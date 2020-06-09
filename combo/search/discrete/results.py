@@ -49,6 +49,17 @@ class history:
         return best_fx, best_actions
 
     def save(self, filename):
+        """
+        Save the information of the history.
+
+        Parameters
+        ----------
+        filename: str
+            The name of the file which stores the information of the history
+        Returns
+        -------
+
+        """
         N = self.total_num_search
         M = self.num_runs
         np.savez_compressed(filename, num_runs=M, total_num_search=N,
@@ -57,6 +68,17 @@ class history:
                             terminal_num_run=self.terminal_num_run[0:M])
 
     def load(self, filename):
+        """
+        Load the information of the history.
+
+        Parameters
+        ----------
+        filename: str
+            The name of the file which stores the information of the history
+        Returns
+        -------
+
+        """
         data = np.load(filename)
         M = data['num_runs']
         N = data['total_num_search']

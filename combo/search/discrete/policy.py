@@ -15,6 +15,14 @@ MAX_SEACH = int(20000)
 
 class policy:
     def __init__(self, test_X, config=None):
+        """
+
+        Parameters
+        ----------
+        test_X: numpy array or combo.variable
+             The set of candidates. Each row vector represents the feature vector of each search candidate.
+        config: set_config object (combo.misc.set_config)
+        """
         self.predictor = None
         self.training = variable()
         self.test = self._set_test(test_X)
@@ -23,14 +31,54 @@ class policy:
         self.config = self._set_config(config)
 
     def set_seed(self, seed):
+        """
+        Setting a seed parameter for np.random.
+
+        Parameters
+        ----------
+        seed: int
+            seed number
+        -------
+
+        """
         self.seed = seed
         np.random.seed(self.seed)
 
     def delete_actions(self, index, actions=None):
+        """
+        Deleteing actions
+
+        Parameters
+        ----------
+        index: int
+            Index of an action to be deleted.
+        actions: numpy array
+            Array of actions.
+        Returns
+        -------
+        actions: numpy array
+            Array of actions which does not include action specified by index.
+        """
         actions = self._set_unchosed_actions(actions)
         return np.delete(actions, index)
 
     def write(self, action, t, X=None):
+        """
+        Writing history (update history, not output to a file).
+
+        Parameters
+        ----------
+        action: int
+            Index of actions.
+        t:  numpy array
+            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+        X:  numpy array
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
+
+        Returns
+        -------
+
+        """
         if X is None:
             X = self.test.X[action, :]
             Z = self.test.Z[action, :] if self.test.Z is not None else None
@@ -44,6 +92,24 @@ class policy:
 
     def random_search(self, max_num_probes, num_search_each_probe=1,
                       simulator=None, is_disp=True):
+        """
+        Doing random search.
+
+        Parameters
+        ----------
+        max_num_probes: int
+            Maximum number of random search process.
+        num_search_each_probe: int
+            Number of search at each random search process.
+        simulator: simulator object
+            This object is called in call_simulator and must have __call__(action).
+            Here, action is an integer which represents the index of the candidate.
+        is_disp: bool
+            If true, process messages are outputted.
+        Returns
+        -------
+        history: history object (combo.search.discrete.results.history)
+        """
 
         N = int(num_search_each_probe)
 
@@ -78,6 +144,39 @@ class policy:
                      predictor=None, is_disp=True,
                      simulator=None, score='TS', interval=0,
                      num_rand_basis=0):
+        """
+        Doing Bayesian optimization.
+
+        Parameters
+        ----------
+        training: combo.variable
+            Training dataset.
+        max_num_probes: int
+            Maximum number of searching process by Bayesian optimization.
+        num_search_each_probe: int
+            Number of searching by Bayesian optimization at each process.
+        predictor: predictor object
+            Base class is defined in combo.predictor.
+            If None, blm_predictor is defined.
+        is_disp: bool
+             If true, process messages are outputted.
+        simulator: simulator object
+            This object is called in call_simulator and must have __call__(action).
+            Here, action is an integer which represents the index of the candidate.
+        score: str
+            The type of aquision funciton.
+            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        interval: int
+            The interval number of learning the hyper parameter.
+            If you set the negative value to interval, the hyper parameter learning is not performed.
+            If you set zero to interval, the hyper parameter learning is performed only at the first step.
+        num_rand_basis: int
+            The number of basis function. If you choose 0, ordinary Gaussian process run.
+
+        Returns
+        -------
+        history: history object (combo.search.discrete.results.history)
+        """
 
         if max_num_probes is None:
             max_num_probes = 1
@@ -128,6 +227,26 @@ class policy:
         return copy.deepcopy(self.history)
 
     def get_score(self, mode, predictor=None, training=None, alpha=1):
+        """
+        Getting score.
+
+        Parameters
+        ----------
+        mode: str
+            The type of aquision funciton. TS, EI and PI are available.
+            These functions are defined in score.py.
+        predictor: predictor object
+            Base class is defined in combo.predictor.
+        training:combo.variable
+            Training dataset.
+        alpha: float
+            Tuning parameter which is used if mode = TS.
+            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        Returns
+        -------
+        f: float or list of float
+            Score defined in each mode.
+        """
         self._set_training(training)
         self._set_predictor(predictor)
         actions = self.actions
@@ -144,6 +263,27 @@ class policy:
         return f
 
     def get_marginal_score(self, mode, chosed_actions, N, alpha):
+        """
+        Getting marginal scores.
+
+        Parameters
+        ----------
+        mode: str
+            The type of aquision funciton.
+            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+            These functions are defined in score.py.
+        chosed_actions: numpy array
+            Array of selected actions.
+        N: int
+            The total number of search candidates.
+        alpha: float
+            not used.
+
+        Returns
+        -------
+        f: list
+            N dimensional scores (score is defined in each mode)
+        """
         f = np.zeros((N, len(self.actions)))
         new_test = self.test.get_subset(chosed_actions)
         virtual_t \
@@ -169,6 +309,28 @@ class policy:
         return f
 
     def get_actions(self, mode, N, K, alpha):
+        """
+        Getting actions
+
+        Parameters
+        ----------
+        mode: str
+            The type of aquision funciton.
+            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+            These functions are defined in score.py.
+        N: int
+            The total number of selected candidates.
+        K: int
+            The total number of search candidates.
+        alpha: float
+            Tuning parameter which is used if mode = TS.
+            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+
+        Returns
+        -------
+        chosed_actions: numpy array
+            An N-dimensional array of actions selected in each search process.
+        """
         f = self.get_score(mode, self.predictor, self.training, alpha)
         temp = np.argmax(f)
         action = self.actions[temp]
@@ -186,6 +348,18 @@ class policy:
         return chosed_actions
 
     def get_random_action(self, N):
+        """
+        Getting indexes of actions randomly.
+
+        Parameters
+        ----------
+        N: int
+            Total number of search candidates.
+        Returns
+        -------
+        action: numpy array
+            Indexes of actions selected randomly from search candidates.
+        """
         random_index = np.random.permutation(xrange(self.actions.shape[0]))
         index = random_index[0:N]
         action = self.actions[index]
@@ -193,6 +367,23 @@ class policy:
         return action
 
     def load(self, file_history, file_training=None, file_predictor=None):
+        """
+
+        Loading files about history, training and predictor.
+
+        Parameters
+        ----------
+        file_history: str
+            The name of the file that stores the information of the history.
+        file_training: str
+            The name of the file that stores the training dataset.
+        file_predictor: str
+            The name of the file that stores the predictor dataset.
+
+        Returns
+        -------
+
+        """
         self.history.load(file_history)
 
         if file_training is None:
@@ -209,20 +400,70 @@ class policy:
                 self.predictor = pickle.load(f)
 
     def export_predictor(self):
+        """
+        Returning the predictor dataset
+
+        Returns
+        -------
+
+        """
         return self.predictor
 
     def export_training(self):
+        """
+        Returning the training dataset
+
+        Returns
+        -------
+
+        """
         return self.training
 
     def export_history(self):
+        """
+        Returning the information of the history.
+
+        Returns
+        -------
+
+        """
         return self.history
 
     def _set_predictor(self, predictor=None):
+        """
+
+        Set predictor if defined.
+
+        Parameters
+        ----------
+        predictor: predictor object
+            Base class is defined in combo.predictor.
+
+        Returns
+        -------
+
+        """
         if predictor is None:
             predictor = self.predictor
         return predictor
 
     def _init_predictor(self, is_rand_expans, predictor=None):
+        """
+        Setting the initial predictor.
+
+        Parameters
+        ----------
+        is_rand_expans: bool
+        If true, blm_predictor is selected.
+        If false, gp_predictor is selected.
+        predictor: predictor object
+            Base class is defined in combo.predictor.
+
+        Returns
+        -------
+        predictor: predictor object
+            Base class is defined in combo.predictor.
+        """
         self.predictor = self._set_predictor(predictor)
         if self.predictor is None:
             if is_rand_expans:
@@ -233,16 +474,55 @@ class policy:
         return self.predictor
 
     def _set_training(self, training=None):
+        """
+
+        Set training dataset.
+
+        Parameters
+        ----------
+        training: combo.variable
+            Training dataset.
+
+        Returns
+        -------
+        training: combo.variable
+            Training dataset.
+        """
         if training is None:
             training = self.training
         return training
 
     def _set_unchosed_actions(self, actions=None):
+        """
+
+        Parameters
+        ----------
+        actions: numpy array
+            An array of indexes of the actions which are not chosen.
+
+        Returns
+        -------
+         actions: numpy array
+            An array of indexes of the actions which are not chosen.
+
+        """
         if actions is None:
             actions = self.actions
         return actions
 
     def _set_test(self, test_X):
+        """
+        Set test candidates.
+
+        Parameters
+        ----------
+        test_X: numpy array or combo.variable
+             The set of candidates. Each row vector represents the feature vector of each search candidate.
+        Returns
+        -------
+        test_X: numpy array or combo.variable
+             The set of candidates. Each row vector represents the feature vector of each search candidate.
+        """
         if isinstance(test_X, np.ndarray):
             test = variable(X=test_X)
         elif isinstance(test_X, variable):
@@ -253,6 +533,18 @@ class policy:
         return test
 
     def _set_config(self, config=None):
+        """
+        Set configure information.
+
+        Parameters
+        ----------
+        config: set_config object (combo.misc.set_config)
+
+        Returns
+        -------
+        config: set_config object (combo.misc.set_config)
+        
+        """
         if config is None:
             config = combo.misc.set_config()
         return config

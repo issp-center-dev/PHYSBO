@@ -3,13 +3,34 @@ import scipy.optimize
 import six
 
 class batch( object ):
-    ''' basis class for batch learning
-    '''
+    """
+    basis class for batch learning
+    """
     def __init__( self, gp, config ):
+        """
+
+        Parameters
+        ----------
+        gp : model  (gp.core.model)
+        config: set_config  (misc.set_config)
+        """
+
         self.gp = gp
         self.config = config
 
     def run( self, X, t ):
+        """
+
+        Parameters
+        ----------
+        X: numpy array
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy array
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+        Returns
+        -------
+
+        """
         batch_size = self.config.learning.batch_size
         sub_X, sub_t = self.gp.sub_sampling( X, t, batch_size )
 
@@ -28,6 +49,22 @@ class batch( object ):
         return params
 
     def one_run( self, params, X, t, max_iter = None ):
+        """
+
+        Parameters
+        ----------
+        params:
+
+        X: numpy array
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy array
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+        max_iter
+
+        Returns
+        -------
+
+        """
         is_disp = True
 
         if max_iter is None:
@@ -62,13 +99,34 @@ class batch( object ):
 
 
 class online( object ):
-    ''' base class for online learning '''
+    """
+    base class for online learning
+    """
     def __init__( self, gp, config ):
+        """
+
+        Parameters
+        ----------
+        gp : model  (gp.core.model)
+        config: set_config  (misc.set_config)
+        """
         self.gp = gp
         self.config = config
         self.num_iter = 0
 
     def run( self, X, t ):
+        """
+        Run initial search and hyper parameter running.
+
+        Parameters
+        ----------
+        X
+        t
+
+        Returns
+        -------
+
+        """
         if self.config.learning.num_init_params_search != 0:
             is_init_params_search = True
         else:
