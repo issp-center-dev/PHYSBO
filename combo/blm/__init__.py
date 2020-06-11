@@ -1,3 +1,6 @@
+""" Bayesian Linear Model
+"""
+
 import basis
 import prior
 import lik
