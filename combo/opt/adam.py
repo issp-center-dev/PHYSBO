@@ -1,8 +1,44 @@
 import numpy as np
 
 class adam:
+    """
+    Optimizer of f(x) with the adam method
+
+    Attributes
+    ==========
+    params: numpy.ndarray
+        current input, x
+    nparams: int
+        dimension
+    grad: function
+        gradient function, g(x) = f'(x)
+    m: numpy.ndarray
+    v: numpy.ndarray
+    epoch: int
+        the number of update already done
+    max_epoch: int
+        the maximum number of update
+    alpha: float
+    beta: float
+    gamma: float
+    epsilon: float
+    """
     def __init__( self, params, grad, options={} ):
-        ''' initialization '''
+        """
+
+        Parameters
+        ==========
+        params:
+        grad:
+        options: dict
+            Hyperparameters for the adam method
+
+                - "alpha" (default: 0.001)
+                - "beta" (default: 0.9)
+                - "gamma" (default: 0.9999)
+                - "epsilon" (default: 1e-8)
+                - "max_epoch" (default: 4000)
+        """
         self.grad = grad
         self.params = params
         self.nparams = params.shape[0]
@@ -15,6 +51,23 @@ class adam:
         self.params = params
 
     def update( self, params, *args, **kwargs ):
+        """
+        calculates the updates of params
+
+        Parameters
+        ==========
+        params: numpy.ndarray
+            input
+        args:
+            will be passed to self.grad
+        kwargs:
+            will be passed to self.grad
+
+        Returns
+        =======
+        numpy.ndarray
+            update of params
+        """
         g = self.grad( params, *args, **kwargs )
         self.m = self.m * self.beta + g * ( 1 - self.beta )
         self.v = self.v * self.gamma + g**2 * ( 1 - self.gamma )
@@ -30,7 +83,14 @@ class adam:
             params += update
 
     def _set_options( self, options ):
-        ''' set options for adam learn '''
+        """
+        set hyperparameters for the method
+
+        Parameters
+        ==========
+        options: dict
+
+        """
         self.alpha = options.get( 'alpha', 0.001 )
         self.beta = options.get( 'beta', 0.9 )
         self.gamma = options.get( 'gamma', 0.9999 )
