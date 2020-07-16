@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from itertools import product
 
 import numpy as np
@@ -32,21 +34,21 @@ def test_interactive():
 
     actions = policy.random_search(max_num_probes=1, num_search_each_probe=nrand, simulator=None)
     targets = sim(actions)
-    print actions
-    print targets
+    print(actions)
+    print(targets)
     policy.write(actions, targets)
     combo.search.utility.show_search_results(policy.history, nrand)
 
     actions = policy.bayes_search(max_num_probes=1, num_search_each_probe=nsearch, simulator=None, score='TS')
     targets = sim(actions)
-    print actions
-    print targets
+    print(actions)
+    print(targets)
     policy.write(actions, targets)
     combo.search.utility.show_search_results(policy.history, nsearch)
 
     res = policy.history
     best_fx, best_action = res.export_all_sequence_best_fx()
-    print best_fx
-    print best_action
+    print(best_fx)
+    print(best_action)
     assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
     assert best_action[-1] == 60

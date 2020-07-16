@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from itertools import product
 
 import numpy as np
@@ -30,8 +32,8 @@ def test_random_search():
     nsearch = 20
     res = policy.random_search(max_num_probes=nsearch, simulator=sim)
     best_fx, best_action = res.export_all_sequence_best_fx()
-    print best_fx[-1]
-    print best_action[-1]
+    print(best_fx[-1])
+    print(best_action[-1])
     assert best_fx[-1] == pytest.approx(-0.01, abs=0.001)
     assert best_action[-1] == 61
 
@@ -45,7 +47,7 @@ def test_bayes_search():
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score='TS')
     best_fx, best_action = res.export_all_sequence_best_fx()
-    print best_fx
-    print best_action
+    print(best_fx)
+    print(best_action)
     assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
     assert best_action[-1] == 60
