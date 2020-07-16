@@ -24,7 +24,7 @@ class variable(object):
 
         Parameters
         ----------
-        index: int
+        index: int or array of int
             Index of selected action.
         Returns
         -------
