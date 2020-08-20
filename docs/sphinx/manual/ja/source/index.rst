@@ -10,6 +10,13 @@ Welcome to PHYSBO's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
+   install
+   notebook/tutorial_basic
+   notebook/tutorial_multi_probe
+   notebook/tutorial_interactive_mode
+   notebook/tutorial_multi_objective
+
 
 
 Indices and tables
