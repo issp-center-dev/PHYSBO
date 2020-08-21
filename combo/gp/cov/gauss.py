@@ -9,7 +9,24 @@ class gauss:
     def __init__( self, num_dim, width = 3, scale = 1, ard = False, \
                         max_width = 1e6, min_width = 1e-6, \
                         max_scale = 1e6, min_scale = 1e-6 ):
+        """
 
+        Parameters
+        ----------
+        num_dim: int
+        width: float
+        scale: float
+        ard: bool
+            flag to use Automatic Relevance Determination (ARD).
+        max_width: float
+            Maximum value of width
+        min_width: float
+            Minimum value of width
+        max_scale: float
+            Maximum value of scale
+        min_scale: float
+            Minimum value of scale
+        """
         self.ard = ard
         self.num_dim = num_dim
         self.scale = scale
@@ -34,7 +51,10 @@ class gauss:
         self.set_params( params )
 
     def print_params( self ):
-        ''' show the current kernel parameters '''
+        """
+        show the current kernel parameters
+
+        """
 
         print ' Parameters of Gaussian kernel \n '
         print ' width  = ', + self.width
@@ -43,6 +63,21 @@ class gauss:
         print ' \n'
 
     def prepare( self, params = None ):
+        """
+        Setting parameters
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            parameters
+
+        Returns
+        -------
+            params: numpy.ndarray
+            width: int
+            scale: int
+
+        """
         if params is None:
             params = self.params
             width = self.width
@@ -54,6 +89,21 @@ class gauss:
         return params, width, scale
 
     def get_grad( self, X, params = None ):
+        """
+        Getting gradiant values of X
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+        params: numpy.ndarray
+
+        Returns
+        -------
+        grad: numpy.ndarray
+
+        """
         num_data = X.shape[0]
         params, width, scale = self.prepare( params )
         G = self.get_cov( X, params = params )
@@ -69,7 +119,27 @@ class gauss:
         return grad
 
     def get_cov( self,  X,  Z = None, params = None,  diag = False  ):
-        ''' compute the gram matrix '''
+        """
+        compute the covariant matrix
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+        Z: numpy.ndarray
+            N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of search candidate.
+
+        params: numpy.ndarray
+            Parameters
+
+        diag: bool
+            If X is the diagonalization matrix, true.
+
+        Returns
+        -------
+        G: numpy.ndarray
+            covariant matrix
+        """
         params, width, scale = self.prepare( params )
         scale2 = scale**2
 
@@ -87,12 +157,34 @@ class gauss:
         return G
 
     def set_params( self, params ):
-        ''' set kernel parameters '''
+        """
+        set kernel parameters
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            Parameters for optimization.
+
+        """
         params = self.supp_params( params )
         self.params = params
         self.width, self.scale = self.decomp_params( params )
 
     def supp_params( self, params ):
+        """
+        Set maximum (minimum) values for parameters when the parameter is greater(less) than this value.
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            Parameters for optimization.
+            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+
+        Returns
+        -------
+        params: numpy.ndarray
+
+        """
         index = np.where( params[0:-1] > self.max_ln_width)
         params[ index[0] ] =  self.max_ln_width
 
@@ -108,15 +200,34 @@ class gauss:
         return params
 
     def decomp_params( self, params ):
-        ''' decompose the parameters defined on the log region
-            into width and scale parameters '''
+        """
+        decompose the parameters defined on the log region
+            into width and scale parameters
+        Parameters
+        ----------
+        params: numpy.ndarray
+            parameters
+
+        Returns
+        -------
+            width: float
+            scale: float
+        """
 
         width = np.exp( params[0:-1] )
         scale = np.exp( params[-1] )
         return width, scale
 
     def save( self, file_name ):
-        ''' save the gaussian kernel '''
+        """
+        save the gaussian kernel
+
+        Parameters
+        ----------
+        file_name: str
+            file name to save the information of the kernel
+
+        """
         kwarg = {'name':'gauss', \
                 'params':self.params, \
                 'ard':self.ard, \
@@ -130,7 +241,14 @@ class gauss:
             np.savez(f, **kwarg)
 
     def load( self, file_name):
-        ''' recover the Gaussian kernel from file'''
+        """
+        Recovering the Gaussian kernel from file
+        Parameters
+        ----------
+         file_name: str
+            file name to load the information of the kernel
+
+        """
         temp = np.load( file_name )
 
         self.num_dim = temp['num_dim']
@@ -143,6 +261,16 @@ class gauss:
         self.set_params( params )
 
     def get_params_bound( self ):
+        """
+        Getting boundary array.
+
+        Returns
+        -------
+        bound: list
+            A num_params-dimensional array with the tuple (min_params, max_params).
+
+        """
+
         if self.ard:
             bound = [ ( self.min_ln_width, self.max_ln_width ) for i in range(0, self.num_dim) ]
         else:
@@ -152,15 +280,39 @@ class gauss:
         return bound
 
     def cat_params( self, width, scale):
-        ''' take the logarithm of width and scale parameters
-            and concatinate them into one ndarray '''
+        """
+        Taking the logarithm of width and scale parameters
+            and concatinate them into one ndarray
+        Parameters
+        ----------
+        width: int
+        scale: int
+
+        Returns
+        -------
+        params: numpy.ndarray
+            Parameters
+        """
         params = np.zeros(  self.num_params  )
         params[0:-1] = np.log( width )
         params[-1] = np.log( scale )
         return params
 
     def rand_expans( self, num_basis, params = None ):
-        ''' Kernel Expansion '''
+        """
+        Kernel Expansion
+
+        Parameters
+        ----------
+        num_basis: int
+            total number of basis
+        params: numpy.ndarray
+            Parameters
+
+        Returns
+        -------
+            tupple (W, b, amp)
+        """
         params, width, scale = self.prepare( params )
         scale2 = scale**2
         amp = np.sqrt( ( 2 * scale2 )/num_basis )
@@ -169,6 +321,23 @@ class gauss:
         return ( W, b, amp )
 
     def get_cand_params( self, X, t ):
+        """
+        Getting candidate parameters.
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+        t:  numpy.ndarray
+            N dimensional array.
+            The negative energy of each search candidate (value of the objective function to be optimized).
+
+        Returns
+        -------
+        params: numpy.ndarray
+
+        """
         if self.ard:
             # with ARD
             width = np.zeros( self.num_dim )

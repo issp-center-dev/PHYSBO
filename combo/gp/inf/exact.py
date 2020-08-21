@@ -4,6 +4,26 @@ from ... import misc
 from copy import deepcopy
 
 def eval_marlik( gp, X, t, params = None ):
+    """
+    Evaluating marginal likelihood.
+
+    Parameters
+    ----------
+    gp: combo.gp.core.model
+    X: numpy.ndarray
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+    t:  numpy.ndarray
+        N dimensional array.
+        The negative energy of each search candidate (value of the objective function to be optimized).
+    params: numpy.ndarray
+        Parameters.
+
+    Returns
+    -------
+    marlik: float
+        Marginal likelihood.
+    """
     ndata, ndims = X.shape
     lik_params, prior_params = gp.decomp_params( params )
 
@@ -21,6 +41,26 @@ def eval_marlik( gp, X, t, params = None ):
     return marlik
 
 def get_grad_marlik( gp, X, t, params = None ):
+    """
+    Evaluating gradiant of marginal likelihood.
+
+    Parameters
+    ----------
+    gp: combo.gp.core.model
+    X: numpy.ndarray
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+    t:  numpy.ndarray
+        N dimensional array.
+        The negative energy of each search candidate (value of the objective function to be optimized).
+    params: numpy.ndarray
+        Parameters.
+
+    Returns
+    -------
+    grad_marlik: numpy.ndarray
+        Gradiant of marginal likelihood.
+    """
     ndata, ndims  = X.shape
     lik_params, prior_params = gp.decomp_params( params )
 
@@ -58,6 +98,24 @@ def get_grad_marlik( gp, X, t, params = None ):
     return grad_marlik
 
 def prepare( gp, X, t, params = None ):
+    """
+
+    Parameters
+    ----------
+    gp: combo.gp.core.model
+    X: numpy.ndarray
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+    t:  numpy.ndarray
+        N dimensional array.
+        The negative energy of each search candidate (value of the objective function to be optimized).
+    params: numpy.ndarray
+        Parameters.
+
+    Returns
+    -------
+    stats: tupple
+    """
     ndata = X.shape[0]
     ndims = X.shape[1]
 
@@ -78,7 +136,23 @@ def prepare( gp, X, t, params = None ):
     return stats
 
 def get_post_fmean( gp, X, Z, params = None ):
-    ''' calculate the mean of posterior  '''
+    """
+    Calculating the mean of posterior
+
+    Parameters
+    ----------
+    gp: combo.gp.core.model
+    X: numpy.ndarray
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+    Z: numpy.ndarray
+        N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.
+    params: numpy.ndarray
+        Parameters.
+
+    Returns
+    -------
+    numpy.ndarray
+    """
 
     ndata = X.shape[0]
     ndims = X.shape[1]
@@ -94,7 +168,25 @@ def get_post_fmean( gp, X, Z, params = None ):
     return G.dot(alpha) + fmu
 
 def get_post_fcov(gp, X, Z, params = None, diag = True ):
-    ''' calculate the covariance of posterior  '''
+    """
+    Calculating the covariance of posterior
+
+    Parameters
+    ----------
+    gp: combo.gp.core.model
+    X: numpy.ndarray
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+    Z: numpy.ndarray
+        N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.
+    params: numpy.ndarray
+        Parameters.
+    diag: bool
+        If X is the diagonalization matrix, true.
+    Returns
+    -------
+        numpy.ndarray
+    """
+
     lik_params, prior_params = gp.decomp_params( params )
 
     L = gp.stats[0]

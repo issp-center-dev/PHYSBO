@@ -4,6 +4,15 @@ import ConfigParser
 
 class set_config:
     def __init__(self, search_config=None, learning_config=None):
+        """
+        Setting configuration for search and learning.
+
+        Parameters
+        ----------
+        search_config: combo.misc.search object
+        learning_config: combo.misc.learning object
+
+        """
         if search_config is None:
             search_config = search()
         self.search = search_config
@@ -13,10 +22,28 @@ class set_config:
         self.learning = learning_config
 
     def show(self):
+        """
+        Showing information of search and learning objects.
+
+        Returns
+        -------
+
+        """
         self.search.show()
         self.learning.show()
 
     def load(self, file_name='config.ini'):
+        """
+        Loading information of configuration.
+
+        Parameters
+        ----------
+        file_name: str
+        An input file name of configuration.
+        Returns
+        -------
+
+        """
         config = ConfigParser.SafeConfigParser()
         config.read(file_name)
 
@@ -44,12 +71,30 @@ class search:
         self.alpha = 1.0
 
     def load(self, config):
+        """
+        Loading information of configuration from config._sectoins['search'].
+
+        Parameters
+        ----------
+        config: combo.misc.set_config object
+
+        Returns
+        -------
+
+        """
         temp_dict = config._sections['search']
         self.multi_probe_num_sampling = \
             int(temp_dict.get('multi_probe_num_sampling', 20))
         self.alpha = np.float64(temp_dict.get('alpha', 1.0))
 
     def show(self):
+        """
+        Showing information about search object.
+
+        Returns
+        -------
+
+        """
         print '(search)'
         print 'multi_probe_num_sampling: ', self.multi_probe_num_sampling
         print 'alpha: ', self.alpha
@@ -64,6 +109,13 @@ class learning(object):
         self.method = 'adam'
 
     def show(self):
+        """
+        Showing information about learning object.
+
+        Returns
+        -------
+
+        """
         print '( learning )'
         print 'method : ', self.method
         print 'is_disp: ', self.is_disp
@@ -71,6 +123,18 @@ class learning(object):
         print 'num_init_params_search: ', self.num_init_params_search
 
     def load(self, config):
+        """
+        Loading information of configuration from config._sectoins['learning'].
+
+        Parameters
+        ----------
+        config: combo.misc.set_config object
+
+
+        Returns
+        -------
+
+        """
         temp_dict = config._sections['learning']
         self.method = temp_dict.get('method', 'adam')
         self.is_disp = boolean(temp_dict.get('is_disp', True))
@@ -88,12 +152,30 @@ class batch(learning):
         self.batch_size = 5000
 
     def show(self):
+        """
+        Showing information about configuration about batch object.
+
+        Returns
+        -------
+
+        """
         super(batch, self).show()
         print 'max_iter: ', self.max_iter
         print 'max_iter_init_params_search: ', self.max_iter_init_params_search
         print 'batch_size: ', self.batch_size
 
     def load(self, config):
+        """
+        Loading information of configuration from config._sectoins['batch'].
+
+        Parameters
+        ----------
+        config: combo.misc.set_config object
+
+        Returns
+        -------
+
+        """
         super(batch, self).load(config)
         temp_dict = config._sections['batch']
         self.max_iter = int(temp_dict.get('max_iter', 200))
@@ -111,6 +193,13 @@ class online(learning):
         self.eval_size = 5000
 
     def show(self):
+        """
+        Showing information about configuration about online object.
+
+        Returns
+        -------
+
+        """
         super(online, self).show()
         print 'max_epoch: ', self.max_epoch
         print 'max_epoch_init_params_search: ', \
@@ -119,6 +208,18 @@ class online(learning):
         print 'eval_size: ', self.eval_size
 
     def load(self, config):
+        """
+        Loading information of configuration from config._sectoins['online'].
+
+        Parameters
+        ----------
+        config: combo.misc.set_config object
+
+
+        Returns
+        -------
+
+        """
         super(online, self).load(config)
         temp_dict = config._sections['online']
         self.max_epoch = int(temp_dict.get('max_epoch', 1000))
@@ -138,6 +239,13 @@ class adam(online):
         self.epsilon = 1e-6
 
     def show(self):
+        """
+        Showing information about configuration about adam object.
+
+        Returns
+        -------
+
+        """
         super(adam, self).show()
         print 'alpha = ', self.alpha
         print 'beta = ', self.beta
@@ -146,6 +254,17 @@ class adam(online):
         print '\n'
 
     def load(self, config):
+        """
+        Loading information of configuration from config._sectoins['adam'].
+
+        Parameters
+        ----------
+        config: combo.misc.set_config object
+
+        Returns
+        -------
+
+        """
         super(adam, self).load(config)
         temp_dict = config._sections['adam']
         self.alpha = np.float64(temp_dict.get('alpha', 0.001))
@@ -155,6 +274,17 @@ class adam(online):
 
 
 def boolean(str):
+    """
+    Return boolean.
+
+    Parameters
+    ----------
+    str: str or boolean
+
+    Returns
+    -------
+    True or False
+    """
     if str == 'True' or str is True:
         return True
     else:

@@ -14,6 +14,21 @@ ctypedef np.float32_t DTYPE32_t
 @cython.nonecheck( False )
 
 def grad_width64( np.ndarray[DTYPE64_t, ndim = 2] X, np.ndarray[DTYPE64_t, ndim = 1] width, np.ndarray[DTYPE64_t, ndim = 2] G ):
+    """
+    Gradiant along width direction (64bit).
+
+    Parameters
+    ----------
+    X: numpy.ndarray[numpy.float64_t, ndim = 2]
+
+    width: numpy.ndarray[numpy.float64_t, ndim = 1]
+        The grid width
+    G: numpy.ndarray[numpy.float64_t, ndim = 2]
+        The gram matrix
+    Returns
+    -------
+    numpy.ndarray
+    """
     cdef int N = X.shape[0]
     cdef int D = X.shape[1]
 
@@ -34,6 +49,22 @@ def grad_width64( np.ndarray[DTYPE64_t, ndim = 2] X, np.ndarray[DTYPE64_t, ndim 
 @cython.nonecheck( False )
 
 def grad_width32( np.ndarray[DTYPE32_t, ndim = 2] X, np.ndarray[DTYPE32_t, ndim = 1] width, np.ndarray[DTYPE32_t, ndim = 2] G ):
+    """
+
+    Gradiant along width direction (32bit).
+
+    Parameters
+    ----------
+    X: numpy.ndarray[numpy.float32_t, ndim = 2]
+
+    width: numpy.ndarray[numpy.float32_t, ndim = 1]
+        The grid width
+    G: numpy.ndarray[numpy.float32_t, ndim = 2]
+        The gram matrix
+    Returns
+    -------
+    numpy.ndarray
+    """
     cdef int N = X.shape[0]
     cdef int D = X.shape[1]
 

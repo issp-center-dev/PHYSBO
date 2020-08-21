@@ -12,6 +12,19 @@ class history:
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
     def write(self, t, action):
+        """
+        Overwrite fx and chosed_actions by t and action.
+
+        Parameters
+        ----------
+        t: numpy.ndarray
+            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+        action: numpy.ndarray
+            N dimensional array. The indexes of actions of each search candidate.
+        Returns
+        -------
+
+        """
         N = utility.length_vector(t)
         st = self.total_num_search
         en = st + N
@@ -23,6 +36,14 @@ class history:
         self.total_num_search += N
 
     def export_sequence_best_fx(self):
+        """
+        Export fx and actions at each sequence.
+        (The total number of data is num_runs.)
+        Returns
+        -------
+        best_fx: numpy.ndarray
+        best_actions: numpy.ndarray
+        """
         best_fx = np.zeros(self.num_runs)
         best_actions = np.zeros(self.num_runs)
         for n in xrange(self.num_runs):
@@ -33,6 +54,15 @@ class history:
         return best_fx, best_actions
 
     def export_all_sequence_best_fx(self):
+        """
+        Export all fx and actions at each sequence.
+         (The total number of data is total_num_research.)
+
+        Returns
+        -------
+        best_fx: numpy.ndarray
+        best_actions: numpy.ndarray
+        """
         best_fx = np.zeros(self.total_num_search)
         best_actions = np.zeros(self.total_num_search)
         best_fx[0] = self.fx[0]

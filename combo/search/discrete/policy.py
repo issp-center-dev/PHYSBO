@@ -19,7 +19,7 @@ class policy:
 
         Parameters
         ----------
-        test_X: numpy array or combo.variable
+        test_X: numpy.ndarray or combo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: set_config object (combo.misc.set_config)
         """
@@ -52,11 +52,11 @@ class policy:
         ----------
         index: int
             Index of an action to be deleted.
-        actions: numpy array
+        actions: numpy.ndarray
             Array of actions.
         Returns
         -------
-        actions: numpy array
+        actions: numpy.ndarray
             Array of actions which does not include action specified by index.
         """
         actions = self._set_unchosed_actions(actions)
@@ -68,11 +68,11 @@ class policy:
 
         Parameters
         ----------
-        action: int
-            Index of actions.
-        t:  numpy array
+        action: numpy.ndarray
+            Indexes of actions.
+        t:  numpy.ndarray
             N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
-        X:  numpy array
+        X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
 
         Returns
@@ -93,7 +93,7 @@ class policy:
     def random_search(self, max_num_probes, num_search_each_probe=1,
                       simulator=None, is_disp=True):
         """
-        Doing random search.
+        Performing random search.
 
         Parameters
         ----------
@@ -145,7 +145,7 @@ class policy:
                      simulator=None, score='TS', interval=0,
                      num_rand_basis=0):
         """
-        Doing Bayesian optimization.
+        Performing Bayesian optimization.
 
         Parameters
         ----------
@@ -272,7 +272,7 @@ class policy:
             The type of aquision funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
-        chosed_actions: numpy array
+        chosed_actions: numpy.ndarray
             Array of selected actions.
         N: int
             The total number of search candidates.
@@ -328,7 +328,7 @@ class policy:
 
         Returns
         -------
-        chosed_actions: numpy array
+        chosed_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
         f = self.get_score(mode, self.predictor, self.training, alpha)
@@ -357,7 +357,7 @@ class policy:
             Total number of search candidates.
         Returns
         -------
-        action: numpy array
+        action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
         random_index = np.random.permutation(xrange(self.actions.shape[0]))
@@ -497,12 +497,12 @@ class policy:
 
         Parameters
         ----------
-        actions: numpy array
+        actions: numpy.ndarray
             An array of indexes of the actions which are not chosen.
 
         Returns
         -------
-         actions: numpy array
+         actions: numpy.ndarray
             An array of indexes of the actions which are not chosen.
 
         """
@@ -516,11 +516,11 @@ class policy:
 
         Parameters
         ----------
-        test_X: numpy array or combo.variable
+        test_X: numpy.ndarray or combo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         Returns
         -------
-        test_X: numpy array or combo.variable
+        test_X: numpy.ndarray or combo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         """
         if isinstance(test_X, np.ndarray):

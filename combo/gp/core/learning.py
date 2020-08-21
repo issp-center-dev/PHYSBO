@@ -1,3 +1,4 @@
+# coding=utf-8
 import numpy as np
 import scipy.optimize
 import six
@@ -11,8 +12,8 @@ class batch( object ):
 
         Parameters
         ----------
-        gp : model  (gp.core.model)
-        config: set_config  (misc.set_config)
+        gp : combo.gp.core.model object
+        config: combo.misc.set_config object
         """
 
         self.gp = gp
@@ -20,16 +21,18 @@ class batch( object ):
 
     def run( self, X, t ):
         """
+        Performing optimization using the L-BFGS-B algorithm
 
         Parameters
         ----------
-        X: numpy array
+        X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
-        t: numpy array
+        t: numpy.ndarray
             N-dimensional vector that represents the corresponding negative energy of search candidates.
         Returns
         -------
-
+        numpy.ndarray
+            The solution of the optimization.
         """
         batch_size = self.config.learning.batch_size
         sub_X, sub_t = self.gp.sub_sampling( X, t, batch_size )
@@ -53,18 +56,23 @@ class batch( object ):
 
         Parameters
         ----------
-        params:
+        params: numpy.ndarray
+            Initial guess for optimization.
+            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
 
-        X: numpy array
+        X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
-        t: numpy array
+        t: numpy.ndarray
             N-dimensional vector that represents the corresponding negative energy of search candidates.
-        max_iter
-
+        max_iter: int
+            Maximum number of iterations to perform.
         Returns
         -------
-
+        numpy.ndarray
+            The solution of the optimization.
         """
+
+        #is_disp: Set to True to print convergence messages.
         is_disp = True
 
         if max_iter is None:
@@ -80,6 +88,20 @@ class batch( object ):
         return res.x
 
     def init_params_search( self, X, t ):
+        """
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+
+        Returns
+        -------
+        numpy.ndarray
+            The parameters which give the minimum marginal likelihood.
+        """
         num_init_params_search = self.config.learning.num_init_params_search
         max_iter = int(self.config.learning.max_iter_init_params_search)
         min_params = np.zeros( self.gp.num_params )
@@ -120,11 +142,15 @@ class online( object ):
 
         Parameters
         ----------
-        X
-        t
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
 
         Returns
         -------
+        numpy.ndarray
+            The solution of the optimization.
 
         """
         if self.config.learning.num_init_params_search != 0:
@@ -147,6 +173,25 @@ class online( object ):
         return params
 
     def one_run( self, params, X, t, max_epoch = None ):
+        """
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            Parameters for optimization.
+            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+        max_epoch: int
+            Maximum candidate epochs
+        Returns
+        -------
+        numpy.ndarray
+            The solution of the optimization.
+
+        """
         num_data = X.shape[0]
         is_disp = False
         batch_size = self.config.learning.batch_size
@@ -187,6 +232,25 @@ class online( object ):
 
 
     def disp_marlik( self, params, eval_X, eval_t, num_epoch = None ):
+        """
+        Displaying marginal likelihood
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            Parameters for optimization.
+            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+        eval_X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        eval_t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+        num_epoch: int
+            Number of epochs
+
+        Returns
+        -------
+
+        """
         marlik = self.gp.eval_marlik( params, eval_X, eval_t )
         if num_epoch is not None:
             print num_epoch,
@@ -196,7 +260,21 @@ class online( object ):
 
 
     def init_params_search( self, X, t ):
-        ''' initial parameter searchs '''
+        """
+        Initial parameter searchs
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+
+        Returns
+        -------
+        numpy.ndarray
+            The parameter which gives the minimum likelihood.
+        """
         num_init_params_search = self.config.learning.num_init_params_search
         is_disp = self.config.learning.is_disp
         max_epoch = self.config.learning.max_epoch_init_params_search
@@ -224,6 +302,13 @@ class online( object ):
 class adam( online ):
     ''' default '''
     def __init__( self, gp, config ):
+        """
+
+        Parameters
+        ----------
+        gp : combo.gp.core.model object
+        config: combo.misc.set_config object
+        """
         super(adam, self).__init__( gp, config )
 
         self.alpha = self.config.learning.alpha
@@ -239,6 +324,21 @@ class adam( online ):
         self.num_iter = 0
 
     def get_one_update( self, params, X, t ):
+        """
+
+        Parameters
+        ----------
+        params: numpy.ndarray
+            Parameters for optimization.
+            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t: numpy.ndarray
+            N-dimensional vector that represents the corresponding negative energy of search candidates.
+        Returns
+        -------
+
+        """
         grad = self.gp.get_grad_marlik( params, X, t )
         self.m = self.m * self.beta + grad * ( 1 - self.beta )
         self.v = self.v * self.gamma + grad**2 * ( 1 - self.gamma )
