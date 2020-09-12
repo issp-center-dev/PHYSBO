@@ -10,6 +10,20 @@ ctypedef np.float64_t DTYPE_t
 @cython.wraparound( False )
 @cython.nonecheck( False )
 def diagAB_64( np.ndarray[DTYPE_t, ndim = 2] A, np.ndarray[DTYPE_t, ndim = 2] B ):
+    """ Return diagonal part of AB
+
+    Parameters
+    ==========
+    A: np.ndarray
+        NxM matrix
+    B: np.ndarray
+        MxN matrix
+
+    Returns
+    =======
+    d: np.ndarray
+        Diagonal part of the matrix AB
+    """
     cdef int N = A.shape[0]
     cdef int M = A.shape[1]
 

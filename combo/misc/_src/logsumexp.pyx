@@ -12,6 +12,12 @@ ctypedef np.float64_t DTYPE_t
 @cython.nonecheck( False )
 
 def logsumexp64( np.ndarray[DTYPE_t, ndim = 1] x ):
+    """ Calculate log(sum(exp(x)))
+
+    Parameters
+    ==========
+    x: np.ndarray
+    """
     cdef int N = x.shape[0]
     cdef int i
     cdef double xmax
