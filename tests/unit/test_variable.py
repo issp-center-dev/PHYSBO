@@ -46,7 +46,6 @@ def test_delete(variable, mocker):
     delete_Z.assert_called_once_with(1)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_X(variable, X, index):
     variable.delete_X(index)
@@ -54,7 +53,6 @@ def test_delete_X(variable, X, index):
     assert np.array_equal(variable.X, ref)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_t(variable, t, index):
     variable.delete_t(index)
@@ -62,7 +60,6 @@ def test_delete_t(variable, t, index):
     assert np.array_equal(variable.t, ref)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_Z(variable, Z, index):
     variable.delete_Z(index)
@@ -111,9 +108,8 @@ def test_save_load(variable, tmpdir):
     variable.Z = None
     variable.save(filename)
     var2 = physbo.variable()
-    with pytest.raises(ValueError):
-        var2.load(filename)
-    # assert np.array_equal(variable.X, var2.X)
-    # assert np.array_equal(variable.t, var2.t)
-    # assert np.array_equal(variable.Z, var2.Z)
+    var2.load(filename)
+    assert np.array_equal(variable.X, var2.X)
+    assert np.array_equal(variable.t, var2.t)
+    assert np.array_equal(variable.Z, var2.Z)
     tmpfile.remove()

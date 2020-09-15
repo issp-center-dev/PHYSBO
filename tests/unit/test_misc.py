@@ -48,7 +48,6 @@ def test_diagAB(NM):
 
 
 # Now work only for diagnal matrices
-@pytest.mark.xfail
 @pytest.mark.parametrize("NM", [(3, 5), (5, 3), (5, 5)])
 def test_traceAB2(NM):
     np.random.seed(12345)
@@ -62,7 +61,6 @@ def test_traceAB2(NM):
 
 
 # Now work only for diagnal matrices
-@pytest.mark.xfail
 @pytest.mark.parametrize("NM", [(3, 5), (5, 3), (5, 5)])
 def test_traceAB3(NM):
     np.random.seed(12345)
