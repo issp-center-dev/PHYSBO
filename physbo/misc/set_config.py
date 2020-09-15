@@ -9,8 +9,8 @@ class set_config:
 
         Parameters
         ----------
-        search_config: combo.misc.search object
-        learning_config: combo.misc.learning object
+        search_config: physbo.misc.search object
+        learning_config: physbo.misc.learning object
 
         """
         if search_config is None:
@@ -76,7 +76,7 @@ class search:
 
         Parameters
         ----------
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
         Returns
         -------
@@ -128,7 +128,7 @@ class learning(object):
 
         Parameters
         ----------
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
 
         Returns
@@ -170,7 +170,7 @@ class batch(learning):
 
         Parameters
         ----------
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
         Returns
         -------
@@ -213,7 +213,7 @@ class online(learning):
 
         Parameters
         ----------
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
 
         Returns
@@ -259,7 +259,7 @@ class adam(online):
 
         Parameters
         ----------
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
         Returns
         -------

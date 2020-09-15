@@ -6,8 +6,8 @@ class predictor(base_predictor):
 
     Attributes
     ==========
-    blm: combo.blm.core.model
-    config: combo.misc.set_config
+    blm: physbo.blm.core.model
+    config: physbo.misc.set_config
         configuration
     """
 
@@ -16,13 +16,13 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        config: combo.misc.set_config
+        config: physbo.misc.set_config
             configuration
-        model: combo.gp.core.model
+        model: physbo.gp.core.model
 
         See also
         ========
-        combo.predictor.base_predictor
+        physbo.predictor.base_predictor
         """
         super(predictor, self).__init__(config, model)
         self.blm = None
@@ -33,7 +33,7 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             dataset for training
         num_basis: int
             the number of basis (default: self.config.predict.num_basis)
@@ -53,7 +53,7 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             dataset for training
         """
         self.blm.prepare(training.X, training.t, training.Z)
@@ -86,9 +86,9 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
 
         Returns
@@ -105,9 +105,9 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
 
         Returns
@@ -124,9 +124,9 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs (not used)
 
         Returns
@@ -143,9 +143,9 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
         N: int
             number of samples
@@ -168,9 +168,9 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
         N: int
             number of samples
@@ -196,10 +196,10 @@ class predictor(base_predictor):
 
         Parameters
         ==========
-        training: combo.variable
+        training: physbo.variable
             training dataset for initialization (preparation).
             If already prepared, the model ignore this.
-        test: combo.variable
+        test: physbo.variable
             training data for update.
             If not prepared, the model ignore this.
         """

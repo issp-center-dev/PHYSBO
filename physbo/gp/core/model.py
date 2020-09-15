@@ -113,7 +113,7 @@ class model:
             Total number of basis
         Returns
         -------
-        combo.blm.core.model
+        physbo.blm.core.model
         """
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError('The kernel must be.')
@@ -240,7 +240,7 @@ class model:
             Parameters
         See also
         ========
-        combo.gp.inf.exact.get_post_fmean
+        physbo.gp.inf.exact.get_post_fmean
         """
         if params is None:
             params = np.copy(self.params)
@@ -267,7 +267,7 @@ class model:
 
         Returns
         -------
-        combo.gp.inf.exact.get_post_fcov
+        physbo.gp.inf.exact.get_post_fcov
 
         """
         if params is None:
@@ -394,7 +394,7 @@ class model:
         t:  numpy.ndarray
             N dimensional array.
             The negative energy of each search candidate (value of the objective function to be optimized).
-        config: combo.misc.set_config object
+        config: physbo.misc.set_config object
 
         """
         method = config.learning.method

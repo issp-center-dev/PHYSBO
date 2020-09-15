@@ -3,7 +3,7 @@ import sys
 import pytest
 import numpy as np
 
-combo = pytest.importorskip("combo")
+physbo = pytest.importorskip("physbo")
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def Z():
 
 @pytest.fixture
 def variable(X, t, Z):
-    return combo.variable(X=X, t=t, Z=Z)
+    return physbo.variable(X=X, t=t, Z=Z)
 
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
@@ -37,9 +37,9 @@ def test_get_subset(variable, X, t, Z, index):
 
 
 def test_delete(variable, mocker):
-    delete_X = mocker.patch("combo.variable.delete_X")
-    delete_t = mocker.patch("combo.variable.delete_t")
-    delete_Z = mocker.patch("combo.variable.delete_Z")
+    delete_X = mocker.patch("physbo.variable.delete_X")
+    delete_t = mocker.patch("physbo.variable.delete_t")
+    delete_Z = mocker.patch("physbo.variable.delete_Z")
     variable.delete(1)
     delete_X.assert_called_once_with(1)
     delete_t.assert_called_once_with(1)
@@ -71,9 +71,9 @@ def test_delete_Z(variable, Z, index):
 
 
 def test_add(variable, X, t, Z, mocker):
-    add_X = mocker.patch("combo.variable.add_X")
-    add_t = mocker.patch("combo.variable.add_t")
-    add_Z = mocker.patch("combo.variable.add_Z")
+    add_X = mocker.patch("physbo.variable.add_X")
+    add_t = mocker.patch("physbo.variable.add_t")
+    add_Z = mocker.patch("physbo.variable.add_Z")
     variable.add(X, t, Z)
     add_X.assert_called_once_with(X)
     add_t.assert_called_once_with(t)
@@ -102,7 +102,7 @@ def test_save_load(variable, tmpdir):
     tmpfile = tmpdir.join("tmpfile.npz")
     filename = str(tmpfile)
     variable.save(filename)
-    var2 = combo.variable()
+    var2 = physbo.variable()
     var2.load(filename)
     assert np.array_equal(variable.X, var2.X)
     assert np.array_equal(variable.t, var2.t)
@@ -110,7 +110,7 @@ def test_save_load(variable, tmpdir):
 
     variable.Z = None
     variable.save(filename)
-    var2 = combo.variable()
+    var2 = physbo.variable()
     with pytest.raises(ValueError):
         var2.load(filename)
     # assert np.array_equal(variable.X, var2.X)

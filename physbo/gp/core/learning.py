@@ -12,8 +12,8 @@ class batch( object ):
 
         Parameters
         ----------
-        gp : combo.gp.core.model object
-        config: combo.misc.set_config object
+        gp : physbo.gp.core.model object
+        config: physbo.misc.set_config object
         """
 
         self.gp = gp
@@ -306,8 +306,8 @@ class adam( online ):
 
         Parameters
         ----------
-        gp : combo.gp.core.model object
-        config: combo.misc.set_config object
+        gp : physbo.gp.core.model object
+        config: physbo.misc.set_config object
         """
         super(adam, self).__init__( gp, config )
 
