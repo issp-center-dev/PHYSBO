@@ -88,7 +88,7 @@ class variable(object):
 
         """
         if self.X is not None:
-            np.delete(self.X, num_row, 0)
+            self.X = np.delete(self.X, num_row, 0)
 
     def delete_t(self, num_row):
         """
@@ -104,7 +104,7 @@ class variable(object):
 
         """
         if self.t is not None:
-            np.delete(self.t, num_row)
+            self.t = np.delete(self.t, num_row)
 
     def delete_Z(self, num_row):
         """
@@ -120,7 +120,7 @@ class variable(object):
 
         """
         if self.Z is not None:
-            np.delete(self.Z, num_row, 0)
+            self.Z = np.delete(self.Z, num_row, 0)
 
     def add_X(self, X=None):
         """
@@ -209,7 +209,7 @@ class variable(object):
         -------
 
         """
-        data = np.load(file_name)
+        data = np.load(file_name, allow_pickle=True)
         self.X = data['X']
         self.t = data['t']
         self.Z = data['Z']
