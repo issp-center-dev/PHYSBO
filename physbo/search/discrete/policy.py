@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-import combo.misc
+import physbo.misc
 import cPickle as pickle
 from results import history
 from .. import utility
@@ -9,7 +9,7 @@ from ..call_simulator import call_simulator
 from ... import predictor
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
-import combo.search.score
+import physbo.search.score
 MAX_SEACH = int(20000)
 
 
@@ -19,9 +19,9 @@ class policy:
 
         Parameters
         ----------
-        test_X: numpy.ndarray or combo.variable
+        test_X: numpy.ndarray or physbo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
-        config: set_config object (combo.misc.set_config)
+        config: set_config object (physbo.misc.set_config)
         """
         self.predictor = None
         self.training = variable()
@@ -108,7 +108,7 @@ class policy:
             If true, process messages are outputted.
         Returns
         -------
-        history: history object (combo.search.discrete.results.history)
+        history: history object (physbo.search.discrete.results.history)
         """
 
         N = int(num_search_each_probe)
@@ -149,14 +149,14 @@ class policy:
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             Training dataset.
         max_num_probes: int
             Maximum number of searching process by Bayesian optimization.
         num_search_each_probe: int
             Number of searching by Bayesian optimization at each process.
         predictor: predictor object
-            Base class is defined in combo.predictor.
+            Base class is defined in physbo.predictor.
             If None, blm_predictor is defined.
         is_disp: bool
              If true, process messages are outputted.
@@ -175,7 +175,7 @@ class policy:
 
         Returns
         -------
-        history: history object (combo.search.discrete.results.history)
+        history: history object (physbo.search.discrete.results.history)
         """
 
         if max_num_probes is None:
@@ -236,8 +236,8 @@ class policy:
             The type of aquision funciton. TS, EI and PI are available.
             These functions are defined in score.py.
         predictor: predictor object
-            Base class is defined in combo.predictor.
-        training:combo.variable
+            Base class is defined in physbo.predictor.
+        training:physbo.variable
             Training dataset.
         alpha: float
             Tuning parameter which is used if mode = TS.
@@ -253,11 +253,11 @@ class policy:
 
         test = self.test.get_subset(actions)
         if mode == 'EI':
-            f = combo.search.score.EI(predictor, training, test)
+            f = physbo.search.score.EI(predictor, training, test)
         elif mode == 'PI':
-            f = combo.search.score.PI(predictor, training, test)
+            f = physbo.search.score.PI(predictor, training, test)
         elif mode == 'TS':
-            f = combo.search.score.TS(predictor, training, test, alpha)
+            f = physbo.search.score.TS(predictor, training, test, alpha)
         else:
             raise NotImplementedError('mode must be EI, PI or TS.')
         return f
@@ -437,7 +437,7 @@ class policy:
         Parameters
         ----------
         predictor: predictor object
-            Base class is defined in combo.predictor.
+            Base class is defined in physbo.predictor.
 
         Returns
         -------
@@ -457,12 +457,12 @@ class policy:
         If true, blm_predictor is selected.
         If false, gp_predictor is selected.
         predictor: predictor object
-            Base class is defined in combo.predictor.
+            Base class is defined in physbo.predictor.
 
         Returns
         -------
         predictor: predictor object
-            Base class is defined in combo.predictor.
+            Base class is defined in physbo.predictor.
         """
         self.predictor = self._set_predictor(predictor)
         if self.predictor is None:
@@ -480,12 +480,12 @@ class policy:
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             Training dataset.
 
         Returns
         -------
-        training: combo.variable
+        training: physbo.variable
             Training dataset.
         """
         if training is None:
@@ -516,11 +516,11 @@ class policy:
 
         Parameters
         ----------
-        test_X: numpy.ndarray or combo.variable
+        test_X: numpy.ndarray or physbo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         Returns
         -------
-        test_X: numpy.ndarray or combo.variable
+        test_X: numpy.ndarray or physbo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         """
         if isinstance(test_X, np.ndarray):
@@ -529,7 +529,7 @@ class policy:
             test = test_X
         else:
             raise TypeError('The type of test_X must \
-                             take ndarray or combo.variable')
+                             take ndarray or physbo.variable')
         return test
 
     def _set_config(self, config=None):
@@ -538,13 +538,13 @@ class policy:
 
         Parameters
         ----------
-        config: set_config object (combo.misc.set_config)
+        config: set_config object (physbo.misc.set_config)
 
         Returns
         -------
-        config: set_config object (combo.misc.set_config)
+        config: set_config object (physbo.misc.set_config)
         
         """
         if config is None:
-            config = combo.misc.set_config()
+            config = physbo.misc.set_config()
         return config

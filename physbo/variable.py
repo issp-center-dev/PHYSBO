@@ -28,7 +28,7 @@ class variable(object):
             Index of selected action.
         Returns
         -------
-        variable: combo.variable
+        variable: physbo.variable
         """
         temp_X = self.X[index, :] if self.X is not None else None
         temp_t = self.t[index] if self.t is not None else None

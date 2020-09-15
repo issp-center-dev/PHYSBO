@@ -8,9 +8,9 @@ class model:
 
     Attributes
     ==========
-    prior: combo.blm.prior.gauss
+    prior: physbo.blm.prior.gauss
         prior distribution of weights
-    lik: combo.blm.lik.gauss
+    lik: physbo.blm.lik.gauss
         kernel
     nbasis: int
         number of features in random feature map
@@ -42,7 +42,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.prepare
+        physbo.blm.inf.exact.prepare
         """
         if self.method is 'exact':
             inf.exact.prepare( blm = self, X = X, t = t, Psi = Psi )
@@ -64,7 +64,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.update_stats
+        physbo.blm.inf.exact.update_stats
         """
         if self.method is 'exact':
             self.stats = inf.exact.update_stats( self, x, t, psi )
@@ -81,7 +81,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.get_post_params_mean
+        physbo.blm.inf.exact.get_post_params_mean
         """
         if self.method is 'exact':
             self.lik.linear.params = inf.exact.get_post_params_mean( blm = self )
@@ -101,7 +101,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.get_post_fmean
+        physbo.blm.inf.exact.get_post_fmean
         """
         if self.method is 'exact':
             fmu = inf.exact.get_post_fmean( self, X, Psi, w )
@@ -115,7 +115,7 @@ class model:
 
         Parameters
         ==========
-        blm: combo.blm.core.model
+        blm: physbo.blm.core.model
             model
         w_mu: numpy.ndarray
             mean of weight
@@ -133,7 +133,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.sampling
+        physbo.blm.inf.exact.sampling
         """
         if self.method is 'exact':
             w_hat = inf.exact.sampling( self, w_mu, N, alpha= alpha )
@@ -210,7 +210,7 @@ class model:
 
         See also
         ========
-        combo.blm.inf.exact.get_post_fcov
+        physbo.blm.inf.exact.get_post_fcov
         """
         if self.method is 'exact':
             fcov = inf.exact.get_post_fcov( self, X, Psi, diag = True)
@@ -238,7 +238,7 @@ class model:
 
         Parameters
         ==========
-        prior: combo.blm.prior.gauss
+        prior: physbo.blm.prior.gauss
             if None, prior.gauss(self.nbasis)
         """
         if prior is None:
