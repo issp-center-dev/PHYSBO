@@ -18,7 +18,9 @@ class simulator:
         self.dim = 2
         self.N = self.nslice ** self.dim
         self.X = np.zeros((self.N, self.dim))
-        for i, x in enumerate(product(np.linspace(0.0, 1.0, self.nslice), repeat=self.dim)):
+        for i, x in enumerate(
+            product(np.linspace(0.0, 1.0, self.nslice), repeat=self.dim)
+        ):
             self.X[i, :] = list(x)
 
     def __call__(self, action):
@@ -27,7 +29,7 @@ class simulator:
 
 def test_random_search():
     sim = simulator()
-    policy = physbo.search.discrete.policy(test_X = sim.X)
+    policy = physbo.search.discrete.policy(test_X=sim.X)
     policy.set_seed(12345)
     nsearch = 20
     res = policy.random_search(max_num_probes=nsearch, simulator=sim)
@@ -42,10 +44,10 @@ def test_bayes_search():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X = sim.X)
+    policy = physbo.search.discrete.policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
-    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score='TS')
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
     best_fx, best_action = res.export_all_sequence_best_fx()
     print(best_fx)
     print(best_action)
