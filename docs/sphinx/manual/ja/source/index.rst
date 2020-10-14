@@ -14,8 +14,11 @@ Welcome to PHYSBO's documentation!
    install
    notebook/index
    algorithm
+   API Reference<api/combo>
    acknowledgement
    contact
+
+
 
 Indices and tables
 ==================
