@@ -5,7 +5,7 @@ from itertools import product
 import numpy as np
 import pytest
 
-combo = pytest.importorskip("combo")
+physbo = pytest.importorskip("physbo")
 
 
 def f(x):
@@ -32,7 +32,7 @@ def test_gp():
     sim = simulator()
     X = sim.X
     t = sim.t
-    X = combo.misc.centering(X)
+    X = physbo.misc.centering(X)
 
     np.random.seed(12345)
     N = len(t)
@@ -48,12 +48,12 @@ def test_gp():
     t_train = t[id_train]
     t_test = t[id_test]
 
-    cov = combo.gp.cov.gauss(X_train.shape[1], ard=False)
-    mean = combo.gp.mean.const()
-    lik = combo.gp.lik.gauss()
+    cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
+    mean = physbo.gp.mean.const()
+    lik = physbo.gp.lik.gauss()
 
-    gp = combo.gp.model(lik=lik, mean=mean, cov=cov)
-    config = combo.misc.set_config()
+    gp = physbo.gp.model(lik=lik, mean=mean, cov=cov)
+    config = physbo.misc.set_config()
 
     gp.fit(X_train, t_train, config)
     gp.print_params()
@@ -67,10 +67,10 @@ def test_gp():
     assert res == pytest.approx(ref, rel=1e-3)
 
     # restart
-    cov = combo.gp.cov.gauss(X_train.shape[1], ard=False)
-    mean = combo.gp.mean.const()
-    lik = combo.gp.lik.gauss()
-    gp2 = combo.gp.model(lik=lik, mean=mean, cov=cov)
+    cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
+    mean = physbo.gp.mean.const()
+    lik = physbo.gp.lik.gauss()
+    gp2 = physbo.gp.model(lik=lik, mean=mean, cov=cov)
     gp_params = np.append(
         np.append(gp.lik.params, gp.prior.mean.params), gp.prior.cov.params
     )

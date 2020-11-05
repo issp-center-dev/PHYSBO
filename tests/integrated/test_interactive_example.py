@@ -5,7 +5,7 @@ from itertools import product
 import numpy as np
 import pytest
 
-combo = pytest.importorskip("combo")
+physbo = pytest.importorskip("physbo")
 
 
 def f(x):
@@ -29,7 +29,7 @@ def test_interactive():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = combo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.policy(test_X=sim.X)
     policy.set_seed(12345)
 
     actions = policy.random_search(max_num_probes=1, num_search_each_probe=nrand, simulator=None)
@@ -37,14 +37,14 @@ def test_interactive():
     print(actions)
     print(targets)
     policy.write(actions, targets)
-    combo.search.utility.show_search_results(policy.history, nrand)
+    physbo.search.utility.show_search_results(policy.history, nrand)
 
     actions = policy.bayes_search(max_num_probes=1, num_search_each_probe=nsearch, simulator=None, score='TS')
     targets = sim(actions)
     print(actions)
     print(targets)
     policy.write(actions, targets)
-    combo.search.utility.show_search_results(policy.history, nsearch)
+    physbo.search.utility.show_search_results(policy.history, nsearch)
 
     res = policy.history
     best_fx, best_action = res.export_all_sequence_best_fx()

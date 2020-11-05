@@ -8,10 +8,10 @@ def EI(predictor, training, test, fmax=None):
     Parameters
     ----------
     predictor: predictor object
-            Base class is defined in combo.predictor.
-    training: combo.variable
+            Base class is defined in physbo.predictor.
+    training: physbo.variable
             Training dataset. If already trained, the model does not use this.
-    test: combo.variable
+    test: physbo.variable
             Inputs
     fmax: float
             Max value of posterior probability distribution.
@@ -41,10 +41,10 @@ def PI(predictor, training, test, fmax=None):
     Parameters
     ----------
     predictor: predictor object
-            Base class is defined in combo.predictor.
-    training: combo.variable
+            Base class is defined in physbo.predictor.
+    training: physbo.variable
             Training dataset. If already trained, the model does not use this.
-    test: combo.variable
+    test: physbo.variable
             Inputs
     fmax: float
             Max value of posterior probability distribution.
@@ -72,10 +72,10 @@ def TS(predictor, training, test, alpha=1):
     Parameters
     ----------
     predictor: predictor object
-            Base class is defined in combo.predictor.
-    training: combo.variable
+            Base class is defined in physbo.predictor.
+    training: physbo.variable
             Training dataset. If already trained, the model does not use this.
-    test: combo.variable
+    test: physbo.variable
             Inputs
     alpha: float
             noise for sampling source

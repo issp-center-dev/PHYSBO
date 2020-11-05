@@ -12,9 +12,9 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        config: combo.misc.set_config
+        config: physbo.misc.set_config
             configuration
-        model: combo.gp.core.model
+        model: physbo.gp.core.model
         """
         super( predictor, self ).__init__( config, model )
 
@@ -24,7 +24,7 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             dataset for training
         num_basis: int
             the number of basis (default: self.config.predict.num_basis)
@@ -68,7 +68,7 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             dataset for training
 
         """
@@ -83,9 +83,9 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
 
         Returns
@@ -103,12 +103,12 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
         diag: bool
-            Diagonlization flag in combo.exact.get_post_fcov function.
+            Diagonlization flag in physbo.exact.get_post_fcov function.
         Returns
         -------
         numpy.ndarray
@@ -124,9 +124,9 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs (not used)
         alpha: float
             tuning parameter of the covariance by multiplying alpha**2 for np.random.multivariate_normal.
@@ -145,9 +145,9 @@ class predictor( base_predictor ):
 
         Parameters
         ----------
-        training: combo.variable
+        training: physbo.variable
             training dataset. If already trained, the model does not use this.
-        test: combo.variable
+        test: physbo.variable
             inputs
         N: int
             number of samples
