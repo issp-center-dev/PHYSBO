@@ -1,3 +1,5 @@
+.. _chap_algorithm:
+
 アルゴリズム
 =====================
 ここでは、ベイズ最適化に関する説明を行う。技術的な詳細については、`こちらの文献 <https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf>`_ を参照のこと。

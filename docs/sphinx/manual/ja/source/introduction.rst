@@ -4,14 +4,12 @@
 PHYSBO とは
 ----------------------
 
-PHYSBOは、高速でスケーラブルなベイズ最適化 (bayesian optimization) のための Python ライブラリです。
+PHYSBOは、高速でスケーラブルなベイズ最適化 (bayesian optimization) のためのPythonライブラリです。
 COMBO(COMmon Baysian Optimization)をもとに、主に物性分野の研究者をターゲットに開発されました。
-
 物理や化学分野において、データドリブンな実験計画アルゴリズムによって科学的発見を加速する、という試みが多く行われています。
 ベイズ最適化は、このような実験科学における発見を加速するために有効なツールです。
-
 一般的にベイズ最適化は計算コストが高く、scikit-learn 等のスタンダードな実装では、多くのデータを扱うことが困難です。
-PHYSBO では以下の特徴により、高いスケーラビリティを実現しています。
+PHYSBOでは以下の特徴により、高いスケーラビリティを実現しています。
 
 * Thompson Sampling
 * random feature map
@@ -24,13 +22,13 @@ PHYSBO では以下の特徴により、高いスケーラビリティを実現�
 PHYSBO の引用
 ----------------------
 
-PHYSBO を引用する際には、以下の文献を引用してください、
+PHYSBOを引用する際には、以下の文献を引用してください、
 
-[ref] Tsuyoshi Ueno, Trevor David Rhone, Zhufeng Hou, Teruyasu Mizoguchi and Koji Tsuda,
+Tsuyoshi Ueno, Trevor David Rhone, Zhufeng Hou, Teruyasu Mizoguchi and Koji Tsuda,
 COMBO: An Efficient Bayesian Optimization Library for Materials Science,
 Materials Discovery, (2016). Available from http://dx.doi.org/10.1016/j.md.2016.04.001
 
-Bibtex は以下の通りです。 ::
+Bibtexは以下の通りです。 ::
 
     @article{Ueno2016,
     title = "COMBO: An Efficient Bayesian Optimization Library for Materials Science ",
@@ -44,7 +42,6 @@ Bibtex は以下の通りです。 ::
     url = "http://www.sciencedirect.com/science/article/pii/S2352924516300035",
     author = "Tsuyoshi Ueno and Trevor David Rhone and Zhufeng Hou and Teruyasu Mizoguchi and Koji Tsuda",
     }
-
 
 主な開発者
 ----------------------
