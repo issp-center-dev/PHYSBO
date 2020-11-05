@@ -44,7 +44,7 @@ class model:
         ========
         physbo.blm.inf.exact.prepare
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             inf.exact.prepare( blm = self, X = X, t = t, Psi = Psi )
         else:
             pass
@@ -66,7 +66,7 @@ class model:
         ========
         physbo.blm.inf.exact.update_stats
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             self.stats = inf.exact.update_stats( self, x, t, psi )
         else:
             pass
@@ -83,7 +83,7 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_params_mean
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             self.lik.linear.params = inf.exact.get_post_params_mean( blm = self )
 
     def get_post_fmean( self, X, Psi = None, w = None ):
@@ -103,7 +103,7 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_fmean
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             fmu = inf.exact.get_post_fmean( self, X, Psi, w )
         else:
             pass
@@ -135,7 +135,7 @@ class model:
         ========
         physbo.blm.inf.exact.sampling
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             w_hat = inf.exact.sampling( self, w_mu, N, alpha= alpha )
         else:
             pass
@@ -212,7 +212,7 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_fcov
         """
-        if self.method is 'exact':
+        if self.method == 'exact':
             fcov = inf.exact.get_post_fcov( self, X, Psi, diag = True)
         else:
             pass
