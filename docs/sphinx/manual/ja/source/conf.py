@@ -16,7 +16,7 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../../../../../combo'))
+sys.path.insert(0, os.path.abspath('../../../../../physbo'))
 
 # -- Project information -----------------------------------------------------
 
@@ -32,7 +32,6 @@ author = "PHYSBO developers"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
