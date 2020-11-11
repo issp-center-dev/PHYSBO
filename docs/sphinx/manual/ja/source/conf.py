@@ -57,6 +57,9 @@ language = "ja"
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
+for t in ('tag-latex', 'tag-latexpdf', 'tag-latexpdfja'):
+    if t in tags:
+        exclude_patterns.append('api')
 
 # The suffix of source filenames.
 source_suffix = ['.rst', '.md']
