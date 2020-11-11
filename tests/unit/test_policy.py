@@ -1,7 +1,13 @@
 from __future__ import print_function
 
+import pprint
+
+import pickle
+
 import pytest
 import numpy as np
+
+from copy import deepcopy
 
 physbo = pytest.importorskip("physbo")
 
@@ -74,6 +80,23 @@ def test_bayes_search(policy, mocker):
     assert write_spy.call_count == N + N
     assert simulator.call_count == N + N
     assert get_actions_spy.call_count == N
+
+
+def test_saveload(policy, X):
+    simulator = lambda x: x
+
+    N = 2
+    policy.random_search(N, simulator=simulator)
+    res = policy.bayes_search(max_num_probes=N, simulator=simulator, score="TS")
+
+    policy.training.save('training.npz')
+    policy.history.save('history.npz')
+    with open('predictor.dump', 'wb') as f:
+        pickle.dump(policy.predictor, f)
+
+    policy2 = physbo.search.discrete.policy(test_X=X)
+    policy2.load(file_history='history.npz', file_training='training.npz', file_predictor='predictor.dump')
+    assert policy.history.num_runs == policy2.history.num_runs
 
 
 def test_get_score(policy, mocker):
