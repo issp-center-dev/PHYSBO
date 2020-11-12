@@ -37,5 +37,6 @@ setup(
     'physbo.blm.lik._src','physbo.blm', 'physbo.search', 'physbo.search.discrete'],
     package_dir={'physbo': 'physbo'},
     cmdclass = {'build_ext': build_ext},
-    ext_modules = ext_mods
+    ext_modules = ext_mods,
+    install_requires=["numpy", "scipy", "Cython"]
 )
