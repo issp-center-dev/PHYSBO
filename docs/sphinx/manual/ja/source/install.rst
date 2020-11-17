@@ -10,10 +10,9 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
 現在はPython 2.7で動作します。ver.1.0ではPython3系に対応する予定です。
 
 * Python = 2.7
-* numpy >=1.10
-* scipy >= 0.16
-* Cython >= 0.22.1
-* mpi4py >= 2.0 (optional)
+* numpy
+* scipy
+* six
 
 
 .. `Anaconda <https://www.anaconda.com/>`_  環境を利用すると、numpy, scipy, Cython がデフォルトでインストールされているため、COMBO をすぐに実行することが可能です。
@@ -49,25 +48,40 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
 ダウンロード・インストール
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. 本体のダウンロード
+- ``pip`` を用いたインストール（推奨） ::
 
-   ソースファイルをダウンロードするか、以下のように github レポジトリをクローンしてください。 ::
-        
-     > git clone https://github.com/issp-center-dev/PHYSBO.git
+  $ pip install physbo
 
-#. インストール
+  - NumPy などの依存パッケージも同時にインストールされます。
 
-   setup.py install を実行します。 ::
+  - ``--user`` オプションを追加するとユーザのホームディレクトリ以下にインストールされます。 ::
 
-     > cd physbo
-     > python setup.py install
+    $ pip install --user physbo
+
+
+- ソースコードからのインストール（開発者向け）
+
+  #. 本体のダウンロード
+
+     ソースファイルをダウンロードするか、以下のように github レポジトリをクローンしてください。 ::
+          
+       $ git clone https://github.com/issp-center-dev/PHYSBO
+
+  #. NumPy, Cython のインストール（コンパイルに必要です） ::
+
+       $ pip install numpy Cython
+
+  #. インストール ::
+
+       $ cd physbo
+       $ python setup.py install
 
 アンインストール
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 #. 以下のコマンドを実行します。 ::
 
-   > pip uninstall physbo
+   $ pip uninstall physbo
 
 
 PHYSBOの基本構造
