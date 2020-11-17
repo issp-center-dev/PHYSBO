@@ -24,6 +24,10 @@ project = "PHYSBO"
 copyright = "2020, PHYSBO developers"
 author = "PHYSBO developers"
 
+# The short X.Y version.
+version = '0.1'
+# The full version, including alpha/beta/rc tags.
+release = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
 
