@@ -4,6 +4,11 @@ A standard implementation (e.g., scikit-learn), however, can accommodate only sm
 PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](/docs/combo_document.pdf).
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
 
+# Document #####################################
+
+- english (in preparation)
+- [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
+
 # Required Packages ############################
 * Python 2.7.x
     * We plan to support Python 3.x in the next version of PHYSBO
