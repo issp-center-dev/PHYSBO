@@ -2,7 +2,7 @@
 Bayesian optimization has been proven as an effective tool in accelerating scientific discovery.
 A standard implementation (e.g., scikit-learn), however, can accommodate only small training data.
 PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](/docs/combo_document.pdf).
-PHYSBO was developed based on COMBO for academic use.
+PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
 
 # Required Packages ############################
 * Python 2.7.x
@@ -44,7 +44,7 @@ $ pip2 uninstall physbo
 After installation, you can launch the test suite from ['examples/grain_bound/tutorial.ipynb'](examples/grain_bound/tutorial.ipynb).
 
 ## License
-PHYSBO was developed based on COMBO for academic use.
+PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
 This package is distributed under GNU General Public License version 3 (GPL v3) or later.
 
 Copyright
