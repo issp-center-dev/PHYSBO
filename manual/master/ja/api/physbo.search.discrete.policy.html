@@ -1,0 +1,543 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="ja" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>physbo.search.discrete.policy module &mdash; PHYSBO 0.1.0 ドキュメント</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "processClass": "math|output_area", "processEscapes": true}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="physbo.search.discrete.results module" href="physbo.search.discrete.results.html" />
+    <link rel="prev" title="physbo.search.discrete package" href="physbo.search.discrete.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> PHYSBO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">チュートリアル</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html">physbo.blm package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html">physbo.gp package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.misc.html">physbo.misc package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html">physbo.opt package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="physbo.search.html">physbo.search package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="physbo.search.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.html#module-physbo.search">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#module-physbo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="physbo.html">physbo package</a> &raquo;</li>
+        
+          <li><a href="physbo.search.html">physbo.search package</a> &raquo;</li>
+        
+          <li><a href="physbo.search.discrete.html">physbo.search.discrete package</a> &raquo;</li>
+        
+      <li>physbo.search.discrete.policy module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/physbo.search.discrete.policy.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-physbo.search.discrete.policy">
+<span id="physbo-search-discrete-policy-module"></span><h1>physbo.search.discrete.policy module<a class="headerlink" href="#module-physbo.search.discrete.policy" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<dl class="class">
+<dt id="physbo.search.discrete.policy.policy">
+<em class="property">class </em><code class="descclassname">physbo.search.discrete.policy.</code><code class="descname">policy</code><span class="sig-paren">(</span><em>test_X</em>, <em>config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy" title="この定義へのパーマリンク">¶</a></dt>
+<dd><dl class="method">
+<dt id="physbo.search.discrete.policy.policy.bayes_search">
+<code class="descname">bayes_search</code><span class="sig-paren">(</span><em>training=None</em>, <em>max_num_probes=None</em>, <em>num_search_each_probe=1</em>, <em>predictor=None</em>, <em>is_disp=True</em>, <em>simulator=None</em>, <em>score='TS'</em>, <em>interval=0</em>, <em>num_rand_basis=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.bayes_search"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.bayes_search" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Performing Bayesian optimization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>training</strong> (<em>physbo.variable</em>) -- Training dataset.</li>
+<li><strong>max_num_probes</strong> (<em>int</em>) -- Maximum number of searching process by Bayesian optimization.</li>
+<li><strong>num_search_each_probe</strong> (<em>int</em>) -- Number of searching by Bayesian optimization at each process.</li>
+<li><strong>predictor</strong> (<em>predictor object</em>) -- Base class is defined in physbo.predictor.
+If None, blm_predictor is defined.</li>
+<li><strong>is_disp</strong> (<em>bool</em>) -- If true, process messages are outputted.</li>
+<li><strong>simulator</strong> (<em>simulator object</em>) -- This object is called in call_simulator and must have __call__(action).
+Here, action is an integer which represents the index of the candidate.</li>
+<li><strong>score</strong> (<em>str</em>) -- The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</li>
+<li><strong>interval</strong> (<em>int</em>) -- The interval number of learning the hyper parameter.
+If you set the negative value to interval, the hyper parameter learning is not performed.
+If you set zero to interval, the hyper parameter learning is performed only at the first step.</li>
+<li><strong>num_rand_basis</strong> (<em>int</em>) -- The number of basis function. If you choose 0, ordinary Gaussian process run.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>history</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">history object (<a class="reference internal" href="physbo.search.discrete.results.html#physbo.search.discrete.results.history" title="physbo.search.discrete.results.history">physbo.search.discrete.results.history</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.delete_actions">
+<code class="descname">delete_actions</code><span class="sig-paren">(</span><em>index</em>, <em>actions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.delete_actions"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.delete_actions" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Deleteing actions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>index</strong> (<em>int</em>) -- Index of an action to be deleted.</li>
+<li><strong>actions</strong> (<em>numpy.ndarray</em>) -- Array of actions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>actions</strong> -- Array of actions which does not include action specified by index.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.export_history">
+<code class="descname">export_history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.export_history"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_history" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Returning the information of the history.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.export_predictor">
+<code class="descname">export_predictor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.export_predictor"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_predictor" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Returning the predictor dataset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.export_training">
+<code class="descname">export_training</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.export_training"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_training" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Returning the training dataset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.get_actions">
+<code class="descname">get_actions</code><span class="sig-paren">(</span><em>mode</em>, <em>N</em>, <em>K</em>, <em>alpha</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.get_actions"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_actions" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Getting actions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> (<em>str</em>) -- The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+These functions are defined in score.py.</li>
+<li><strong>N</strong> (<em>int</em>) -- The total number of selected candidates.</li>
+<li><strong>K</strong> (<em>int</em>) -- The total number of search candidates.</li>
+<li><strong>alpha</strong> (<em>float</em>) -- Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>chosed_actions</strong> -- An N-dimensional array of actions selected in each search process.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.get_marginal_score">
+<code class="descname">get_marginal_score</code><span class="sig-paren">(</span><em>mode</em>, <em>chosed_actions</em>, <em>N</em>, <em>alpha</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.get_marginal_score"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_marginal_score" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Getting marginal scores.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> (<em>str</em>) -- The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+These functions are defined in score.py.</li>
+<li><strong>chosed_actions</strong> (<em>numpy.ndarray</em>) -- Array of selected actions.</li>
+<li><strong>N</strong> (<em>int</em>) -- The total number of search candidates.</li>
+<li><strong>alpha</strong> (<em>float</em>) -- not used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>f</strong> -- N dimensional scores (score is defined in each mode)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.get_random_action">
+<code class="descname">get_random_action</code><span class="sig-paren">(</span><em>N</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.get_random_action"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_random_action" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Getting indexes of actions randomly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><strong>N</strong> (<em>int</em>) -- Total number of search candidates.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><strong>action</strong> -- Indexes of actions selected randomly from search candidates.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.get_score">
+<code class="descname">get_score</code><span class="sig-paren">(</span><em>mode</em>, <em>predictor=None</em>, <em>training=None</em>, <em>alpha=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.get_score"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_score" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Getting score.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> (<em>str</em>) -- The type of aquision funciton. TS, EI and PI are available.
+These functions are defined in score.py.</li>
+<li><strong>predictor</strong> (<em>predictor object</em>) -- Base class is defined in physbo.predictor.</li>
+<li><strong>training</strong> (<em>physbo.variable</em>) -- Training dataset.</li>
+<li><strong>alpha</strong> (<em>float</em>) -- Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>f</strong> -- Score defined in each mode.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">float or list of float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>file_history</em>, <em>file_training=None</em>, <em>file_predictor=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.load"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.load" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Loading files about history, training and predictor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_history</strong> (<em>str</em>) -- The name of the file that stores the information of the history.</li>
+<li><strong>file_training</strong> (<em>str</em>) -- The name of the file that stores the training dataset.</li>
+<li><strong>file_predictor</strong> (<em>str</em>) -- The name of the file that stores the predictor dataset.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.random_search">
+<code class="descname">random_search</code><span class="sig-paren">(</span><em>max_num_probes</em>, <em>num_search_each_probe=1</em>, <em>simulator=None</em>, <em>is_disp=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.random_search"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.random_search" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Performing random search.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>max_num_probes</strong> (<em>int</em>) -- Maximum number of random search process.</li>
+<li><strong>num_search_each_probe</strong> (<em>int</em>) -- Number of search at each random search process.</li>
+<li><strong>simulator</strong> (<em>simulator object</em>) -- This object is called in call_simulator and must have __call__(action).
+Here, action is an integer which represents the index of the candidate.</li>
+<li><strong>is_disp</strong> (<em>bool</em>) -- If true, process messages are outputted.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first"><strong>history</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">history object (<a class="reference internal" href="physbo.search.discrete.results.html#physbo.search.discrete.results.history" title="physbo.search.discrete.results.history">physbo.search.discrete.results.history</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.set_seed">
+<code class="descname">set_seed</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.set_seed"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.set_seed" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Setting a seed parameter for np.random.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first last simple">
+<li><strong>seed</strong> (<em>int</em>) -- seed number</li>
+<li><strong>-------</strong> -- </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.search.discrete.policy.policy.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>action</em>, <em>t</em>, <em>X=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/policy.html#policy.write"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.search.discrete.policy.policy.write" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Writing history (update history, not output to a file).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first last simple">
+<li><strong>action</strong> (<em>numpy.ndarray</em>) -- Indexes of actions.</li>
+<li><strong>t</strong> (<em>numpy.ndarray</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</li>
+<li><strong>X</strong> (<em>numpy.ndarray</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="physbo.search.discrete.results.html" class="btn btn-neutral float-right" title="physbo.search.discrete.results module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="physbo.search.discrete.html" class="btn btn-neutral float-left" title="physbo.search.discrete package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; 著作権 2020, PHYSBO developers
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

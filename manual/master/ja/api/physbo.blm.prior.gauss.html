@@ -1,0 +1,494 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="ja" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>physbo.blm.prior.gauss module &mdash; PHYSBO 0.1.0 ドキュメント</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "processClass": "math|output_area", "processEscapes": true}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="physbo.blm.predictor module" href="physbo.blm.predictor.html" />
+    <link rel="prev" title="physbo.blm.prior package" href="physbo.blm.prior.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> PHYSBO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">チュートリアル</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="physbo.blm.html">physbo.blm package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="physbo.blm.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.blm.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.blm.html#module-physbo.blm">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html">physbo.gp package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.misc.html">physbo.misc package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html">physbo.opt package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.search.html">physbo.search package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#module-physbo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="physbo.html">physbo package</a> &raquo;</li>
+        
+          <li><a href="physbo.blm.html">physbo.blm package</a> &raquo;</li>
+        
+          <li><a href="physbo.blm.prior.html">physbo.blm.prior package</a> &raquo;</li>
+        
+      <li>physbo.blm.prior.gauss module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/physbo.blm.prior.gauss.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-physbo.blm.prior.gauss">
+<span id="physbo-blm-prior-gauss-module"></span><h1>physbo.blm.prior.gauss module<a class="headerlink" href="#module-physbo.blm.prior.gauss" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<dl class="class">
+<dt id="physbo.blm.prior.gauss.cov_const">
+<em class="property">class </em><code class="descclassname">physbo.blm.prior.gauss.</code><code class="descname">cov_const</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>isotropic variance-covariance</p>
+<p>All elements have the same variance and are independent with each other</p>
+<dl class="attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.params">
+<code class="descname">params</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.params" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>half of log of covariance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.sigma2">
+<code class="descname">sigma2</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.sigma2" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>covariance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.prec">
+<code class="descname">prec</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.prec" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>precision (= inv. of covariance)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.cov_const.get_cov">
+<code class="descname">get_cov</code><span class="sig-paren">(</span><em>nbasis</em>, <em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.get_cov"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_cov" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>computes the covariance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>nbasis</strong> (<em>int</em>) -- the number of components</li>
+<li><strong>params</strong> (<em>float</em>) -- half of log of variance
+(default: self.params)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first">nbasis-by-n-basis covariance matrix</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.cov_const.get_prec">
+<code class="descname">get_prec</code><span class="sig-paren">(</span><em>nbasis</em>, <em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.get_prec"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_prec" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>computes the precision</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><ul class="first simple">
+<li><strong>nbasis</strong> (<em>int</em>) -- the number of components</li>
+<li><strong>params</strong> (<em>float</em>) -- half of log of variance
+(default: self.params)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値:</th><td class="field-body"><p class="first">nbasis-by-n-basis precision matrix</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">戻り値の型:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.cov_const.set_params">
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.set_params"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.set_params" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>sets params</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">パラメータ:</th><td class="field-body"><strong>params</strong> (<em>float</em>) -- half of log of variance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="physbo.blm.prior.gauss.gauss">
+<em class="property">class </em><code class="descclassname">physbo.blm.prior.gauss.</code><code class="descname">gauss</code><span class="sig-paren">(</span><em>nbasis</em>, <em>cov=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>Gaussian prior</p>
+<dl class="attribute">
+<dt id="physbo.blm.prior.gauss.gauss.nbasis">
+<code class="descname">nbasis</code><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.nbasis" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>number of components</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="physbo.blm.prior.gauss.gauss.cov">
+<code class="descname">cov</code><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.cov" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>covariance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#physbo.blm.prior.gauss.cov_const" title="physbo.blm.prior.gauss.cov_const">cov_const</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.gauss.get_cov">
+<code class="descname">get_cov</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_cov"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_cov" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>calculates the variance-covariance matrix of priors</p>
+<dl class="docutils">
+<dt>params: float</dt>
+<dd>half of log of variance
+(default: self.cov.params)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">戻り値:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値の型:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.gauss.get_mean">
+<code class="descname">get_mean</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_mean"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_mean" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>calculates the mean value of priors</p>
+<dl class="docutils">
+<dt>params: float</dt>
+<dd>half of log of variance
+(not used)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">戻り値:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値の型:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.gauss.get_prec">
+<code class="descname">get_prec</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_prec"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_prec" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>calculates the precise matrix of priors</p>
+<dl class="docutils">
+<dt>params: float</dt>
+<dd>half of log of variance
+(default: self.cov.params)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">戻り値:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">戻り値の型:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="physbo.blm.prior.gauss.gauss.set_params">
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.set_params"><span class="viewcode-link">[ソース]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.set_params" title="この定義へのパーマリンク">¶</a></dt>
+<dd><p>sets params</p>
+<dl class="docutils">
+<dt>params: float</dt>
+<dd>half of log of variance</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="physbo.blm.predictor.html" class="btn btn-neutral float-right" title="physbo.blm.predictor module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="physbo.blm.prior.html" class="btn btn-neutral float-left" title="physbo.blm.prior package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; 著作権 2020, PHYSBO developers
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
