@@ -33,7 +33,7 @@
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script type="text/javascript" src="_static/translations.js"></script>
         <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "processClass": "math|output_area", "processEscapes": true}})</script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processEscapes": true, "processClass": "math|output_area", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "ignoreClass": "document"}})</script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -208,35 +208,56 @@
 現在はPython 2.7で動作します。ver.1.0ではPython3系に対応する予定です。</p>
 <ul class="simple">
 <li>Python = 2.7</li>
-<li>numpy &gt;=1.10</li>
-<li>scipy &gt;= 0.16</li>
-<li>Cython &gt;= 0.22.1</li>
-<li>mpi4py &gt;= 2.0 (optional)</li>
+<li>numpy</li>
+<li>scipy</li>
+<li>six</li>
 </ul>
 </div>
 <div class="section" id="id4">
 <h3>ダウンロード・インストール<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h3>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">pip</span></code> を用いたインストール（推奨）</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install physbo
+</pre></div>
+</div>
+<ul>
+<li><p class="first">NumPy などの依存パッケージも同時にインストールされます。</p>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">--user</span></code> オプションを追加するとユーザのホームディレクトリ以下にインストールされます。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install --user physbo
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p class="first">ソースコードからのインストール（開発者向け）</p>
 <ol class="arabic">
 <li><p class="first">本体のダウンロード</p>
 <p>ソースファイルをダウンロードするか、以下のように github レポジトリをクローンしてください。</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">issp</span><span class="o">-</span><span class="n">center</span><span class="o">-</span><span class="n">dev</span><span class="o">/</span><span class="n">PHYSBO</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/issp-center-dev/PHYSBO
+</pre></div>
+</div>
+</li>
+<li><p class="first">NumPy, Cython のインストール（コンパイルに必要です）</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install numpy Cython
 </pre></div>
 </div>
 </li>
 <li><p class="first">インストール</p>
-<p>setup.py install を実行します。</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">cd</span> <span class="n">physbo</span>
-<span class="o">&gt;</span> <span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd physbo
+$ python setup.py install
 </pre></div>
 </div>
 </li>
 </ol>
+</li>
+</ul>
 </div>
 <div class="section" id="id5">
 <h3>アンインストール<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h3>
 <ol class="arabic">
 <li><p class="first">以下のコマンドを実行します。</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">pip</span> <span class="n">uninstall</span> <span class="n">physbo</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip uninstall physbo
 </pre></div>
 </div>
 </li>
