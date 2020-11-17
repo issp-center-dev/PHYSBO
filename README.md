@@ -1,8 +1,8 @@
-# PHYsics Bayesian Optimization Library ( PHYSBO )
+# optimization tools for PHYsics based on Bayesian Optimization ( PHYSBO )
 Bayesian optimization has been proven as an effective tool in accelerating scientific discovery.
 A standard implementation (e.g., scikit-learn), however, can accommodate only small training data.
-PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](/docs/combo_document.pdf).
-PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
+PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf).
+PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for academic use.
 
 # Document #####################################
 
