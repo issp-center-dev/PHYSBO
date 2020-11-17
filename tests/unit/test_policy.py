@@ -1,13 +1,13 @@
 from __future__ import print_function
 
-import pprint
-
+import os
 import pickle
+import shutil
+import tempfile
 
 import pytest
 import numpy as np
 
-from copy import deepcopy
 
 physbo = pytest.importorskip("physbo")
 
@@ -89,13 +89,20 @@ def test_saveload(policy, X):
     policy.random_search(N, simulator=simulator)
     res = policy.bayes_search(max_num_probes=N, simulator=simulator, score="TS")
 
-    policy.training.save('training.npz')
-    policy.history.save('history.npz')
-    with open('predictor.dump', 'wb') as f:
+    tempdir = tempfile.mkdtemp()
+
+    policy.training.save(os.path.join(tempdir, "training.npz"))
+    policy.history.save(os.path.join(tempdir, "history.npz"))
+    with open(os.path.join(tempdir, "predictor.dump"), "wb") as f:
         pickle.dump(policy.predictor, f)
 
     policy2 = physbo.search.discrete.policy(test_X=X)
-    policy2.load(file_history='history.npz', file_training='training.npz', file_predictor='predictor.dump')
+    policy2.load(
+        file_history=os.path.join(tempdir, "history.npz"),
+        file_training=os.path.join(tempdir, "training.npz"),
+        file_predictor=os.path.join(tempdir, "predictor.dump"),
+    )
+    shutil.rmtree(tempdir)
     assert policy.history.num_runs == policy2.history.num_runs
 
 
