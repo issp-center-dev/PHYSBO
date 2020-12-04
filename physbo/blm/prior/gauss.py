@@ -135,8 +135,8 @@ class gauss:
         """
         calculates the mean value of priors
 
-        Parameter
-        =========
+        Parameters
+        ==========
         params: float
             half of log of variance
             (not used)
@@ -151,8 +151,8 @@ class gauss:
         """
         calculates the variance-covariance matrix of priors
 
-        Parameter
-        =========
+        Parameters
+        ==========
         params: float
             half of log of variance
             (default: self.cov.params)
@@ -167,8 +167,8 @@ class gauss:
         """
         calculates the precise matrix of priors
 
-        Parameter
-        =========
+        Parameters
+        ==========
         params: float
             half of log of variance
             (default: self.cov.params)
@@ -183,8 +183,8 @@ class gauss:
         """
         sets params
 
-        Parameter
-        =========
+        Parameters
+        ==========
         params: float
             half of log of variance
         """

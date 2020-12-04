@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 import numpy as np
 from scipy import spatial
-import _src
-from _src.enhance_gauss import grad_width64
+from . import _src
+from ._src.enhance_gauss import grad_width64
 
 class gauss:
     ''' gaussian kernel '''
@@ -56,11 +56,11 @@ class gauss:
 
         """
 
-        print ' Parameters of Gaussian kernel \n '
-        print ' width  = ', + self.width
-        print ' scale  = ', + self.scale
-        print ' scale2 = ', + self.scale**2
-        print ' \n'
+        print(' Parameters of Gaussian kernel \n ')
+        print(' width  = ', + self.width)
+        print(' scale  = ', + self.scale)
+        print(' scale2 = ', + self.scale**2)
+        print(' \n')
 
     def prepare( self, params = None ):
         """
@@ -73,9 +73,9 @@ class gauss:
 
         Returns
         -------
-            params: numpy.ndarray
-            width: int
-            scale: int
+        params: numpy.ndarray
+        width: int
+        scale: int
 
         """
         if params is None:
@@ -202,7 +202,8 @@ class gauss:
     def decomp_params( self, params ):
         """
         decompose the parameters defined on the log region
-            into width and scale parameters
+        into width and scale parameters
+
         Parameters
         ----------
         params: numpy.ndarray
@@ -210,8 +211,8 @@ class gauss:
 
         Returns
         -------
-            width: float
-            scale: float
+        width: float
+        scale: float
         """
 
         width = np.exp( params[0:-1] )
@@ -282,7 +283,8 @@ class gauss:
     def cat_params( self, width, scale):
         """
         Taking the logarithm of width and scale parameters
-            and concatinate them into one ndarray
+        and concatinate them into one ndarray
+
         Parameters
         ----------
         width: int
@@ -311,7 +313,7 @@ class gauss:
 
         Returns
         -------
-            tupple (W, b, amp)
+        tupple (W, b, amp)
         """
         params, width, scale = self.prepare( params )
         scale2 = scale**2
@@ -355,7 +357,7 @@ class gauss:
 
             dist = np.zeros( M )
 
-            for m in xrange( M ):
+            for m in range( M ):
                 a = np.random.randint( 0, X.shape[0], 2 )
                 dist[m] = np.linalg.norm( X[a[0],:] - X[a[1],:] )
 

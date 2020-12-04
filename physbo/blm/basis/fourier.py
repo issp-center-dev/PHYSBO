@@ -5,19 +5,19 @@ class fourier:
     '''
     random feature maps
     ``Psi(X; W,b) = cos[X * Wt + b] * alpha``
-        where
+    where
 
-            - X: input, N-by-d matrix
-            - W: weight, l-by-d matrix
-            - Wt: transpose of W
-            - b: bias, 1-by-l matrix
-            - alpha: coefficient
-        
-        and
+        - X: input, N-by-d matrix
+        - W: weight, l-by-d matrix
+        - Wt: transpose of W
+        - b: bias, 1-by-l matrix
+        - alpha: coefficient
+    
+    and
 
-            - N: number of data
-            - d: dimension of input
-            - l: number of basis
+        - N: number of data
+        - d: dimension of input
+        - l: number of basis
 
     Attributes
     ==========
@@ -91,9 +91,9 @@ class fourier:
         """
         print parameters
         """
-        print 'W = ', self.params[0]
-        print 'b = ', self.params[1]
-        print 'alpha = ', self.params[2]
+        print('W = ', self.params[0])
+        print('b = ', self.params[1])
+        print('alpha = ', self.params[2])
 
     def _check_params( self, params ):
         """
