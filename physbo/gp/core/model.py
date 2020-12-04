@@ -94,7 +94,8 @@ class model:
         subt: numpy.ndarray
         """
         num_data = X.shape[0]
-        if N < num_data:
+
+        if N is not None and N < num_data:
             index = np.random.permutation(num_data)
             subX = X[index[0:N], :]
             subt = t[index[0:N]]
