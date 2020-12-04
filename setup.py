@@ -40,10 +40,6 @@ ext_mods = [
     ),
 ]
 setup(
-    name="physbo",
-    version="0.1",
-    author="PHYSBO developers",
-    author_email="physbo-dev@issp.u-tokyo.ac.jp",
     packages=[
         "physbo",
         "physbo.misc",
