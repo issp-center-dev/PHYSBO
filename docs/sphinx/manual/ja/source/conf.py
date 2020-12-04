@@ -76,6 +76,8 @@ source_parsers = {
 
 pygments_style = 'sphinx'
 
+nbsphinx_execute = "never"
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

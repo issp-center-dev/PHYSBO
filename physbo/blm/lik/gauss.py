@@ -65,8 +65,8 @@ class gauss:
         """
         calculates value of basis function at input
 
-        Parameter
-        =========
+        Parameters
+        ==========
         X: numpy.ndarray
             input
 

@@ -58,6 +58,6 @@ Bibtexは以下の通りです。 ::
 | 本ソフトウェアのプログラムパッケージおよびソースコード一式はGNU
   General Public License version 3（GPL v3）に準じて配布されています。
 
-Copyright (c) <2020-> The University of Tokyo.* *All rights reserved.
+Copyright (c) <2020-> The University of Tokyo. All rights reserved.
 
 本ソフトウェアは2020年度 東京大学物性研究所 ソフトウェア高度化プロジェクトの支援を受け開発されました。

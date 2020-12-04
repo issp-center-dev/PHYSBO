@@ -5,19 +5,19 @@ class fourier:
     '''
     random feature maps
     ``Psi(X; W,b) = cos[X * Wt + b] * alpha``
-        where
+    where
 
-            - X: input, N-by-d matrix
-            - W: weight, l-by-d matrix
-            - Wt: transpose of W
-            - b: bias, 1-by-l matrix
-            - alpha: coefficient
-        
-        and
+        - X: input, N-by-d matrix
+        - W: weight, l-by-d matrix
+        - Wt: transpose of W
+        - b: bias, 1-by-l matrix
+        - alpha: coefficient
+    
+    and
 
-            - N: number of data
-            - d: dimension of input
-            - l: number of basis
+        - N: number of data
+        - d: dimension of input
+        - l: number of basis
 
     Attributes
     ==========

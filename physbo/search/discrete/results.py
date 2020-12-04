@@ -39,6 +39,7 @@ class history:
         """
         Export fx and actions at each sequence.
         (The total number of data is num_runs.)
+
         Returns
         -------
         best_fx: numpy.ndarray

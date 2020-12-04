@@ -73,9 +73,9 @@ class gauss:
 
         Returns
         -------
-            params: numpy.ndarray
-            width: int
-            scale: int
+        params: numpy.ndarray
+        width: int
+        scale: int
 
         """
         if params is None:
@@ -202,7 +202,8 @@ class gauss:
     def decomp_params( self, params ):
         """
         decompose the parameters defined on the log region
-            into width and scale parameters
+        into width and scale parameters
+
         Parameters
         ----------
         params: numpy.ndarray
@@ -210,8 +211,8 @@ class gauss:
 
         Returns
         -------
-            width: float
-            scale: float
+        width: float
+        scale: float
         """
 
         width = np.exp( params[0:-1] )
@@ -282,7 +283,8 @@ class gauss:
     def cat_params( self, width, scale):
         """
         Taking the logarithm of width and scale parameters
-            and concatinate them into one ndarray
+        and concatinate them into one ndarray
+
         Parameters
         ----------
         width: int
@@ -311,7 +313,7 @@ class gauss:
 
         Returns
         -------
-            tupple (W, b, amp)
+        tupple (W, b, amp)
         """
         params, width, scale = self.prepare( params )
         scale2 = scale**2
