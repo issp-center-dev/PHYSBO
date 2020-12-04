@@ -107,7 +107,7 @@ class batch( object ):
         min_params = np.zeros( self.gp.num_params )
         min_marlik = np.inf
 
-        for i in xrange(num_init_params_search):
+        for i in range(num_init_params_search):
             params = self.gp.get_cand_params( X, t )
             params = self.one_run( params, X, t, max_iter )
             marlik = self.gp.eval_marlik( params, X, t )
@@ -160,15 +160,15 @@ class online( object ):
 
 
         if is_init_params_search:
-            print 'Start the initial hyper parameter searching ...'
+            print('Start the initial hyper parameter searching ...')
             params = self.init_params_search( X, t )
-            print 'Done\n'
+            print('Done\n')
         else:
             params = np.copy( self.params )
 
-        print 'Start the hyper parameter learning ...'
+        print('Start the hyper parameter learning ...')
         params = self.one_run( params, X, t )
-        print 'Done\n'
+        print('Done\n')
 
         return params
 
@@ -206,10 +206,10 @@ class online( object ):
         num_disp = self.config.learning.num_disp
         eval_size = self.config.learning.eval_size
         eval_X, eval_t = self.gp.sub_sampling( X, t, eval_size )
-        timing = xrange( 0, max_epoch, int( np.floor( max_epoch / num_disp ) ) )
+        timing = range( 0, max_epoch, int( np.floor( max_epoch / num_disp ) ) )
         temp = 0
 
-        for num_epoch in xrange( 0, max_epoch ):
+        for num_epoch in range( 0, max_epoch ):
             perm = np.random.permutation( num_data )
 
             if is_disp and temp < num_disp and num_epoch == timing[temp]:
@@ -253,10 +253,10 @@ class online( object ):
         """
         marlik = self.gp.eval_marlik( params, eval_X, eval_t )
         if num_epoch is not None:
-            print num_epoch,
-            print '-th epoch',
+            print(num_epoch, end=' ')
+            print('-th epoch', end=' ')
 
-        print 'marginal likelihood', marlik
+        print('marginal likelihood', marlik)
 
 
     def init_params_search( self, X, t ):
@@ -283,7 +283,7 @@ class online( object ):
         min_params = np.zeros( self.gp.num_params )
         min_marlik = np.inf
 
-        for i in xrange(num_init_params_search):
+        for i in range(num_init_params_search):
             params = self.gp.get_cand_params( X, t )
 
             params = self.one_run( params, X, t, max_epoch )

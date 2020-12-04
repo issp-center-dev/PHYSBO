@@ -1,8 +1,8 @@
 import numpy as np
 from .. import inf
 from ... import blm
-import learning
-from prior import prior
+from . import learning
+from .prior import prior
 
 
 class model:
@@ -337,13 +337,13 @@ class model:
         """
         print ('\n')
         if self.lik.num_params != 0:
-            print 'likelihood parameter =  ', self.lik.params
+            print('likelihood parameter =  ', self.lik.params)
 
         if self.prior.mean.num_params != 0:
-            print 'mean parameter in GP prior: ', self.prior.mean.params
+            print('mean parameter in GP prior: ', self.prior.mean.params)
 
-        print 'covariance parameter in GP prior: ', self.prior.cov.params
-        print '\n'
+        print('covariance parameter in GP prior: ', self.prior.cov.params)
+        print('\n')
 
     def get_cand_params(self, X, t):
         """

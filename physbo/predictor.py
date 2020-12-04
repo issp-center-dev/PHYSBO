@@ -1,6 +1,6 @@
 import numpy as np
-import cPickle as pickle
-import gp
+import pickle as pickle
+from . import gp
 
 class base_predictor( object ):
     """

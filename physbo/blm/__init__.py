@@ -1,10 +1,10 @@
 """ Bayesian Linear Model
 """
 
-import basis
-import prior
-import lik
-import inf
+from . import basis
+from . import prior
+from . import lik
+from . import inf
 
-from core import model
-from predictor import predictor
+from .core import model
+from .predictor import predictor

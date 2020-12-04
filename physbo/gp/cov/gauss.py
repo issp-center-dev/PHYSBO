@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 import numpy as np
 from scipy import spatial
-import _src
-from _src.enhance_gauss import grad_width64
+from . import _src
+from ._src.enhance_gauss import grad_width64
 
 class gauss:
     ''' gaussian kernel '''
@@ -56,11 +56,11 @@ class gauss:
 
         """
 
-        print ' Parameters of Gaussian kernel \n '
-        print ' width  = ', + self.width
-        print ' scale  = ', + self.scale
-        print ' scale2 = ', + self.scale**2
-        print ' \n'
+        print(' Parameters of Gaussian kernel \n ')
+        print(' width  = ', + self.width)
+        print(' scale  = ', + self.scale)
+        print(' scale2 = ', + self.scale**2)
+        print(' \n')
 
     def prepare( self, params = None ):
         """
@@ -357,7 +357,7 @@ class gauss:
 
             dist = np.zeros( M )
 
-            for m in xrange( M ):
+            for m in range( M ):
                 a = np.random.randint( 0, X.shape[0], 2 )
                 dist[m] = np.linalg.norm( X[a[0],:] - X[a[1],:] )
 

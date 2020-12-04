@@ -1,5 +1,5 @@
 import numpy as np
-import ConfigParser
+import configparser
 
 
 class set_config:
@@ -44,7 +44,7 @@ class set_config:
         -------
 
         """
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read(file_name)
 
         search_config = search()
@@ -95,10 +95,10 @@ class search:
         -------
 
         """
-        print '(search)'
-        print 'multi_probe_num_sampling: ', self.multi_probe_num_sampling
-        print 'alpha: ', self.alpha
-        print '\n'
+        print('(search)')
+        print('multi_probe_num_sampling: ', self.multi_probe_num_sampling)
+        print('alpha: ', self.alpha)
+        print('\n')
 
 
 class learning(object):
@@ -116,11 +116,11 @@ class learning(object):
         -------
 
         """
-        print '( learning )'
-        print 'method : ', self.method
-        print 'is_disp: ', self.is_disp
-        print 'num_disp: ', self.num_disp
-        print 'num_init_params_search: ', self.num_init_params_search
+        print('( learning )')
+        print('method : ', self.method)
+        print('is_disp: ', self.is_disp)
+        print('num_disp: ', self.num_disp)
+        print('num_init_params_search: ', self.num_init_params_search)
 
     def load(self, config):
         """
@@ -160,9 +160,9 @@ class batch(learning):
 
         """
         super(batch, self).show()
-        print 'max_iter: ', self.max_iter
-        print 'max_iter_init_params_search: ', self.max_iter_init_params_search
-        print 'batch_size: ', self.batch_size
+        print('max_iter: ', self.max_iter)
+        print('max_iter_init_params_search: ', self.max_iter_init_params_search)
+        print('batch_size: ', self.batch_size)
 
     def load(self, config):
         """
@@ -201,11 +201,11 @@ class online(learning):
 
         """
         super(online, self).show()
-        print 'max_epoch: ', self.max_epoch
-        print 'max_epoch_init_params_search: ', \
-            self.max_epoch_init_params_search
-        print 'batch_size: ', self.batch_size
-        print 'eval_size: ', self.eval_size
+        print('max_epoch: ', self.max_epoch)
+        print('max_epoch_init_params_search: ', \
+            self.max_epoch_init_params_search)
+        print('batch_size: ', self.batch_size)
+        print('eval_size: ', self.eval_size)
 
     def load(self, config):
         """
@@ -247,11 +247,11 @@ class adam(online):
 
         """
         super(adam, self).show()
-        print 'alpha = ', self.alpha
-        print 'beta = ', self.beta
-        print 'gamma = ', self.gamma
-        print 'epsilon = ', self.epsilon
-        print '\n'
+        print('alpha = ', self.alpha)
+        print('beta = ', self.beta)
+        print('gamma = ', self.gamma)
+        print('epsilon = ', self.epsilon)
+        print('\n')
 
     def load(self, config):
         """
