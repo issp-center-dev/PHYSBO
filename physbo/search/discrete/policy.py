@@ -366,6 +366,33 @@ class policy:
         self.actions = self.delete_actions(index)
         return action
 
+    def save(self, file_history, file_training=None, file_predictor=None):
+        """
+
+        Saving history, training and predictor into the corresponding files.
+
+        Parameters
+        ----------
+        file_history: str
+            The name of the file that stores the information of the history.
+        file_training: str
+            The name of the file that stores the training dataset.
+        file_predictor: str
+            The name of the file that stores the predictor dataset.
+
+        Returns
+        -------
+
+        """
+        self.history.save(file_history)
+
+        if file_training is not None:
+            self.training.save(file_training)
+
+        if file_predictor is not None:
+            with open(file_predictor, "wb") as f:
+                pickle.dump(self.predictor, f)
+
     def load(self, file_history, file_training=None, file_predictor=None):
         """
 
@@ -396,7 +423,7 @@ class policy:
             self.training.load(file_training)
 
         if file_predictor is not None:
-            with open(file_predictor) as f:
+            with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
 
     def export_predictor(self):

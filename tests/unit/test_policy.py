@@ -87,23 +87,22 @@ def test_saveload(policy, X):
 
     N = 2
     policy.random_search(N, simulator=simulator)
-    res = policy.bayes_search(max_num_probes=N, simulator=simulator, score="TS")
+    policy.bayes_search(max_num_probes=N, simulator=simulator, score="TS")
 
-    tempdir = tempfile.mkdtemp()
+    with tempfile.TemporaryDirectory() as tempdir:
+        policy.save(
+            file_history=os.path.join(tempdir, "history.npz"),
+            file_training=os.path.join(tempdir, "training.npz"),
+            file_predictor=os.path.join(tempdir, "predictor.dump"),
+        )
 
-    policy.training.save(os.path.join(tempdir, "training.npz"))
-    policy.history.save(os.path.join(tempdir, "history.npz"))
-    with open(os.path.join(tempdir, "predictor.dump"), "wb") as f:
-        pickle.dump(policy.predictor, f)
-
-    policy2 = physbo.search.discrete.policy(test_X=X)
-    policy2.load(
-        file_history=os.path.join(tempdir, "history.npz"),
-        file_training=os.path.join(tempdir, "training.npz"),
-        file_predictor=os.path.join(tempdir, "predictor.dump"),
-    )
-    shutil.rmtree(tempdir)
-    assert policy.history.num_runs == policy2.history.num_runs
+        policy2 = physbo.search.discrete.policy(test_X=X)
+        policy2.load(
+            file_history=os.path.join(tempdir, "history.npz"),
+            file_training=os.path.join(tempdir, "training.npz"),
+            file_predictor=os.path.join(tempdir, "predictor.dump"),
+        )
+        assert policy.history.num_runs == policy2.history.num_runs
 
 
 def test_get_score(policy, mocker):
