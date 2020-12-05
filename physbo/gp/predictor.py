@@ -5,9 +5,11 @@ from . import mean
 from . import core
 from ..predictor import base_predictor
 
-class predictor( base_predictor ):
-    ''' predictor '''
-    def __init__( self, config, model = None ):
+
+class predictor(base_predictor):
+    """ predictor """
+
+    def __init__(self, config, model=None):
         """
 
         Parameters
@@ -16,7 +18,7 @@ class predictor( base_predictor ):
             configuration
         model: physbo.gp.core.model
         """
-        super( predictor, self ).__init__( config, model )
+        super(predictor, self).__init__(config, model)
 
     def fit(self, training, num_basis=None):
         """
@@ -34,7 +36,7 @@ class predictor( base_predictor ):
         self.model.fit(training.X, training.t, self.config)
         self.delete_stats()
 
-    def get_basis( self, *args, **kwds ):
+    def get_basis(self, *args, **kwds):
         """
 
         Parameters
@@ -48,7 +50,7 @@ class predictor( base_predictor ):
         """
         pass
 
-    def get_post_params( self, *args, **kwds ):
+    def get_post_params(self, *args, **kwds):
         """
 
         Parameters
@@ -62,7 +64,7 @@ class predictor( base_predictor ):
         """
         pass
 
-    def prepare( self, training ):
+    def prepare(self, training):
         """
         Initializing model by using training data set
 
@@ -72,12 +74,12 @@ class predictor( base_predictor ):
             dataset for training
 
         """
-        self.model.prepare( training.X, training.t )
+        self.model.prepare(training.X, training.t)
 
-    def delete_stats( self ):
+    def delete_stats(self):
         self.model.stats = None
 
-    def get_post_fmean( self, training, test ):
+    def get_post_fmean(self, training, test):
         """
         Calculating posterior mean value of model
 
@@ -94,10 +96,10 @@ class predictor( base_predictor ):
 
         """
         if self.model.stats is None:
-            self.prepare( training )
-        return self.model.get_post_fmean( training.X, test.X )
+            self.prepare(training)
+        return self.model.get_post_fmean(training.X, test.X)
 
-    def get_post_fcov( self, training, test, diag = True ):
+    def get_post_fcov(self, training, test, diag=True):
         """
         Calculating posterior variance-covariance matrix of model
 
@@ -116,9 +118,9 @@ class predictor( base_predictor ):
         """
         if self.model.stats is None:
             self.prepare(training)
-        return self.model.get_post_fcov( training.X, test.X, diag = diag )
+        return self.model.get_post_fcov(training.X, test.X, diag=diag)
 
-    def get_post_samples( self, training, test, alpha = 1 ):
+    def get_post_samples(self, training, test, alpha=1):
         """
         Drawing samples of mean values of model
 
@@ -136,10 +138,10 @@ class predictor( base_predictor ):
 
         """
         if self.model.stats is None:
-            self.prepare( training )
-        return self.model.post_sampling( training.X, test.X, alpha = alpha )
+            self.prepare(training)
+        return self.model.post_sampling(training.X, test.X, alpha=alpha)
 
-    def get_predict_samples( self, training, test, N = 1  ):
+    def get_predict_samples(self, training, test, N=1):
         """
         Drawing samples of values of model
 
@@ -159,5 +161,5 @@ class predictor( base_predictor ):
 
         """
         if self.model.stats is None:
-            self.prepare( training )
-        return self.model.predict_sampling( training.X, test.X, N = N )
+            self.prepare(training)
+        return self.model.predict_sampling(training.X, test.X, N=N)

@@ -6,7 +6,7 @@ from .prior import prior
 
 
 class model:
-    def __init__(self, lik, mean, cov, inf='exact'):
+    def __init__(self, lik, mean, cov, inf="exact"):
         """
 
         Parameters
@@ -58,8 +58,8 @@ class model:
         if params is None:
             params = np.copy(self.params)
 
-        lik_params = params[0:self.lik.num_params]
-        prior_params = params[self.lik.num_params:]
+        lik_params = params[0 : self.lik.num_params]
+        prior_params = params[self.lik.num_params :]
         return lik_params, prior_params
 
     def set_params(self, params):
@@ -117,13 +117,15 @@ class model:
         physbo.blm.core.model
         """
         if not hasattr(self.prior.cov, "rand_expans"):
-            raise ValueError('The kernel must be.')
+            raise ValueError("The kernel must be.")
 
         basis_params = self.prior.cov.rand_expans(num_basis)
         basis = blm.basis.fourier(basis_params)
         prior = blm.prior.gauss(num_basis)
-        lik = blm.lik.gauss(blm.lik.linear(basis, bias=self.prior.get_mean(1)),
-                            blm.lik.cov(self.lik.params))
+        lik = blm.lik.gauss(
+            blm.lik.linear(basis, bias=self.prior.get_mean(1)),
+            blm.lik.cov(self.lik.params),
+        )
         blr = blm.model(lik, prior)
 
         return blr
@@ -149,7 +151,7 @@ class model:
             Marginal likelihood.
         """
         subX, subt = self.sub_sampling(X, t, N)
-        if self.inf == 'exact':
+        if self.inf == "exact":
             marlik = inf.exact.eval_marlik(self, subX, subt, params=params)
         else:
             pass
@@ -178,10 +180,9 @@ class model:
             Gradiant of marginal likelihood.
         """
         subX, subt = self.sub_sampling(X, t, N)
-        if self.inf == 'exact':
+        if self.inf == "exact":
             grad_marlik = inf.exact.get_grad_marlik(self, subX, subt, params=params)
         return grad_marlik
-        
 
     def get_params_bound(self):
         """
@@ -218,7 +219,7 @@ class model:
         """
         if params is None:
             params = np.copy(self.params)
-        if self.inf == 'exact':
+        if self.inf == "exact":
             self.stats = inf.exact.prepare(self, X, t, params)
         else:
             pass
@@ -242,7 +243,7 @@ class model:
         if params is None:
             params = np.copy(self.params)
 
-        if self.inf == 'exact':
+        if self.inf == "exact":
             post_fmu = inf.exact.get_post_fmean(self, X, Z, params)
 
         return post_fmu
@@ -270,7 +271,7 @@ class model:
         if params is None:
             params = np.copy(self.params)
 
-        if self.inf == 'exact':
+        if self.inf == "exact":
             post_fcov = inf.exact.get_post_fcov(self, X, Z, params, diag)
 
         return post_fcov
@@ -299,7 +300,7 @@ class model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        return np.random.multivariate_normal(fmean, fcov * alpha ** 2, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """
@@ -326,8 +327,9 @@ class model:
 
         ndata = Z.shape[0]
         fmean = self.get_post_fmean(X, Z, params=None)
-        fcov = self.get_post_fcov(X, Z, params=None, diag=False) \
-            + self.lik.get_cov(ndata)
+        fcov = self.get_post_fcov(X, Z, params=None, diag=False) + self.lik.get_cov(
+            ndata
+        )
 
         return np.random.multivariate_normal(fmean, fcov, N)
 
@@ -335,15 +337,15 @@ class model:
         """
         Printing parameters
         """
-        print ('\n')
+        print("\n")
         if self.lik.num_params != 0:
-            print('likelihood parameter =  ', self.lik.params)
+            print("likelihood parameter =  ", self.lik.params)
 
         if self.prior.mean.num_params != 0:
-            print('mean parameter in GP prior: ', self.prior.mean.params)
+            print("mean parameter in GP prior: ", self.prior.mean.params)
 
-        print('covariance parameter in GP prior: ', self.prior.cov.params)
-        print('\n')
+        print("covariance parameter in GP prior: ", self.prior.cov.params)
+        print("\n")
 
     def get_cand_params(self, X, t):
         """
@@ -364,13 +366,14 @@ class model:
         """
         params = np.zeros(self.num_params)
         if self.lik.num_params != 0:
-            params[0:self.lik.num_params] = self.lik.get_cand_params(t)
+            params[0 : self.lik.num_params] = self.lik.get_cand_params(t)
 
         temp = self.lik.num_params
 
         if self.prior.mean.num_params != 0:
-            params[temp:temp + self.prior.mean.num_params] \
-                                = self.prior.mean.get_cand_params(t)
+            params[
+                temp : temp + self.prior.mean.num_params
+            ] = self.prior.mean.get_cand_params(t)
 
         temp += self.prior.mean.num_params
 
@@ -396,11 +399,11 @@ class model:
         """
         method = config.learning.method
 
-        if method == 'adam':
+        if method == "adam":
             adam = learning.adam(self, config)
             params = adam.run(X, t)
 
-        if method in ('bfgs', 'batch'):
+        if method in ("bfgs", "batch"):
             bfgs = learning.batch(self, config)
             params = bfgs.run(X, t)
 

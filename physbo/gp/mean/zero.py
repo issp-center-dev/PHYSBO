@@ -1,12 +1,14 @@
 import numpy as np
 
+
 class zero:
-    ''' zero '''
+    """ zero """
+
     def __init__(self):
         self.num_params = 0
         self.params = np.array([])
 
-    def get_mean(self, num_data, params = None):
+    def get_mean(self, num_data, params=None):
         """
         Returning numpy.zeros(num_data)
 
@@ -24,7 +26,7 @@ class zero:
         """
         return np.zeros(num_data)
 
-    def get_grad( self, num_data, params = None):
+    def get_grad(self, num_data, params=None):
         """
         Returning empty numpy.ndarray
 
@@ -42,7 +44,7 @@ class zero:
         """
         return np.array([])
 
-    def set_params( self, params ):
+    def set_params(self, params):
         """
         Not defined
 

@@ -2,7 +2,7 @@ from ..predictor import base_predictor
 
 
 class predictor(base_predictor):
-    """ Predictor using Baysean linear model
+    """Predictor using Baysean linear model
 
     Attributes
     ==========
@@ -207,7 +207,7 @@ class predictor(base_predictor):
             self.prepare(training)
             return None
 
-        if hasattr(test.t, '__len__'):
+        if hasattr(test.t, "__len__"):
             N = len(test.t)
         else:
             N = 1

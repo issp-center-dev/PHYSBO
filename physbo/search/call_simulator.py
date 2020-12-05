@@ -15,7 +15,7 @@ def call_simulator(simu, action):
             d dimensional matrix. The d-dimensional feature vector of the target candidate.
     """
     output = simu(action)
-    if hasattr(output, '__len__') and len(output) == 2:
+    if hasattr(output, "__len__") and len(output) == 2:
         t = output[0]
         x = output[1]
     else:

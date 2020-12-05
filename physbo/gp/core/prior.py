@@ -1,9 +1,11 @@
 import numpy as np
 import scipy
 
+
 class prior:
-    ''' prior of gaussian process '''
-    def __init__( self, mean, cov ):
+    """ prior of gaussian process """
+
+    def __init__(self, mean, cov):
         """
 
         Parameters
@@ -16,9 +18,9 @@ class prior:
         self.mean = mean
         self.cov = cov
         self.num_params = self.cov.num_params + self.mean.num_params
-        self.params = self.cat_params( self.mean.params, self.cov.params )
+        self.params = self.cat_params(self.mean.params, self.cov.params)
 
-    def cat_params( self, mean_params, cov_params ):
+    def cat_params(self, mean_params, cov_params):
         """
 
         Parameters
@@ -31,9 +33,9 @@ class prior:
         -------
         numpy.ndarray
         """
-        return  np.append( mean_params, cov_params )
+        return np.append(mean_params, cov_params)
 
-    def decomp_params( self, params ):
+    def decomp_params(self, params):
         """
         decomposing the parameters to those of mean values and covariance matrix for priors
 
@@ -48,13 +50,13 @@ class prior:
         cov_params: numpy.ndarray
         """
         if params is None:
-            params = np.copy( self.params )
+            params = np.copy(self.params)
 
-        mean_params = params[0:self.mean.num_params ]
-        cov_params = params[self.mean.num_params:]
+        mean_params = params[0 : self.mean.num_params]
+        cov_params = params[self.mean.num_params :]
         return mean_params, cov_params
 
-    def get_mean( self, num_data, params = None ):
+    def get_mean(self, num_data, params=None):
         """
         Calculating the mean value of priors
 
@@ -69,10 +71,10 @@ class prior:
         float
         """
         if params is None:
-            params = np.copy( self.params )
-        return self.mean.get_mean( num_data, params[0:self.mean.num_params] )
+            params = np.copy(self.params)
+        return self.mean.get_mean(num_data, params[0 : self.mean.num_params])
 
-    def get_cov( self, X, Z = None, params = None, diag = False ):
+    def get_cov(self, X, Z=None, params=None, diag=False):
         """
         Calculating the variance-covariance matrix of priors
 
@@ -91,11 +93,11 @@ class prior:
         numpy.ndarray
         """
         if params is None:
-            params = np.copy( self.params )
+            params = np.copy(self.params)
 
-        return self.cov.get_cov( X, Z, params = params[self.mean.num_params:], diag = diag  )
+        return self.cov.get_cov(X, Z, params=params[self.mean.num_params :], diag=diag)
 
-    def get_grad_mean( self, num_data, params = None ):
+    def get_grad_mean(self, num_data, params=None):
         """
         Calculating the gradiant of mean values of priors
 
@@ -112,12 +114,12 @@ class prior:
 
         """
         if params is None:
-            params = np.copy( self.params )
+            params = np.copy(self.params)
 
-        mean_params, cov_params = self.decomp_params( params )
-        return self.mean.get_grad( num_data, params = mean_params )
+        mean_params, cov_params = self.decomp_params(params)
+        return self.mean.get_grad(num_data, params=mean_params)
 
-    def get_grad_cov( self, X, params = None ):
+    def get_grad_cov(self, X, params=None):
         """
         Calculating the covariance matrix priors
 
@@ -134,11 +136,11 @@ class prior:
 
         """
         if params is None:
-            params = np.copy( self.params )
-        mean_params, cov_params =self.decomp_params( params )
-        return self.cov.get_grad( X, params = cov_params )
+            params = np.copy(self.params)
+        mean_params, cov_params = self.decomp_params(params)
+        return self.cov.get_grad(X, params=cov_params)
 
-    def set_params( self, params ):
+    def set_params(self, params):
         """
         Setting parameters
 
@@ -147,11 +149,11 @@ class prior:
         params: numpy.ndarray
            Parameters.
         """
-        mean_params, cov_params = self.decomp_params( params )
-        self.set_mean_params( mean_params )
-        self.set_cov_params( cov_params )
+        mean_params, cov_params = self.decomp_params(params)
+        self.set_mean_params(mean_params)
+        self.set_cov_params(cov_params)
 
-    def set_mean_params( self, params ):
+    def set_mean_params(self, params):
         """
         Setting parameters for mean values of priors
 
@@ -161,10 +163,10 @@ class prior:
             Parameters
         """
         if self.mean.num_params != 0:
-            self.params[0:self.mean.num_params ] = params
-            self.mean.set_params( params )
+            self.params[0 : self.mean.num_params] = params
+            self.mean.set_params(params)
 
-    def set_cov_params( self, params ):
+    def set_cov_params(self, params):
         """
         Setting parameters for covariance matrix of priors
 
@@ -173,10 +175,10 @@ class prior:
         params: numpy.ndarray
             Parameters
         """
-        self.params[self.mean.num_params:] = params
-        self.cov.set_params( params )
+        self.params[self.mean.num_params :] = params
+        self.cov.set_params(params)
 
-    def sampling( self, X, N = 1 ):
+    def sampling(self, X, N=1):
         """
         Sampling from GP prior
 
@@ -192,7 +194,7 @@ class prior:
 
         """
         num_data = X.shape[0]
-        G = self.get_cov( X ) + 1e-8 * np.identity( num_data )
-        L = scipy.linalg.cholesky( G, check_finite = False )
-        Z = np.random.randn( N, num_data )
-        return np.dot(Z,L) + self.get_mean( num_data )
+        G = self.get_cov(X) + 1e-8 * np.identity(num_data)
+        L = scipy.linalg.cholesky(G, check_finite=False)
+        Z = np.random.randn(N, num_data)
+        return np.dot(Z, L) + self.get_mean(num_data)

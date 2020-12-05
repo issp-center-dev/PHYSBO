@@ -10,6 +10,7 @@ from ... import predictor
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 import physbo.search.score
+
 MAX_SEACH = int(20000)
 
 
@@ -83,15 +84,15 @@ class policy:
             X = self.test.X[action, :]
             Z = self.test.Z[action, :] if self.test.Z is not None else None
         else:
-            Z = self.predictor.get_basis(X) \
-                if self.predictor is not None else None
+            Z = self.predictor.get_basis(X) if self.predictor is not None else None
 
         self.new_data = variable(X, t, Z)
         self.history.write(t, action)
         self.training.add(X=X, t=t, Z=Z)
 
-    def random_search(self, max_num_probes, num_search_each_probe=1,
-                      simulator=None, is_disp=True):
+    def random_search(
+        self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
+    ):
         """
         Performing random search.
 
@@ -114,8 +115,10 @@ class policy:
         N = int(num_search_each_probe)
 
         if int(max_num_probes) * N > len(self.actions):
-            raise ValueError('max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates')
+            raise ValueError(
+                "max_num_probes * num_search_each_probe must \
+                be smaller than the length of candidates"
+            )
 
         if is_disp:
             utility.show_interactive_mode(simulator, self.history)
@@ -139,11 +142,18 @@ class policy:
 
         return copy.deepcopy(self.history)
 
-    def bayes_search(self, training=None, max_num_probes=None,
-                     num_search_each_probe=1,
-                     predictor=None, is_disp=True,
-                     simulator=None, score='TS', interval=0,
-                     num_rand_basis=0):
+    def bayes_search(
+        self,
+        training=None,
+        max_num_probes=None,
+        num_search_each_probe=1,
+        predictor=None,
+        is_disp=True,
+        simulator=None,
+        score="TS",
+        interval=0,
+        num_rand_basis=0,
+    ):
         """
         Performing Bayesian optimization.
 
@@ -207,8 +217,7 @@ class policy:
                     self.predictor.prepare(self.training)
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs,
-                                                        score)
+                utility.show_start_message_multi_search(self.history.num_runs, score)
 
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
@@ -252,14 +261,14 @@ class policy:
         actions = self.actions
 
         test = self.test.get_subset(actions)
-        if mode == 'EI':
+        if mode == "EI":
             f = physbo.search.score.EI(predictor, training, test)
-        elif mode == 'PI':
+        elif mode == "PI":
             f = physbo.search.score.PI(predictor, training, test)
-        elif mode == 'TS':
+        elif mode == "TS":
             f = physbo.search.score.TS(predictor, training, test, alpha)
         else:
-            raise NotImplementedError('mode must be EI, PI or TS.')
+            raise NotImplementedError("mode must be EI, PI or TS.")
         return f
 
     def get_marginal_score(self, mode, chosed_actions, N, alpha):
@@ -286,8 +295,7 @@ class policy:
         """
         f = np.zeros((N, len(self.actions)))
         new_test = self.test.get_subset(chosed_actions)
-        virtual_t \
-            = self.predictor.get_predict_samples(self.training, new_test, N)
+        virtual_t = self.predictor.get_predict_samples(self.training, new_test, N)
 
         for n in range(N):
             predictor = copy.deepcopy(self.predictor)
@@ -555,8 +563,10 @@ class policy:
         elif isinstance(test_X, variable):
             test = test_X
         else:
-            raise TypeError('The type of test_X must \
-                             take ndarray or physbo.variable')
+            raise TypeError(
+                "The type of test_X must \
+                             take ndarray or physbo.variable"
+            )
         return test
 
     def _set_config(self, config=None):
@@ -570,7 +580,7 @@ class policy:
         Returns
         -------
         config: set_config object (physbo.misc.set_config)
-        
+
         """
         if config is None:
             config = physbo.misc.set_config()

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class cov:
     """
     Covariance
@@ -15,15 +16,16 @@ class cov:
     prec: float
         inv. of variance
     """
-    def __init__( self, params = None ):
+
+    def __init__(self, params=None):
         self.params = params
         if self.params is None:
             self.params = np.log(1)
         self.nparams = 1
-        self.sigma2, self.prec = self._trans_params( params )
+        self.sigma2, self.prec = self._trans_params(params)
 
-    def get_cov( self, N, params = None ):
-        '''
+    def get_cov(self, N, params=None):
+        """
         compute the covariance of prior
 
         Parameters
@@ -38,15 +40,15 @@ class cov:
         =======
         numpy.ndarray
             NxN covariance matrix
-        '''
+        """
         if params is None:
             params = self.params
 
-        sigma2, prec = self._trans_params( params )
-        return np.identity( N ) * sigma2
+        sigma2, prec = self._trans_params(params)
+        return np.identity(N) * sigma2
 
-    def get_prec( self, N, params = None ):
-        '''
+    def get_prec(self, N, params=None):
+        """
         compute the precision of prior
 
         Parameters
@@ -61,27 +63,27 @@ class cov:
         =======
         numpy.ndarray
             inverse of covariance matrix
-        '''
+        """
         if params is None:
             params = self.params
-        sigma2, prec = self._trans_params( params )
-        return np.identity( N ) * prec
+        sigma2, prec = self._trans_params(params)
+        return np.identity(N) * prec
 
-    def set_params( self, params ):
-        '''
+    def set_params(self, params):
+        """
         set the parameter
-        
+
         Parameters
         ==========
         params: float
             half of log of variance
-        '''
+        """
         self.params = params
-        self.sigma2, self.prec = self._trans_params( params )
+        self.sigma2, self.prec = self._trans_params(params)
 
-    def _trans_params( self, params = None ):
-        ''' 
-        transform the parameter into variance and precision 
+    def _trans_params(self, params=None):
+        """
+        transform the parameter into variance and precision
 
         Parameters
         ==========
@@ -95,10 +97,10 @@ class cov:
             variance
         prec: float
             precision (inv. of variance)
-        '''
+        """
         if params is None:
             params = np.copy(self.params)
 
-        sigma2 = np.exp( 2 * params )
-        prec = 1/sigma2
+        sigma2 = np.exp(2 * params)
+        prec = 1 / sigma2
         return sigma2, prec
