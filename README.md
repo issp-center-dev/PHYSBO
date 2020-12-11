@@ -45,7 +45,7 @@ $ pip3 uninstall physbo
 ```
 
 # Usage
-After installation, you can launch the test suite from ['examples/grain_bound/tutorial.ipynb'](examples/grain_bound/tutorial.ipynb).
+After installation, you can launch the test suite from ['examples/grain_bound/tutorial.ipynb'](https://github.com/issp-center-dev/PHYSBO/examples/grain_bound/tutorial.ipynb).
 
 ## License
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
