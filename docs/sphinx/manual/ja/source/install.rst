@@ -7,9 +7,8 @@
 実行環境・必要なパッケージ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 PHYSBOの実行環境・必要なパッケージは以下の通りです。
-現在はPython 2.7で動作します。ver.1.0ではPython3系に対応する予定です。
 
-* Python = 2.7
+* Python >= 3.6
 * numpy
 * scipy
 * six
@@ -67,9 +66,9 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
           
        $ git clone https://github.com/issp-center-dev/PHYSBO
 
-  #. NumPy, Cython のインストール（コンパイルに必要です） ::
+  #. NumPy, Cython, setuptools のインストール（コンパイルに必要です） ::
 
-       $ pip install numpy Cython
+       $ pip install numpy Cython setuptools
 
   #. インストール ::
 

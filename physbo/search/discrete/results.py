@@ -1,5 +1,6 @@
 import numpy as np
 from .. import utility
+
 MAX_SEARCH = int(30000)
 
 
@@ -39,6 +40,7 @@ class history:
         """
         Export fx and actions at each sequence.
         (The total number of data is num_runs.)
+
         Returns
         -------
         best_fx: numpy.ndarray
@@ -46,8 +48,8 @@ class history:
         """
         best_fx = np.zeros(self.num_runs)
         best_actions = np.zeros(self.num_runs)
-        for n in xrange(self.num_runs):
-            index = np.argmax(self.fx[0:self.terminal_num_run[n]])
+        for n in range(self.num_runs):
+            index = np.argmax(self.fx[0 : self.terminal_num_run[n]])
             best_actions[n] = self.chosed_actions[index]
             best_fx[n] = self.fx[index]
 
@@ -68,13 +70,13 @@ class history:
         best_fx[0] = self.fx[0]
         best_actions[0] = self.chosed_actions[0]
 
-        for n in xrange(1, self.total_num_search):
-            if best_fx[n-1] < self.fx[n]:
+        for n in range(1, self.total_num_search):
+            if best_fx[n - 1] < self.fx[n]:
                 best_fx[n] = self.fx[n]
                 best_actions[n] = self.chosed_actions[n]
             else:
-                best_fx[n] = best_fx[n-1]
-                best_actions[n] = best_actions[n-1]
+                best_fx[n] = best_fx[n - 1]
+                best_actions[n] = best_actions[n - 1]
 
         return best_fx, best_actions
 
@@ -92,10 +94,14 @@ class history:
         """
         N = self.total_num_search
         M = self.num_runs
-        np.savez_compressed(filename, num_runs=M, total_num_search=N,
-                            fx=self.fx[0:N],
-                            chosed_actions=self.chosed_actions[0:N],
-                            terminal_num_run=self.terminal_num_run[0:M])
+        np.savez_compressed(
+            filename,
+            num_runs=M,
+            total_num_search=N,
+            fx=self.fx[0:N],
+            chosed_actions=self.chosed_actions[0:N],
+            terminal_num_run=self.terminal_num_run[0:M],
+        )
 
     def load(self, filename):
         """
@@ -110,10 +116,10 @@ class history:
 
         """
         data = np.load(filename)
-        M = data['num_runs']
-        N = data['total_num_search']
+        M = data["num_runs"]
+        N = data["total_num_search"]
         self.num_runs = M
         self.total_num_search = N
-        self.fx[0:N] = data['fx']
-        self.chosed_actions[0:N] = data['chosed_actions']
-        self.terminal_num_run[0:M] = data['terminal_num_run']
+        self.fx[0:N] = data["fx"]
+        self.chosed_actions[0:N] = data["chosed_actions"]
+        self.terminal_num_run[0:M] = data["terminal_num_run"]

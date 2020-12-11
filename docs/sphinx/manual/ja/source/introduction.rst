@@ -44,7 +44,7 @@ Bibtexは以下の通りです。 ::
 
 主な開発者
 ----------------------
-- ver. 0.1
+- ver. 0.1-
 
   - 田村 亮 (物質・材料研究機構 国際ナノアーキテクトニクス研究拠点)
   - 寺山 慧 (横浜市立大学大学院 生命医科学研究科)
@@ -58,6 +58,6 @@ Bibtexは以下の通りです。 ::
 | 本ソフトウェアのプログラムパッケージおよびソースコード一式はGNU
   General Public License version 3（GPL v3）に準じて配布されています。
 
-Copyright (c) <2020-> The University of Tokyo.* *All rights reserved.
+Copyright (c) <2020-> The University of Tokyo. All rights reserved.
 
 本ソフトウェアは2020年度 東京大学物性研究所 ソフトウェア高度化プロジェクトの支援を受け開発されました。

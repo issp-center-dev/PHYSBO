@@ -10,21 +10,20 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
 
 # Required Packages ############################
-* Python 2.7.x
-    * We plan to support Python 3.x in the next version of PHYSBO
+* Python >= 3.6
 * numpy
 * scipy
 
 # Install ######################################
 - From PyPI (recommended)
 ```bash
-    $ pip2 install physbo
+    $ pip3 install physbo
 ```
 
 - From source (for developers)
     1. Install NumPy and Cython before installing PHYSBO
         ```bash
-        $ pip2 install numpy Cython
+        $ pip3 install numpy Cython
         ```
 
     1. Download or clone the github repository
@@ -35,14 +34,14 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
     1. Run setup.py install
         ``` bash
         $ cd physbo
-        $ python2 setup.py install --user
+        $ python3 setup.py install --user
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
 
 # Uninstall
 ```bash
-$ pip2 uninstall physbo
+$ pip3 uninstall physbo
 ```
 
 # Usage

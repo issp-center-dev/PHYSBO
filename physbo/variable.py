@@ -210,6 +210,6 @@ class variable(object):
 
         """
         data = np.load(file_name, allow_pickle=True)
-        self.X = data['X']
-        self.t = data['t']
-        self.Z = data['Z']
+        self.X = data["X"]
+        self.t = data["t"]
+        self.Z = data["Z"]

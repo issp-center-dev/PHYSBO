@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats
 
+
 def EI(predictor, training, test, fmax=None):
     """
     Maximum expected improvement.
@@ -27,10 +28,9 @@ def EI(predictor, training, test, fmax=None):
     if fmax is None:
         fmax = np.max(predictor.get_post_fmean(training, training))
 
-    temp1 = (fmean - fmax)
+    temp1 = fmean - fmax
     temp2 = temp1 / fstd
-    score = temp1 * scipy.stats.norm.cdf(temp2) \
-        + fstd * scipy.stats.norm.pdf(temp2)
+    score = temp1 * scipy.stats.norm.cdf(temp2) + fstd * scipy.stats.norm.pdf(temp2)
     return score
 
 
@@ -60,7 +60,7 @@ def PI(predictor, training, test, fmax=None):
     if fmax is None:
         fmax = np.max(predictor.get_post_fmean(training, training))
 
-    temp = (fmean - fmax)/fstd
+    temp = (fmean - fmax) / fstd
     score = scipy.stats.norm.cdf(temp)
     return score
 

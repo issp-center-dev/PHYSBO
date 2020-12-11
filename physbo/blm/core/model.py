@@ -19,17 +19,18 @@ class model:
     method: str
         sampling method
     """
-    def __init__( self, lik, prior, options = {} ):
+
+    def __init__(self, lik, prior, options={}):
         self.prior = prior
         self.lik = lik
         self.nbasis = self.lik.linear.basis.nbasis
-        self._init_prior( prior )
-        self._set_options( options )
+        self._init_prior(prior)
+        self._set_options(options)
         self.stats = ()
 
-    def prepare( self, X, t, Psi = None ):
+    def prepare(self, X, t, Psi=None):
         """
-        initializes model by using the first training dataset 
+        initializes model by using the first training dataset
 
         Parameters
         ==========
@@ -44,12 +45,12 @@ class model:
         ========
         physbo.blm.inf.exact.prepare
         """
-        if self.method == 'exact':
-            inf.exact.prepare( blm = self, X = X, t = t, Psi = Psi )
+        if self.method == "exact":
+            inf.exact.prepare(blm=self, X=X, t=t, Psi=Psi)
         else:
             pass
 
-    def update_stats( self, x, t, psi = None ):
+    def update_stats(self, x, t, psi=None):
         """
         updates model by using another training data
 
@@ -66,12 +67,12 @@ class model:
         ========
         physbo.blm.inf.exact.update_stats
         """
-        if self.method == 'exact':
-            self.stats = inf.exact.update_stats( self, x, t, psi )
+        if self.method == "exact":
+            self.stats = inf.exact.update_stats(self, x, t, psi)
         else:
             pass
 
-    def get_post_params_mean( self ):
+    def get_post_params_mean(self):
         """
         calculates posterior mean of weights
 
@@ -83,10 +84,10 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_params_mean
         """
-        if self.method == 'exact':
-            self.lik.linear.params = inf.exact.get_post_params_mean( blm = self )
+        if self.method == "exact":
+            self.lik.linear.params = inf.exact.get_post_params_mean(blm=self)
 
-    def get_post_fmean( self, X, Psi = None, w = None ):
+    def get_post_fmean(self, X, Psi=None, w=None):
         """
         calculates posterior mean of model (function)
 
@@ -103,13 +104,13 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_fmean
         """
-        if self.method == 'exact':
-            fmu = inf.exact.get_post_fmean( self, X, Psi, w )
+        if self.method == "exact":
+            fmu = inf.exact.get_post_fmean(self, X, Psi, w)
         else:
             pass
         return fmu
 
-    def sampling( self, w_mu = None, N = 1, alpha = 1.0 ):
+    def sampling(self, w_mu=None, N=1, alpha=1.0):
         """
         draws samples of weights
 
@@ -135,13 +136,13 @@ class model:
         ========
         physbo.blm.inf.exact.sampling
         """
-        if self.method == 'exact':
-            w_hat = inf.exact.sampling( self, w_mu, N, alpha= alpha )
+        if self.method == "exact":
+            w_hat = inf.exact.sampling(self, w_mu, N, alpha=alpha)
         else:
             pass
         return w_hat
 
-    def post_sampling( self, Xtest, Psi = None, N = 1, alpha = 1.0):
+    def post_sampling(self, Xtest, Psi=None, N=1, alpha=1.0):
         """
         draws samples of mean value of model
 
@@ -163,11 +164,11 @@ class model:
         numpy.ndarray
         """
         if Psi is None:
-            Psi = blm.lik.get_basis( Xtest )
-        w_hat = self.sampling( N = N, alpha = alpha)
-        return Psi.dot( w_hat ) + self.lik.linear.bias
+            Psi = blm.lik.get_basis(Xtest)
+        w_hat = self.sampling(N=N, alpha=alpha)
+        return Psi.dot(w_hat) + self.lik.linear.bias
 
-    def predict_sampling( self, Xtest, Psi = None, N=1 ):
+    def predict_sampling(self, Xtest, Psi=None, N=1):
         """
         draws samples from model
 
@@ -187,9 +188,9 @@ class model:
         numpy.ndarray
         """
         fmean = self.post_sampling(Xtest, Psi, N=N)
-        return fmean + np.sqrt( self.lik.cov.sigma2 ) * np.random.randn( Xtest.shape[0], N )
+        return fmean + np.sqrt(self.lik.cov.sigma2) * np.random.randn(Xtest.shape[0], N)
 
-    def get_post_fcov( self, X, Psi = None, diag = True ):
+    def get_post_fcov(self, X, Psi=None, diag=True):
         """
         calculates posterior covariance of model
 
@@ -212,27 +213,27 @@ class model:
         ========
         physbo.blm.inf.exact.get_post_fcov
         """
-        if self.method == 'exact':
-            fcov = inf.exact.get_post_fcov( self, X, Psi, diag = True)
+        if self.method == "exact":
+            fcov = inf.exact.get_post_fcov(self, X, Psi, diag=True)
         else:
             pass
         return fcov
 
-    def _set_options( self, options ):
+    def _set_options(self, options):
         """
         read options
 
         Parameters
         ==========
         options: dict
-            
+
             - 'method' : sampling method
 
                 - 'exact' (default)
         """
-        self.method = options.get('method','exact')
+        self.method = options.get("method", "exact")
 
-    def _init_prior( self, prior ):
+    def _init_prior(self, prior):
         """
         sets the prior distribution
 
@@ -242,5 +243,5 @@ class model:
             if None, prior.gauss(self.nbasis)
         """
         if prior is None:
-            prior = prior.gauss( self.nbasis )
+            prior = prior.gauss(self.nbasis)
         self.prior = prior

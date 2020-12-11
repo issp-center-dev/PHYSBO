@@ -1,14 +1,24 @@
 # -*- coding:utf-8 -*-
 import numpy as np
 from scipy import spatial
-import _src
-from _src.enhance_gauss import grad_width64
+from . import _src
+from ._src.enhance_gauss import grad_width64
+
 
 class gauss:
-    ''' gaussian kernel '''
-    def __init__( self, num_dim, width = 3, scale = 1, ard = False, \
-                        max_width = 1e6, min_width = 1e-6, \
-                        max_scale = 1e6, min_scale = 1e-6 ):
+    """ gaussian kernel """
+
+    def __init__(
+        self,
+        num_dim,
+        width=3,
+        scale=1,
+        ard=False,
+        max_width=1e6,
+        min_width=1e-6,
+        max_scale=1e6,
+        min_scale=1e-6,
+    ):
         """
 
         Parameters
@@ -38,7 +48,7 @@ class gauss:
         if self.ard:
             # with ARD
             self.num_params = num_dim + 1
-            if isinstance( width, np.ndarray ) and len( width ) == self.num_dim:
+            if isinstance(width, np.ndarray) and len(width) == self.num_dim:
                 self.width = width
             else:
                 self.width = width * np.ones(self.num_dim)
@@ -47,22 +57,22 @@ class gauss:
             self.width = width
             self.num_params = 2
 
-        params = self.cat_params( self.width, self.scale )
-        self.set_params( params )
+        params = self.cat_params(self.width, self.scale)
+        self.set_params(params)
 
-    def print_params( self ):
+    def print_params(self):
         """
         show the current kernel parameters
 
         """
 
-        print ' Parameters of Gaussian kernel \n '
-        print ' width  = ', + self.width
-        print ' scale  = ', + self.scale
-        print ' scale2 = ', + self.scale**2
-        print ' \n'
+        print(" Parameters of Gaussian kernel \n ")
+        print(" width  = ", +self.width)
+        print(" scale  = ", +self.scale)
+        print(" scale2 = ", +self.scale ** 2)
+        print(" \n")
 
-    def prepare( self, params = None ):
+    def prepare(self, params=None):
         """
         Setting parameters
 
@@ -73,9 +83,9 @@ class gauss:
 
         Returns
         -------
-            params: numpy.ndarray
-            width: int
-            scale: int
+        params: numpy.ndarray
+        width: int
+        scale: int
 
         """
         if params is None:
@@ -83,12 +93,12 @@ class gauss:
             width = self.width
             scale = self.scale
         else:
-            params = self.supp_params( params )
-            width, scale = self.decomp_params( params )
+            params = self.supp_params(params)
+            width, scale = self.decomp_params(params)
 
         return params, width, scale
 
-    def get_grad( self, X, params = None ):
+    def get_grad(self, X, params=None):
         """
         Getting gradiant values of X
 
@@ -105,20 +115,20 @@ class gauss:
 
         """
         num_data = X.shape[0]
-        params, width, scale = self.prepare( params )
-        G = self.get_cov( X, params = params )
+        params, width, scale = self.prepare(params)
+        G = self.get_cov(X, params=params)
 
         grad = np.zeros((self.num_params, num_data, num_data))
         if self.ard:
-            grad[0:self.num_params-1,:,:] = grad_width64(X, width, G)
+            grad[0 : self.num_params - 1, :, :] = grad_width64(X, width, G)
         else:
-            pairwise_dists = spatial.distance.pdist( X/width, 'euclidean' )
-            grad[0,:,:] = G * spatial.distance.squareform( pairwise_dists**2 )
+            pairwise_dists = spatial.distance.pdist(X / width, "euclidean")
+            grad[0, :, :] = G * spatial.distance.squareform(pairwise_dists ** 2)
 
-        grad[-1,:,:] = 2 * G
+        grad[-1, :, :] = 2 * G
         return grad
 
-    def get_cov( self,  X,  Z = None, params = None,  diag = False  ):
+    def get_cov(self, X, Z=None, params=None, diag=False):
         """
         compute the covariant matrix
         Parameters
@@ -140,23 +150,26 @@ class gauss:
         G: numpy.ndarray
             covariant matrix
         """
-        params, width, scale = self.prepare( params )
-        scale2 = scale**2
+        params, width, scale = self.prepare(params)
+        scale2 = scale ** 2
 
         if Z is None:
             if diag:
                 G = scale2 * np.ones(X.shape[0])
             else:
-                pairwise_dists = spatial.distance.squareform( \
-                                    spatial.distance.pdist( X/width, 'euclidean' )**2 )
-                G = np.exp(- 0.5 * pairwise_dists ) * scale2
+                pairwise_dists = spatial.distance.squareform(
+                    spatial.distance.pdist(X / width, "euclidean") ** 2
+                )
+                G = np.exp(-0.5 * pairwise_dists) * scale2
         else:
-            pairwise_dists = spatial.distance.cdist( X/width, Z/width, 'euclidean')**2
-            G = np.exp(- 0.5 * pairwise_dists ) * scale2
+            pairwise_dists = (
+                spatial.distance.cdist(X / width, Z / width, "euclidean") ** 2
+            )
+            G = np.exp(-0.5 * pairwise_dists) * scale2
 
         return G
 
-    def set_params( self, params ):
+    def set_params(self, params):
         """
         set kernel parameters
 
@@ -166,11 +179,11 @@ class gauss:
             Parameters for optimization.
 
         """
-        params = self.supp_params( params )
+        params = self.supp_params(params)
         self.params = params
-        self.width, self.scale = self.decomp_params( params )
+        self.width, self.scale = self.decomp_params(params)
 
-    def supp_params( self, params ):
+    def supp_params(self, params):
         """
         Set maximum (minimum) values for parameters when the parameter is greater(less) than this value.
 
@@ -185,11 +198,11 @@ class gauss:
         params: numpy.ndarray
 
         """
-        index = np.where( params[0:-1] > self.max_ln_width)
-        params[ index[0] ] =  self.max_ln_width
+        index = np.where(params[0:-1] > self.max_ln_width)
+        params[index[0]] = self.max_ln_width
 
-        index = np.where( params[0:-1] < self.min_ln_width)
-        params[ index[0] ] =  self.min_ln_width
+        index = np.where(params[0:-1] < self.min_ln_width)
+        params[index[0]] = self.min_ln_width
 
         if params[-1] > self.max_ln_scale:
             params[-1] = self.max_ln_scale
@@ -199,10 +212,11 @@ class gauss:
 
         return params
 
-    def decomp_params( self, params ):
+    def decomp_params(self, params):
         """
         decompose the parameters defined on the log region
-            into width and scale parameters
+        into width and scale parameters
+
         Parameters
         ----------
         params: numpy.ndarray
@@ -210,15 +224,15 @@ class gauss:
 
         Returns
         -------
-            width: float
-            scale: float
+        width: float
+        scale: float
         """
 
-        width = np.exp( params[0:-1] )
-        scale = np.exp( params[-1] )
+        width = np.exp(params[0:-1])
+        scale = np.exp(params[-1])
         return width, scale
 
-    def save( self, file_name ):
+    def save(self, file_name):
         """
         save the gaussian kernel
 
@@ -228,19 +242,21 @@ class gauss:
             file name to save the information of the kernel
 
         """
-        kwarg = {'name':'gauss', \
-                'params':self.params, \
-                'ard':self.ard, \
-                'num_dim': self.num_dim, \
-                'max_ln_scale': self.max_ln_scale, \
-                'min_ln_scale': self.min_ln_scale, \
-                'max_ln_width': self.max_ln_width, \
-                'min_ln_width': self.min_ln_width, \
-                'num_params': self.num_params }
-        with open(file_name,'wb') as f:
+        kwarg = {
+            "name": "gauss",
+            "params": self.params,
+            "ard": self.ard,
+            "num_dim": self.num_dim,
+            "max_ln_scale": self.max_ln_scale,
+            "min_ln_scale": self.min_ln_scale,
+            "max_ln_width": self.max_ln_width,
+            "min_ln_width": self.min_ln_width,
+            "num_params": self.num_params,
+        }
+        with open(file_name, "wb") as f:
             np.savez(f, **kwarg)
 
-    def load( self, file_name):
+    def load(self, file_name):
         """
         Recovering the Gaussian kernel from file
         Parameters
@@ -249,18 +265,18 @@ class gauss:
             file name to load the information of the kernel
 
         """
-        temp = np.load( file_name )
+        temp = np.load(file_name)
 
-        self.num_dim = temp['num_dim']
-        self.ard = temp['ard']
-        self.max_ln_scale = temp['max_ln_scale']
-        self.min_ln_scale = temp['min_ln_scale']
-        self.max_ln_width = temp['max_ln_width']
-        self.min_ln_width = temp['min_ln_width']
-        params = temp['params']
-        self.set_params( params )
+        self.num_dim = temp["num_dim"]
+        self.ard = temp["ard"]
+        self.max_ln_scale = temp["max_ln_scale"]
+        self.min_ln_scale = temp["min_ln_scale"]
+        self.max_ln_width = temp["max_ln_width"]
+        self.min_ln_width = temp["min_ln_width"]
+        params = temp["params"]
+        self.set_params(params)
 
-    def get_params_bound( self ):
+    def get_params_bound(self):
         """
         Getting boundary array.
 
@@ -272,17 +288,20 @@ class gauss:
         """
 
         if self.ard:
-            bound = [ ( self.min_ln_width, self.max_ln_width ) for i in range(0, self.num_dim) ]
+            bound = [
+                (self.min_ln_width, self.max_ln_width) for i in range(0, self.num_dim)
+            ]
         else:
-            bound = [ ( self.min_ln_width, self.max_ln_width ) ]
+            bound = [(self.min_ln_width, self.max_ln_width)]
 
-        bound.append( ( self.min_ln_scale, self.max_ln_scale ) )
+        bound.append((self.min_ln_scale, self.max_ln_scale))
         return bound
 
-    def cat_params( self, width, scale):
+    def cat_params(self, width, scale):
         """
         Taking the logarithm of width and scale parameters
-            and concatinate them into one ndarray
+        and concatinate them into one ndarray
+
         Parameters
         ----------
         width: int
@@ -293,12 +312,12 @@ class gauss:
         params: numpy.ndarray
             Parameters
         """
-        params = np.zeros(  self.num_params  )
-        params[0:-1] = np.log( width )
-        params[-1] = np.log( scale )
+        params = np.zeros(self.num_params)
+        params[0:-1] = np.log(width)
+        params[-1] = np.log(scale)
         return params
 
-    def rand_expans( self, num_basis, params = None ):
+    def rand_expans(self, num_basis, params=None):
         """
         Kernel Expansion
 
@@ -311,16 +330,16 @@ class gauss:
 
         Returns
         -------
-            tupple (W, b, amp)
+        tupple (W, b, amp)
         """
-        params, width, scale = self.prepare( params )
-        scale2 = scale**2
-        amp = np.sqrt( ( 2 * scale2 )/num_basis )
-        W = np.random.randn( num_basis, self.num_dim )/width
-        b = np.random.rand( num_basis ) * 2 * np.pi
-        return ( W, b, amp )
+        params, width, scale = self.prepare(params)
+        scale2 = scale ** 2
+        amp = np.sqrt((2 * scale2) / num_basis)
+        W = np.random.randn(num_basis, self.num_dim) / width
+        b = np.random.rand(num_basis) * 2 * np.pi
+        return (W, b, amp)
 
-    def get_cand_params( self, X, t ):
+    def get_cand_params(self, X, t):
         """
         Getting candidate parameters.
 
@@ -340,29 +359,29 @@ class gauss:
         """
         if self.ard:
             # with ARD
-            width = np.zeros( self.num_dim )
-            scale = np.std( t )
-            u = np.random.uniform( 0.4, 0.8 )
-            width = u * ( np.max( X, 0 ) - np.min( X, 0 ) ) * np.sqrt( self.num_dim )
+            width = np.zeros(self.num_dim)
+            scale = np.std(t)
+            u = np.random.uniform(0.4, 0.8)
+            width = u * (np.max(X, 0) - np.min(X, 0)) * np.sqrt(self.num_dim)
 
-            index = np.where( np.abs( width ) < 1e-6 )
+            index = np.where(np.abs(width) < 1e-6)
             width[index[0]] = 1e-6
-            params = np.append( np.log( width ), np.log( scale ) )
+            params = np.append(np.log(width), np.log(scale))
         else:
             # without ARD
             num_data = X.shape[0]
-            M = max( 2000,  int( np.floor( num_data / 5 )) )
+            M = max(2000, int(np.floor(num_data / 5)))
 
-            dist = np.zeros( M )
+            dist = np.zeros(M)
 
-            for m in xrange( M ):
-                a = np.random.randint( 0, X.shape[0], 2 )
-                dist[m] = np.linalg.norm( X[a[0],:] - X[a[1],:] )
+            for m in range(M):
+                a = np.random.randint(0, X.shape[0], 2)
+                dist[m] = np.linalg.norm(X[a[0], :] - X[a[1], :])
 
-            dist = np.sort( dist )
-            tmp = int( np.floor( M / 10 ) )
-            n = np.random.randint(0,5)
-            width = dist[ (2*n+ 1)*tmp ]
+            dist = np.sort(dist)
+            tmp = int(np.floor(M / 10))
+            n = np.random.randint(0, 5)
+            width = dist[(2 * n + 1) * tmp]
             scale = np.std(t)
-            params = np.append( np.log(width + 1e-8), np.log(scale) )
+            params = np.append(np.log(width + 1e-8), np.log(scale))
         return params

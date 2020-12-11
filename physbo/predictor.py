@@ -1,13 +1,15 @@
 import numpy as np
-import cPickle as pickle
-import gp
+import pickle as pickle
+from . import gp
 
-class base_predictor( object ):
+
+class base_predictor(object):
     """
-        Base predictor is defined in this class.
+    Base predictor is defined in this class.
 
     """
-    def __init__( self, config, model = None ):
+
+    def __init__(self, config, model=None):
         """
 
         Parameters
@@ -20,9 +22,13 @@ class base_predictor( object ):
         self.config = config
         self.model = model
         if self.model is None:
-            self.model = gp.core.model(cov = gp.cov.gauss( num_dim = None, ard = False ), mean = gp.mean.const(), lik = gp.lik.gauss())
+            self.model = gp.core.model(
+                cov=gp.cov.gauss(num_dim=None, ard=False),
+                mean=gp.mean.const(),
+                lik=gp.lik.gauss(),
+            )
 
-    def fit( self, *args, **kwds ):
+    def fit(self, *args, **kwds):
         """
 
         Default fit function.
@@ -39,7 +45,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def prepare( self, *args, **kwds ):
+    def prepare(self, *args, **kwds):
         """
 
         Default prepare function.
@@ -56,7 +62,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def delete_stats( self, *args, **kwds ):
+    def delete_stats(self, *args, **kwds):
         """
 
         Default function to delete status
@@ -73,7 +79,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_basis( self, *args, **kwds ):
+    def get_basis(self, *args, **kwds):
         """
 
         Default function to get basis
@@ -90,7 +96,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_post_fmean( self, *args, **kwds ):
+    def get_post_fmean(self, *args, **kwds):
         """
 
         Default function to get a mean value of the score.
@@ -107,7 +113,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_post_fcov( self, *args, **kwds ):
+    def get_post_fcov(self, *args, **kwds):
         """
 
         Default function to get a covariance of the score.
@@ -124,7 +130,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_post_params( self,*args, **kwds ):
+    def get_post_params(self, *args, **kwds):
         """
 
         Default function to get parameters.
@@ -141,7 +147,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_post_samples( self, *args, **kwds ):
+    def get_post_samples(self, *args, **kwds):
         """
 
         Default function to get samples.
@@ -158,7 +164,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_predict_samples( self, *args, **kwds ):
+    def get_predict_samples(self, *args, **kwds):
         """
 
         Default function to get prediction variables of samples.
@@ -175,7 +181,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def get_post_params_samples( self, *args, **kwds ):
+    def get_post_params_samples(self, *args, **kwds):
         """
 
         Default function to get parameters of samples.
@@ -192,7 +198,7 @@ class base_predictor( object ):
         """
         raise NotImplementedError
 
-    def update( self,*args, **kwds ):
+    def update(self, *args, **kwds):
         """
 
         Default function to update variables.
@@ -224,7 +230,7 @@ class base_predictor( object ):
         -------
 
         """
-        with open(file_name, 'w') as f:
+        with open(file_name, "w") as f:
             pickle.dump(self.__dict__, f, 2)
 
     def load(self, file_name):
