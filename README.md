@@ -21,9 +21,9 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 ```
 
 - From source (for developers)
-    1. Install NumPy and Cython before installing PHYSBO
+    1. Update pip (>= 19.0)
         ```bash
-        $ pip3 install numpy Cython
+        $ pip3 install -U pip
         ```
 
     1. Download or clone the github repository
@@ -31,10 +31,10 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
         $ git clone https://github.com/issp-center-dev/PHYSBO
         ```
 
-    1. Run setup.py install
+    1. Install via pip
         ``` bash
-        $ cd physbo
-        $ python3 setup.py install --user
+        $ cd PHYSBO
+        $ pip3 install --user ./
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
