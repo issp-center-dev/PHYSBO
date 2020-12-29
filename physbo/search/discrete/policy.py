@@ -15,7 +15,7 @@ MAX_SEACH = int(20000)
 
 
 class policy:
-    def __init__(self, test_X, config=None):
+    def __init__(self, test_X, config=None, initial_actions=None):
         """
 
         Parameters
@@ -30,6 +30,9 @@ class policy:
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
         self.config = self._set_config(config)
+
+        if initial_actions is not None:
+            self.actions = sorted(list(set(self.actoins)-set(initial_actions)))
 
     def set_seed(self, seed):
         """
