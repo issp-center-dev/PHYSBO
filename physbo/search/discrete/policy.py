@@ -32,7 +32,7 @@ class policy:
         self.config = self._set_config(config)
 
         if initial_actions is not None:
-            self.actions = sorted(list(set(self.actoins)-set(initial_actions)))
+            self.actions = sorted(list(set(self.actions)-set(initial_actions)))
 
     def set_seed(self, seed):
         """
