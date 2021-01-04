@@ -31,10 +31,14 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
         $ git clone https://github.com/issp-center-dev/PHYSBO
         ```
 
+    1. Edit some files
+
     1. Install via pip
         ``` bash
-        $ cd PHYSBO
-        $ pip3 install --user ./
+        # ./PHYSBO is the root directory of PHYSBO
+        # pip install options such as --user are avaiable
+
+        $ pip3 install ./PHYSBO
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
