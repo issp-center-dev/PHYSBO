@@ -60,7 +60,7 @@ class policy:
         actions: numpy.ndarray
             Array of actions which does not include action specified by index.
         """
-        actions = self._set_unchosed_actions(actions)
+        actions = self._set_unchosen_actions(actions)
         return np.delete(actions, index)
 
     def write(self, action, t, X=None):
@@ -271,7 +271,7 @@ class policy:
             raise NotImplementedError("mode must be EI, PI or TS.")
         return f
 
-    def get_marginal_score(self, mode, chosed_actions, N, alpha):
+    def get_marginal_score(self, mode, chosen_actions, N, alpha):
         """
         Getting marginal scores.
 
@@ -281,7 +281,7 @@ class policy:
             The type of aquision funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
-        chosed_actions: numpy.ndarray
+        chosen_actions: numpy.ndarray
             Array of selected actions.
         N: int
             The total number of search candidates.
@@ -294,7 +294,7 @@ class policy:
             N dimensional scores (score is defined in each mode)
         """
         f = np.zeros((N, len(self.actions)))
-        new_test = self.test.get_subset(chosed_actions)
+        new_test = self.test.get_subset(chosen_actions)
         virtual_t = self.predictor.get_predict_samples(self.training, new_test, N)
 
         for n in range(N):
@@ -336,7 +336,7 @@ class policy:
 
         Returns
         -------
-        chosed_actions: numpy.ndarray
+        chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
         f = self.get_score(mode, self.predictor, self.training, alpha)
@@ -344,16 +344,16 @@ class policy:
         action = self.actions[temp]
         self.actions = self.delete_actions(temp)
 
-        chosed_actions = np.zeros(N, dtype=int)
-        chosed_actions[0] = action
+        chosen_actions = np.zeros(N, dtype=int)
+        chosen_actions[0] = action
 
         for n in range(1, N):
-            f = self.get_marginal_score(mode, chosed_actions[0:n], K, alpha)
+            f = self.get_marginal_score(mode, chosen_actions[0:n], K, alpha)
             temp = np.argmax(np.mean(f, 0))
-            chosed_actions[n] = self.actions[temp]
+            chosen_actions[n] = self.actions[temp]
             self.actions = self.delete_actions(temp)
 
-        return chosed_actions
+        return chosen_actions
 
     def get_random_action(self, N):
         """
@@ -423,7 +423,7 @@ class policy:
 
         if file_training is None:
             N = self.history.total_num_search
-            X = self.test.X[self.history.chosed_actions[0:N], :]
+            X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
             self.training = variable(X=X, t=t)
         else:
@@ -527,7 +527,7 @@ class policy:
             training = self.training
         return training
 
-    def _set_unchosed_actions(self, actions=None):
+    def _set_unchosen_actions(self, actions=None):
         """
 
         Parameters

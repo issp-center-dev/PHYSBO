@@ -154,7 +154,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
   探索結果 res は history クラスのオブジェクト (physbo.search.discrete.results.history) として返されます。以下より探索結果を参照します。
 
   - res.fx : simulator (目的関数) の評価値の履歴。
-  - res.chosed_actions: simulator を評価したときのaction ID(パラメータ)の履歴。
+  - res.chosen_actions: simulator を評価したときのaction ID(パラメータ)の履歴。
   - fbest, best_action= res.export_all_sequence_best_fx(): simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
   - res.total_num_search: simulator のトータル評価数。
 

@@ -8,23 +8,23 @@ def show_search_results(history, N):
     if N == 1:
         print(
             "%04d-th step: f(x) = %f (action=%d)"
-            % (n, history.fx[n - 1], history.chosed_actions[n - 1])
+            % (n, history.fx[n - 1], history.chosen_actions[n - 1])
         )
         print(
             "   current best f(x) = %f (best action=%d) \n"
-            % (history.fx[index], history.chosed_actions[index])
+            % (history.fx[index], history.chosen_actions[index])
         )
     else:
         print(
             "current best f(x) = %f (best action = %d) "
-            % (history.fx[index], history.chosed_actions[index])
+            % (history.fx[index], history.chosen_actions[index])
         )
 
         print("list of simulation results")
         st = history.total_num_search - N
         en = history.total_num_search
         for n in range(st, en):
-            print("f(x)=%f (action = %d)" % (history.fx[n], history.chosed_actions[n]))
+            print("f(x)=%f (action = %d)" % (history.fx[n], history.chosen_actions[n]))
         print("\n")
 
 
