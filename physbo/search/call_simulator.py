@@ -22,27 +22,3 @@ def call_simulator(simu, action):
         t = output
         x = None  # self.test.X[action, :]
     return t, x
-
-
-def call_simulator_mo(simu, action):
-    """
-        call_simulator for multi-objective
-
-        Parameters
-        ----------
-        simu: simulator object
-            This object is called in call_simulator and must have __call__(action).
-            `simu` must return only `t`, not `(t, x)`.
-        action: int
-            Index of actions
-        Returns
-        -------
-            t:  float
-                The negative energy of the target candidate (value of the objective function to be optimized).
-            X:  numpy array
-                d dimensional matrix. The d-dimensional feature vector of the target candidate.
-    """
-
-    t = simu(action)
-    x = None
-    return t, x

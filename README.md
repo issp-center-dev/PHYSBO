@@ -21,9 +21,9 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 ```
 
 - From source (for developers)
-    1. Update pip (>= 19.0)
+    1. Install NumPy and Cython before installing PHYSBO
         ```bash
-        $ pip3 install -U pip
+        $ pip3 install numpy Cython
         ```
 
     1. Download or clone the github repository
@@ -31,14 +31,10 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
         $ git clone https://github.com/issp-center-dev/PHYSBO
         ```
 
-    1. Edit some files
-
-    1. Install via pip
+    1. Run setup.py install
         ``` bash
-        # ./PHYSBO is the root directory of PHYSBO
-        # pip install options such as --user are avaiable
-
-        $ pip3 install ./PHYSBO
+        $ cd physbo
+        $ python3 setup.py install --user
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
@@ -49,7 +45,7 @@ $ pip3 uninstall physbo
 ```
 
 # Usage
-After installation, you can launch the test suite from ['examples/grain_bound/tutorial.ipynb'](https://github.com/issp-center-dev/PHYSBO/examples/grain_bound/tutorial.ipynb).
+After installation, you can launch the test suite from ['examples/grain_bound/tutorial.ipynb'](examples/grain_bound/tutorial.ipynb).
 
 ## License
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
