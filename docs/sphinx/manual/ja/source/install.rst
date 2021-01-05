@@ -11,7 +11,6 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
 * Python >= 3.6
 * numpy
 * scipy
-* six
 
 
 .. `Anaconda <https://www.anaconda.com/>`_  環境を利用すると、numpy, scipy, Cython がデフォルトでインストールされているため、COMBO をすぐに実行することが可能です。
@@ -47,15 +46,15 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
 ダウンロード・インストール
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``pip`` を用いたインストール（推奨） ::
+- ``PyPI`` からのインストール（推奨） ::
 
-  $ pip install physbo
+  $ pip3 install physbo
 
   - NumPy などの依存パッケージも同時にインストールされます。
 
   - ``--user`` オプションを追加するとユーザのホームディレクトリ以下にインストールされます。 ::
 
-    $ pip install --user physbo
+    $ pip3 install --user physbo
 
 
 - ソースコードからのインストール（開発者向け）
@@ -66,14 +65,16 @@ PHYSBOの実行環境・必要なパッケージは以下の通りです。
           
        $ git clone https://github.com/issp-center-dev/PHYSBO
 
-  #. NumPy, Cython, setuptools のインストール（コンパイルに必要です） ::
+  #. pip を 19.0 以上に更新 ::
 
-       $ pip install numpy Cython setuptools
+       $ pip3 install -U pip
+
+       - ここで ``pip3`` が入っていない場合には ``python3 -m ensurepip`` でインストール可能です
 
   #. インストール ::
 
-       $ cd physbo
-       $ python setup.py install
+       $ cd PHYSBO
+       $ pip3 install --user ./
 
 アンインストール
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,7 +154,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
   探索結果 res は history クラスのオブジェクト (physbo.search.discrete.results.history) として返されます。以下より探索結果を参照します。
 
   - res.fx : simulator (目的関数) の評価値の履歴。
-  - res.chosed_actions: simulator を評価したときのaction ID(パラメータ)の履歴。
+  - res.chosen_actions: simulator を評価したときのaction ID(パラメータ)の履歴。
   - fbest, best_action= res.export_all_sequence_best_fx(): simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
   - res.total_num_search: simulator のトータル評価数。
 
