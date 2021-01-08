@@ -1,12 +1,7 @@
-import numpy as np
-from . import cov
-from . import lik
-from . import mean
-from . import core
-from ..predictor import base_predictor
+import physbo.predictor
 
 
-class predictor(base_predictor):
+class predictor(physbo.predictor.base_predictor):
     """ predictor """
 
     def __init__(self, config, model=None):

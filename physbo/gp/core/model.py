@@ -1,8 +1,9 @@
 import numpy as np
-from .. import inf
-from ... import blm
-from . import learning
-from .prior import prior
+
+from physbo import blm
+from physbo.gp import inf
+from physbo.gp.core import learning
+from physbo.gp.core.prior import prior
 
 
 class model:

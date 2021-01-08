@@ -1,7 +1,6 @@
 # coding=utf-8
 import numpy as np
 import scipy.optimize
-import six
 
 
 class batch(object):
@@ -223,7 +222,7 @@ class online(object):
                 self.disp_marlik(params, eval_X, eval_t, num_epoch)
                 temp += 1
 
-            for n in six.moves.range(0, num_data, batch_size):
+            for n in range(0, num_data, batch_size):
                 tmp_index = perm[n : n + batch_size]
                 if len(tmp_index) == batch_size:
                     self.num_iter += 1

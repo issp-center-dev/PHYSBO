@@ -1,6 +1,6 @@
-import numpy as np
 import pickle as pickle
-from . import gp
+import numpy as np
+from physbo import gp
 
 
 class base_predictor(object):

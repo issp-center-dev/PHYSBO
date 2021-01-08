@@ -1,14 +1,17 @@
 import numpy as np
 import copy
-import physbo.misc
 import pickle as pickle
+
 from .results import history, history_mo
 from .. import utility
-from ...variable import variable
 from ..call_simulator import call_simulator, call_simulator_mo
-from ...gp import predictor as gp_predictor
-from ...blm import predictor as blm_predictor
+
+import physbo
+import physbo.gp
+import physbo.blm
+import physbo.misc
 import physbo.search.score
+from physbo.variable import variable
 
 MAX_SEACH = int(20000)
 
@@ -488,8 +491,8 @@ class policy:
         Parameters
         ----------
         is_rand_expans: bool
-        If true, blm_predictor is selected.
-        If false, gp_predictor is selected.
+        If true, physbo.blm.predictor is selected.
+        If false, physbo.gp.predictor is selected.
         predictor: predictor object
             Base class is defined in physbo.predictor.
 
@@ -501,9 +504,9 @@ class policy:
         self.predictor = self._set_predictor(predictor)
         if self.predictor is None:
             if is_rand_expans:
-                self.predictor = blm_predictor(self.config)
+                self.predictor = physbo.blm.predictor(self.config)
             else:
-                self.predictor = gp_predictor(self.config)
+                self.predictor = physbo.gp.predictor(self.config)
 
         return self.predictor
 

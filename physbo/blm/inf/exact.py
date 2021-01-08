@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
-from ... import misc
+
+import physbo.misc as misc
 
 
 def prepare(blm, X, t, Psi=None):

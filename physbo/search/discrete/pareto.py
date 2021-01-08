@@ -195,8 +195,3 @@ class Pareto(object):
                     right_lb_idx = np.copy(rect[0])
                     right_lb_idx[div_dim] = div_point
                     rect_candidates.append([right_lb_idx, np.copy(rect[1])])
-
-
-
-            
-

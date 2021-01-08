@@ -1,7 +1,8 @@
 import numpy as np
-from .. import utility
 import pickle
+
 from . import pareto
+import physbo.search.utility
 
 MAX_SEARCH = int(30000)
 
@@ -28,7 +29,7 @@ class history:
         -------
 
         """
-        N = utility.length_vector(t)
+        N = physbo.search.utility.length_vector(t)
         st = self.total_num_search
         en = st + N
 
