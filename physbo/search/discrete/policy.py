@@ -16,6 +16,16 @@ from physbo.variable import variable
 MAX_SEACH = int(20000)
 
 
+def run_simulator(simulator, action, comm=None):
+    if comm is None:
+        return simulator(action)
+    if comm.rank == 0:
+        t = simulator(action)
+    else:
+        t = 0.0
+    return comm.bcast(t, root=0)
+
+
 class policy:
     def __init__(self, test_X, comm=None, config=None):
         """
@@ -148,8 +158,7 @@ class policy:
             if simulator is None:
                 return action
 
-            t = simulator(action)
-
+            t = run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -244,8 +253,7 @@ class policy:
             if simulator is None:
                 return action
 
-            t = simulator(action)
-
+            t = run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -735,8 +743,7 @@ class policy_mo(policy):
             if simulator is None:
                 return action
 
-            t = simulator(action)
-
+            t = run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -815,8 +822,7 @@ class policy_mo(policy):
             if simulator is None:
                 return action
 
-            t = simulator(action)
-
+            t = run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
