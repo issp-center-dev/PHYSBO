@@ -4,7 +4,6 @@ import pickle as pickle
 
 from .results import history, history_mo
 from .. import utility
-from ..call_simulator import call_simulator, call_simulator_mo
 
 import physbo
 import physbo.gp
@@ -104,8 +103,8 @@ class policy:
             Maximum number of random search process.
         num_search_each_probe: int
             Number of search at each random search process.
-        simulator: simulator object
-            This object is called in call_simulator and must have __call__(action).
+        simulator: callable
+            Callable (function or object with ``__call__``) from action to t
             Here, action is an integer which represents the index of the candidate.
         is_disp: bool
             If true, process messages are outputted.
@@ -135,9 +134,9 @@ class policy:
             if simulator is None:
                 return action
 
-            t, X = call_simulator(simulator, action)
+            t = simulator(action)
 
-            self.write(action, t, X)
+            self.write(action, t)
 
             if is_disp:
                 utility.show_search_results(self.history, N)
@@ -172,8 +171,8 @@ class policy:
             If None, blm_predictor is defined.
         is_disp: bool
              If true, process messages are outputted.
-        simulator: simulator object
-            This object is called in call_simulator and must have __call__(action).
+        simulator: callable
+            Callable (function or object with ``__call__``) 
             Here, action is an integer which represents the index of the candidate.
         score: str
             The type of aquision funciton.
@@ -228,9 +227,9 @@ class policy:
             if simulator is None:
                 return action
 
-            t, X = call_simulator(simulator, action)
+            t = simulator(action)
 
-            self.write(action, t, X)
+            self.write(action, t)
 
             if is_disp:
                 utility.show_search_results(self.history, N)
@@ -655,9 +654,9 @@ class policy_mo(policy):
             if simulator is None:
                 return action
 
-            t, X = call_simulator_mo(simulator, action)
+            t = simulator(action)
 
-            self.write(action, t, X)
+            self.write(action, t)
 
             if is_disp:
                 utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
@@ -718,9 +717,9 @@ class policy_mo(policy):
             if simulator is None:
                 return action
 
-            t, X = call_simulator_mo(simulator, action)
+            t = simulator(action)
 
-            self.write(action, t, X)
+            self.write(action, t)
 
             if is_disp:
                 utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
