@@ -165,20 +165,25 @@ class online(object):
         else:
             is_init_params_search = False
 
+        is_disp = self.config.learning.is_disp
         if is_init_params_search:
-            print("Start the initial hyper parameter searching ...")
+            if is_disp:
+                print("Start the initial hyper parameter searching ...")
             params = self.init_params_search(X, t)
-            print("Done\n")
+            if is_disp:
+                print("Done\n")
         else:
             params = np.copy(self.params)
 
-        print("Start the hyper parameter learning ...")
+        if is_disp:
+            print("Start the hyper parameter learning ...")
         params = self.one_run(params, X, t)
-        print("Done\n")
+        if is_disp:
+            print("Done\n")
 
         return params
 
-    def one_run(self, params, X, t, max_epoch=None):
+    def one_run(self, params, X, t, max_epoch=None, is_disp=False):
         """
 
         Parameters
@@ -199,7 +204,6 @@ class online(object):
 
         """
         num_data = X.shape[0]
-        is_disp = False
         batch_size = self.config.learning.batch_size
 
         if batch_size > num_data:
