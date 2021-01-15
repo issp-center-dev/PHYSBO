@@ -396,14 +396,10 @@ class policy:
         if self.mpisize == 1:
             return local_champion, local_champion, local_index
         else:
-            local_champions = self.mpicomm.gather(local_champion, root=0)
-            local_fs = self.mpicomm.gather(local_fmax, root=0)
-            champion_rank = 0
-            champion = 0
-            if self.mpirank == 0:
-                champion_rank = np.argmax(local_fs)
-                champion = local_champions[champion_rank]
-            champion = self.mpicomm.bcast(champion, root=0)
+            local_champions = self.mpicomm.allgather(local_champion)
+            local_fs = self.mpicomm.allgather(local_fmax)
+            champion_rank = np.argmax(local_fs)
+            champion = local_champions[champion_rank]
             return champion, local_champion, local_index
 
     def get_random_action(self, N):
