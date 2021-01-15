@@ -253,10 +253,7 @@ class policy:
                 self.training.Z = self.predictor.get_basis(self.training.X)
                 self.predictor.prepare(self.training)
             else:
-                try:
-                    self.predictor.update(self.training, self.new_data)
-                except:
-                    self.predictor.prepare(self.training)
+                self.predictor.update(self.training, self.new_data)
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search(self.history.num_runs, score)
@@ -356,10 +353,7 @@ class policy:
             else:
                 train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
-            try:
-                predictor.update(train, virtual_train)
-            except:
-                predictor.prepare(train)
+            predictor.update(train, virtual_train)
 
             f[k, :] = self.get_score(mode, predictor, train)
         return np.mean(f, axis=0)
@@ -814,14 +808,9 @@ class policy_mo(policy):
                     self.training.Z = self.predictor.get_basis(self.training.X)
                     self.predictor.prepare(self.training)
             else:
-                try:
-                    for i in range(self.num_objectives):
-                        self._switch_model(i)
-                        self.predictor.update(self.training, self.new_data)
-                except:
-                    for i in range(self.num_objectives):
-                        self._switch_model(i)
-                        self.predictor.prepare(self.training)
+                for i in range(self.num_objectives):
+                    self._switch_model(i)
+                    self.predictor.update(self.training, self.new_data)
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search_mo(self.history.num_runs, score)

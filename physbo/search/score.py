@@ -2,6 +2,7 @@ import numpy as np
 import scipy.stats
 from .discrete.pareto import Pareto
 
+
 def EI(predictor, training, test, fmax=None):
     """
     Maximum expected improvement.
@@ -84,15 +85,7 @@ def TS(predictor, training, test, alpha=1):
     -------
     score: numpy.ndarray
     """
-    score = predictor.get_post_samples(training, test, alpha=alpha)
-
-    try:
-        score.shape[1]
-        score[0, :]
-    except:
-        pass
-
-    return score
+    return predictor.get_post_samples(training, test, alpha=alpha)
 
 
 def HVPI(fmean, fstd, pareto):
@@ -111,9 +104,11 @@ def HVPI(fmean, fstd, pareto):
 
     # Pareto front with reference points
     # shape: (front_size, n_obj)
-    front = np.r_[np.array(reference_min).reshape((1, n_obj)),
-                  pareto.front,
-                  np.full((1, n_obj), np.inf)]
+    front = np.r_[
+        np.array(reference_min).reshape((1, n_obj)),
+        pareto.front,
+        np.full((1, n_obj), np.inf),
+    ]
 
     ax = np.arange(n_obj)
     n_cell = pareto.cells.lb.shape[0]
@@ -162,9 +157,11 @@ def EHVI(fmean, fstd, pareto):
 
     # Pareto front with reference points
     # shape: (front_size, n_obj)
-    front = np.r_[np.array(reference_min).reshape((1, n_obj)),
-                  pareto.front,
-                  np.array(reference_max).reshape((1, n_obj))]
+    front = np.r_[
+        np.array(reference_min).reshape((1, n_obj)),
+        pareto.front,
+        np.array(reference_max).reshape((1, n_obj)),
+    ]
 
     ax = np.arange(n_obj)
 
@@ -197,9 +194,11 @@ def EHVI(fmean, fstd, pareto):
     is_type_B = u <= a
 
     # note: Phi[max_or_min(x,y)] = max_or_min(Phi[x], Phi[y])
-    EI_A = (b - a) * (np.maximum(Phi_a, Phi_l) - Phi_l) + \
-           (b - fmean) * (np.minimum(Phi_b, Phi_u) - np.maximum(Phi_a, Phi_l)) + \
-           fstd * (phi_min_bu - phi_max_al)
+    EI_A = (
+        (b - a) * (np.maximum(Phi_a, Phi_l) - Phi_l)
+        + (b - fmean) * (np.minimum(Phi_b, Phi_u) - np.maximum(Phi_a, Phi_l))
+        + fstd * (phi_min_bu - phi_max_al)
+    )
     EI_B = (b - a) * (Phi_u - Phi_l)
 
     G = EI_A * is_type_A + EI_B * is_type_B
@@ -208,8 +207,10 @@ def EHVI(fmean, fstd, pareto):
 
 
 def TS_MO(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None):
-    score = [predictor.get_post_samples(training, test, alpha=alpha) \
-             for predictor, training in zip(predictor_list, training_list)]
+    score = [
+        predictor.get_post_samples(training, test, alpha=alpha)
+        for predictor, training in zip(predictor_list, training_list)
+    ]
     score = np.array(score).reshape((len(predictor_list), test.X.shape[0])).T
     pareto = Pareto(num_objectives=len(predictor_list))
 

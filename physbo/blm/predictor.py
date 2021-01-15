@@ -214,17 +214,15 @@ class predictor(physbo.predictor.base_predictor):
 
         if N == 1:
             if test.Z is None:
-                try:
-                    test.X.shape[1]
-                    self.blm.update_stats(test.X[0, :], test.t)
-                except:
+                if test.X.ndim == 1:
                     self.blm.update_stats(test.X, test.t)
+                else:
+                    self.blm.update_stats(test.X[0, :], test.t)
             else:
-                try:
-                    test.Z.shape[1]
-                    self.blm.update_stats(test.X[0, :], test.t, psi=test.Z[0, :])
-                except:
+                if test.Z.ndim == 1:
                     self.blm.update_stats(test.X, test.t, psi=test.Z)
+                else:
+                    self.blm.update_stats(test.X[0, :], test.t, psi=test.Z[0, :])
         else:
             for n in range(N):
                 if test.Z is None:

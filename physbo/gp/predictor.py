@@ -59,6 +59,9 @@ class predictor(physbo.predictor.base_predictor):
         """
         pass
 
+    def update(self, training, test):
+        self.prepare(training)
+
     def prepare(self, training):
         """
         Initializing model by using training data set
