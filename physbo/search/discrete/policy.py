@@ -787,11 +787,11 @@ class policy_mo(policy):
         if predictor_list is None:
             if is_rand_expans:
                 self.predictor_list = [
-                    blm_predictor(self.config) for i in range(self.num_objectives)
+                    physbo.blm.predictor(self.config) for i in range(self.num_objectives)
                 ]
             else:
                 self.predictor_list = [
-                    gp_predictor(self.config) for i in range(self.num_objectives)
+                    physbo.gp.predictor(self.config) for i in range(self.num_objectives)
                 ]
         else:
             self.predictor = predictor_list
