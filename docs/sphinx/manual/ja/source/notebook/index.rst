@@ -13,3 +13,5 @@
    tutorial_once_mode
    tutorial_simulator
    tutorial_multi_probe
+   tutorial_multi_objective
+   
