@@ -27,7 +27,7 @@ def run_simulator(simulator, action, comm=None):
 
 
 class policy:
-    def __init__(self, test_X, comm=None, config=None):
+    def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
 
         Parameters
@@ -35,6 +35,9 @@ class policy:
         test_X: numpy.ndarray or physbo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: set_config object (physbo.misc.set_config)
+        initial_data: tuple[np.ndarray, np.ndarray]
+            The initial training datasets.
+            The first elements is the array of actions and the second is the array of value of objective functions
         """
         self.predictor = None
         self.training = variable()
@@ -42,6 +45,18 @@ class policy:
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
         self.config = self._set_config(config)
+
+        if initial_data is not None:
+            if len(initial_data) != 2:
+                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+                raise RuntimeError(msg)
+            actions, fs = initial_data
+            if len(actions) != len(fs):
+                msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
+                raise RuntimeError(msg)
+            self.write(actions, fs)
+            self.actions = sorted(list(set(self.actions)-set(actions)))
+
         if comm is None:
             self.mpicomm = None
             self.mpisize = 1
