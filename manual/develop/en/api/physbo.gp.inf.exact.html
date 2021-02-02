@@ -12,7 +12,9 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="physbo.gp.lik package" href="physbo.gp.lik.html" />
@@ -37,104 +39,115 @@
 <span id="physbo-gp-inf-exact-module"></span><h1>physbo.gp.inf.exact module<a class="headerlink" href="#module-physbo.gp.inf.exact" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="physbo.gp.inf.exact.eval_marlik">
-<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">eval_marlik</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.inf.exact.eval_marlik" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">eval_marlik</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/inf/exact.html#eval_marlik"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.gp.inf.exact.eval_marlik" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluating marginal likelihood.</p>
-<p>gp: physbo.gp.core.model
-X: numpy.ndarray</p>
-<blockquote>
-<div><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array.
-The negative energy of each search candidate (value of the objective function to be optimized).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp</strong> (<em>physbo.gp.core.model</em>) – </p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
 </dd>
-<dt>params: numpy.ndarray</dt><dd><p>Parameters.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>marlik</strong> – Marginal likelihood.</p>
 </dd>
-</dl>
-<dl class="simple">
-<dt>marlik: float</dt><dd><p>Marginal likelihood.</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="physbo.gp.inf.exact.get_grad_marlik">
-<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_grad_marlik</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.inf.exact.get_grad_marlik" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_grad_marlik</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/inf/exact.html#get_grad_marlik"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.gp.inf.exact.get_grad_marlik" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluating gradiant of marginal likelihood.</p>
-<p>gp: physbo.gp.core.model
-X: numpy.ndarray</p>
-<blockquote>
-<div><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array.
-The negative energy of each search candidate (value of the objective function to be optimized).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp</strong> (<em>physbo.gp.core.model</em>) – </p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
 </dd>
-<dt>params: numpy.ndarray</dt><dd><p>Parameters.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>grad_marlik</strong> – Gradiant of marginal likelihood.</p>
 </dd>
-</dl>
-<dl class="simple">
-<dt>grad_marlik: numpy.ndarray</dt><dd><p>Gradiant of marginal likelihood.</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="physbo.gp.inf.exact.get_post_fcov">
-<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_post_fcov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Z</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">diag</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.inf.exact.get_post_fcov" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_post_fcov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Z</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">diag</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/inf/exact.html#get_post_fcov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.gp.inf.exact.get_post_fcov" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculating the covariance of posterior</p>
-<p>gp: physbo.gp.core.model
-X: numpy.ndarray</p>
-<blockquote>
-<div><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Z: numpy.ndarray</dt><dd><p>N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp</strong> (<em>physbo.gp.core.model</em>) – </p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+<li><p><strong>diag</strong> (<em>bool</em>) – If X is the diagonalization matrix, true.</p></li>
+</ul>
 </dd>
-<dt>params: numpy.ndarray</dt><dd><p>Parameters.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
 </dd>
-<dt>diag: bool</dt><dd><p>If X is the diagonalization matrix, true.</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<blockquote>
-<div><p>numpy.ndarray</p>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
 <dt id="physbo.gp.inf.exact.get_post_fmean">
-<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_post_fmean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Z</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.inf.exact.get_post_fmean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">get_post_fmean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Z</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/inf/exact.html#get_post_fmean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.gp.inf.exact.get_post_fmean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculating the mean of posterior</p>
-<p>gp: physbo.gp.core.model
-X: numpy.ndarray</p>
-<blockquote>
-<div><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Z: numpy.ndarray</dt><dd><p>N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp</strong> (<em>physbo.gp.core.model</em>) – </p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
 </dd>
-<dt>params: numpy.ndarray</dt><dd><p>Parameters.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="physbo.gp.inf.exact.prepare">
-<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">prepare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.inf.exact.prepare" title="Permalink to this definition">¶</a></dt>
-<dd><p>gp: physbo.gp.core.model
-X: numpy.ndarray</p>
-<blockquote>
-<div><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array.
-The negative energy of each search candidate (value of the objective function to be optimized).</p>
+<code class="sig-prename descclassname">physbo.gp.inf.exact.</code><code class="sig-name descname">prepare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gp</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/inf/exact.html#prepare"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.gp.inf.exact.prepare" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp</strong> (<em>physbo.gp.core.model</em>) – </p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
 </dd>
-<dt>params: numpy.ndarray</dt><dd><p>Parameters.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>stats</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tupple</p>
 </dd>
 </dl>
-<p>stats: tupple</p>
 </dd></dl>
 
 </div>
@@ -160,6 +173,7 @@ The negative energy of each search candidate (value of the objective function to
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
@@ -209,7 +223,7 @@ The negative energy of each search candidate (value of the objective function to
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      &copy;2020, PHYSBO developers.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>

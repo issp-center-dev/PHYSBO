@@ -12,7 +12,9 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="physbo.blm.predictor module" href="physbo.blm.predictor.html" />
@@ -37,58 +39,92 @@
 <span id="physbo-blm-prior-gauss-module"></span><h1>physbo.blm.prior.gauss module<a class="headerlink" href="#module-physbo.blm.prior.gauss" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="physbo.blm.prior.gauss.cov_const">
-<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">cov_const</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">cov_const</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>isotropic variance-covariance</p>
 <p>All elements have the same variance and are independent with each other</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of covariance</p>
-</dd>
-<dt>sigma2: float</dt><dd><p>covariance</p>
-</dd>
-<dt>prec: float</dt><dd><p>precision (= inv. of covariance)</p>
+<dl class="py attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.params">
+<code class="sig-name descname">params</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>half of log of covariance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.sigma2">
+<code class="sig-name descname">sigma2</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.sigma2" title="Permalink to this definition">¶</a></dt>
+<dd><p>covariance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.prior.gauss.cov_const.prec">
+<code class="sig-name descname">prec</code><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.prec" title="Permalink to this definition">¶</a></dt>
+<dd><p>precision (= inv. of covariance)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.cov_const.get_cov">
-<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_cov" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.get_cov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_cov" title="Permalink to this definition">¶</a></dt>
 <dd><p>computes the covariance</p>
-<dl class="simple">
-<dt>nbasis: int</dt><dd><p>the number of components</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbasis</strong> (<em>int</em>) – the number of components</p></li>
+<li><p><strong>params</strong> (<em>float</em>) – half of log of variance
+(default: self.params)</p></li>
+</ul>
 </dd>
-<dt>params: float</dt><dd><p>half of log of variance
-(default: self.params)</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>nbasis-by-n-basis covariance matrix</p>
 </dd>
-</dl>
-<dl class="simple">
-<dt>numpy.ndarray</dt><dd><p>nbasis-by-n-basis covariance matrix</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.cov_const.get_prec">
-<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_prec" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.get_prec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_prec" title="Permalink to this definition">¶</a></dt>
 <dd><p>computes the precision</p>
-<dl class="simple">
-<dt>nbasis: int</dt><dd><p>the number of components</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbasis</strong> (<em>int</em>) – the number of components</p></li>
+<li><p><strong>params</strong> (<em>float</em>) – half of log of variance
+(default: self.params)</p></li>
+</ul>
 </dd>
-<dt>params: float</dt><dd><p>half of log of variance
-(default: self.params)</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>nbasis-by-n-basis precision matrix</p>
 </dd>
-</dl>
-<dl class="simple">
-<dt>numpy.ndarray</dt><dd><p>nbasis-by-n-basis precision matrix</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.cov_const.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#cov_const.set_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>sets params</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of variance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>float</em>) – half of log of variance</p>
 </dd>
 </dl>
 </dd></dl>
@@ -97,57 +133,92 @@
 
 <dl class="py class">
 <dt id="physbo.blm.prior.gauss.gauss">
-<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">gauss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">cov</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">gauss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">cov</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Gaussian prior</p>
-<dl class="simple">
-<dt>nbasis: int</dt><dd><p>number of components</p>
-</dd>
-<dt>cov: cov_const</dt><dd><p>covariance</p>
+<dl class="py attribute">
+<dt id="physbo.blm.prior.gauss.gauss.nbasis">
+<code class="sig-name descname">nbasis</code><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.nbasis" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of components</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.prior.gauss.gauss.cov">
+<code class="sig-name descname">cov</code><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>covariance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#physbo.blm.prior.gauss.cov_const" title="physbo.blm.prior.gauss.cov_const">cov_const</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.gauss.get_cov">
-<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_cov" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_cov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_cov" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates the variance-covariance matrix of priors</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of variance
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>float</em>) – half of log of variance
 (default: self.cov.params)</p>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.gauss.get_mean">
-<code class="sig-name descname">get_mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_mean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_mean" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates the mean value of priors</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of variance
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>float</em>) – half of log of variance
 (not used)</p>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.gauss.get_prec">
-<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_prec" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.get_prec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_prec" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates the precise matrix of priors</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of variance
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>float</em>) – half of log of variance
 (default: self.cov.params)</p>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.prior.gauss.gauss.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/prior/gauss.html#gauss.set_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>sets params</p>
-<dl class="simple">
-<dt>params: float</dt><dd><p>half of log of variance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>float</em>) – half of log of variance</p>
 </dd>
 </dl>
 </dd></dl>
@@ -177,6 +248,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
@@ -226,7 +298,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      &copy;2020, PHYSBO developers.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>

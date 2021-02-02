@@ -1,0 +1,2760 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-objective optimization &#8212; PHYSBO 1.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Algorithm" href="../algorithm.html" />
+    <link rel="prev" title="Search multiple candidates at once" href="tutorial_multi_probe.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<div class="section" id="Multi-objective-optimization">
+<h1>Multi-objective optimization<a class="headerlink" href="#Multi-objective-optimization" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line">When there are multiple objective functions (<span class="math notranslate nohighlight">\(p\)</span>) to be optimized, multi-objective optimization is used.</div>
+<div class="line">Note that in this tutorial, “solution” means the pair of objective functions <span class="math notranslate nohighlight">\(y = (y_1(x), y_2(x), \dots, y_p(x))\)</span>.</div>
+<div class="line">Define the solution size relation <span class="math notranslate nohighlight">\(\prec\)</span> as follows.</div>
+</div>
+<p><span class="math notranslate nohighlight">\(y \prec y^{'}\Longleftrightarrow \forall \ i \le p, y_i \le y^{'}_i \land \exists \ j \le p, y_j &lt; y^{'}_j\)</span></p>
+<div class="line-block">
+<div class="line">A <strong>Pareto solution</strong> (in the maximization problem) is one in which no solution is larger than itself satisfying the above relations.</div>
+<div class="line">In other words, if you try to improve the value of any objective function, one of the other objective functions will deteriorate.</div>
+<div class="line">When there is a trade-off between objective functions, there are multiple Pareto solutions, and the numerical task is to find them efficiently.</div>
+</div>
+<p>PHYSBO implements a Bayesian optimization method to find Pareto solutions efficiently.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">physbo</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<div class="section" id="Test-functions">
+<h2>Test functions<a class="headerlink" href="#Test-functions" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line">In this tutorial, we will use VLMOP2, which is a benchmark function for multi-objective optimization.</div>
+<div class="line">The number of objective functions is two.</div>
+</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{split}
+    y_1(\vec{x}) &amp;= 1 - \exp\left[-\sum_{i=1}^N\left( x_i - 1/\sqrt{N}\right)^2\right] \\
+    y_2(\vec{x}) &amp;= 1 - \exp\left[-\sum_{i=1}^N\left( x_i + 1/\sqrt{N}\right)^2\right],
+\end{split}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(y_1\)</span> and <span class="math notranslate nohighlight">\(y_2\)</span> have minimums at <span class="math notranslate nohighlight">\(x_1 = x_2 = \cdots x_N = 1/\sqrt{N}\)</span> and <span class="math notranslate nohighlight">\(x_1 = x_2 = \cdots x_N = -1/\sqrt{N}\)</span>, respectively, both of which are 0. Also, the upper bound is 1.</p>
+<p>Since PHYSBO solves a maximization problem, the objective function is again multiplied by -1.</p>
+<ul class="simple">
+<li><p>Refernce</p>
+<ul>
+<li><p>Van Veldhuizen, David A. Multiobjective evolutionary algorithms: classifications, analyses, and new innovations. No. AFIT/DS/ENG/99-01. AIR FORCE INST OF TECH WRIGHT-PATTERSONAFB OH SCHOOL OF ENGINEERING, 1999.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">vlmop2_minus</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="o">-</span><span class="n">y1</span><span class="p">,</span> <span class="o">-</span><span class="n">y2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Preparation-of-search-candidate-data">
+<h2>Preparation of search candidate data<a class="headerlink" href="#Preparation-of-search-candidate-data" title="Permalink to this headline">¶</a></h2>
+<p>Let the input space <span class="math notranslate nohighlight">\(\vec{x}\)</span> be two-dimensional, and generate a grid of candidate points on [-2, 2] × [-2, 2].</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="n">test_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">test_X</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-2.  , -2.  ],
+       [-2.  , -1.96],
+       [-2.  , -1.92],
+       ...,
+       [ 2.  ,  1.92],
+       [ 2.  ,  1.96],
+       [ 2.  ,  2.  ]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">test_X</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(10201, 2)
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Definition-of-simulator">
+<h2>Definition of simulator<a class="headerlink" href="#Definition-of-simulator" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">vlmop2_minus</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">simu</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Plotting-the-functions">
+<h2>Plotting the functions<a class="headerlink" href="#Plotting-the-functions" title="Permalink to this headline">¶</a></h2>
+<p>Let’s plot each of the two objective functions. The first objective function has a peak in the upper right corner, and the second objective function has a trade-off with a peak in the lower left corner (The star is the position of the peak.).</p>
+<div class="section" id="First-objective-function">
+<h3>First objective function<a class="headerlink" href="#First-objective-function" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 1&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_12_0.png" src="../_images/notebook_tutorial_multi_objective_12_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Second-objective-function">
+<h3>Second objective function<a class="headerlink" href="#Second-objective-function" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># plot objective 2</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 2&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_14_0.png" src="../_images/notebook_tutorial_multi_objective_14_0.png" />
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="Performing-optimizations.">
+<h2>Performing optimizations.<a class="headerlink" href="#Performing-optimizations." title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="Setting-policy">
+<h2>Setting policy<a class="headerlink" href="#Setting-policy" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line">Use <code class="docutils literal notranslate"><span class="pre">policy_mo</span></code> for multi-objective optimization.</div>
+<div class="line">Specify the number of objective functions in <code class="docutils literal notranslate"><span class="pre">num_objectives</span></code>.</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>As with the usual usage of <code class="docutils literal notranslate"><span class="pre">policy</span></code> (with one objective function), optimization is done by calling the <code class="docutils literal notranslate"><span class="pre">random_search</span></code> or <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> methods. The basic API and usage are roughly the same as <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
+<div class="section" id="Random-search">
+<h3>Random search<a class="headerlink" href="#Random-search" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
+0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
+0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
+0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
+0011-th step: f(x) = [-0.99700074 -0.99847873] (action = 1406)
+0012-th step: f(x) = [-0.9992592  -0.93891121] (action = 6061)
+0013-th step: f(x) = [-0.19963873 -0.93357674] (action = 5722)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0014-th step: f(x) = [-0.98046765 -0.99294428] (action = 2309)
+0015-th step: f(x) = [-0.99602549 -0.98620358] (action = 7989)
+0016-th step: f(x) = [-0.99957128 -0.9973798 ] (action = 8484)
+0017-th step: f(x) = [-0.52191048 -0.72845916] (action = 5405)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0018-th step: f(x) = [-0.99916441 -0.40869572] (action = 2742)
+0019-th step: f(x) = [-0.99480122 -0.7565076 ] (action = 1266)
+0020-th step: f(x) = [-0.63329589 -0.63329589] (action = 5200)
+   Pareto set updated.
+   the number of Pareto frontiers = 4
+
+0021-th step: f(x) = [-0.95437918 -0.80142908] (action = 2487)
+0022-th step: f(x) = [-0.99899466 -0.96646532] (action = 269)
+0023-th step: f(x) = [-0.19473522 -0.99445365] (action = 8044)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0024-th step: f(x) = [-0.99969529 -0.52395588] (action = 2135)
+0025-th step: f(x) = [-0.59106078 -0.79258035] (action = 6206)
+0026-th step: f(x) = [-0.78231041 -0.99997141] (action = 9079)
+0027-th step: f(x) = [-0.99955573 -0.99930147] (action = 396)
+0028-th step: f(x) = [-0.99825097 -0.99875436] (action = 9403)
+0029-th step: f(x) = [-0.65387719 -0.99938669] (action = 9456)
+0030-th step: f(x) = [-0.26132949 -0.87913689] (action = 5816)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0031-th step: f(x) = [-0.74523952 -0.7724917 ] (action = 6301)
+0032-th step: f(x) = [-0.33644513 -0.97772424] (action = 5530)
+0033-th step: f(x) = [-0.99777557 -0.93373833] (action = 6470)
+0034-th step: f(x) = [-0.9725524 -0.6296562] (action = 2277)
+0035-th step: f(x) = [-0.99924826 -0.84674905] (action = 353)
+0036-th step: f(x) = [-0.99743705 -0.17848438] (action = 2549)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0037-th step: f(x) = [-0.99994916 -0.78013199] (action = 326)
+0038-th step: f(x) = [-0.99887174 -0.86936149] (action = 5458)
+0039-th step: f(x) = [-0.99362699 -0.99769786] (action = 9309)
+0040-th step: f(x) = [-0.84889217 -0.99973225] (action = 10156)
+0041-th step: f(x) = [-0.95713719 -0.09067194] (action = 4073)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0042-th step: f(x) = [-0.17190645 -0.91382463] (action = 6120)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0043-th step: f(x) = [-0.98406208 -0.94467587] (action = 7289)
+0044-th step: f(x) = [-0.93974303 -0.92444262] (action = 2698)
+0045-th step: f(x) = [-0.98414342 -0.84762781] (action = 1780)
+0046-th step: f(x) = [-0.99699986 -0.98166426] (action = 7684)
+0047-th step: f(x) = [-0.3868143  -0.99930896] (action = 8060)
+0048-th step: f(x) = [-0.97964062 -0.65554315] (action = 2075)
+0049-th step: f(x) = [-0.99907307 -0.73466786] (action = 4450)
+0050-th step: f(x) = [-0.99720717 -0.85352507] (action = 865)
+</pre></div></div>
+</div>
+<div class="line-block">
+<div class="line">The evaluation value of the objective function (the array) and the action ID at that time are displayed.</div>
+<div class="line">It also displays a message when the Pareto set is updated.</div>
+</div>
+<div class="line-block">
+<div class="line">If you want to display the contents of the Pareto set when it is updated, specify <code class="docutils literal notranslate"><span class="pre">disp_pareto_set=True</span></code>.</div>
+<div class="line">Pareto set is sorted in ascending order of the first objective function value.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+   Pareto set updated.
+   current Pareto set = [[-0.99973003 -0.62334035]] (steps = [1])
+
+0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+   Pareto set updated.
+   current Pareto set = [[-0.99973003 -0.62334035]
+ [-0.99789981 -0.99866427]] (steps = [1 2])
+
+0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+   Pareto set updated.
+   current Pareto set = [[-0.99090897 -0.46609239]] (steps = [3])
+
+0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]] (steps = [4])
+
+0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.67969326 -0.99981691]] (steps = [4 5])
+
+0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.45601619 -0.99848443]] (steps = [4 6])
+
+0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
+0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
+0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
+0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
+0011-th step: f(x) = [-0.99700074 -0.99847873] (action = 1406)
+0012-th step: f(x) = [-0.9992592  -0.93891121] (action = 6061)
+0013-th step: f(x) = [-0.19963873 -0.93357674] (action = 5722)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.19963873 -0.93357674]] (steps = [ 4 13])
+
+0014-th step: f(x) = [-0.98046765 -0.99294428] (action = 2309)
+0015-th step: f(x) = [-0.99602549 -0.98620358] (action = 7989)
+0016-th step: f(x) = [-0.99957128 -0.9973798 ] (action = 8484)
+0017-th step: f(x) = [-0.52191048 -0.72845916] (action = 5405)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.52191048 -0.72845916]
+ [-0.19963873 -0.93357674]] (steps = [ 4 17 13])
+
+0018-th step: f(x) = [-0.99916441 -0.40869572] (action = 2742)
+0019-th step: f(x) = [-0.99480122 -0.7565076 ] (action = 1266)
+0020-th step: f(x) = [-0.63329589 -0.63329589] (action = 5200)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.19963873 -0.93357674]] (steps = [ 4 20 17 13])
+
+0021-th step: f(x) = [-0.95437918 -0.80142908] (action = 2487)
+0022-th step: f(x) = [-0.99899466 -0.96646532] (action = 269)
+0023-th step: f(x) = [-0.19473522 -0.99445365] (action = 8044)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.19963873 -0.93357674]
+ [-0.19473522 -0.99445365]] (steps = [ 4 20 17 13 23])
+
+0024-th step: f(x) = [-0.99969529 -0.52395588] (action = 2135)
+0025-th step: f(x) = [-0.59106078 -0.79258035] (action = 6206)
+0026-th step: f(x) = [-0.78231041 -0.99997141] (action = 9079)
+0027-th step: f(x) = [-0.99955573 -0.99930147] (action = 396)
+0028-th step: f(x) = [-0.99825097 -0.99875436] (action = 9403)
+0029-th step: f(x) = [-0.65387719 -0.99938669] (action = 9456)
+0030-th step: f(x) = [-0.26132949 -0.87913689] (action = 5816)
+   Pareto set updated.
+   current Pareto set = [[-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.26132949 -0.87913689]
+ [-0.19963873 -0.93357674]
+ [-0.19473522 -0.99445365]] (steps = [ 4 20 17 30 13 23])
+
+0031-th step: f(x) = [-0.74523952 -0.7724917 ] (action = 6301)
+0032-th step: f(x) = [-0.33644513 -0.97772424] (action = 5530)
+0033-th step: f(x) = [-0.99777557 -0.93373833] (action = 6470)
+0034-th step: f(x) = [-0.9725524 -0.6296562] (action = 2277)
+0035-th step: f(x) = [-0.99924826 -0.84674905] (action = 353)
+0036-th step: f(x) = [-0.99743705 -0.17848438] (action = 2549)
+   Pareto set updated.
+   current Pareto set = [[-0.99743705 -0.17848438]
+ [-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.26132949 -0.87913689]
+ [-0.19963873 -0.93357674]
+ [-0.19473522 -0.99445365]] (steps = [36  4 20 17 30 13 23])
+
+0037-th step: f(x) = [-0.99994916 -0.78013199] (action = 326)
+0038-th step: f(x) = [-0.99887174 -0.86936149] (action = 5458)
+0039-th step: f(x) = [-0.99362699 -0.99769786] (action = 9309)
+0040-th step: f(x) = [-0.84889217 -0.99973225] (action = 10156)
+0041-th step: f(x) = [-0.95713719 -0.09067194] (action = 4073)
+   Pareto set updated.
+   current Pareto set = [[-0.95713719 -0.09067194]
+ [-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.26132949 -0.87913689]
+ [-0.19963873 -0.93357674]
+ [-0.19473522 -0.99445365]] (steps = [41  4 20 17 30 13 23])
+
+0042-th step: f(x) = [-0.17190645 -0.91382463] (action = 6120)
+   Pareto set updated.
+   current Pareto set = [[-0.95713719 -0.09067194]
+ [-0.92633083 -0.29208351]
+ [-0.63329589 -0.63329589]
+ [-0.52191048 -0.72845916]
+ [-0.26132949 -0.87913689]
+ [-0.17190645 -0.91382463]] (steps = [41  4 20 17 30 42])
+
+0043-th step: f(x) = [-0.98406208 -0.94467587] (action = 7289)
+0044-th step: f(x) = [-0.93974303 -0.92444262] (action = 2698)
+0045-th step: f(x) = [-0.98414342 -0.84762781] (action = 1780)
+0046-th step: f(x) = [-0.99699986 -0.98166426] (action = 7684)
+0047-th step: f(x) = [-0.3868143  -0.99930896] (action = 8060)
+0048-th step: f(x) = [-0.97964062 -0.65554315] (action = 2075)
+0049-th step: f(x) = [-0.99907307 -0.73466786] (action = 4450)
+0050-th step: f(x) = [-0.99720717 -0.85352507] (action = 865)
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Checking-results">
+<h3>Checking results<a class="headerlink" href="#Checking-results" title="Permalink to this headline">¶</a></h3>
+<p>#### History of evaluation values</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_random</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res_random</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-0.99973003, -0.62334035],
+       [-0.99789981, -0.99866427],
+       [-0.99090897, -0.46609239],
+       [-0.92633083, -0.29208351],
+       [-0.67969326, -0.99981691],
+       [-0.45601619, -0.99848443],
+       [-0.92670204, -0.71508873],
+       [-0.58233995, -0.99952931],
+       [-0.99848229, -0.96780195],
+       [-0.80479332, -0.99994946],
+       [-0.99700074, -0.99847873],
+       [-0.9992592 , -0.93891121],
+       [-0.19963873, -0.93357674],
+       [-0.98046765, -0.99294428],
+       [-0.99602549, -0.98620358],
+       [-0.99957128, -0.9973798 ],
+       [-0.52191048, -0.72845916],
+       [-0.99916441, -0.40869572],
+       [-0.99480122, -0.7565076 ],
+       [-0.63329589, -0.63329589],
+       [-0.95437918, -0.80142908],
+       [-0.99899466, -0.96646532],
+       [-0.19473522, -0.99445365],
+       [-0.99969529, -0.52395588],
+       [-0.59106078, -0.79258035],
+       [-0.78231041, -0.99997141],
+       [-0.99955573, -0.99930147],
+       [-0.99825097, -0.99875436],
+       [-0.65387719, -0.99938669],
+       [-0.26132949, -0.87913689],
+       [-0.74523952, -0.7724917 ],
+       [-0.33644513, -0.97772424],
+       [-0.99777557, -0.93373833],
+       [-0.9725524 , -0.6296562 ],
+       [-0.99924826, -0.84674905],
+       [-0.99743705, -0.17848438],
+       [-0.99994916, -0.78013199],
+       [-0.99887174, -0.86936149],
+       [-0.99362699, -0.99769786],
+       [-0.84889217, -0.99973225],
+       [-0.95713719, -0.09067194],
+       [-0.17190645, -0.91382463],
+       [-0.98406208, -0.94467587],
+       [-0.93974303, -0.92444262],
+       [-0.98414342, -0.84762781],
+       [-0.99699986, -0.98166426],
+       [-0.3868143 , -0.99930896],
+       [-0.97964062, -0.65554315],
+       [-0.99907307, -0.73466786],
+       [-0.99720717, -0.85352507]])
+</pre></div></div>
+</div>
+<div class="section" id="Obtaining-the-Pareto-solution">
+<h4>Obtaining the Pareto solution<a class="headerlink" href="#Obtaining-the-Pareto-solution" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res_random</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
+<span class="n">front</span><span class="p">,</span> <span class="n">front_num</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(array([[-0.95713719, -0.09067194],
+        [-0.92633083, -0.29208351],
+        [-0.63329589, -0.63329589],
+        [-0.52191048, -0.72845916],
+        [-0.26132949, -0.87913689],
+        [-0.17190645, -0.91382463]]),
+ array([40,  3, 19, 16, 29, 41]))
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Plotting-the-solution-(evaluated-value)">
+<h4>Plotting the solution (evaluated value)<a class="headerlink" href="#Plotting-the-solution-(evaluated-value)" title="Permalink to this headline">¶</a></h4>
+<p>Note again that the space to be plotted is <span class="math notranslate nohighlight">\(y = (y_1, y_2)\)</span> and not <span class="math notranslate nohighlight">\(x = (x_1, x_2)\)</span>.</p>
+<p>The red plot is the Pareto solution.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">plot_pareto_front</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+    <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
+    <span class="n">dominated</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">num_runs</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">]</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">front</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">front</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Pareto front&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Objective 1&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Objective 2&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_random</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_28_0.png" src="../_images/notebook_tutorial_multi_objective_28_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Calculate-the-volume-of-the-dominated-region">
+<h4>Calculate the volume of the dominated region<a class="headerlink" href="#Calculate-the-volume-of-the-dominated-region" title="Permalink to this headline">¶</a></h4>
+<p>A solution that is not a Pareto solution, i.e., a solution <span class="math notranslate nohighlight">\(y\)</span> for which there exists a solution <span class="math notranslate nohighlight">\(y'\)</span> that is better than itself, is called a subordinate solution (<span class="math notranslate nohighlight">\(\exists y' y\prec y'\)</span>). The volume of the inferior solution region, which is the space occupied by inferior solutions in the solution space (a subspace of the solution space), is one of the indicators of the results of multi-objective optimization. The larger this value is, the more good Pareto solutions are
+obtained.<code class="docutils literal notranslate"><span class="pre">res_random.pareto.volume_in_dominance(ref_min,</span> <span class="pre">ref_max)</span></code> calculates the volume of the inferior solution region in the hyper-rectangle specified by <code class="docutils literal notranslate"><span class="pre">ref_min</span></code> and <code class="docutils literal notranslate"><span class="pre">ref_max</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_random</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.2376881844865093
+</pre></div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="Bayesian-optimization">
+<h2>Bayesian optimization<a class="headerlink" href="#Bayesian-optimization" title="Permalink to this headline">¶</a></h2>
+<p>For <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> in the multi-objective case, <code class="docutils literal notranslate"><span class="pre">score</span></code> can be selected from the following method</p>
+<ul class="simple">
+<li><p>HVPI (Hypervolume-based Probability of Improvement)</p></li>
+<li><p>EHVI (Expected Hyper-Volume Improvement)</p></li>
+<li><p>TS (Thompson Sampling)</p></li>
+</ul>
+<p>The following 50 evaluations (10 random searches + 40 Bayesian optimizations) will be performed with different scores.</p>
+<div class="section" id="HVPI-(Hypervolume-based-Probability-of-Improvement)">
+<h3>HVPI (Hypervolume-based Probability of Improvement)<a class="headerlink" href="#HVPI-(Hypervolume-based-Probability-of-Improvement)" title="Permalink to this headline">¶</a></h3>
+<p>The improvement probability of a non-dominated region in a multi-dimensional objective function space is obtained as a score.</p>
+<ul class="simple">
+<li><p>Reference</p>
+<ul>
+<li><p>Couckuyt, Ivo, Dirk Deschrijver, and Tom Dhaene. “Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization.” Journal of Global Optimization 60.3 (2014): 575-594.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
+0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
+0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
+0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -3.2095235185355078
+50 -th epoch marginal likelihood -3.256143691169738
+100 -th epoch marginal likelihood -3.257729815869573
+150 -th epoch marginal likelihood -3.259506317055296
+200 -th epoch marginal likelihood -3.2618022406678797
+250 -th epoch marginal likelihood -3.265007867375182
+300 -th epoch marginal likelihood -3.270214654456719
+350 -th epoch marginal likelihood -3.283146778738617
+400 -th epoch marginal likelihood -3.3349571842670818
+450 -th epoch marginal likelihood -3.4598938485764448
+500 -th epoch marginal likelihood -3.638891636652419
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -0.39855118433009995
+50 -th epoch marginal likelihood -1.1073617181516306
+100 -th epoch marginal likelihood -1.48359552534615
+150 -th epoch marginal likelihood -1.640267927311978
+200 -th epoch marginal likelihood -1.7235291849352752
+250 -th epoch marginal likelihood -1.7923359112412909
+300 -th epoch marginal likelihood -1.8557670557806043
+350 -th epoch marginal likelihood -1.9149715899772781
+400 -th epoch marginal likelihood -1.9707008234172152
+450 -th epoch marginal likelihood -2.0236441467096205
+500 -th epoch marginal likelihood -2.0742748668215905
+Done
+
+0011-th step: f(x) = [-0.3901523  -0.82431347] (action = 5911)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0012-th step: f(x) = [-0.03511246 -0.9676084 ] (action = 6830)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0013-th step: f(x) = [-0.71403166 -0.55036801] (action = 5096)
+   Pareto set updated.
+   the number of Pareto frontiers = 4
+
+0014-th step: f(x) = [-0.57031134 -0.69398025] (action = 5403)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0015-th step: f(x) = [-0.95456998 -0.13930743] (action = 4274)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0016-th step: f(x) = [-0.97105694 -0.03456373] (action = 3769)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0017-th step: f(x) = [-0.8209077 -0.3783301] (action = 4589)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0018-th step: f(x) = [-0.2166426 -0.8977806] (action = 6118)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0019-th step: f(x) = [-0.8884927  -0.23687603] (action = 4283)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0020-th step: f(x) = [-0.47482314 -0.76211783] (action = 5507)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -20.478517060540376
+50 -th epoch marginal likelihood -20.781777717781775
+100 -th epoch marginal likelihood -21.074743824515057
+150 -th epoch marginal likelihood -21.361819816983
+200 -th epoch marginal likelihood -21.643265562211884
+250 -th epoch marginal likelihood -21.91931561518446
+300 -th epoch marginal likelihood -22.19018196350523
+350 -th epoch marginal likelihood -22.456056664334916
+400 -th epoch marginal likelihood -22.717113628442405
+450 -th epoch marginal likelihood -22.97351139890936
+500 -th epoch marginal likelihood -23.22539459783166
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -19.2200674565482
+50 -th epoch marginal likelihood -19.781203528558464
+100 -th epoch marginal likelihood -20.160782321296455
+150 -th epoch marginal likelihood -20.47609152347622
+200 -th epoch marginal likelihood -20.7789483345566
+250 -th epoch marginal likelihood -21.075707387253235
+300 -th epoch marginal likelihood -21.367080634555194
+350 -th epoch marginal likelihood -21.653324047345386
+400 -th epoch marginal likelihood -21.934638540180405
+450 -th epoch marginal likelihood -22.211199410392915
+500 -th epoch marginal likelihood -22.48316242909351
+Done
+
+0021-th step: f(x) = [-0.00146848 -0.97868044] (action = 6834)
+   Pareto set updated.
+   the number of Pareto frontiers = 11
+
+0022-th step: f(x) = [-9.82978321e-01 -3.32414921e-04] (action = 3264)
+   Pareto set updated.
+   the number of Pareto frontiers = 12
+
+0023-th step: f(x) = [-0.65290909 -0.61133266] (action = 4999)
+   Pareto set updated.
+   the number of Pareto frontiers = 13
+
+0024-th step: f(x) = [-0.76211783 -0.47482314] (action = 4693)
+   Pareto set updated.
+   the number of Pareto frontiers = 14
+
+0025-th step: f(x) = [-0.30569255 -0.85754934] (action = 5814)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0026-th step: f(x) = [-0.11566871 -0.93445881] (action = 6223)
+   Pareto set updated.
+   the number of Pareto frontiers = 16
+
+0027-th step: f(x) = [-0.93445881 -0.11566871] (action = 3877)
+   Pareto set updated.
+   the number of Pareto frontiers = 16
+
+0028-th step: f(x) = [-0.85754934 -0.30569255] (action = 4386)
+   Pareto set updated.
+   the number of Pareto frontiers = 17
+
+0029-th step: f(x) = [-0.61133266 -0.65290909] (action = 5101)
+   Pareto set updated.
+   the number of Pareto frontiers = 18
+
+0030-th step: f(x) = [-0.52191048 -0.72845916] (action = 5305)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -42.1717530825686
+50 -th epoch marginal likelihood -43.8046509813867
+100 -th epoch marginal likelihood -45.02627488559779
+150 -th epoch marginal likelihood -45.965397367475475
+200 -th epoch marginal likelihood -46.77369057378863
+250 -th epoch marginal likelihood -47.540710327442255
+300 -th epoch marginal likelihood -48.29092418080577
+350 -th epoch marginal likelihood -49.029431178650256
+400 -th epoch marginal likelihood -49.75844919206085
+450 -th epoch marginal likelihood -50.47935398601932
+500 -th epoch marginal likelihood -51.19300046940767
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -41.719173831287456
+50 -th epoch marginal likelihood -43.05994290558706
+100 -th epoch marginal likelihood -44.130659234469945
+150 -th epoch marginal likelihood -45.0456059902643
+200 -th epoch marginal likelihood -45.85761716495076
+250 -th epoch marginal likelihood -46.62546327243187
+300 -th epoch marginal likelihood -47.377755215418944
+350 -th epoch marginal likelihood -48.12173437412515
+400 -th epoch marginal likelihood -48.85871974035212
+450 -th epoch marginal likelihood -49.589013903685284
+500 -th epoch marginal likelihood -50.31273081888847
+Done
+
+0031-th step: f(x) = [-0.42677852 -0.79293383] (action = 5509)
+   Pareto set updated.
+   the number of Pareto frontiers = 20
+
+0032-th step: f(x) = [-0.79293383 -0.42677852] (action = 4591)
+   Pareto set updated.
+   the number of Pareto frontiers = 21
+
+0033-th step: f(x) = [-0.91382463 -0.17190645] (action = 4080)
+   Pareto set updated.
+   the number of Pareto frontiers = 22
+
+0034-th step: f(x) = [-0.72845916 -0.52191048] (action = 4795)
+   Pareto set updated.
+   the number of Pareto frontiers = 23
+
+0035-th step: f(x) = [-0.69201544 -0.56755251] (action = 4897)
+   Pareto set updated.
+   the number of Pareto frontiers = 24
+
+0036-th step: f(x) = [-0.95078624 -0.06762287] (action = 3774)
+   Pareto set updated.
+   the number of Pareto frontiers = 25
+
+0037-th step: f(x) = [-0.17190645 -0.91382463] (action = 6120)
+   Pareto set updated.
+   the number of Pareto frontiers = 26
+
+0038-th step: f(x) = [-0.35362632 -0.83371008] (action = 5712)
+   Pareto set updated.
+   the number of Pareto frontiers = 27
+
+0039-th step: f(x) = [-0.25896196 -0.87874951] (action = 5916)
+   Pareto set updated.
+   the number of Pareto frontiers = 28
+
+0040-th step: f(x) = [-0.06762287 -0.95078624] (action = 6426)
+   Pareto set updated.
+   the number of Pareto frontiers = 29
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -68.14422496160626
+50 -th epoch marginal likelihood -69.74821313678454
+100 -th epoch marginal likelihood -71.16364516263106
+150 -th epoch marginal likelihood -72.45633416637565
+200 -th epoch marginal likelihood -73.70427277891362
+250 -th epoch marginal likelihood -74.93918231618832
+300 -th epoch marginal likelihood -76.16638542804964
+350 -th epoch marginal likelihood -77.38658583568828
+400 -th epoch marginal likelihood -78.60006687735122
+450 -th epoch marginal likelihood -79.80705478031916
+500 -th epoch marginal likelihood -81.00774602550845
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -67.44927460858041
+50 -th epoch marginal likelihood -69.06511428073529
+100 -th epoch marginal likelihood -70.50986339369797
+150 -th epoch marginal likelihood -71.83302009477609
+200 -th epoch marginal likelihood -73.10472627633348
+250 -th epoch marginal likelihood -74.3572797097576
+300 -th epoch marginal likelihood -75.59977538619205
+350 -th epoch marginal likelihood -76.83435149512745
+400 -th epoch marginal likelihood -78.06151201943825
+450 -th epoch marginal likelihood -79.28144610933269
+500 -th epoch marginal likelihood -80.4942780312418
+Done
+
+0041-th step: f(x) = [-0.83371008 -0.35362632] (action = 4488)
+   Pareto set updated.
+   the number of Pareto frontiers = 30
+
+0042-th step: f(x) = [-0.58937008 -0.67252288] (action = 5202)
+   Pareto set updated.
+   the number of Pareto frontiers = 31
+
+0043-th step: f(x) = [-0.54457573 -0.71034774] (action = 5304)
+   Pareto set updated.
+   the number of Pareto frontiers = 32
+
+0044-th step: f(x) = [-0.86857621 -0.28270771] (action = 4285)
+   Pareto set updated.
+   the number of Pareto frontiers = 33
+
+0045-th step: f(x) = [-0.63212056 -0.63212056] (action = 5100)
+   Pareto set updated.
+   the number of Pareto frontiers = 34
+
+0046-th step: f(x) = [-0.67252288 -0.58937008] (action = 4998)
+   Pareto set updated.
+   the number of Pareto frontiers = 35
+
+0047-th step: f(x) = [-0.40208972 -0.80711969] (action = 5610)
+   Pareto set updated.
+   the number of Pareto frontiers = 36
+
+0048-th step: f(x) = [-0.7454381  -0.49811725] (action = 4794)
+   Pareto set updated.
+   the number of Pareto frontiers = 37
+
+0049-th step: f(x) = [-0.49811725 -0.7454381 ] (action = 5406)
+   Pareto set updated.
+   the number of Pareto frontiers = 38
+
+0050-th step: f(x) = [-0.77770464 -0.45044788] (action = 4692)
+   Pareto set updated.
+   the number of Pareto frontiers = 39
+
+</pre></div></div>
+</div>
+<div class="section" id="Plotting-the-Pareto-solution">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#Plotting-the-Pareto-solution" title="Permalink to this headline">¶</a></h4>
+<p>We can see that more Pareto solutions are obtained compared to random sampling.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_HVPI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_35_0.png" src="../_images/notebook_tutorial_multi_objective_35_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Volume-of-dominated-region">
+<h4>Volume of dominated region<a class="headerlink" href="#Volume-of-dominated-region" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.32877907991633726
+</pre></div></div>
+</div>
+</div>
+</div>
+<div class="section" id="EHVI-(Expected-Hyper-Volume-Improvement)">
+<h3>EHVI (Expected Hyper-Volume Improvement)<a class="headerlink" href="#EHVI-(Expected-Hyper-Volume-Improvement)" title="Permalink to this headline">¶</a></h3>
+<p>The expected improvement of the non-dominated region in the multi-dimensional objective function space is obtained as score.</p>
+<ul class="simple">
+<li><p>Reference</p>
+<ul>
+<li><p>Couckuyt, Ivo, Dirk Deschrijver, and Tom Dhaene. “Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization.” Journal of Global Optimization 60.3 (2014): 575-594.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_EHVI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EHVI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
+0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
+0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
+0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -3.2095235185355078
+50 -th epoch marginal likelihood -3.256143691169738
+100 -th epoch marginal likelihood -3.257729815869573
+150 -th epoch marginal likelihood -3.259506317055296
+200 -th epoch marginal likelihood -3.2618022406678797
+250 -th epoch marginal likelihood -3.265007867375182
+300 -th epoch marginal likelihood -3.270214654456719
+350 -th epoch marginal likelihood -3.283146778738617
+400 -th epoch marginal likelihood -3.3349571842670818
+450 -th epoch marginal likelihood -3.4598938485764448
+500 -th epoch marginal likelihood -3.638891636652419
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -0.39855118433009995
+50 -th epoch marginal likelihood -1.1073617181516306
+100 -th epoch marginal likelihood -1.48359552534615
+150 -th epoch marginal likelihood -1.640267927311978
+200 -th epoch marginal likelihood -1.7235291849352752
+250 -th epoch marginal likelihood -1.7923359112412909
+300 -th epoch marginal likelihood -1.8557670557806043
+350 -th epoch marginal likelihood -1.9149715899772781
+400 -th epoch marginal likelihood -1.9707008234172152
+450 -th epoch marginal likelihood -2.0236441467096205
+500 -th epoch marginal likelihood -2.0742748668215905
+Done
+
+0011-th step: f(x) = [-9.00606888e-04 -9.80950206e-01] (action = 6935)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0012-th step: f(x) = [-0.54603076 -0.71127314] (action = 5404)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0013-th step: f(x) = [-0.7666416  -0.48481035] (action = 4993)
+   Pareto set updated.
+   the number of Pareto frontiers = 4
+
+0014-th step: f(x) = [-0.24028954 -0.95990013] (action = 5626)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0015-th step: f(x) = [-0.95713719 -0.09067194] (action = 4073)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0016-th step: f(x) = [-0.30791078 -0.85800445] (action = 5914)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0017-th step: f(x) = [-0.97621647 -0.0052244 ] (action = 3467)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0018-th step: f(x) = [-0.86941464 -0.28728372] (action = 4185)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0019-th step: f(x) = [-0.67252288 -0.58937008] (action = 4998)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0020-th step: f(x) = [-0.24028954 -0.95990013] (action = 7226)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -17.256832207034975
+50 -th epoch marginal likelihood -17.709872584141642
+100 -th epoch marginal likelihood -17.978813161119312
+150 -th epoch marginal likelihood -18.209025416360287
+200 -th epoch marginal likelihood -18.428873830640573
+250 -th epoch marginal likelihood -18.64297699025044
+300 -th epoch marginal likelihood -18.852196397138712
+350 -th epoch marginal likelihood -19.05681375510759
+400 -th epoch marginal likelihood -19.257038614163186
+450 -th epoch marginal likelihood -19.453048039815908
+500 -th epoch marginal likelihood -19.644993031408248
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -16.97422842158386
+50 -th epoch marginal likelihood -17.41277339058675
+100 -th epoch marginal likelihood -17.695739672913106
+150 -th epoch marginal likelihood -17.947485717899344
+200 -th epoch marginal likelihood -18.19073249547075
+250 -th epoch marginal likelihood -18.427704212860466
+300 -th epoch marginal likelihood -18.658813644519512
+350 -th epoch marginal likelihood -18.8842841045557
+400 -th epoch marginal likelihood -19.10431964671837
+450 -th epoch marginal likelihood -19.31910873872591
+500 -th epoch marginal likelihood -19.528823244919742
+Done
+
+0021-th step: f(x) = [-0.45044788 -0.77770464] (action = 5508)
+   Pareto set updated.
+   the number of Pareto frontiers = 11
+
+0022-th step: f(x) = [-0.15266624 -0.92125491] (action = 6221)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0023-th step: f(x) = [-0.80711969 -0.40208972] (action = 4590)
+   Pareto set updated.
+   the number of Pareto frontiers = 11
+
+0024-th step: f(x) = [-0.98483911 -0.00295954] (action = 3163)
+   Pareto set updated.
+   the number of Pareto frontiers = 12
+
+0025-th step: f(x) = [-0.91382463 -0.17190645] (action = 4080)
+   Pareto set updated.
+   the number of Pareto frontiers = 13
+
+0026-th step: f(x) = [-0.61133266 -0.65290909] (action = 5201)
+   Pareto set updated.
+   the number of Pareto frontiers = 14
+
+0027-th step: f(x) = [-3.32414921e-04 -9.82978321e-01] (action = 6936)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0028-th step: f(x) = [-0.72845916 -0.52191048] (action = 4895)
+   Pareto set updated.
+   the number of Pareto frontiers = 16
+
+0029-th step: f(x) = [-0.3783301 -0.8209077] (action = 5711)
+   Pareto set updated.
+   the number of Pareto frontiers = 17
+
+0030-th step: f(x) = [-9.82978321e-01 -3.32414921e-04] (action = 3264)
+   Pareto set updated.
+   the number of Pareto frontiers = 17
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -40.565172932803115
+50 -th epoch marginal likelihood -41.830958947827106
+100 -th epoch marginal likelihood -42.67299215293336
+150 -th epoch marginal likelihood -43.4052795681336
+200 -th epoch marginal likelihood -44.11916465112648
+250 -th epoch marginal likelihood -44.82488438364017
+300 -th epoch marginal likelihood -45.52360072557959
+350 -th epoch marginal likelihood -46.215830304001585
+400 -th epoch marginal likelihood -46.90190490077347
+450 -th epoch marginal likelihood -47.58205426649937
+500 -th epoch marginal likelihood -48.25645172024365
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -38.647083594404954
+50 -th epoch marginal likelihood -40.297231562596245
+100 -th epoch marginal likelihood -41.50105212639614
+150 -th epoch marginal likelihood -42.39506537989111
+200 -th epoch marginal likelihood -43.168164154601115
+250 -th epoch marginal likelihood -43.90802002518216
+300 -th epoch marginal likelihood -44.63457425996856
+350 -th epoch marginal likelihood -45.35124261625994
+400 -th epoch marginal likelihood -46.05893403939047
+450 -th epoch marginal likelihood -46.758159460382835
+500 -th epoch marginal likelihood -47.44928513058071
+Done
+
+0031-th step: f(x) = [-0.00295954 -0.98483911] (action = 6937)
+0032-th step: f(x) = [-0.06762287 -0.95078624] (action = 6426)
+   Pareto set updated.
+   the number of Pareto frontiers = 18
+
+0033-th step: f(x) = [-0.23687603 -0.8884927 ] (action = 6017)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+0034-th step: f(x) = [-0.00295954 -0.98483911] (action = 7037)
+0035-th step: f(x) = [-0.9830327  -0.00352624] (action = 3164)
+0036-th step: f(x) = [-0.83371008 -0.35362632] (action = 4488)
+   Pareto set updated.
+   the number of Pareto frontiers = 20
+
+0037-th step: f(x) = [-0.49811725 -0.7454381 ] (action = 5406)
+   Pareto set updated.
+   the number of Pareto frontiers = 21
+
+0038-th step: f(x) = [-9.00606888e-04 -9.80950206e-01] (action = 6835)
+   Pareto set updated.
+   the number of Pareto frontiers = 22
+
+0039-th step: f(x) = [-0.98483911 -0.00295954] (action = 3263)
+0040-th step: f(x) = [-0.00557976 -0.98649648] (action = 7038)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -60.35218224451246
+50 -th epoch marginal likelihood -62.31324230703655
+100 -th epoch marginal likelihood -64.03507521142396
+150 -th epoch marginal likelihood -65.58859324220901
+200 -th epoch marginal likelihood -66.99580206729127
+250 -th epoch marginal likelihood -68.30020077573663
+300 -th epoch marginal likelihood -69.54647337575281
+350 -th epoch marginal likelihood -70.7618409294369
+400 -th epoch marginal likelihood -71.95882264318016
+450 -th epoch marginal likelihood -73.14338125074443
+500 -th epoch marginal likelihood -74.31855291263857
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -62.250215560988316
+50 -th epoch marginal likelihood -63.99696283844089
+100 -th epoch marginal likelihood -65.4852148259357
+150 -th epoch marginal likelihood -66.8211166160608
+200 -th epoch marginal likelihood -68.08675696269279
+250 -th epoch marginal likelihood -69.31967194576622
+300 -th epoch marginal likelihood -70.53336812110842
+350 -th epoch marginal likelihood -71.7345133472877
+400 -th epoch marginal likelihood -72.92618059866
+450 -th epoch marginal likelihood -74.10947899659575
+500 -th epoch marginal likelihood -75.2847461566066
+Done
+
+0041-th step: f(x) = [-9.80950206e-01 -9.00606888e-04] (action = 3265)
+   Pareto set updated.
+   the number of Pareto frontiers = 23
+
+0042-th step: f(x) = [-0.8884927  -0.23687603] (action = 4183)
+   Pareto set updated.
+   the number of Pareto frontiers = 24
+
+0043-th step: f(x) = [-0.00146848 -0.97868044] (action = 6834)
+   Pareto set updated.
+   the number of Pareto frontiers = 25
+
+0044-th step: f(x) = [-0.93445881 -0.11566871] (action = 3877)
+   Pareto set updated.
+   the number of Pareto frontiers = 26
+
+0045-th step: f(x) = [-0.98107174 -0.00727443] (action = 3165)
+0046-th step: f(x) = [-0.00352624 -0.9830327 ] (action = 6836)
+0047-th step: f(x) = [-0.77770464 -0.45044788] (action = 4692)
+   Pareto set updated.
+   the number of Pareto frontiers = 27
+
+0048-th step: f(x) = [-0.00352624 -0.9830327 ] (action = 7036)
+0049-th step: f(x) = [-0.98649648 -0.00557976] (action = 3162)
+0050-th step: f(x) = [-0.63212056 -0.63212056] (action = 5100)
+   Pareto set updated.
+   the number of Pareto frontiers = 28
+
+</pre></div></div>
+</div>
+<div class="section" id="id1">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_EHVI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_41_0.png" src="../_images/notebook_tutorial_multi_objective_41_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="id2">
+<h4>Volume of dominated region<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_EHVI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.3200467412741881
+</pre></div></div>
+</div>
+</div>
+</div>
+<div class="section" id="TS-(Thompson-Sampling)">
+<h3>TS (Thompson Sampling)<a class="headerlink" href="#TS-(Thompson-Sampling)" title="Permalink to this headline">¶</a></h3>
+<p>In Thompson Sampling for the single objective case, at each candidate (test_X), sampling is performed from the posterior distribution of the objective function, and the candidate with the largest value is recommended as the next search point. In the multi-objective case, one candidate is randomly selected as the next search point from among the candidates with the maximum value based on the Pareto rule for the sampled values, i.e., the Pareto-optimal candidates.</p>
+<ul class="simple">
+<li><p>Reference</p>
+<ul>
+<li><p>Yahyaa, Saba Q., and Bernard Manderick. “Thompson sampling for multi-objective multi-armed bandits problem.” Proc. Eur. Symp. Artif. Neural Netw., Comput. Intell. Mach. Learn.. 2015.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_TS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
+0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
+0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
+0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -3.2095235185355078
+50 -th epoch marginal likelihood -3.256143691169738
+100 -th epoch marginal likelihood -3.257729815869573
+150 -th epoch marginal likelihood -3.259506317055296
+200 -th epoch marginal likelihood -3.2618022406678797
+250 -th epoch marginal likelihood -3.265007867375182
+300 -th epoch marginal likelihood -3.270214654456719
+350 -th epoch marginal likelihood -3.283146778738617
+400 -th epoch marginal likelihood -3.3349571842670818
+450 -th epoch marginal likelihood -3.4598938485764448
+500 -th epoch marginal likelihood -3.638891636652419
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 1.6231643893527519
+50 -th epoch marginal likelihood 0.9161844782048467
+100 -th epoch marginal likelihood 0.5685391937325868
+150 -th epoch marginal likelihood 0.4352074454732362
+200 -th epoch marginal likelihood 0.4046905941601322
+250 -th epoch marginal likelihood 0.40039478628316516
+300 -th epoch marginal likelihood 0.4000108419175099
+350 -th epoch marginal likelihood 0.3999892703426049
+400 -th epoch marginal likelihood 0.39998854608706313
+450 -th epoch marginal likelihood 0.3999885330679991
+500 -th epoch marginal likelihood 0.3999885329713031
+Done
+
+0011-th step: f(x) = [-0.53677148 -0.93231328] (action = 4717)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0012-th step: f(x) = [-0.99984298 -0.72530014] (action = 3034)
+0013-th step: f(x) = [-0.98603674 -0.99111929] (action = 2004)
+0014-th step: f(x) = [-0.99813428 -0.80708194] (action = 5259)
+0015-th step: f(x) = [-0.90384623 -0.99742574] (action = 9432)
+0016-th step: f(x) = [-0.99947154 -0.58123945] (action = 941)
+0017-th step: f(x) = [-0.42293862 -0.98455073] (action = 8032)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0018-th step: f(x) = [-0.99990859 -0.68471079] (action = 1928)
+0019-th step: f(x) = [-0.99942566 -0.99959096] (action = 703)
+0020-th step: f(x) = [-0.15807186 -0.92175727] (action = 6321)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -11.109899691750915
+50 -th epoch marginal likelihood -11.911951103007336
+100 -th epoch marginal likelihood -12.403495428686028
+150 -th epoch marginal likelihood -12.663496208639502
+200 -th epoch marginal likelihood -12.794812103570198
+250 -th epoch marginal likelihood -12.869503941063922
+300 -th epoch marginal likelihood -12.916014580167344
+350 -th epoch marginal likelihood -12.946828194857428
+400 -th epoch marginal likelihood -12.969062194417212
+450 -th epoch marginal likelihood -12.986700124991122
+500 -th epoch marginal likelihood -13.001766935989208
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -13.956116366816612
+50 -th epoch marginal likelihood -14.269817836330576
+100 -th epoch marginal likelihood -14.450679965338123
+150 -th epoch marginal likelihood -14.550228651401113
+200 -th epoch marginal likelihood -14.60794140891448
+250 -th epoch marginal likelihood -14.649760391711341
+300 -th epoch marginal likelihood -14.68533707916134
+350 -th epoch marginal likelihood -14.717130159532145
+400 -th epoch marginal likelihood -14.745852138249056
+450 -th epoch marginal likelihood -14.77190352341345
+500 -th epoch marginal likelihood -14.795599713988466
+Done
+
+0021-th step: f(x) = [-0.87107548 -0.29634835] (action = 4085)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0022-th step: f(x) = [-0.92140059 -0.65788521] (action = 2987)
+0023-th step: f(x) = [-0.98512742 -0.02192011] (action = 3463)
+   Pareto set updated.
+   the number of Pareto frontiers = 4
+
+0024-th step: f(x) = [-0.92804454 -0.13297899] (action = 3978)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0025-th step: f(x) = [-0.9984469  -0.30099592] (action = 1846)
+0026-th step: f(x) = [-0.98449919 -0.98763811] (action = 2002)
+0027-th step: f(x) = [-0.9638648  -0.03874184] (action = 3471)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0028-th step: f(x) = [-0.90953591 -0.2236856 ] (action = 4481)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0029-th step: f(x) = [-0.98653962 -0.00875682] (action = 3262)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0030-th step: f(x) = [-0.99983957 -0.82149709] (action = 38)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -30.500474847890658
+50 -th epoch marginal likelihood -32.43603006127972
+100 -th epoch marginal likelihood -33.83423558973539
+150 -th epoch marginal likelihood -34.986377945780006
+200 -th epoch marginal likelihood -35.945124865830735
+250 -th epoch marginal likelihood -36.734056728077434
+300 -th epoch marginal likelihood -37.368895832582325
+350 -th epoch marginal likelihood -37.87493634262652
+400 -th epoch marginal likelihood -38.283943212980205
+450 -th epoch marginal likelihood -38.626043663680534
+500 -th epoch marginal likelihood -38.9248456329509
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -25.512999263909123
+50 -th epoch marginal likelihood -27.379256989135094
+100 -th epoch marginal likelihood -28.4653949145102
+150 -th epoch marginal likelihood -29.388297361693937
+200 -th epoch marginal likelihood -30.212575531305916
+250 -th epoch marginal likelihood -30.9536837091091
+300 -th epoch marginal likelihood -31.61817559474459
+350 -th epoch marginal likelihood -32.21005770725087
+400 -th epoch marginal likelihood -32.73579323714127
+450 -th epoch marginal likelihood -33.20423114040735
+500 -th epoch marginal likelihood -33.62546361806544
+Done
+
+0031-th step: f(x) = [-0.97666876 -0.02414191] (action = 3167)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0032-th step: f(x) = [-0.9357052  -0.13248591] (action = 4177)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0033-th step: f(x) = [-0.95822055 -0.1136553 ] (action = 4173)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0034-th step: f(x) = [-0.99650744 -0.28800081] (action = 1853)
+0035-th step: f(x) = [-0.98544244 -0.78004999] (action = 5976)
+0036-th step: f(x) = [-0.85466737 -0.99971163] (action = 5655)
+0037-th step: f(x) = [-0.99369628 -0.08477389] (action = 2556)
+0038-th step: f(x) = [-0.96729595 -0.02580494] (action = 3470)
+   Pareto set updated.
+   the number of Pareto frontiers = 11
+
+0039-th step: f(x) = [-0.99359461 -0.0700125 ] (action = 2656)
+0040-th step: f(x) = [-0.98717046 -0.05521263] (action = 3562)
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -62.611026708777786
+50 -th epoch marginal likelihood -64.20236170424886
+100 -th epoch marginal likelihood -65.05060389301391
+150 -th epoch marginal likelihood -65.77600594361401
+200 -th epoch marginal likelihood -66.47936652092474
+250 -th epoch marginal likelihood -67.16739318789834
+300 -th epoch marginal likelihood -67.8428071289677
+350 -th epoch marginal likelihood -68.50741926672065
+400 -th epoch marginal likelihood -69.16239820167326
+450 -th epoch marginal likelihood -69.80850190860637
+500 -th epoch marginal likelihood -70.4462487503116
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -46.614138208164384
+50 -th epoch marginal likelihood -48.14999941208065
+100 -th epoch marginal likelihood -49.57886424469417
+150 -th epoch marginal likelihood -50.8820560401331
+200 -th epoch marginal likelihood -52.05533619926354
+250 -th epoch marginal likelihood -53.11693549156229
+300 -th epoch marginal likelihood -54.09625721870212
+350 -th epoch marginal likelihood -55.017361293376425
+400 -th epoch marginal likelihood -55.89365983770457
+450 -th epoch marginal likelihood -56.73271757611425
+500 -th epoch marginal likelihood -57.54052768605143
+Done
+
+0041-th step: f(x) = [-0.99938407 -0.98833098] (action = 7474)
+0042-th step: f(x) = [-0.99615554 -0.21626044] (action = 2053)
+0043-th step: f(x) = [-0.99164248 -0.68782977] (action = 5368)
+0044-th step: f(x) = [-0.98846274 -0.04860585] (action = 3461)
+0045-th step: f(x) = [-9.80950206e-01 -9.00606888e-04] (action = 3265)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0046-th step: f(x) = [-0.97346772 -0.0089662 ] (action = 3468)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0047-th step: f(x) = [-0.98753468 -0.08203442] (action = 2662)
+0048-th step: f(x) = [-0.99503181 -0.7394345 ] (action = 5365)
+0049-th step: f(x) = [-0.93417393 -0.29168092] (action = 3279)
+0050-th step: f(x) = [-0.99972499 -0.9992387 ] (action = 9191)
+</pre></div></div>
+</div>
+<div class="section" id="id3">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_TS</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_47_0.png" src="../_images/notebook_tutorial_multi_objective_47_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="id4">
+<h4>Volume of dominated region<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_TS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.16415446221006114
+</pre></div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="Appendix:-Full-search">
+<h2>Appendix: Full search<a class="headerlink" href="#Appendix:-Full-search" title="Permalink to this headline">¶</a></h2>
+<div class="line-block">
+<div class="line">In <code class="docutils literal notranslate"><span class="pre">random_search</span></code>, you can easily do a full search by passing the number of all data (<code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">test_X.shape[0]</span></code>) to <code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code>.</div>
+<div class="line">Since it takes time to evaluate all data, reduce the number of data in advance.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">test_X_sparse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
+<span class="n">simu_sparse</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X_sparse</span><span class="p">)</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy_mo</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_sparse</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="n">test_X_sparse</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">res_all</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_sparse</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = [-0.98370924 -0.99074733] (action = 361)
+   Pareto set updated.
+   the number of Pareto frontiers = 1
+
+0002-th step: f(x) = [-0.99523084 -0.2246305 ] (action = 91)
+   Pareto set updated.
+   the number of Pareto frontiers = 2
+
+0003-th step: f(x) = [-0.99987153 -0.64661672] (action = 46)
+0004-th step: f(x) = [-0.69972145 -0.9998078 ] (action = 413)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0005-th step: f(x) = [-0.92045011 -0.23557331] (action = 196)
+   Pareto set updated.
+   the number of Pareto frontiers = 3
+
+0006-th step: f(x) = [-0.99617304 -0.98813681] (action = 338)
+0007-th step: f(x) = [-0.97604003 -0.76975911] (action = 256)
+0008-th step: f(x) = [-0.82194903 -0.44805925] (action = 218)
+   Pareto set updated.
+   the number of Pareto frontiers = 4
+
+0009-th step: f(x) = [-0.99987659 -0.99987659] (action = 420)
+0010-th step: f(x) = [-0.97555848 -0.99552177] (action = 383)
+0011-th step: f(x) = [-0.88371066 -0.99999225] (action = 437)
+0012-th step: f(x) = [-0.82093385 -0.82093385] (action = 280)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0013-th step: f(x) = [-0.58998965 -0.99856763] (action = 390)
+   Pareto set updated.
+   the number of Pareto frontiers = 5
+
+0014-th step: f(x) = [-0.70979198 -0.83517034] (action = 181)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0015-th step: f(x) = [-0.99829019 -0.98356972] (action = 36)
+0016-th step: f(x) = [-0.44333209 -0.96709773] (action = 225)
+   Pareto set updated.
+   the number of Pareto frontiers = 6
+
+0017-th step: f(x) = [-0.99980113 -0.99964985] (action = 399)
+0018-th step: f(x) = [-0.96595598 -0.99935088] (action = 427)
+0019-th step: f(x) = [-0.99516257 -0.95351517] (action = 56)
+0020-th step: f(x) = [-0.98403021 -0.52428851] (action = 214)
+0021-th step: f(x) = [-0.99968938 -0.51472752] (action = 67)
+0022-th step: f(x) = [-0.88792973 -0.98833743] (action = 364)
+0023-th step: f(x) = [-0.99960175 -0.88600183] (action = 10)
+0024-th step: f(x) = [-0.2246305  -0.99523084] (action = 349)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0025-th step: f(x) = [-0.99728354 -0.22242321] (action = 90)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0026-th step: f(x) = [-0.90611507 -0.70896582] (action = 138)
+0027-th step: f(x) = [-0.99995095 -0.76244576] (action = 25)
+0028-th step: f(x) = [-0.98843647 -0.3935306 ] (action = 193)
+0029-th step: f(x) = [-0.95021293 -0.95021293] (action = 320)
+0030-th step: f(x) = [-0.90611507 -0.70896582] (action = 258)
+0031-th step: f(x) = [-0.81837051 -0.98926465] (action = 365)
+0032-th step: f(x) = [-0.94682748 -0.10038325] (action = 175)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0033-th step: f(x) = [-0.96709773 -0.44333209] (action = 115)
+0034-th step: f(x) = [-0.91108736 -0.99830471] (action = 187)
+0035-th step: f(x) = [-0.99994244 -0.72122752] (action = 65)
+0036-th step: f(x) = [-0.40038762 -0.89013777] (action = 223)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0037-th step: f(x) = [-0.70057384 -0.99966256] (action = 412)
+0038-th step: f(x) = [-0.91745532 -0.99949228] (action = 429)
+0039-th step: f(x) = [-0.29032185 -0.97617587] (action = 326)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0040-th step: f(x) = [-0.76579837 -0.99918182] (action = 410)
+0041-th step: f(x) = [-0.9999968  -0.91531622] (action = 2)
+0042-th step: f(x) = [-0.94637208 -0.83375864] (action = 118)
+0043-th step: f(x) = [-0.64661672 -0.99987153] (action = 394)
+0044-th step: f(x) = [-0.99948501 -0.99505129] (action = 336)
+0045-th step: f(x) = [-0.91838861 -0.9951763 ] (action = 385)
+0046-th step: f(x) = [-0.99227074 -0.28627554] (action = 92)
+0047-th step: f(x) = [-0.99948501 -0.99505129] (action = 16)
+0048-th step: f(x) = [-0.72437945 -0.99945311] (action = 411)
+0049-th step: f(x) = [-0.99993226 -0.81366367] (action = 126)
+0050-th step: f(x) = [-0.72826929 -0.99087791] (action = 206)
+0051-th step: f(x) = [-0.99959374 -0.99778272] (action = 357)
+0052-th step: f(x) = [-0.40038762 -0.89013777] (action = 283)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0053-th step: f(x) = [-0.90826315 -0.99999653] (action = 418)
+0054-th step: f(x) = [-0.09782226 -0.96971359] (action = 306)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0055-th step: f(x) = [-0.98926465 -0.81837051] (action = 75)
+0056-th step: f(x) = [-0.99964985 -0.99980113] (action = 421)
+0057-th step: f(x) = [-0.96595598 -0.99935088] (action = 167)
+0058-th step: f(x) = [-0.5969236  -0.95805394] (action = 204)
+0059-th step: f(x) = [-0.97389649 -0.91908164] (action = 98)
+0060-th step: f(x) = [-0.43214402 -0.99936004] (action = 332)
+0061-th step: f(x) = [-0.98370924 -0.99074733] (action = 101)
+0062-th step: f(x) = [-0.98403021 -0.52428851] (action = 94)
+0063-th step: f(x) = [-0.76579837 -0.99918182] (action = 250)
+0064-th step: f(x) = [-0.64661672 -0.99987153] (action = 354)
+0065-th step: f(x) = [-0.83517034 -0.70979198] (action = 259)
+0066-th step: f(x) = [-0.91908164 -0.97389649] (action = 342)
+0067-th step: f(x) = [-0.89013777 -0.40038762] (action = 157)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0068-th step: f(x) = [-0.99999091 -0.8635332 ] (action = 43)
+0069-th step: f(x) = [-0.15766112 -0.9970573 ] (action = 330)
+0070-th step: f(x) = [-0.99918182 -0.76579837] (action = 30)
+0071-th step: f(x) = [-0.99074733 -0.98370924] (action = 339)
+0072-th step: f(x) = [-0.99943574 -0.99943574] (action = 400)
+0073-th step: f(x) = [-0.81629344 -0.99887005] (action = 229)
+0074-th step: f(x) = [-0.86773446 -0.9955598 ] (action = 386)
+0075-th step: f(x) = [-0.92022365 -0.56459205] (action = 237)
+0076-th step: f(x) = [-0.9951763  -0.91838861] (action = 55)
+0077-th step: f(x) = [-0.99778272 -0.99959374] (action = 83)
+0078-th step: f(x) = [-0.99996438 -0.82750022] (action = 105)
+0079-th step: f(x) = [-0.85793518 -0.97397059] (action = 163)
+0080-th step: f(x) = [-0.99945311 -0.72437945] (action = 29)
+0081-th step: f(x) = [-0.98830423 -0.93616616] (action = 77)
+0082-th step: f(x) = [-0.01711023 -0.98935582] (action = 308)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0083-th step: f(x) = [-0.56459205 -0.92022365] (action = 303)
+0084-th step: f(x) = [-0.65160403 -0.99785708] (action = 249)
+0085-th step: f(x) = [-0.55457668 -0.99911619] (action = 391)
+0086-th step: f(x) = [-0.99853885 -0.99202523] (action = 37)
+0087-th step: f(x) = [-0.91908164 -0.97389649] (action = 142)
+0088-th step: f(x) = [-0.99970416 -0.99908292] (action = 378)
+0089-th step: f(x) = [-0.99911619 -0.55457668] (action = 149)
+0090-th step: f(x) = [-0.99505129 -0.99948501] (action = 104)
+0091-th step: f(x) = [-0.17190645 -0.91382463] (action = 264)
+   Pareto set updated.
+   the number of Pareto frontiers = 11
+
+0092-th step: f(x) = [-0.56459205 -0.92022365] (action = 203)
+0093-th step: f(x) = [-0.38659518 -0.99878288] (action = 311)
+0094-th step: f(x) = [-0.99964985 -0.99980113] (action = 41)
+0095-th step: f(x) = [-0.70896582 -0.90611507] (action = 182)
+0096-th step: f(x) = [-0.99017418 -0.09267839] (action = 152)
+   Pareto set updated.
+   the number of Pareto frontiers = 12
+
+0097-th step: f(x) = [-0.99481892 -0.52157619] (action = 72)
+0098-th step: f(x) = [-0.94513852 -0.99815828] (action = 406)
+0099-th step: f(x) = [-0.99949659 -0.55330867] (action = 128)
+0100-th step: f(x) = [-0.9985717  -0.28016277] (action = 109)
+0101-th step: f(x) = [-0.38833643 -0.99786316] (action = 290)
+0102-th step: f(x) = [-0.79699336 -0.99997619] (action = 396)
+0103-th step: f(x) = [-0.81366367 -0.99993226] (action = 434)
+0104-th step: f(x) = [-0.85466737 -0.99971163] (action = 251)
+0105-th step: f(x) = [-0.99856763 -0.58998965] (action = 50)
+0106-th step: f(x) = [-0.93742384 -0.39868067] (action = 216)
+0107-th step: f(x) = [-0.28627554 -0.99227074] (action = 268)
+0108-th step: f(x) = [-0.01990033 -0.98131247] (action = 307)
+   Pareto set updated.
+   the number of Pareto frontiers = 13
+
+0109-th step: f(x) = [-0.38659518 -0.99878288] (action = 371)
+0110-th step: f(x) = [-0.97934917 -0.97934917] (action = 100)
+0111-th step: f(x) = [-0.65160403 -0.99785708] (action = 389)
+0112-th step: f(x) = [-0.90531099 -0.94621941] (action = 321)
+0113-th step: f(x) = [-0.93742384 -0.39868067] (action = 136)
+0114-th step: f(x) = [-0.99852214 -0.99916062] (action = 61)
+0115-th step: f(x) = [-0.28016277 -0.9985717 ] (action = 351)
+0116-th step: f(x) = [-0.99642687 -0.99884734] (action = 402)
+0117-th step: f(x) = [-0.99987659 -0.99987659] (action = 20)
+0118-th step: f(x) = [-0.52157619 -0.99481892] (action = 248)
+0119-th step: f(x) = [-0.99949659 -0.55330867] (action = 48)
+0120-th step: f(x) = [-0.09267839 -0.99017418] (action = 328)
+0121-th step: f(x) = [-0.85793518 -0.97397059] (action = 343)
+0122-th step: f(x) = [-0.99918182 -0.76579837] (action = 190)
+0123-th step: f(x) = [-0.70979198 -0.83517034] (action = 281)
+   Pareto set updated.
+   the number of Pareto frontiers = 14
+
+0124-th step: f(x) = [-0.98833743 -0.88792973] (action = 76)
+0125-th step: f(x) = [-0.99270087 -0.99270087] (action = 360)
+0126-th step: f(x) = [-0.99829019 -0.98356972] (action = 316)
+0127-th step: f(x) = [-0.99908292 -0.99970416] (action = 62)
+0128-th step: f(x) = [-0.92022365 -0.56459205] (action = 137)
+0129-th step: f(x) = [-0.99884734 -0.99642687] (action = 358)
+0130-th step: f(x) = [-0.99971163 -0.85466737] (action = 189)
+0131-th step: f(x) = [-0.43696618 -0.99653688] (action = 269)
+0132-th step: f(x) = [-0.01990033 -0.98131247] (action = 287)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0133-th step: f(x) = [-0.97964062 -0.65554315] (action = 95)
+0134-th step: f(x) = [-0.99830471 -0.91108736] (action = 33)
+0135-th step: f(x) = [-0.85466737 -0.99971163] (action = 431)
+0136-th step: f(x) = [-0.99780154 -0.99780154] (action = 60)
+0137-th step: f(x) = [-0.99704052 -0.72671998] (action = 212)
+0138-th step: f(x) = [-0.80212129 -0.99622705] (action = 207)
+0139-th step: f(x) = [-0.43696618 -0.99653688] (action = 369)
+0140-th step: f(x) = [-0.76975911 -0.97604003] (action = 344)
+0141-th step: f(x) = [-0.73362301 -0.53100224] (action = 199)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0142-th step: f(x) = [-0.99930674 -0.38484896] (action = 88)
+0143-th step: f(x) = [-0.96643645 -0.98917271] (action = 122)
+0144-th step: f(x) = [-0.82093385 -0.82093385] (action = 160)
+0145-th step: f(x) = [-0.94513852 -0.99815828] (action = 166)
+0146-th step: f(x) = [-0.39868067 -0.93742384] (action = 224)
+0147-th step: f(x) = [-0.98131247 -0.01990033] (action = 153)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0148-th step: f(x) = [-0.63212056 -0.63212056] (action = 220)
+   Pareto set updated.
+   the number of Pareto frontiers = 14
+
+0149-th step: f(x) = [-0.81837051 -0.98926465] (action = 185)
+0150-th step: f(x) = [-0.52157619 -0.99481892] (action = 368)
+0151-th step: f(x) = [-0.95805394 -0.5969236 ] (action = 236)
+0152-th step: f(x) = [-0.90531099 -0.94621941] (action = 141)
+0153-th step: f(x) = [-0.98980427 -0.99939737] (action = 125)
+0154-th step: f(x) = [-0.98917271 -0.96643645] (action = 78)
+0155-th step: f(x) = [-0.95351517 -0.99516257] (action = 144)
+0156-th step: f(x) = [-0.99999091 -0.8635332 ] (action = 23)
+0157-th step: f(x) = [-0.89771579 -0.89771579] (action = 140)
+0158-th step: f(x) = [-0.29634835 -0.87107548] (action = 263)
+   Pareto set updated.
+   the number of Pareto frontiers = 13
+
+0159-th step: f(x) = [-0.5969236  -0.95805394] (action = 324)
+0160-th step: f(x) = [-0.96875158 -0.99815304] (action = 405)
+0161-th step: f(x) = [-0.99887005 -0.81629344] (action = 211)
+0162-th step: f(x) = [-0.99778272 -0.99959374] (action = 423)
+0163-th step: f(x) = [-0.53100224 -0.73362301] (action = 241)
+   Pareto set updated.
+   the number of Pareto frontiers = 14
+
+0164-th step: f(x) = [-0.60034647 -0.7730085 ] (action = 201)
+0165-th step: f(x) = [-0.73362301 -0.53100224] (action = 219)
+   Pareto set updated.
+   the number of Pareto frontiers = 15
+
+0166-th step: f(x) = [-0.95021293 -0.95021293] (action = 120)
+0167-th step: f(x) = [-0.9998078  -0.69972145] (action = 27)
+0168-th step: f(x) = [-0.72122752 -0.99994244] (action = 395)
+0169-th step: f(x) = [-0.96709773 -0.44333209] (action = 215)
+0170-th step: f(x) = [-0.10038325 -0.94682748] (action = 285)
+   Pareto set updated.
+   the number of Pareto frontiers = 16
+
+0171-th step: f(x) = [-0.9955598  -0.86773446] (action = 54)
+0172-th step: f(x) = [-0.99468465 -0.99698104] (action = 81)
+0173-th step: f(x) = [-0.99698104 -0.99468465] (action = 359)
+0174-th step: f(x) = [-0.09009546 -0.99440334] (action = 329)
+0175-th step: f(x) = [-0.40208972 -0.80711969] (action = 242)
+   Pareto set updated.
+   the number of Pareto frontiers = 17
+
+0176-th step: f(x) = [-0.91838861 -0.9951763 ] (action = 165)
+0177-th step: f(x) = [-0.99468465 -0.99698104] (action = 381)
+0178-th step: f(x) = [-0.99516257 -0.95351517] (action = 296)
+0179-th step: f(x) = [-0.99815828 -0.94513852] (action = 34)
+0180-th step: f(x) = [-0.99878288 -0.38659518] (action = 129)
+0181-th step: f(x) = [-0.98407554 -0.16481416] (action = 113)
+0182-th step: f(x) = [-0.09782226 -0.96971359] (action = 266)
+   Pareto set updated.
+   the number of Pareto frontiers = 18
+
+0183-th step: f(x) = [-0.98407554 -0.16481416] (action = 173)
+0184-th step: f(x) = [-0.97604003 -0.76975911] (action = 96)
+0185-th step: f(x) = [-0.97555848 -0.99552177] (action = 123)
+0186-th step: f(x) = [-0.98356972 -0.99829019] (action = 404)
+0187-th step: f(x) = [-0.96467434 -0.99999957] (action = 440)
+0188-th step: f(x) = [-0.99916062 -0.99852214] (action = 379)
+0189-th step: f(x) = [-0.99815304 -0.96875158] (action = 35)
+0190-th step: f(x) = [-0.09267839 -0.99017418] (action = 288)
+0191-th step: f(x) = [-0.88600183 -0.99960175] (action = 430)
+0192-th step: f(x) = [-0.99966256 -0.70057384] (action = 148)
+0193-th step: f(x) = [-0.22242321 -0.99728354] (action = 350)
+0194-th step: f(x) = [-0.99653688 -0.43696618] (action = 171)
+0195-th step: f(x) = [-0.97934917 -0.97934917] (action = 340)
+0196-th step: f(x) = [-0.94637208 -0.83375864] (action = 278)
+0197-th step: f(x) = [-0.99936004 -0.43214402] (action = 68)
+0198-th step: f(x) = [-0.91531622 -0.9999968 ] (action = 438)
+0199-th step: f(x) = [-0.23339717 -0.95468937] (action = 245)
+0200-th step: f(x) = [-0.85258693 -0.99998271] (action = 436)
+0201-th step: f(x) = [-0.83375864 -0.94637208] (action = 322)
+0202-th step: f(x) = [-0.89013777 -0.40038762] (action = 217)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+0203-th step: f(x) = [-0.72201886 -0.99989894] (action = 414)
+0204-th step: f(x) = [-0.82896507 -0.99980725] (action = 432)
+0205-th step: f(x) = [-0.99704052 -0.72671998] (action = 52)
+0206-th step: f(x) = [-0.02268252 -0.96719113] (action = 286)
+   Pareto set updated.
+   the number of Pareto frontiers = 18
+
+0207-th step: f(x) = [-0.86698033 -0.99855947] (action = 408)
+0208-th step: f(x) = [-0.99999225 -0.88371066] (action = 63)
+0209-th step: f(x) = [-0.98813681 -0.99617304] (action = 382)
+0210-th step: f(x) = [-0.99087791 -0.72826929] (action = 74)
+0211-th step: f(x) = [-0.66040447 -0.66040447] (action = 240)
+0212-th step: f(x) = [-0.23557331 -0.92045011] (action = 284)
+0213-th step: f(x) = [-0.99887005 -0.81629344] (action = 31)
+0214-th step: f(x) = [-0.94482572 -0.99940249] (action = 188)
+0215-th step: f(x) = [-0.81419262 -0.99988107] (action = 293)
+0216-th step: f(x) = [-0.44333209 -0.96709773] (action = 325)
+0217-th step: f(x) = [-0.99980725 -0.82896507] (action = 8)
+0218-th step: f(x) = [-0.97389649 -0.91908164] (action = 298)
+0219-th step: f(x) = [-0.99284468 -0.62472681] (action = 213)
+0220-th step: f(x) = [-0.95063572 -0.73057679] (action = 117)
+0221-th step: f(x) = [-0.99853885 -0.99202523] (action = 337)
+0222-th step: f(x) = [-0.99973531 -0.58647807] (action = 107)
+0223-th step: f(x) = [-0.96875158 -0.99815304] (action = 145)
+0224-th step: f(x) = [-0.99989894 -0.72201886] (action = 106)
+0225-th step: f(x) = [-0.99994244 -0.72122752] (action = 45)
+0226-th step: f(x) = [-0.52428851 -0.98403021] (action = 226)
+0227-th step: f(x) = [-0.97617587 -0.29032185] (action = 114)
+0228-th step: f(x) = [-0.91745532 -0.99949228] (action = 209)
+0229-th step: f(x) = [-0.95805394 -0.5969236 ] (action = 116)
+0230-th step: f(x) = [-0.72122752 -0.99994244] (action = 375)
+0231-th step: f(x) = [-0.99785708 -0.65160403] (action = 191)
+0232-th step: f(x) = [-0.98833743 -0.88792973] (action = 276)
+0233-th step: f(x) = [-0.9970573  -0.15766112] (action = 110)
+0234-th step: f(x) = [-0.99940249 -0.94482572] (action = 252)
+0235-th step: f(x) = [-0.65554315 -0.97964062] (action = 205)
+0236-th step: f(x) = [-0.3935306  -0.98843647] (action = 347)
+0237-th step: f(x) = [-0.94307317 -0.99999878] (action = 419)
+0238-th step: f(x) = [-0.99911619 -0.55457668] (action = 49)
+0239-th step: f(x) = [-0.99988107 -0.81419262] (action = 7)
+0240-th step: f(x) = [-0.62472681 -0.99284468] (action = 367)
+0241-th step: f(x) = [-0.72671998 -0.99704052] (action = 228)
+0242-th step: f(x) = [-0.99815828 -0.94513852] (action = 274)
+0243-th step: f(x) = [-0.95468937 -0.23339717] (action = 195)
+0244-th step: f(x) = [-0.99552177 -0.97555848] (action = 317)
+0245-th step: f(x) = [-0.76975911 -0.97604003] (action = 184)
+0246-th step: f(x) = [-0.98926465 -0.81837051] (action = 255)
+0247-th step: f(x) = [-0.51472752 -0.99968938] (action = 353)
+0248-th step: f(x) = [-0.99997802 -0.81260125] (action = 24)
+0249-th step: f(x) = [-0.91108736 -0.99830471] (action = 407)
+0250-th step: f(x) = [-0.99989894 -0.72201886] (action = 26)
+0251-th step: f(x) = [-0.99786316 -0.38833643] (action = 70)
+0252-th step: f(x) = [-0.99980725 -0.82896507] (action = 168)
+0253-th step: f(x) = [-0.99728354 -0.22242321] (action = 130)
+0254-th step: f(x) = [-0.99999653 -0.90826315] (action = 22)
+0255-th step: f(x) = [-0.7730085  -0.60034647] (action = 179)
+0256-th step: f(x) = [-0.99855947 -0.86698033] (action = 32)
+0257-th step: f(x) = [-0.82750022 -0.99996438] (action = 335)
+0258-th step: f(x) = [-0.94307317 -0.99999878] (action = 439)
+0259-th step: f(x) = [-0.89800614 -0.82042409] (action = 279)
+0260-th step: f(x) = [-0.95745348 -0.97583482] (action = 341)
+0261-th step: f(x) = [-0.98813681 -0.99617304] (action = 102)
+0262-th step: f(x) = [-0.58998965 -0.99856763] (action = 270)
+0263-th step: f(x) = [-0.85994015 -0.56582803] (action = 158)
+0264-th step: f(x) = [-0.99936004 -0.43214402] (action = 108)
+0265-th step: f(x) = [-0.55330867 -0.99949659] (action = 312)
+0266-th step: f(x) = [-0.97617587 -0.29032185] (action = 194)
+0267-th step: f(x) = [-0.97397059 -0.85793518] (action = 277)
+0268-th step: f(x) = [-0.2246305  -0.99523084] (action = 289)
+0269-th step: f(x) = [-0.72826929 -0.99087791] (action = 366)
+0270-th step: f(x) = [-0.16481416 -0.98407554] (action = 267)
+0271-th step: f(x) = [-0.98917271 -0.96643645] (action = 318)
+0272-th step: f(x) = [-0.8635332  -0.99999091] (action = 397)
+0273-th step: f(x) = [-0.99830471 -0.91108736] (action = 253)
+0274-th step: f(x) = [-0.81260125 -0.99997802] (action = 416)
+0275-th step: f(x) = [-0.99884734 -0.99642687] (action = 38)
+0276-th step: f(x) = [-0.99523084 -0.2246305 ] (action = 151)
+0277-th step: f(x) = [-0.99999878 -0.94307317] (action = 21)
+0278-th step: f(x) = [-0.81260125 -0.99997802] (action = 376)
+0279-th step: f(x) = [-0.76244576 -0.99995095] (action = 415)
+0280-th step: f(x) = [-0.99966256 -0.70057384] (action = 28)
+0281-th step: f(x) = [-0.94621941 -0.90531099] (action = 299)
+0282-th step: f(x) = [-0.99855947 -0.86698033] (action = 232)
+0283-th step: f(x) = [-0.99996438 -0.82750022] (action = 5)
+0284-th step: f(x) = [-0.99999225 -0.88371066] (action = 3)
+0285-th step: f(x) = [-0.93616616 -0.98830423] (action = 363)
+0286-th step: f(x) = [-0.98356972 -0.99829019] (action = 124)
+0287-th step: f(x) = [-0.99935088 -0.96595598] (action = 13)
+0288-th step: f(x) = [-0.72437945 -0.99945311] (action = 271)
+0289-th step: f(x) = [-0.99943574 -0.99943574] (action = 40)
+0290-th step: f(x) = [-0.70057384 -0.99966256] (action = 292)
+0291-th step: f(x) = [-0.97397059 -0.85793518] (action = 97)
+0292-th step: f(x) = [-0.99995095 -0.76244576] (action = 85)
+0293-th step: f(x) = [-0.98060895 -0.99934904] (action = 426)
+0294-th step: f(x) = [-0.99074733 -0.98370924] (action = 79)
+0295-th step: f(x) = [-0.99202523 -0.99853885] (action = 403)
+0296-th step: f(x) = [-0.52428851 -0.98403021] (action = 346)
+0297-th step: f(x) = [-0.89800614 -0.82042409] (action = 139)
+0298-th step: f(x) = [-0.82194903 -0.44805925] (action = 178)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+0299-th step: f(x) = [-0.99987153 -0.64661672] (action = 86)
+0300-th step: f(x) = [-0.99785708 -0.65160403] (action = 51)
+0301-th step: f(x) = [-0.99934904 -0.98060895] (action = 14)
+0302-th step: f(x) = [-0.80212129 -0.99622705] (action = 387)
+0303-th step: f(x) = [-0.87107548 -0.29634835] (action = 177)
+   Pareto set updated.
+   the number of Pareto frontiers = 18
+
+0304-th step: f(x) = [-0.82750022 -0.99996438] (action = 435)
+0305-th step: f(x) = [-0.39868067 -0.93742384] (action = 304)
+0306-th step: f(x) = [-0.91531622 -0.9999968 ] (action = 398)
+0307-th step: f(x) = [-0.99481892 -0.52157619] (action = 192)
+0308-th step: f(x) = [-0.94682748 -0.10038325] (action = 155)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+0309-th step: f(x) = [-0.97583482 -0.95745348] (action = 99)
+0310-th step: f(x) = [-0.44805925 -0.82194903] (action = 222)
+0311-th step: f(x) = [-0.9955598  -0.86773446] (action = 254)
+0312-th step: f(x) = [-0.98980427 -0.99939737] (action = 425)
+0313-th step: f(x) = [-0.88600183 -0.99960175] (action = 230)
+0314-th step: f(x) = [-0.95468937 -0.23339717] (action = 135)
+0315-th step: f(x) = [-0.82042409 -0.89800614] (action = 301)
+0316-th step: f(x) = [-0.99934904 -0.98060895] (action = 294)
+0317-th step: f(x) = [-0.85994015 -0.56582803] (action = 238)
+0318-th step: f(x) = [-0.99968938 -0.51472752] (action = 87)
+0319-th step: f(x) = [-0.28627554 -0.99227074] (action = 348)
+0320-th step: f(x) = [-0.72201886 -0.99989894] (action = 334)
+0321-th step: f(x) = [-0.87107548 -0.29634835] (action = 197)
+   Pareto set updated.
+   the number of Pareto frontiers = 20
+
+0322-th step: f(x) = [-0.99087791 -0.72826929] (action = 234)
+0323-th step: f(x) = [-0.66040447 -0.66040447] (action = 200)
+0324-th step: f(x) = [-0.99940249 -0.94482572] (action = 12)
+0325-th step: f(x) = [-0.99949228 -0.91745532] (action = 11)
+0326-th step: f(x) = [-0.99971163 -0.85466737] (action = 9)
+0327-th step: f(x) = [-0.58647807 -0.99973531] (action = 333)
+0328-th step: f(x) = [-0.99998271 -0.85258693] (action = 84)
+0329-th step: f(x) = [-0.80711969 -0.40208972] (action = 198)
+   Pareto set updated.
+   the number of Pareto frontiers = 19
+
+0330-th step: f(x) = [-0.3935306  -0.98843647] (action = 247)
+0331-th step: f(x) = [-0.99949228 -0.91745532] (action = 231)
+0332-th step: f(x) = [-0.95351517 -0.99516257] (action = 384)
+0333-th step: f(x) = [-0.81366367 -0.99993226] (action = 314)
+0334-th step: f(x) = [-0.83517034 -0.70979198] (action = 159)
+0335-th step: f(x) = [-0.82042409 -0.89800614] (action = 161)
+0336-th step: f(x) = [-0.82896507 -0.99980725] (action = 272)
+0337-th step: f(x) = [-0.95745348 -0.97583482] (action = 121)
+0338-th step: f(x) = [-0.99935088 -0.96595598] (action = 273)
+0339-th step: f(x) = [-0.38484896 -0.99930674] (action = 352)
+0340-th step: f(x) = [-0.96719113 -0.02268252] (action = 154)
+   Pareto set updated.
+   the number of Pareto frontiers = 20
+
+0341-th step: f(x) = [-0.58647807 -0.99973531] (action = 393)
+0342-th step: f(x) = [-0.99786316 -0.38833643] (action = 150)
+0343-th step: f(x) = [-0.99939737 -0.98980427] (action = 315)
+0344-th step: f(x) = [-0.98131247 -0.01990033] (action = 133)
+   Pareto set updated.
+   the number of Pareto frontiers = 21
+
+0345-th step: f(x) = [-0.70896582 -0.90611507] (action = 302)
+0346-th step: f(x) = [-0.99642687 -0.99884734] (action = 82)
+0347-th step: f(x) = [-0.9985717  -0.28016277] (action = 89)
+0348-th step: f(x) = [-0.99856763 -0.58998965] (action = 170)
+0349-th step: f(x) = [-0.23339717 -0.95468937] (action = 305)
+0350-th step: f(x) = [-0.10038325 -0.94682748] (action = 265)
+   Pareto set updated.
+   the number of Pareto frontiers = 22
+
+0351-th step: f(x) = [-0.91382463 -0.17190645] (action = 176)
+   Pareto set updated.
+   the number of Pareto frontiers = 22
+
+0352-th step: f(x) = [-0.99440334 -0.09009546] (action = 131)
+0353-th step: f(x) = [-0.99973531 -0.58647807] (action = 47)
+0354-th step: f(x) = [-0.88792973 -0.98833743] (action = 164)
+0355-th step: f(x) = [-0.99505129 -0.99948501] (action = 424)
+0356-th step: f(x) = [-0.96971359 -0.09782226] (action = 134)
+0357-th step: f(x) = [-0.7730085  -0.60034647] (action = 239)
+0358-th step: f(x) = [-0.62472681 -0.99284468] (action = 227)
+0359-th step: f(x) = [-0.96643645 -0.98917271] (action = 362)
+0360-th step: f(x) = [-0.99997802 -0.81260125] (action = 64)
+0361-th step: f(x) = [-0.99284468 -0.62472681] (action = 73)
+0362-th step: f(x) = [-0.97583482 -0.95745348] (action = 319)
+0363-th step: f(x) = [-0.83375864 -0.94637208] (action = 162)
+0364-th step: f(x) = [-0.94482572 -0.99940249] (action = 428)
+0365-th step: f(x) = [-0.86698033 -0.99855947] (action = 208)
+0366-th step: f(x) = [-0.98843647 -0.3935306 ] (action = 93)
+0367-th step: f(x) = [-0.99552177 -0.97555848] (action = 57)
+0368-th step: f(x) = [-0.99980113 -0.99964985] (action = 19)
+0369-th step: f(x) = [-0.29032185 -0.97617587] (action = 246)
+0370-th step: f(x) = [-0.99959374 -0.99778272] (action = 17)
+0371-th step: f(x) = [-0.60034647 -0.7730085 ] (action = 261)
+0372-th step: f(x) = [-0.56582803 -0.85994015] (action = 202)
+0373-th step: f(x) = [-0.88371066 -0.99999225] (action = 377)
+0374-th step: f(x) = [-0.98830423 -0.93616616] (action = 297)
+0375-th step: f(x) = [-0.61718446 -0.99986083] (action = 374)
+0376-th step: f(x) = [-0.98060895 -0.99934904] (action = 146)
+0377-th step: f(x) = [-0.7328647 -0.7328647] (action = 180)
+0378-th step: f(x) = [-0.99999957 -0.96467434] (action = 0)
+0379-th step: f(x) = [-0.99815304 -0.96875158] (action = 295)
+0380-th step: f(x) = [-0.99988107 -0.81419262] (action = 147)
+0381-th step: f(x) = [-0.23557331 -0.92045011] (action = 244)
+0382-th step: f(x) = [-0.99960175 -0.88600183] (action = 210)
+0383-th step: f(x) = [-0.99698104 -0.99468465] (action = 59)
+0384-th step: f(x) = [-0.99622705 -0.80212129] (action = 233)
+0385-th step: f(x) = [-0.94621941 -0.90531099] (action = 119)
+0386-th step: f(x) = [-0.99227074 -0.28627554] (action = 172)
+0387-th step: f(x) = [-0.8635332  -0.99999091] (action = 417)
+0388-th step: f(x) = [-0.95063572 -0.73057679] (action = 257)
+0389-th step: f(x) = [-0.44805925 -0.82194903] (action = 262)
+0390-th step: f(x) = [-0.9998078  -0.69972145] (action = 127)
+0391-th step: f(x) = [-0.7328647 -0.7328647] (action = 260)
+0392-th step: f(x) = [-0.99999878 -0.94307317] (action = 1)
+0393-th step: f(x) = [-0.99270087 -0.99270087] (action = 80)
+0394-th step: f(x) = [-0.56582803 -0.85994015] (action = 282)
+0395-th step: f(x) = [-0.99440334 -0.09009546] (action = 111)
+0396-th step: f(x) = [-0.22242321 -0.99728354] (action = 310)
+0397-th step: f(x) = [-0.9951763  -0.91838861] (action = 275)
+0398-th step: f(x) = [-0.99617304 -0.98813681] (action = 58)
+0399-th step: f(x) = [-0.51472752 -0.99968938] (action = 373)
+0400-th step: f(x) = [-0.99970416 -0.99908292] (action = 18)
+0401-th step: f(x) = [-0.99916062 -0.99852214] (action = 39)
+0402-th step: f(x) = [-0.99622705 -0.80212129] (action = 53)
+0403-th step: f(x) = [-0.55457668 -0.99911619] (action = 291)
+0404-th step: f(x) = [-0.55330867 -0.99949659] (action = 392)
+0405-th step: f(x) = [-0.09009546 -0.99440334] (action = 309)
+0406-th step: f(x) = [-0.43214402 -0.99936004] (action = 372)
+0407-th step: f(x) = [-0.69972145 -0.9998078 ] (action = 313)
+0408-th step: f(x) = [-0.99878288 -0.38659518] (action = 69)
+0409-th step: f(x) = [-0.99780154 -0.99780154] (action = 380)
+0410-th step: f(x) = [-0.65554315 -0.97964062] (action = 345)
+0411-th step: f(x) = [-0.73057679 -0.95063572] (action = 183)
+0412-th step: f(x) = [-0.53100224 -0.73362301] (action = 221)
+   Pareto set updated.
+   the number of Pareto frontiers = 23
+
+0413-th step: f(x) = [-0.99986083 -0.61718446] (action = 66)
+0414-th step: f(x) = [-0.72671998 -0.99704052] (action = 388)
+0415-th step: f(x) = [-0.86773446 -0.9955598 ] (action = 186)
+0416-th step: f(x) = [-0.76244576 -0.99995095] (action = 355)
+0417-th step: f(x) = [-0.99202523 -0.99853885] (action = 103)
+0418-th step: f(x) = [-0.85258693 -0.99998271] (action = 356)
+0419-th step: f(x) = [-0.99017418 -0.09267839] (action = 112)
+0420-th step: f(x) = [-0.73057679 -0.95063572] (action = 323)
+0421-th step: f(x) = [-0.81419262 -0.99988107] (action = 433)
+0422-th step: f(x) = [-0.9999968  -0.91531622] (action = 42)
+0423-th step: f(x) = [-0.97964062 -0.65554315] (action = 235)
+0424-th step: f(x) = [-0.99945311 -0.72437945] (action = 169)
+0425-th step: f(x) = [-0.99653688 -0.43696618] (action = 71)
+0426-th step: f(x) = [-0.99998271 -0.85258693] (action = 4)
+0427-th step: f(x) = [-0.81629344 -0.99887005] (action = 409)
+0428-th step: f(x) = [-0.99997619 -0.79699336] (action = 44)
+0429-th step: f(x) = [-0.99852214 -0.99916062] (action = 401)
+0430-th step: f(x) = [-0.96971359 -0.09782226] (action = 174)
+0431-th step: f(x) = [-0.38833643 -0.99786316] (action = 370)
+0432-th step: f(x) = [-0.99939737 -0.98980427] (action = 15)
+0433-th step: f(x) = [-0.29634835 -0.87107548] (action = 243)
+   Pareto set updated.
+   the number of Pareto frontiers = 24
+
+0434-th step: f(x) = [-0.16481416 -0.98407554] (action = 327)
+0435-th step: f(x) = [-0.93616616 -0.98830423] (action = 143)
+0436-th step: f(x) = [-0.99993226 -0.81366367] (action = 6)
+0437-th step: f(x) = [-0.28016277 -0.9985717 ] (action = 331)
+0438-th step: f(x) = [-0.98935582 -0.01711023] (action = 132)
+   Pareto set updated.
+   the number of Pareto frontiers = 25
+
+0439-th step: f(x) = [-0.99908292 -0.99970416] (action = 422)
+0440-th step: f(x) = [-0.92045011 -0.23557331] (action = 156)
+0441-th step: f(x) = [-0.89771579 -0.89771579] (action = 300)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_all</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_53_0.png" src="../_images/notebook_tutorial_multi_objective_53_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">res_all</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.30051687493437484
+</pre></div></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PHYSBO</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">Basic usage of PHYSBO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">Gaussian process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">Running PHYSBO interactively</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_simulator.html">Definition of the simulator class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Multi-objective optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Tutorials</a><ul>
+      <li>Previous: <a href="tutorial_multi_probe.html" title="previous chapter">Search multiple candidates at once</a></li>
+      <li>Next: <a href="../algorithm.html" title="next chapter">Algorithm</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, PHYSBO developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/notebook/tutorial_multi_objective.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

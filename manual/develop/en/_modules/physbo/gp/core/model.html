@@ -1,0 +1,521 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>physbo.gp.core.model &#8212; PHYSBO 1.0.0 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for physbo.gp.core.model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">physbo</span> <span class="kn">import</span> <span class="n">blm</span>
+<span class="kn">from</span> <span class="nn">physbo.gp</span> <span class="kn">import</span> <span class="n">inf</span>
+<span class="kn">from</span> <span class="nn">physbo.gp.core</span> <span class="kn">import</span> <span class="n">learning</span>
+<span class="kn">from</span> <span class="nn">physbo.gp.core.prior</span> <span class="kn">import</span> <span class="n">prior</span>
+
+
+<div class="viewcode-block" id="model"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model">[docs]</a><span class="k">class</span> <span class="nc">model</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lik</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">inf</span><span class="o">=</span><span class="s2">&quot;exact&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lik</span>
+<span class="sd">        mean</span>
+<span class="sd">        cov</span>
+<span class="sd">        inf</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lik</span> <span class="o">=</span> <span class="n">lik</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">prior</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">=</span> <span class="n">inf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">num_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">()</span>
+
+<div class="viewcode-block" id="model.cat_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.cat_params">[docs]</a>    <span class="k">def</span> <span class="nf">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Concatinate the likelihood and prior parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lik_params: numpy.ndarray</span>
+<span class="sd">            Parameters for likelihood</span>
+<span class="sd">        prior_params: numpy.ndarray</span>
+<span class="sd">            Parameters for prior</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            parameters about likelihood and prior</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span></div>
+
+<div class="viewcode-block" id="model.decomp_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.decomp_params">[docs]</a>    <span class="k">def</span> <span class="nf">decomp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        decomposing the parameters to those of likelifood and priors</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lik_params: numpy.ndarray</span>
+<span class="sd">        prior_params: numpy.ndarray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">lik_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span>
+        <span class="n">prior_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span></div>
+
+<div class="viewcode-block" id="model.set_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.set_params">[docs]</a>    <span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setting parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">           Parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">lik_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">prior_params</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="model.sub_sampling"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.sub_sampling">[docs]</a>    <span class="k">def</span> <span class="nf">sub_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make subset for sampling</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">           Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+<span class="sd">        t: numpy.ndarray</span>
+<span class="sd">           The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        N: int</span>
+<span class="sd">           Total number of data in subset</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subX: numpy.ndarray</span>
+<span class="sd">        subt: numpy.ndarray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_data</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">N</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&lt;</span> <span class="n">num_data</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span>
+            <span class="n">subX</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="n">subt</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subX</span> <span class="o">=</span> <span class="n">X</span>
+            <span class="n">subt</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="k">return</span> <span class="n">subX</span><span class="p">,</span> <span class="n">subt</span></div>
+
+<div class="viewcode-block" id="model.export_blm"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.export_blm">[docs]</a>    <span class="k">def</span> <span class="nf">export_blm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_basis</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Exporting the blm(Baysean linear model) predictor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_basis: int</span>
+<span class="sd">            Total number of basis</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        physbo.blm.core.model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="p">,</span> <span class="s2">&quot;rand_expans&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The kernel must be.&quot;</span><span class="p">)</span>
+
+        <span class="n">basis_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">rand_expans</span><span class="p">(</span><span class="n">num_basis</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">basis</span><span class="o">.</span><span class="n">fourier</span><span class="p">(</span><span class="n">basis_params</span><span class="p">)</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="n">num_basis</span><span class="p">)</span>
+        <span class="n">lik</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span>
+            <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span>
+            <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">blr</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">lik</span><span class="p">,</span> <span class="n">prior</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">blr</span></div>
+
+<div class="viewcode-block" id="model.eval_marlik"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.eval_marlik">[docs]</a>    <span class="k">def</span> <span class="nf">eval_marlik</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluating marginal likelihood.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters.</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        N: int</span>
+<span class="sd">            Total number of subset data (if not specified, all dataset is used)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            marlik: float</span>
+<span class="sd">            Marginal likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subX</span><span class="p">,</span> <span class="n">subt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sub_sampling</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="n">marlik</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">eval_marlik</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subX</span><span class="p">,</span> <span class="n">subt</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">marlik</span></div>
+
+<div class="viewcode-block" id="model.get_grad_marlik"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.get_grad_marlik">[docs]</a>    <span class="k">def</span> <span class="nf">get_grad_marlik</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluating gradiant of marginal likelihood.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters.</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        N: int</span>
+<span class="sd">            Total number of subset data (if not specified, all dataset is used)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        grad_marlik: numpy.ndarray</span>
+<span class="sd">            Gradiant of marginal likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subX</span><span class="p">,</span> <span class="n">subt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sub_sampling</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="n">grad_marlik</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">get_grad_marlik</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subX</span><span class="p">,</span> <span class="n">subt</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">grad_marlik</span></div>
+
+<div class="viewcode-block" id="model.get_params_bound"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.get_params_bound">[docs]</a>    <span class="k">def</span> <span class="nf">get_params_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getting boundary of the parameters.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bound: list</span>
+<span class="sd">            An array with the tuple (min_params, max_params).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_params_bound</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">bound</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">get_params_bound</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">bound</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">get_params_bound</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">bound</span></div>
+
+<div class="viewcode-block" id="model.prepare"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.prepare">[docs]</a>    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="model.get_post_fmean"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.get_post_fmean">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculating posterior mean of model (function)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            inputs</span>
+<span class="sd">        Z: numpy.ndarray</span>
+<span class="sd">            feature maps</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters</span>
+<span class="sd">        See also</span>
+<span class="sd">        ========</span>
+<span class="sd">        physbo.gp.inf.exact.get_post_fmean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="n">post_fmu</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">post_fmu</span></div>
+
+<div class="viewcode-block" id="model.get_post_fcov"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.get_post_fcov">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculating posterior covariance matrix of model (function)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            inputs</span>
+<span class="sd">        Z: numpy.ndarray</span>
+<span class="sd">            feature maps</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters</span>
+<span class="sd">        diag: bool</span>
+<span class="sd">            If X is the diagonalization matrix, true.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        physbo.gp.inf.exact.get_post_fcov</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="n">post_fcov</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">post_fcov</span></div>
+
+<div class="viewcode-block" id="model.post_sampling"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.post_sampling">[docs]</a>    <span class="k">def</span> <span class="nf">post_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        draws samples of mean value of model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            inputs</span>
+<span class="sd">        Z: numpy.ndarray</span>
+<span class="sd">            feature maps</span>
+<span class="sd">        N: int</span>
+<span class="sd">            number of samples</span>
+<span class="sd">            (default: 1)</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">            noise for sampling source</span>
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="model.predict_sampling"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.predict_sampling">[docs]</a>    <span class="k">def</span> <span class="nf">predict_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            inputs</span>
+<span class="sd">        Z: numpy.ndarray</span>
+<span class="sd">            feature maps</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters</span>
+<span class="sd">        N: int</span>
+<span class="sd">            number of samples</span>
+<span class="sd">            (default: 1)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">ndata</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span>
+            <span class="n">ndata</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="model.print_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.print_params">[docs]</a>    <span class="k">def</span> <span class="nf">print_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Printing parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;likelihood parameter =  &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;mean parameter in GP prior: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;covariance parameter in GP prior: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="model.get_cand_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.get_cand_params">[docs]</a>    <span class="k">def</span> <span class="nf">get_cand_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getting candidate for parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cand_params</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span>
+                <span class="n">temp</span> <span class="p">:</span> <span class="n">temp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">get_cand_params</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="n">temp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">temp</span><span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">get_cand_params</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span></div>
+
+<div class="viewcode-block" id="model.fit"><a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fitting function (update parameters)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        config: physbo.misc.set_config object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">method</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+            <span class="n">adam</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">adam</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;bfgs&quot;</span><span class="p">,</span> <span class="s2">&quot;batch&quot;</span><span class="p">):</span>
+            <span class="n">bfgs</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">bfgs</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">PHYSBO</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, PHYSBO developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

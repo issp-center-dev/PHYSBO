@@ -12,7 +12,9 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="physbo.blm.core package" href="physbo.blm.core.html" />
@@ -37,7 +39,7 @@
 <span id="physbo-blm-basis-fourier-module"></span><h1>physbo.blm.basis.fourier module<a class="headerlink" href="#module-physbo.blm.basis.fourier" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="physbo.blm.basis.fourier.fourier">
-<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.basis.fourier.</code><code class="sig-name descname">fourier</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.basis.fourier.fourier" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.basis.fourier.</code><code class="sig-name descname">fourier</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/fourier.html#fourier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.basis.fourier.fourier" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>random feature maps
 <code class="docutils literal notranslate"><span class="pre">Psi(X;</span> <span class="pre">W,b)</span> <span class="pre">=</span> <span class="pre">cos[X</span> <span class="pre">*</span> <span class="pre">Wt</span> <span class="pre">+</span> <span class="pre">b]</span> <span class="pre">*</span> <span class="pre">alpha</span></code>
@@ -59,46 +61,69 @@ where</p>
 <li><p>l: number of basis</p></li>
 </ul>
 </div></blockquote>
-<dl class="simple">
-<dt>params: Tuple</dt><dd><p>W, b, alpha</p>
-</dd>
-<dt>nbasis: int</dt><dd><p>number of basis</p>
+<dl class="py attribute">
+<dt id="physbo.blm.basis.fourier.fourier.params">
+<code class="sig-name descname">params</code><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>W, b, alpha</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Tuple</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.basis.fourier.fourier.nbasis">
+<code class="sig-name descname">nbasis</code><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.nbasis" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of basis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">References</p>
 <p>A. Rahimi and B. Recht, “Random features for large-scale kernel machines,”
 in “Advances in neural information processing systems,” 2007, pp. 1177-1184.</p>
 <dl class="py method">
 <dt id="physbo.blm.basis.fourier.fourier.get_basis">
-<code class="sig-name descname">get_basis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.get_basis" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_basis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/fourier.html#fourier.get_basis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.get_basis" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute the value of basis</p>
-<dl class="simple">
-<dt>X: numpy.ndarray</dt><dd><p>input</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – input</p></li>
+<li><p><strong>params</strong> (<em>Tuple</em>) – W, b, alpha
+(default: self.params)</p></li>
+</ul>
 </dd>
-<dt>params: Tuple</dt><dd><p>W, b, alpha
-(default: self.params)</p>
-</dd>
-</dl>
-<dl>
-<dt>Psi(X; W,b): numpy.ndarray</dt><dd><p>N-by-l matrix</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><strong>Psi(X; W,b)</strong> – N-by-l matrix</p>
 <p><code class="docutils literal notranslate"><span class="pre">cos[X</span> <span class="pre">*</span> <span class="pre">Wt</span> <span class="pre">+</span> <span class="pre">b]</span> <span class="pre">*</span> <span class="pre">alpha</span></code></p>
 <p>where <code class="docutils literal notranslate"><span class="pre">Wt</span></code> is the transpose of <code class="docutils literal notranslate"><span class="pre">W</span></code>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.basis.fourier.fourier.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.set_params" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/fourier.html#fourier.set_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>update basis parameters</p>
-<dl class="simple">
-<dt>params: tuple</dt><dd><p>W, b, alpha</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>tuple</em>) – W, b, alpha</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.basis.fourier.fourier.show">
-<code class="sig-name descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.show" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/fourier.html#fourier.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.basis.fourier.fourier.show" title="Permalink to this definition">¶</a></dt>
 <dd><p>print parameters</p>
 </dd></dl>
 
@@ -127,6 +152,7 @@ in “Advances in neural information processing systems,” 2007, pp. 1177-1184.
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
@@ -176,7 +202,7 @@ in “Advances in neural information processing systems,” 2007, pp. 1177-1184.
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      &copy;2020, PHYSBO developers.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>

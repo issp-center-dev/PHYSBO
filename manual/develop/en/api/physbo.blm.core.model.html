@@ -12,7 +12,9 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="physbo.blm.inf package" href="physbo.blm.inf.html" />
@@ -37,149 +39,239 @@
 <span id="physbo-blm-core-model-module"></span><h1>physbo.blm.core.model module<a class="headerlink" href="#module-physbo.blm.core.model" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="physbo.blm.core.model.model">
-<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.core.model.</code><code class="sig-name descname">model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lik</span></em>, <em class="sig-param"><span class="n">prior</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.core.model.</code><code class="sig-name descname">model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lik</span></em>, <em class="sig-param"><span class="n">prior</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Baysean Linear Model</p>
-<dl class="simple">
-<dt>prior: physbo.blm.prior.gauss</dt><dd><p>prior distribution of weights</p>
-</dd>
-<dt>lik: physbo.blm.lik.gauss</dt><dd><p>kernel</p>
-</dd>
-<dt>nbasis: int</dt><dd><p>number of features in random feature map</p>
-</dd>
-<dt>stats: Tuple</dt><dd><p>auxially parameters for sampling</p>
-</dd>
-<dt>method: str</dt><dd><p>sampling method</p>
+<dl class="py attribute">
+<dt id="physbo.blm.core.model.model.prior">
+<code class="sig-name descname">prior</code><a class="headerlink" href="#physbo.blm.core.model.model.prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>prior distribution of weights</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>physbo.blm.prior.gauss</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.core.model.model.lik">
+<code class="sig-name descname">lik</code><a class="headerlink" href="#physbo.blm.core.model.model.lik" title="Permalink to this definition">¶</a></dt>
+<dd><p>kernel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>physbo.blm.lik.gauss</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.core.model.model.nbasis">
+<code class="sig-name descname">nbasis</code><a class="headerlink" href="#physbo.blm.core.model.model.nbasis" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of features in random feature map</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.core.model.model.stats">
+<code class="sig-name descname">stats</code><a class="headerlink" href="#physbo.blm.core.model.model.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>auxially parameters for sampling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="physbo.blm.core.model.model.method">
+<code class="sig-name descname">method</code><a class="headerlink" href="#physbo.blm.core.model.model.method" title="Permalink to this definition">¶</a></dt>
+<dd><p>sampling method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.get_post_fcov">
-<code class="sig-name descname">get_post_fcov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">diag</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.get_post_fcov" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_post_fcov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">diag</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.get_post_fcov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.get_post_fcov" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates posterior covariance of model</p>
-<dl class="simple">
-<dt>X: numpy.ndarray</dt><dd><p>inputs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Psi</strong> (<em>numpy.ndarray</em>) – feature maps
+(default: blm.lik.linear.basis.get_basis(X))</p></li>
+<li><p><strong>diag</strong> (<em>bool</em>) – if True, returns only variances as a diagonal matrix
+(default: True)</p></li>
+</ul>
 </dd>
-<dt>Psi: numpy.ndarray</dt><dd><p>feature maps
-(default: blm.lik.linear.basis.get_basis(X))</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
 </dd>
-<dt>diag: bool</dt><dd><p>if True, returns only variances as a diagonal matrix
-(default: True)</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<p>numpy.ndarray</p>
-<p>physbo.blm.inf.exact.get_post_fcov</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.get_post_fcov" title="physbo.blm.inf.exact.get_post_fcov"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.get_post_fcov</span></code></a></p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.get_post_fmean">
-<code class="sig-name descname">get_post_fmean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">w</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.get_post_fmean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_post_fmean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">w</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.get_post_fmean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.get_post_fmean" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates posterior mean of model (function)</p>
-<dl class="simple">
-<dt>X: numpy.ndarray</dt><dd><p>inputs</p>
-</dd>
-<dt>Psi: numpy.ndarray</dt><dd><p>feature maps</p>
-</dd>
-<dt>w: numpy.ndarray</dt><dd><p>weight</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Psi</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>w</strong> (<em>numpy.ndarray</em>) – weight</p></li>
+</ul>
 </dd>
 </dl>
-<p>physbo.blm.inf.exact.get_post_fmean</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.get_post_fmean" title="physbo.blm.inf.exact.get_post_fmean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.get_post_fmean</span></code></a></p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.get_post_params_mean">
-<code class="sig-name descname">get_post_params_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.get_post_params_mean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_post_params_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.get_post_params_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.get_post_params_mean" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculates posterior mean of weights</p>
-<p>numpy.ndarray</p>
-<p>physbo.blm.inf.exact.get_post_params_mean</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.get_post_params_mean" title="physbo.blm.inf.exact.get_post_params_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.get_post_params_mean</span></code></a></p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.post_sampling">
-<code class="sig-name descname">post_sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Xtest</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.post_sampling" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">post_sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Xtest</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.post_sampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.post_sampling" title="Permalink to this definition">¶</a></dt>
 <dd><p>draws samples of mean value of model</p>
-<dl class="simple">
-<dt>Xtest: numpy.ndarray</dt><dd><p>inputs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xtest</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Psi</strong> (<em>numpy.ndarray</em>) – feature maps
+(default: <code class="docutils literal notranslate"><span class="pre">blm.lik.get_basis(Xtest)</span></code>)</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – number of samples
+(default: 1)</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source</p></li>
+</ul>
 </dd>
-<dt>Psi: numpy.ndarray</dt><dd><p>feature maps
-(default: <code class="docutils literal notranslate"><span class="pre">blm.lik.get_basis(Xtest)</span></code>)</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
 </dd>
-<dt>N: int</dt><dd><p>number of samples
-(default: 1)</p>
-</dd>
-<dt>alpha: float</dt><dd><p>noise for sampling source</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.predict_sampling">
-<code class="sig-name descname">predict_sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Xtest</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.predict_sampling" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict_sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Xtest</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.predict_sampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.predict_sampling" title="Permalink to this definition">¶</a></dt>
 <dd><p>draws samples from model</p>
-<dl class="simple">
-<dt>Xtest: numpy.ndarray</dt><dd><p>inputs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xtest</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Psi</strong> (<em>numpy.ndarray</em>) – feature map
+(default: <code class="docutils literal notranslate"><span class="pre">blm.lik.get_basis(Xtest)</span></code>)</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – number of samples
+(default: 1)</p></li>
+</ul>
 </dd>
-<dt>Psi: numpy.ndarray</dt><dd><p>feature map
-(default: <code class="docutils literal notranslate"><span class="pre">blm.lik.get_basis(Xtest)</span></code>)</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
 </dd>
-<dt>N: int</dt><dd><p>number of samples
-(default: 1)</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<p>numpy.ndarray</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.prepare">
-<code class="sig-name descname">prepare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.prepare" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">prepare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">Psi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.prepare"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.prepare" title="Permalink to this definition">¶</a></dt>
 <dd><p>initializes model by using the first training dataset</p>
-<dl class="simple">
-<dt>X: numpy.ndarray</dt><dd><p>inputs</p>
-</dd>
-<dt>t: numpy.ndarray</dt><dd><p>target (label)</p>
-</dd>
-<dt>Psi: numpy.ndarray</dt><dd><p>feature maps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – target (label)</p></li>
+<li><p><strong>Psi</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+</ul>
 </dd>
 </dl>
-<p>physbo.blm.inf.exact.prepare</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.prepare" title="physbo.blm.inf.exact.prepare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.prepare</span></code></a></p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.sampling">
-<code class="sig-name descname">sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">w_mu</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.sampling" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">w_mu</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">N</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.sampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.sampling" title="Permalink to this definition">¶</a></dt>
 <dd><p>draws samples of weights</p>
-<dl class="simple">
-<dt>blm: physbo.blm.core.model</dt><dd><p>model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blm</strong> (<em>physbo.blm.core.model</em>) – model</p></li>
+<li><p><strong>w_mu</strong> (<em>numpy.ndarray</em>) – mean of weight</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – the number of samples
+(default: 1)</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source
+(default: 1.0)</p></li>
+</ul>
 </dd>
-<dt>w_mu: numpy.ndarray</dt><dd><p>mean of weight</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>samples of weights</p>
 </dd>
-<dt>N: int</dt><dd><p>the number of samples
-(default: 1)</p>
-</dd>
-<dt>alpha: float</dt><dd><p>noise for sampling source
-(default: 1.0)</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<dl class="simple">
-<dt>numpy.ndarray</dt><dd><p>samples of weights</p>
-</dd>
-</dl>
-<p>physbo.blm.inf.exact.sampling</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.sampling" title="physbo.blm.inf.exact.sampling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.sampling</span></code></a></p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt id="physbo.blm.core.model.model.update_stats">
-<code class="sig-name descname">update_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">psi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.core.model.model.update_stats" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">psi</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/core/model.html#model.update_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#physbo.blm.core.model.model.update_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>updates model by using another training data</p>
-<dl class="simple">
-<dt>x: numpy.ndarray</dt><dd><p>input</p>
-</dd>
-<dt>t: float</dt><dd><p>target (label)</p>
-</dd>
-<dt>psi: numpy.ndarray</dt><dd><p>feature map</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>numpy.ndarray</em>) – input</p></li>
+<li><p><strong>t</strong> (<em>float</em>) – target (label)</p></li>
+<li><p><strong>psi</strong> (<em>numpy.ndarray</em>) – feature map</p></li>
+</ul>
 </dd>
 </dl>
-<p>physbo.blm.inf.exact.update_stats</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.blm.inf.exact.html#physbo.blm.inf.exact.update_stats" title="physbo.blm.inf.exact.update_stats"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.blm.inf.exact.update_stats</span></code></a></p>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -207,6 +299,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
@@ -256,7 +349,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      &copy;2020, PHYSBO developers.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>

@@ -12,13 +12,8 @@ Welcome to PHYSBO's documentation!
 
    introduction
    install
+   notebook/index
    algorithm
    API Reference<api/physbo>
    acknowledgement
    contact
-
-..  notebook/index
-..  algorithm
-    API Reference<api/physbo>
-    acknowledgement
-    contact
