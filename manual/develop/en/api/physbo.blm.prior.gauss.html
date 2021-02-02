@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>physbo.blm.prior.gauss module &#8212; PHYSBO 1.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="physbo.blm.predictor module" href="physbo.blm.predictor.html" />
+    <link rel="prev" title="physbo.blm.prior package" href="physbo.blm.prior.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-physbo.blm.prior.gauss">
+<span id="physbo-blm-prior-gauss-module"></span><h1>physbo.blm.prior.gauss module<a class="headerlink" href="#module-physbo.blm.prior.gauss" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="physbo.blm.prior.gauss.cov_const">
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">cov_const</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>isotropic variance-covariance</p>
+<p>All elements have the same variance and are independent with each other</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of covariance</p>
+</dd>
+<dt>sigma2: float</dt><dd><p>covariance</p>
+</dd>
+<dt>prec: float</dt><dd><p>precision (= inv. of covariance)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.cov_const.get_cov">
+<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the covariance</p>
+<dl class="simple">
+<dt>nbasis: int</dt><dd><p>the number of components</p>
+</dd>
+<dt>params: float</dt><dd><p>half of log of variance
+(default: self.params)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>nbasis-by-n-basis covariance matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.cov_const.get_prec">
+<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.get_prec" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the precision</p>
+<dl class="simple">
+<dt>nbasis: int</dt><dd><p>the number of components</p>
+</dd>
+<dt>params: float</dt><dd><p>half of log of variance
+(default: self.params)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>nbasis-by-n-basis precision matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.cov_const.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.cov_const.set_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets params</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of variance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="physbo.blm.prior.gauss.gauss">
+<em class="property">class </em><code class="sig-prename descclassname">physbo.blm.prior.gauss.</code><code class="sig-name descname">gauss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbasis</span></em>, <em class="sig-param"><span class="n">cov</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Gaussian prior</p>
+<dl class="simple">
+<dt>nbasis: int</dt><dd><p>number of components</p>
+</dd>
+<dt>cov: cov_const</dt><dd><p>covariance</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.gauss.get_cov">
+<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates the variance-covariance matrix of priors</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of variance
+(default: self.cov.params)</p>
+</dd>
+</dl>
+<p>numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.gauss.get_mean">
+<code class="sig-name descname">get_mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates the mean value of priors</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of variance
+(not used)</p>
+</dd>
+</dl>
+<p>numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.gauss.get_prec">
+<code class="sig-name descname">get_prec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.get_prec" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates the precise matrix of priors</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of variance
+(default: self.cov.params)</p>
+</dd>
+</dl>
+<p>numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.blm.prior.gauss.gauss.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.blm.prior.gauss.gauss.set_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets params</p>
+<dl class="simple">
+<dt>params: float</dt><dd><p>half of log of variance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PHYSBO</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#module-physbo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="physbo.html">physbo package</a><ul>
+  <li><a href="physbo.blm.html">physbo.blm package</a><ul>
+  <li><a href="physbo.blm.prior.html">physbo.blm.prior package</a><ul>
+      <li>Previous: <a href="physbo.blm.prior.html" title="previous chapter">physbo.blm.prior package</a></li>
+      <li>Next: <a href="physbo.blm.predictor.html" title="next chapter">physbo.blm.predictor module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/physbo.blm.prior.gauss.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

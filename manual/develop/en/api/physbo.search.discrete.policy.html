@@ -1,0 +1,507 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>physbo.search.discrete.policy module &#8212; PHYSBO 1.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="physbo.search.discrete.results module" href="physbo.search.discrete.results.html" />
+    <link rel="prev" title="physbo.search.discrete.pareto module" href="physbo.search.discrete.pareto.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-physbo.search.discrete.policy">
+<span id="physbo-search-discrete-policy-module"></span><h1>physbo.search.discrete.policy module<a class="headerlink" href="#module-physbo.search.discrete.policy" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="physbo.search.discrete.policy.policy">
+<em class="property">class </em><code class="sig-prename descclassname">physbo.search.discrete.policy.</code><code class="sig-name descname">policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test_X</span></em>, <em class="sig-param"><span class="n">config</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">initial_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">comm</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.bayes_search">
+<code class="sig-name descname">bayes_search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">training</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_num_probes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_search_each_probe</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">predictor</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">is_disp</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">simulator</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">score</span><span class="o">=</span><span class="default_value">'TS'</span></em>, <em class="sig-param"><span class="n">interval</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">num_rand_basis</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.bayes_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performing Bayesian optimization.</p>
+<dl class="simple">
+<dt>training: physbo.variable</dt><dd><p>Training dataset.</p>
+</dd>
+<dt>max_num_probes: int</dt><dd><p>Maximum number of searching process by Bayesian optimization.</p>
+</dd>
+<dt>num_search_each_probe: int</dt><dd><p>Number of searching by Bayesian optimization at each process.</p>
+</dd>
+<dt>predictor: predictor object</dt><dd><p>Base class is defined in physbo.predictor.
+If None, blm_predictor is defined.</p>
+</dd>
+<dt>is_disp: bool</dt><dd><p>If true, process messages are outputted.</p>
+</dd>
+<dt>simulator: callable</dt><dd><p>Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>) 
+Here, action is an integer which represents the index of the candidate.</p>
+</dd>
+<dt>score: str</dt><dd><p>The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</p>
+</dd>
+<dt>interval: int</dt><dd><p>The interval number of learning the hyper parameter.
+If you set the negative value to interval, the hyper parameter learning is not performed.
+If you set zero to interval, the hyper parameter learning is performed only at the first step.</p>
+</dd>
+<dt>num_rand_basis: int</dt><dd><p>The number of basis function. If you choose 0, ordinary Gaussian process run.</p>
+</dd>
+</dl>
+<p>history: history object (physbo.search.discrete.results.history)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.delete_actions">
+<code class="sig-name descname">delete_actions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span></em>, <em class="sig-param"><span class="n">actions</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.delete_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deleteing actions</p>
+<dl class="simple">
+<dt>index: int</dt><dd><p>Index of an action to be deleted.</p>
+</dd>
+<dt>actions: numpy.ndarray</dt><dd><p>Array of actions.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>actions: numpy.ndarray</dt><dd><p>Array of actions which does not include action specified by index.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.export_history">
+<code class="sig-name descname">export_history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returning the information of the history.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.export_predictor">
+<code class="sig-name descname">export_predictor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_predictor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returning the predictor dataset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.export_training">
+<code class="sig-name descname">export_training</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.export_training" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returning the training dataset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.get_actions">
+<code class="sig-name descname">get_actions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em>, <em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">K</span></em>, <em class="sig-param"><span class="n">alpha</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting actions</p>
+<dl class="simple">
+<dt>mode: str</dt><dd><p>The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+These functions are defined in score.py.</p>
+</dd>
+<dt>N: int</dt><dd><p>The total number of actions to return.</p>
+</dd>
+<dt>K: int</dt><dd><p>The total number of samples to evaluate marginal score</p>
+</dd>
+<dt>alpha: float</dt><dd><p>Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>chosen_actions: numpy.ndarray</dt><dd><p>An N-dimensional array of actions selected in each search process.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.get_marginal_score">
+<code class="sig-name descname">get_marginal_score</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em>, <em class="sig-param"><span class="n">chosen_actions</span></em>, <em class="sig-param"><span class="n">K</span></em>, <em class="sig-param"><span class="n">alpha</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_marginal_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting marginal scores.</p>
+<dl class="simple">
+<dt>mode: str</dt><dd><p>The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+These functions are defined in score.py.</p>
+</dd>
+<dt>chosen_actions: numpy.ndarray</dt><dd><p>Array of selected actions.</p>
+</dd>
+<dt>K: int</dt><dd><p>The total number of search candidates.</p>
+</dd>
+<dt>alpha: float</dt><dd><p>not used.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>f: list</dt><dd><p>N dimensional scores (score is defined in each mode)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.get_random_action">
+<code class="sig-name descname">get_random_action</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">N</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_random_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting indexes of actions randomly.</p>
+<dl class="simple">
+<dt>N: int</dt><dd><p>Total number of search candidates.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>action: numpy.ndarray</dt><dd><p>Indexes of actions selected randomly from search candidates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.get_score">
+<code class="sig-name descname">get_score</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em>, <em class="sig-param"><span class="n">predictor</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">training</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.get_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting score.</p>
+<dl class="simple">
+<dt>mode: str</dt><dd><p>The type of aquision funciton. TS, EI and PI are available.
+These functions are defined in score.py.</p>
+</dd>
+<dt>predictor: predictor object</dt><dd><p>Base class is defined in physbo.predictor.</p>
+</dd>
+<dt>training:physbo.variable</dt><dd><p>Training dataset.</p>
+</dd>
+<dt>alpha: float</dt><dd><p>Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>f: float or list of float</dt><dd><p>Score defined in each mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_history</span></em>, <em class="sig-param"><span class="n">file_training</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_predictor</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loading files about history, training and predictor.</p>
+<dl class="simple">
+<dt>file_history: str</dt><dd><p>The name of the file that stores the information of the history.</p>
+</dd>
+<dt>file_training: str</dt><dd><p>The name of the file that stores the training dataset.</p>
+</dd>
+<dt>file_predictor: str</dt><dd><p>The name of the file that stores the predictor dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.random_search">
+<code class="sig-name descname">random_search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_num_probes</span></em>, <em class="sig-param"><span class="n">num_search_each_probe</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">simulator</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">is_disp</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.random_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performing random search.</p>
+<dl class="simple">
+<dt>max_num_probes: int</dt><dd><p>Maximum number of random search process.</p>
+</dd>
+<dt>num_search_each_probe: int</dt><dd><p>Number of search at each random search process.</p>
+</dd>
+<dt>simulator: callable</dt><dd><p>Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>) from action to t
+Here, action is an integer which represents the index of the candidate.</p>
+</dd>
+<dt>is_disp: bool</dt><dd><p>If true, process messages are outputted.</p>
+</dd>
+</dl>
+<p>history: history object (physbo.search.discrete.results.history)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_history</span></em>, <em class="sig-param"><span class="n">file_training</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_predictor</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saving history, training and predictor into the corresponding files.</p>
+<dl class="simple">
+<dt>file_history: str</dt><dd><p>The name of the file that stores the information of the history.</p>
+</dd>
+<dt>file_training: str</dt><dd><p>The name of the file that stores the training dataset.</p>
+</dd>
+<dt>file_predictor: str</dt><dd><p>The name of the file that stores the predictor dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.set_seed">
+<code class="sig-name descname">set_seed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.set_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setting a seed parameter for np.random.</p>
+<dl class="simple">
+<dt>seed: int</dt><dd><p>seed number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">action</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">X</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writing history (update history, not output to a file).</p>
+<dl class="simple">
+<dt>action: numpy.ndarray</dt><dd><p>Indexes of actions.</p>
+</dd>
+<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p>
+</dd>
+<dt>X:  numpy.ndarray</dt><dd><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="physbo.search.discrete.policy.policy_mo">
+<em class="property">class </em><code class="sig-prename descclassname">physbo.search.discrete.policy.</code><code class="sig-name descname">policy_mo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test_X</span></em>, <em class="sig-param"><span class="n">num_objectives</span></em>, <em class="sig-param"><span class="n">comm</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">initial_actions</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#physbo.search.discrete.policy.policy" title="physbo.search.discrete.policy.policy"><code class="xref py py-class docutils literal notranslate"><span class="pre">physbo.search.discrete.policy.policy</span></code></a></p>
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.bayes_search">
+<code class="sig-name descname">bayes_search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">training_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_num_probes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_search_each_probe</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">predictor_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">is_disp</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">disp_pareto_set</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">simulator</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">score</span><span class="o">=</span><span class="default_value">'HVPI'</span></em>, <em class="sig-param"><span class="n">interval</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">num_rand_basis</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.bayes_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performing Bayesian optimization.</p>
+<dl class="simple">
+<dt>training: physbo.variable</dt><dd><p>Training dataset.</p>
+</dd>
+<dt>max_num_probes: int</dt><dd><p>Maximum number of searching process by Bayesian optimization.</p>
+</dd>
+<dt>num_search_each_probe: int</dt><dd><p>Number of searching by Bayesian optimization at each process.</p>
+</dd>
+<dt>predictor: predictor object</dt><dd><p>Base class is defined in physbo.predictor.
+If None, blm_predictor is defined.</p>
+</dd>
+<dt>is_disp: bool</dt><dd><p>If true, process messages are outputted.</p>
+</dd>
+<dt>simulator: callable</dt><dd><p>Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>) 
+Here, action is an integer which represents the index of the candidate.</p>
+</dd>
+<dt>score: str</dt><dd><p>The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</p>
+</dd>
+<dt>interval: int</dt><dd><p>The interval number of learning the hyper parameter.
+If you set the negative value to interval, the hyper parameter learning is not performed.
+If you set zero to interval, the hyper parameter learning is performed only at the first step.</p>
+</dd>
+<dt>num_rand_basis: int</dt><dd><p>The number of basis function. If you choose 0, ordinary Gaussian process run.</p>
+</dd>
+</dl>
+<p>history: history object (physbo.search.discrete.results.history)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.get_actions">
+<code class="sig-name descname">get_actions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em>, <em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">K</span></em>, <em class="sig-param"><span class="n">alpha</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.get_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting actions</p>
+<dl class="simple">
+<dt>mode: str</dt><dd><p>The type of aquision funciton.
+TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+These functions are defined in score.py.</p>
+</dd>
+<dt>N: int</dt><dd><p>The total number of actions to return.</p>
+</dd>
+<dt>K: int</dt><dd><p>The total number of samples to evaluate marginal score</p>
+</dd>
+<dt>alpha: float</dt><dd><p>Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>chosen_actions: numpy.ndarray</dt><dd><p>An N-dimensional array of actions selected in each search process.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.get_fmean_fstd">
+<code class="sig-name descname">get_fmean_fstd</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">predictor_list</span></em>, <em class="sig-param"><span class="n">training_list</span></em>, <em class="sig-param"><span class="n">test</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.get_fmean_fstd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.get_score">
+<code class="sig-name descname">get_score</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em>, <em class="sig-param"><span class="n">predictor_list</span></em>, <em class="sig-param"><span class="n">training_list</span></em>, <em class="sig-param"><span class="n">pareto</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.get_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting score.</p>
+<dl class="simple">
+<dt>mode: str</dt><dd><p>The type of aquision funciton. TS, EI and PI are available.
+These functions are defined in score.py.</p>
+</dd>
+<dt>predictor: predictor object</dt><dd><p>Base class is defined in physbo.predictor.</p>
+</dd>
+<dt>training:physbo.variable</dt><dd><p>Training dataset.</p>
+</dd>
+<dt>alpha: float</dt><dd><p>Tuning parameter which is used if mode = TS.
+In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>f: float or list of float</dt><dd><p>Score defined in each mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_history</span></em>, <em class="sig-param"><span class="n">file_training_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_predictor_list</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loading files about history, training and predictor.</p>
+<dl class="simple">
+<dt>file_history: str</dt><dd><p>The name of the file that stores the information of the history.</p>
+</dd>
+<dt>file_training: str</dt><dd><p>The name of the file that stores the training dataset.</p>
+</dd>
+<dt>file_predictor: str</dt><dd><p>The name of the file that stores the predictor dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.load_predictor_list">
+<code class="sig-name descname">load_predictor_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.load_predictor_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.load_training_list">
+<code class="sig-name descname">load_training_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.load_training_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.random_search">
+<code class="sig-name descname">random_search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_num_probes</span></em>, <em class="sig-param"><span class="n">num_search_each_probe</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">simulator</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">is_disp</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">disp_pareto_set</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.random_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performing random search.</p>
+<dl class="simple">
+<dt>max_num_probes: int</dt><dd><p>Maximum number of random search process.</p>
+</dd>
+<dt>num_search_each_probe: int</dt><dd><p>Number of search at each random search process.</p>
+</dd>
+<dt>simulator: callable</dt><dd><p>Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>) from action to t
+Here, action is an integer which represents the index of the candidate.</p>
+</dd>
+<dt>is_disp: bool</dt><dd><p>If true, process messages are outputted.</p>
+</dd>
+</dl>
+<p>history: history object (physbo.search.discrete.results.history)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.save_predictor_list">
+<code class="sig-name descname">save_predictor_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.save_predictor_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.save_training_list">
+<code class="sig-name descname">save_training_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.save_training_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="physbo.search.discrete.policy.policy_mo.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">action</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">X</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.policy_mo.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writing history (update history, not output to a file).</p>
+<dl class="simple">
+<dt>action: numpy.ndarray</dt><dd><p>Indexes of actions.</p>
+</dd>
+<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p>
+</dd>
+<dt>X:  numpy.ndarray</dt><dd><p>N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="physbo.search.discrete.policy.run_simulator">
+<code class="sig-prename descclassname">physbo.search.discrete.policy.</code><code class="sig-name descname">run_simulator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">simulator</span></em>, <em class="sig-param"><span class="n">action</span></em>, <em class="sig-param"><span class="n">comm</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete.policy.run_simulator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PHYSBO</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#module-physbo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="physbo.html">physbo package</a><ul>
+  <li><a href="physbo.search.html">physbo.search package</a><ul>
+  <li><a href="physbo.search.discrete.html">physbo.search.discrete package</a><ul>
+      <li>Previous: <a href="physbo.search.discrete.pareto.html" title="previous chapter">physbo.search.discrete.pareto module</a></li>
+      <li>Next: <a href="physbo.search.discrete.results.html" title="next chapter">physbo.search.discrete.results module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/physbo.search.discrete.policy.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
