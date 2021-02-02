@@ -1,7 +1,6 @@
-チュートリアル
+Tutorials
 ==================================
-ここでは、PHYSBOのチュートリアルを通してその使用方法を紹介します。
-
+Here, the usage of PHYSBO is introduced through tutorials.
 
 .. toctree::
    :maxdepth: 2
@@ -14,4 +13,3 @@
    tutorial_simulator
    tutorial_multi_probe
    tutorial_multi_objective
-   
