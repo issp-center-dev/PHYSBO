@@ -83,8 +83,8 @@ By introducing the random feature map :math:`\phi (\mathbf{x})`, we can approxim
 
 .. math::
 
-   &&k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
-   &&\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top,
+   k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+   \phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top,
 
 where :math:`z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)`.
 Then, :math:`\boldsymbol{\omega}` is generated from :math:`p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)` and :math:`b` is chosen uniformly from :math:`[0, 2 \pi]` is chosen uniformly from :math:`[0, 2 \pi]`.
@@ -100,8 +100,8 @@ It is seen that the following relation is satisfied:
 
 .. math::
 
-   &&\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
-   &&K= \Phi^\top \Phi.
+   \mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+   K= \Phi^\top \Phi.
 
 Next, a method that uses Thompson sampling to make the computation time for candidate prediction :math:`O(l)` is introduced.
 Note that using EI or PI will result in :math:`O(l^2)` because of the need to evaluate the variance.
@@ -116,9 +116,9 @@ In a Gaussian process, when the training data :math:`D` is given, this :math:`\m
 
 .. math::
 
-   &&p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
-   &&\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
-   &&\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}
+   p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+   \boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+   \Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}
 
 In Thompson sampling, one coefficient vector is sampled according to this posterior probability distribution and set to :math:`\mathbf{w}^*`, which represents the acquisition function as follows
 

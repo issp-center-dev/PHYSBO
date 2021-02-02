@@ -253,8 +253,8 @@ PIスコアは、現在得られている <span class="math notranslate nohighli
 random feature map <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span> を導入することで
 ガウスカーネル <span class="math notranslate nohighlight">\(k(\mathbf{x},\mathbf{x}')\)</span> を以下のように近似しています。</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
-&amp;&amp;\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top\end{split}\]</div>
+\[\begin{split}k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top\end{split}\]</div>
 <p>ただし、 <span class="math notranslate nohighlight">\(z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)\)</span> としています。
 このとき、 <span class="math notranslate nohighlight">\(\boldsymbol{\omega}\)</span> は <span class="math notranslate nohighlight">\(p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)\)</span> より生成され、 <span class="math notranslate nohighlight">\(b\)</span> は <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span> から一様に選ばれます。
 この近似は、 <span class="math notranslate nohighlight">\(l \to \infty\)</span> の極限で厳密に成立し、 <span class="math notranslate nohighlight">\(l\)</span> の値がrandom feature mapの次元となります。</p>
@@ -263,8 +263,8 @@ random feature map <span class="math notranslate nohighlight">\(\phi (\mathbf{x}
 \[\Phi = ( \phi(\mathbf{x}_1),..., \phi(\mathbf{x}_n) )\]</div>
 <p>すると、</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
-&amp;&amp;K= \Phi^\top \Phi\end{split}\]</div>
+\[\begin{split}\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+K= \Phi^\top \Phi\end{split}\]</div>
 <p>という関係が成立することがわかります。</p>
 <p>次に、トンプソンサンプリングを利用することで、候補の予測にかかる計算時間を <span class="math notranslate nohighlight">\(O(l)\)</span> にする手法について紹介します。
 EIやPIを利用すると、分散を評価する必要があるため <span class="math notranslate nohighlight">\(O(l^2)\)</span> になってしまうことに注意が必要です。
@@ -275,9 +275,9 @@ EIやPIを利用すると、分散を評価する必要があるため <span cla
 <p>ただし、この <span class="math notranslate nohighlight">\(\phi(\mathbf{x})\)</span> は前述したrandom feature mapであり、 <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> は係数ベクトルです。
 ガウス過程では、学習データ <span class="math notranslate nohighlight">\(D\)</span> があたえられたとき、この <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> が以下のガウス分布に従うように決まります。</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
-&amp;&amp;\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
-&amp;&amp;\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
+\[\begin{split}p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
 <p>トンプソンサンプリングでは、この事後確率分布にしたがって係数ベクトルを一つサンプリングし、
 それを <span class="math notranslate nohighlight">\(\mathbf{w}^*\)</span> とすることで、
 獲得関数を</p>

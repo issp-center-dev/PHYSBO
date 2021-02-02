@@ -90,8 +90,8 @@ In addition, the EI score is the expected value of the difference between the pr
 First, the random feature map is introduced.
 By introducing the random feature map <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span>, we can approximate the Gaussian kernel <span class="math notranslate nohighlight">\(k(\mathbf{x},\mathbf{x}')\)</span> as follows.</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
-&amp;&amp;\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top,\end{split}\]</div>
+\[\begin{split}k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top,\end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)\)</span>.
 Then, <span class="math notranslate nohighlight">\(\boldsymbol{\omega}\)</span> is generated from <span class="math notranslate nohighlight">\(p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)\)</span> and <span class="math notranslate nohighlight">\(b\)</span> is chosen uniformly from <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span> is chosen uniformly from <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span>.
 This approximation is strictly valid in the limit of <span class="math notranslate nohighlight">\(l \to \infty\)</span>, where the value of <span class="math notranslate nohighlight">\(l\)</span> is the dimension of the random feature map.</p>
@@ -102,8 +102,8 @@ This approximation is strictly valid in the limit of <span class="math notransla
 \[\Phi = ( \phi(\mathbf{x}_1),..., \phi(\mathbf{x}_n) ).\]</div>
 <p>It is seen that the following relation is satisfied:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
-&amp;&amp;K= \Phi^\top \Phi.\end{split}\]</div>
+\[\begin{split}\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+K= \Phi^\top \Phi.\end{split}\]</div>
 <p>Next, a method that uses Thompson sampling to make the computation time for candidate prediction <span class="math notranslate nohighlight">\(O(l)\)</span> is introduced.
 Note that using EI or PI will result in <span class="math notranslate nohighlight">\(O(l^2)\)</span> because of the need to evaluate the variance.
 In order to perform Thompson sampling, the Bayesian linear model defined below is used.</p>
@@ -112,9 +112,9 @@ In order to perform Thompson sampling, the Bayesian linear model defined below i
 <p>where <span class="math notranslate nohighlight">\(\phi(\mathbf{x})\)</span> is random feature map described above and <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is a coefficient vector.
 In a Gaussian process, when the training data <span class="math notranslate nohighlight">\(D\)</span> is given, this <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is determined to follow the following Gaussian distribution.</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}&amp;&amp;p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
-&amp;&amp;\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
-&amp;&amp;\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
+\[\begin{split}p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
 <p>In Thompson sampling, one coefficient vector is sampled according to this posterior probability distribution and set to <span class="math notranslate nohighlight">\(\mathbf{w}^*\)</span>, which represents the acquisition function as follows</p>
 <div class="math notranslate nohighlight">
 \[\text{TS} (\mathbf{x}) = {\mathbf{w}^*}^\top \phi (\mathbf{x}).\]</div>

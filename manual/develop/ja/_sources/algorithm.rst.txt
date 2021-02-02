@@ -87,8 +87,8 @@ random feature map :math:`\phi (\mathbf{x})` を導入することで
 
 .. math::
 
-   &&k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
-   &&\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top
+   k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+   \phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top
 
 ただし、 :math:`z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)` としています。
 このとき、 :math:`\boldsymbol{\omega}` は :math:`p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)` より生成され、 :math:`b` は :math:`[0, 2 \pi]` から一様に選ばれます。
@@ -104,8 +104,8 @@ random feature map :math:`\phi (\mathbf{x})` を導入することで
 
 .. math::
 
-   &&\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
-   &&K= \Phi^\top \Phi
+   \mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+   K= \Phi^\top \Phi
 
 という関係が成立することがわかります。
 
@@ -123,9 +123,9 @@ EIやPIを利用すると、分散を評価する必要があるため :math:`O(
 
 .. math::
 
-   &&p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
-   &&\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
-   &&\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}
+   p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+   \boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+   \Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}
 
 トンプソンサンプリングでは、この事後確率分布にしたがって係数ベクトルを一つサンプリングし、
 それを :math:`\mathbf{w}^*` とすることで、
