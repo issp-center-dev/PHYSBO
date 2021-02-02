@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>physbo.gp.lik.gauss module &#8212; PHYSBO 1.0.0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="physbo.gp.mean package" href="physbo.gp.mean.html" />
+    <link rel="prev" title="physbo.gp.lik package" href="physbo.gp.lik.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-physbo.gp.lik.gauss">
+<span id="physbo-gp-lik-gauss-module"></span><h1>physbo.gp.lik.gauss module<a class="headerlink" href="#module-physbo.gp.lik.gauss" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="physbo.gp.lik.gauss.gauss">
+<em class="property">class </em><code class="sig-prename descclassname">physbo.gp.lik.gauss.</code><code class="sig-name descname">gauss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">std</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">max_params</span><span class="o">=</span><span class="default_value">1000000.0</span></em>, <em class="sig-param"><span class="n">min_params</span><span class="o">=</span><span class="default_value">1e-06</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Gaussian likelihood function</p>
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.get_cand_params">
+<code class="sig-name descname">get_cand_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.get_cand_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getting candidate parameters.</p>
+<dl class="simple">
+<dt>t:  numpy.ndarray</dt><dd><p>N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>log[ standard deviation of t] - log 10.0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.get_cov">
+<code class="sig-name descname">get_cov</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_data</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.get_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a covariance matrix</p>
+<p>num_data: int
+params: numpy.ndarray</p>
+<blockquote>
+<div><p>Parameters for optimization.
+Array of real elements of size (n,), where ‘n’ is the number of independent variables.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>Diagonal element matrix of exp(2.0*params)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.get_grad">
+<code class="sig-name descname">get_grad</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_data</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.get_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a gradient matrix</p>
+<p>num_data: int
+params: numpy.ndarray</p>
+<blockquote>
+<div><p>Parameters for optimization.
+Array of real elements of size (n,), where ‘n’ is the number of independent variables.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>Diagonal element matrix of 2.0 * exp(2.0*params)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.get_params_bound">
+<code class="sig-name descname">get_params_bound</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.get_params_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get boundary array.</p>
+<dl class="simple">
+<dt>bound: list</dt><dd><p>A num_params-dimensional array with the tuple (min_params, max_params).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.sampling">
+<code class="sig-name descname">sampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fmean</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.sampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampling by adding noise</p>
+<p>fmean: numpy.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.set_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set parameters.</p>
+<dl class="simple">
+<dt>params: numpy.ndarray</dt><dd><p>Parameters for optimization.
+Array of real elements of size (n,), where ‘n’ is the number of independent variables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.supp_params">
+<code class="sig-name descname">supp_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.supp_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set maximum (minimum) values for parameters when the parameter is greater(less) than this value.</p>
+<dl class="simple">
+<dt>params: numpy.ndarray</dt><dd><p>Parameters for optimization.
+Array of real elements of size (n,), where ‘n’ is the number of independent variables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="physbo.gp.lik.gauss.gauss.trans_params">
+<code class="sig-name descname">trans_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.gp.lik.gauss.gauss.trans_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get exp[params].</p>
+<dl class="simple">
+<dt>params: numpy.ndarray</dt><dd><p>Parameters for optimization.
+Array of real elements of size (n,), where ‘n’ is the number of independent variables.</p>
+</dd>
+</dl>
+<p>std: numpy.ndarray</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">PHYSBO</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#module-physbo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="physbo.html">physbo package</a><ul>
+  <li><a href="physbo.gp.html">physbo.gp package</a><ul>
+  <li><a href="physbo.gp.lik.html">physbo.gp.lik package</a><ul>
+      <li>Previous: <a href="physbo.gp.lik.html" title="previous chapter">physbo.gp.lik package</a></li>
+      <li>Next: <a href="physbo.gp.mean.html" title="next chapter">physbo.gp.mean package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Institute for Solid State Physics, University of Tokyo.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/physbo.gp.lik.gauss.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
