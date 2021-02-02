@@ -12,6 +12,7 @@ Welcome to PHYSBO's documentation!
 
    introduction
    install
+   algorithm
    API Reference<api/physbo>
    acknowledgement
    contact
