@@ -1,0 +1,72 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - ghactions
+      - '!gh-pages'
+    tags: '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        path: main
+
+    - name: Checkout gh-pages
+      uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install tox tox-gh-actions
+
+    - name: Build docs with tox
+      run: tox -e docs
+
+    - name: Deploy Configuration
+      run: |
+          mkdir ~/.ssh
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.GH_ACTIONS_DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
+    - name: Push
+      env:
+        GIT_USER: "PHYSBO Developers"
+        GIT_EMAIL: "physbo-dev@issp.u-tokyo.ac.jp"
+        TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
+      run: |
+          cd ${GITHUB_WORKSPACE}
+          for lang in ja en; do
+            rm -rf "gh-pages/manual/${TARGET_NAME}/${lang}"
+            mkdir -p "gh-pages/manual/${TARGET_NAME}"
+            cp -r "main/.tox/docs_out/manual/${lang}" "gh-pages/manual/${TARGET_NAME}/"
+          done
+          cd gh-pages
+          git config --local user.name "${GIT_USER}"
+          git config --local user.email "${GIT_EMAIL}"
+          git remote set-url origin git@github.com:${GITHUB_REPOSITORY}.git
+          git add manual
+          if git commit -m "Deploy docs to ${TARGET_NAME} by GitHub Actions triggered by ${GITHUB_SHA}"
+          then
+            git push origin gh-pages
+          else
+            echo "Nothing to deploy"
+          fi
