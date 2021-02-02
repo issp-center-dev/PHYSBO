@@ -1,7 +1,0 @@
-physbo.gp.core.prior module
-===========================
-
-.. automodule:: physbo.gp.core.prior
-   :members:
-   :undoc-members:
-   :show-inheritance:
