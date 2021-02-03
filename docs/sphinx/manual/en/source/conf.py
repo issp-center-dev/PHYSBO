@@ -229,12 +229,12 @@ html_context = {}
 html_context["languages"] = ["en", "ja"]
 html_context["current_lang"] = language
 
-current_version = os.environ.get("tagname", "")
+current_version = os.environ.get("TARGET_NAME", "")
 if not current_version:
     current_version = release
 html_context["current_version"] = current_version
 
-html_context["branches"] = ["develop", "master", "change_docs"]
+html_context["branches"] = ["develop", "master", "changedocs"]
 html_context["tags"] = []
 exclude_tags = ["v0.1.0", "v0.2.0", "v0.3.0"]
 
