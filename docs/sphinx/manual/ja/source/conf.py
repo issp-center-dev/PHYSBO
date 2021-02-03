@@ -122,12 +122,6 @@ html_context["branches"] = ["develop", "master", "change_docs"]
 html_context["tags"] = []
 exclude_tags = ["v0.1.0", "v0.2.0", "v0.3.0"]
 
-html_context["ENABLE_VERSIONING"] = "false"
-if os.environ.get("CI", "false") == "true":
-    html_context["ENABLE_VERSIONING"] = "true"
-if os.environ.get("ENABLE_VERSIONING", "false") == "true":
-    html_context["ENABLE_VERSIONING"] = "true"
-
 try:
     import git
     repo = git.Repo(search_parent_directories=True)
@@ -138,3 +132,9 @@ try:
             html_context["tags"].append(tag)
 except:
     pass
+
+html_context["ENABLE_VERSIONING"] = "false"
+if os.environ.get("CI", "false") == "true":
+    html_context["ENABLE_VERSIONING"] = "true"
+if os.environ.get("ENABLE_VERSIONING", "false") == "true":
+    html_context["ENABLE_VERSIONING"] = "true"
