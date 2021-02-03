@@ -226,7 +226,9 @@ texinfo_documents = [
 
 html_context = {}
 
-html_context["languages"] = ["en", "ja"]
+html_context["ENABLE_VERSIONING"] = os.environ.get("CI", "false")
+
+html_context["languages"] = [("en"), ("ja")]
 html_context["current_lang"] = language
 
 current_version = os.environ.get("TARGET_NAME", "")
@@ -234,7 +236,7 @@ if not current_version:
     current_version = release
 html_context["current_version"] = current_version
 
-html_context["branches"] = ["develop", "master", "changedocs"]
+html_context["branches"] = ["develop", "master"]
 html_context["tags"] = []
 exclude_tags = ["v0.1.0", "v0.2.0", "v0.3.0"]
 
@@ -250,8 +252,6 @@ try:
 except:
     pass
 
-html_context["ENABLE_VERSIONING"] = "false"
-if os.environ.get("CI", "false") == "true":
-    html_context["ENABLE_VERSIONING"] = "true"
-if os.environ.get("ENABLE_VERSIONING", "false") == "true":
-    html_context["ENABLE_VERSIONING"] = "true"
+if current_version not in html_context["branches"]:
+    if current_version not in html_context["tags"]:
+        html_context["branches"].append(current_version)
