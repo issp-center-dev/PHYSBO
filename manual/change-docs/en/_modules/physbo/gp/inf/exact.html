@@ -1,0 +1,440 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>physbo.gp.inf.exact &mdash; PHYSBO 1.0.0-beta documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> PHYSBO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0-beta
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contact.html">Contact</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PHYSBO</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>physbo.gp.inf.exact</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for physbo.gp.inf.exact</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">misc</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+
+<div class="viewcode-block" id="eval_marlik"><a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.eval_marlik">[docs]</a><span class="k">def</span> <span class="nf">eval_marlik</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluating marginal likelihood.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gp: physbo.gp.core.model</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">    t:  numpy.ndarray</span>
+<span class="sd">        N dimensional array.</span>
+<span class="sd">        The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">    params: numpy.ndarray</span>
+<span class="sd">        Parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    marlik: float</span>
+<span class="sd">        Marginal likelihood.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ndata</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">fmu</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">lik_params</span><span class="p">)</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">G</span> <span class="o">+</span> <span class="n">B</span> <span class="o">+</span> <span class="mf">1e-8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">ndata</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">fmu</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
+        <span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">res</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
+    <span class="n">marlik</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ndata</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">L</span><span class="p">)))</span>
+        <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">marlik</span></div>
+
+
+<div class="viewcode-block" id="get_grad_marlik"><a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_grad_marlik">[docs]</a><span class="k">def</span> <span class="nf">get_grad_marlik</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluating gradiant of marginal likelihood.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gp: physbo.gp.core.model</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">    t:  numpy.ndarray</span>
+<span class="sd">        N dimensional array.</span>
+<span class="sd">        The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">    params: numpy.ndarray</span>
+<span class="sd">        Parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_marlik: numpy.ndarray</span>
+<span class="sd">        Gradiant of marginal likelihood.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ndata</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">fmu</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">lik_params</span><span class="p">)</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">G</span> <span class="o">+</span> <span class="n">B</span> <span class="o">+</span> <span class="mf">1e-8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">ndata</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">fmu</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+    <span class="n">invA</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">grad_marlik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
+
+    <span class="sd">&quot;&quot;&quot; lik &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">lik_grad</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_grad</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">lik_params</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">lik_grad</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">grad_marlik</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">temp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+            <span class="n">alpha</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">misc</span><span class="o">.</span><span class="n">traceAB2</span><span class="p">(</span><span class="n">invA</span><span class="p">,</span> <span class="n">lik_grad</span><span class="p">)</span>
+
+    <span class="n">ntemp</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span>
+    <span class="sd">&quot;&quot;&quot; prior &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">mean_grad</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_grad_mean</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">)</span>
+        <span class="n">grad_marlik</span><span class="p">[</span><span class="n">ntemp</span> <span class="p">:</span> <span class="n">ntemp</span> <span class="o">+</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span>
+            <span class="n">alpha</span><span class="p">,</span> <span class="n">mean_grad</span>
+        <span class="p">)</span>
+
+    <span class="n">ntemp</span> <span class="o">+=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span>
+
+    <span class="k">if</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">cov_grad</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_grad_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">cov_grad</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">grad_marlik</span><span class="p">[</span><span class="n">ntemp</span><span class="p">:]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">temp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">misc</span><span class="o">.</span><span class="n">traceAB3</span><span class="p">(</span>
+            <span class="n">invA</span><span class="p">,</span> <span class="n">cov_grad</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">grad_marlik</span></div>
+
+
+<div class="viewcode-block" id="prepare"><a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.prepare">[docs]</a><span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gp: physbo.gp.core.model</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">    t:  numpy.ndarray</span>
+<span class="sd">        N dimensional array.</span>
+<span class="sd">        The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">    params: numpy.ndarray</span>
+<span class="sd">        Parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stats: tupple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ndata</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">fmu</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">lik_params</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">G</span> <span class="o">+</span> <span class="n">B</span> <span class="o">+</span> <span class="mf">1e-8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">ndata</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">fmu</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">residual</span><span class="p">)</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stats</span></div>
+
+
+<div class="viewcode-block" id="get_post_fmean"><a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fmean">[docs]</a><span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculating the mean of posterior</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gp: physbo.gp.core.model</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+<span class="sd">    Z: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</span>
+<span class="sd">    params: numpy.ndarray</span>
+<span class="sd">        Parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ndata</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">ntest</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">fmu</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">ntest</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">fmu</span></div>
+
+
+<div class="viewcode-block" id="get_post_fcov"><a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fcov">[docs]</a><span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculating the covariance of posterior</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gp: physbo.gp.core.model</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+<span class="sd">    Z: numpy.ndarray</span>
+<span class="sd">        N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</span>
+<span class="sd">    params: numpy.ndarray</span>
+<span class="sd">        Parameters.</span>
+<span class="sd">    diag: bool</span>
+<span class="sd">        If X is the diagonalization matrix, true.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+
+    <span class="n">invLG</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
+        <span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">G</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">diag</span><span class="p">:</span>
+        <span class="n">diagK</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">diag_invLG2</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">diagAB</span><span class="p">(</span><span class="n">invLG</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">invLG</span><span class="p">)</span>
+        <span class="n">post_cov</span> <span class="o">=</span> <span class="n">diagK</span> <span class="o">-</span> <span class="n">diag_invLG2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
+        <span class="n">post_cov</span> <span class="o">=</span> <span class="n">K</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">invLG</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">invLG</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">post_cov</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020, PHYSBO developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+
+ 
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
