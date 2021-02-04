@@ -31,8 +31,6 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
         $ git clone https://github.com/issp-center-dev/PHYSBO
         ```
 
-    1. Edit some files
-
     1. Install via pip
         ``` bash
         # ./PHYSBO is the root directory of PHYSBO
