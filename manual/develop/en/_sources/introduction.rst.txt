@@ -40,7 +40,7 @@ Main Developers
 - ver. 1.0
 
   - Ryo Tamura (International Center for Materials Nanoarchitectonics, National Institute for Materials Science)
-  - Tsuyoshi Ueno
+  - Tsuyoshi Ueno (Magne-Max Capital Management Company)
   - Kei Terayama (Graduate School of Medical Life Science, Yokohama City University)
   - Koji Tsuda (Graduate School of Frontier Sciences, The University of Tokyo)
   - Yuichi Motoyama (The Institute for Solid State Physics, The University of Tokyo)
