@@ -331,7 +331,7 @@ class policy:
         f: list
             N dimensional scores (score is defined in each mode)
         """
-        f = np.zeros((K, len(self.actions)))
+        f = np.zeros((K, len(self.actions)), dtype=float)
         new_test_local = self.test.get_subset(chosen_actions)
         if self.mpisize == 1:
             new_test = new_test_local
@@ -424,7 +424,7 @@ class policy:
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = np.zeros(N, dtype=np.int)
+        action = np.zeros(N, dtype=int)
         if self.mpisize == 1:
             index = np.random.choice(len(self.actions), N, replace=False)
             action = self.actions[index]

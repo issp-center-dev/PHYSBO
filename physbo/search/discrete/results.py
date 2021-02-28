@@ -49,8 +49,8 @@ class history:
         best_fx: numpy.ndarray
         best_actions: numpy.ndarray
         """
-        best_fx = np.zeros(self.num_runs)
-        best_actions = np.zeros(self.num_runs)
+        best_fx = np.zeros(self.num_runs, dtype=float)
+        best_actions = np.zeros(self.num_runs, dtype=int)
         for n in range(self.num_runs):
             index = np.argmax(self.fx[0 : self.terminal_num_run[n]])
             best_actions[n] = self.chosen_actions[index]
@@ -68,8 +68,8 @@ class history:
         best_fx: numpy.ndarray
         best_actions: numpy.ndarray
         """
-        best_fx = np.zeros(self.total_num_search)
-        best_actions = np.zeros(self.total_num_search)
+        best_fx = np.zeros(self.total_num_search, dtype=float)
+        best_actions = np.zeros(self.total_num_search, dtype=int)
         best_fx[0] = self.fx[0]
         best_actions[0] = self.chosen_actions[0]
 
@@ -136,7 +136,7 @@ class history_mo(object):
         self.num_runs = int(0)
         self.total_num_search = int(0)
         self.fx = np.zeros((MAX_SEARCH, self.num_objectives), dtype=float)
-        self.chosed_actions = np.zeros(MAX_SEARCH, dtype=int)
+        self.chosen_actions = np.zeros(MAX_SEARCH, dtype=int)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
     def write(self, t, action):
@@ -157,7 +157,7 @@ class history_mo(object):
 
         self.terminal_num_run[self.num_runs] = en
         self.fx[st:en] = t
-        self.chosed_actions[st:en] = action
+        self.chosen_actions[st:en] = action
         self.num_runs += 1
         self.total_num_search += N
 
@@ -172,7 +172,7 @@ class history_mo(object):
         M = self.num_runs
 
         obj = {"num_runs": M, "total_num_search": N,
-               "fx": self.fx[0:N], "chosed_actions": self.chosed_actions[0:N],
+               "fx": self.fx[0:N], "chosen_actions": self.chosen_actions[0:N],
                "terminal_num_run": self.terminal_num_run[0:M],
                "pareto": self.pareto}
 
@@ -188,6 +188,6 @@ class history_mo(object):
         self.num_runs = M
         self.total_num_search = N
         self.fx[0:N] = data['fx']
-        self.chosed_actions[0:N] = data['chosed_actions']
+        self.chosen_actions[0:N] = data['chosen_actions']
         self.terminal_num_run[0:M] = data['terminal_num_run']
         self.pareto = data['pareto']
