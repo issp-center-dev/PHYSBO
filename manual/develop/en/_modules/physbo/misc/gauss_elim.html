@@ -36,14 +36,14 @@
 <span class="kn">import</span> <span class="nn">scipy</span>
 
 
-<div class="viewcode-block" id="gauss_elim"><a class="viewcode-back" href="../../../api/physbo.misc.gauss_elim.html#physbo.misc.gauss_elim.gauss_elim">[docs]</a><span class="k">def</span> <span class="nf">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<div class="viewcode-block" id="gauss_elim"><a class="viewcode-back" href="../../../api/physbo.misc.gauss_elim.html#physbo.misc.gauss_elim.gauss_elim">[docs]</a><span class="k">def</span> <span class="nf">gauss_elim</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate alpha using scipy.linalg.solve_triangular.</span>
-<span class="sd">    alpha = (L^T L)^-1 t = L^-1 [(L^T)-1 t]</span>
+<span class="sd">    alpha = (U^T U)^-1 t = U^-1 [(U^T)-1 t]</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    L: (M, M) array_like</span>
+<span class="sd">    U: (M, M) array_like</span>
 <span class="sd">    A triangular matrix</span>
 <span class="sd">    t: (M,) or (M, N) array_like</span>
 
@@ -53,11 +53,11 @@
 <span class="sd">    Solution to the system L^T alpha = t. Shape of return matches t.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">alpha</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">t</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">U</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">t</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
 
     <span class="n">alpha</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">alpha</span></div>
 </pre></div>
