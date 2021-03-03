@@ -26,11 +26,11 @@ class simulator:
         return self.t[action]
 
 
-def test_bayes_search():
+def test_multi_objective():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy_mo(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI")

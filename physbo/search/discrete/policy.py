@@ -3,14 +3,13 @@ import copy
 import pickle as pickle
 import itertools
 
-from .results import history, history_mo
+from .results import history
 from .. import utility
+from .. import score as search_score
+from ...gp import predictor as gp_predictor
+from ...blm import predictor as blm_predictor
+from ...misc import set_config
 
-import physbo
-import physbo.gp
-import physbo.blm
-import physbo.misc
-import physbo.search.score
 from physbo.variable import variable
 
 MAX_SEACH = int(20000)
@@ -300,11 +299,11 @@ class policy:
 
         test = self.test.get_subset(actions)
         if mode == "EI":
-            f = physbo.search.score.EI(predictor, training, test)
+            f = search_score.EI(predictor, training, test)
         elif mode == "PI":
-            f = physbo.search.score.PI(predictor, training, test)
+            f = search_score.PI(predictor, training, test)
         elif mode == "TS":
-            f = physbo.search.score.TS(predictor, training, test, alpha)
+            f = search_score.TS(predictor, training, test, alpha)
         else:
             raise NotImplementedError("mode must be EI, PI or TS.")
         return f
@@ -576,9 +575,9 @@ class policy:
         self.predictor = self._set_predictor(predictor)
         if self.predictor is None:
             if is_rand_expans:
-                self.predictor = physbo.blm.predictor(self.config)
+                self.predictor = blm_predictor(self.config)
             else:
-                self.predictor = physbo.gp.predictor(self.config)
+                self.predictor = gp_predictor(self.config)
 
         return self.predictor
 
@@ -657,280 +656,5 @@ class policy:
 
         """
         if config is None:
-            config = physbo.misc.set_config()
+            config = set_config()
         return config
-
-
-class policy_mo(policy):
-    def __init__(self, test_X, num_objectives, comm=None, config=None, initial_actions=None):
-        self.num_objectives = num_objectives
-        self.history = history_mo(num_objectives=self.num_objectives)
-
-        self.training_list = [variable() for i in range(self.num_objectives)]
-        self.predictor_list = [None for i in range(self.num_objectives)]
-        self.test_list = [self._set_test(test_X) for i in range(self.num_objectives)]
-        self.new_data_list = [None for i in range(self.num_objectives)]
-
-        self.actions = np.arange(0, test_X.shape[0])
-        self.config = self._set_config(config)
-
-        self.TS_candidate_num = None
-
-        if initial_actions is not None:
-            self.actions = sorted(list(set(self.actions) - set(initial_actions)))
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-
-    def write(self, action, t, X=None):
-        self.history.write(t, action)
-        action = np.array(action)
-        t = np.array(t)
-
-        for i in range(self.num_objectives):
-            test = self.test_list[i]
-            predictor = self.predictor_list[i]
-
-            if X is None:
-                X = test.X[action, :]
-                Z = test.Z[action, :] if test.Z is not None else None
-            else:
-                Z = predictor.get_basis(X) if predictor is not None else None
-
-            self.new_data_list[i] = variable(X, t[:, i], Z)
-            self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-
-    def _switch_model(self, i):
-        self.training = self.training_list[i]
-        self.predictor = self.predictor_list[i]
-        self.test = self.test_list[i]
-        self.new_data = self.new_data_list[i]
-
-    def random_search(
-        self,
-        max_num_probes,
-        num_search_each_probe=1,
-        simulator=None,
-        is_disp=True,
-        disp_pareto_set=False,
-    ):
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if int(max_num_probes) * N > len(self.actions):
-            raise ValueError(
-                "max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates"
-            )
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search_mo(
-                    self.history.num_runs, "random"
-                )
-
-            action = self.get_random_action(N)
-
-            if simulator is None:
-                return action
-
-            t = run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
-
-    def bayes_search(
-        self,
-        training_list=None,
-        max_num_probes=None,
-        num_search_each_probe=1,
-        predictor_list=None,
-        is_disp=True,
-        disp_pareto_set=False,
-        simulator=None,
-        score="HVPI",
-        interval=0,
-        num_rand_basis=0,
-    ):
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = False if num_rand_basis == 0 else True
-
-        if training_list is not None:
-            self.training_list = training_list
-
-        if predictor_list is None:
-            if is_rand_expans:
-                self.predictor_list = [
-                    physbo.blm.predictor(self.config) for i in range(self.num_objectives)
-                ]
-            else:
-                self.predictor_list = [
-                    physbo.gp.predictor(self.config) for i in range(self.num_objectives)
-                ]
-        else:
-            self.predictor = predictor_list
-
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-
-            if utility.is_learning(n, interval):
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.fit(self.training, num_rand_basis)
-                    self.test.Z = self.predictor.get_basis(self.test.X)
-                    self.training.Z = self.predictor.get_basis(self.training.X)
-                    self.predictor.prepare(self.training)
-            else:
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.update(self.training, self.new_data)
-
-            if num_search_each_probe != 1:
-                utility.show_start_message_multi_search_mo(self.history.num_runs, score)
-
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self.get_actions(score, N, K, alpha)
-
-            if simulator is None:
-                return action
-
-            t = run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
-
-    def get_actions(self, mode, N, K, alpha):
-        f = self.get_score(
-            mode, self.predictor_list, self.training_list, self.history.pareto, alpha
-        )
-        champion, local_champion, local_index = self._find_champion(f)
-        chosen_actions = np.zeros(N, dtype=int)
-        chosen_actions[0] = champion
-        if champion == local_champion:
-            self.actions = self.delete_actions(local_index)
-
-        for n in range(1, N):
-            f = self.get_score(
-                mode,
-                self.predictor_list,
-                self.training_list,
-                self.history.pareto,
-                alpha,
-            )
-            champion, local_champion, local_index = self._find_champion(f)
-            chosen_actions[n] = champion
-            if champion == local_champion:
-                self.actions = self.delete_actions(local_index)
-        return chosen_actions
-
-    def get_score(self, mode, predictor_list, training_list, pareto, alpha=1):
-        actions = self.actions
-        test = self.test.get_subset(actions)
-
-        if mode == "EHVI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = physbo.search.score.EHVI(fmean, fstd, pareto)
-        elif mode == "HVPI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = physbo.search.score.HVPI(fmean, fstd, pareto)
-        elif mode == "TS":
-            f = physbo.search.score.TS_MO(
-                predictor_list,
-                training_list,
-                test,
-                alpha,
-                reduced_candidate_num=self.TS_candidate_num,
-            )
-        else:
-            raise NotImplementedError("mode must be EHVI, HVPI or TS.")
-        return f
-
-    def get_fmean_fstd(self, predictor_list, training_list, test):
-        fmean = [
-            predictor.get_post_fmean(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-        fcov = [
-            predictor.get_post_fcov(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-
-        # shape: (N, n_obj)
-        fmean = np.array(fmean).T
-        fstd = np.sqrt(np.array(fcov)).T
-        return fmean, fstd
-
-    def load(self, file_history, file_training_list=None, file_predictor_list=None):
-        self.history.load(file_history)
-
-        if file_training_list is None:
-            N = self.history.total_num_search
-            X = self.test_list[0].X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
-            self.training_list = [
-                variable(X=X, t=t[:, i]) for i in range(self.num_objectives)
-            ]
-        else:
-            self.load_training_list(file_training_list)
-
-        if file_predictor_list is not None:
-            self.load_predictor_list(file_predictor_list)
-
-    def save_predictor_list(self, file_name):
-        with open(file_name, "wb") as f:
-            pickle.dump(self.predictor_list, f, 2)
-
-    def save_training_list(self, file_name):
-        obj = [
-            {"X": training.X, "t": training.t, "Z": training.Z}
-            for training in self.training_list
-        ]
-        with open(file_name, "wb") as f:
-            pickle.dump(obj, f, 2)
-
-    def load_predictor_list(self, file_name):
-        with open(file_name, "rb") as f:
-            self.predictor_list = pickle.load(f)
-
-    def load_training_list(self, file_name):
-        with open(file_name, "rb") as f:
-            data_list = pickle.load(f)
-
-        self.training_list = [variable() for i in range(self.num_objectives)]
-        for data, training in zip(data_list, self.training_list):
-            training.X = data["X"]
-            training.t = data["t"]
-            training.Z = data["Z"]
