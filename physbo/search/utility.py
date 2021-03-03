@@ -43,7 +43,7 @@ def show_search_results_mo(history, N, disp_pareto_set = False):
 
     if N == 1:
         print('%04d-th step: f(x) = %s (action = %d)'
-                % (n, str(history.fx[n-1]), history.chosed_actions[n-1]))
+                % (n, str(history.fx[n-1]), history.chosen_actions[n-1]))
 
         msg_pareto_set_updated(indent=True)
 
@@ -55,7 +55,7 @@ def show_search_results_mo(history, N, disp_pareto_set = False):
         en = history.total_num_search
         for n in range(st, en):
             print('f(x) = %s (action = %d)'
-                % (str(history.fx[n-1]), history.chosed_actions[n-1]))
+                % (str(history.fx[n-1]), history.chosen_actions[n-1]))
         print('\n')
 
 def show_start_message_multi_search(N, score=None):
