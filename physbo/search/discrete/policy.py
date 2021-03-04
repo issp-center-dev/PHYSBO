@@ -487,14 +487,15 @@ class policy:
         -------
 
         """
-        self.history.save(file_history)
+        if self.mpirank == 0:
+            self.history.save(file_history)
 
-        if file_training is not None:
-            self.training.save(file_training)
+            if file_training is not None:
+                self.training.save(file_training)
 
-        if file_predictor is not None:
-            with open(file_predictor, "wb") as f:
-                pickle.dump(self.predictor, f)
+            if file_predictor is not None:
+                with open(file_predictor, "wb") as f:
+                    pickle.dump(self.predictor, f)
 
     def load(self, file_history, file_training=None, file_predictor=None):
         """

@@ -271,6 +271,14 @@ class policy(discrete.policy):
         fstd = np.sqrt(np.array(fcov)).T
         return fmean, fstd
 
+    def save(self, file_history, file_training_list=None, file_predictor_list=None):
+        if self.mpirank == 0:
+            self.history.save(file_history)
+            if file_training_list is not None:
+                self.save_training_list(file_training_list)
+            if file_predictor_list is not None:
+                self.save_predictor_list(file_predictor_list)
+
     def load(self, file_history, file_training_list=None, file_predictor_list=None):
         self.history.load(file_history)
 
