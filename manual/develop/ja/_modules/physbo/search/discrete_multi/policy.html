@@ -176,8 +176,6 @@
 <span class="kn">from</span> <span class="nn">...misc</span> <span class="kn">import</span> <span class="n">set_config</span>
 <span class="kn">from</span> <span class="nn">...variable</span> <span class="kn">import</span> <span class="n">variable</span>
 
-<span class="n">MAX_SEACH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20000</span><span class="p">)</span>
-
 
 <div class="viewcode-block" id="run_simulator"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.run_simulator">[ドキュメント]</a><span class="k">def</span> <span class="nf">run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -349,6 +347,11 @@
             <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span>
             <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_actions</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: All actions have already searched.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">action</span>
 
@@ -364,31 +367,41 @@
 
 <div class="viewcode-block" id="policy.get_actions"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_actions">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-            <span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="p">,</span> <span class="n">alpha</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">predictor_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span>
+            <span class="n">training_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">,</span>
+            <span class="n">pareto</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">chosen_actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">champion</span>
+        <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="n">local_champion</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
 
+        <span class="n">chosen_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">champion</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
             <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="p">,</span>
-                <span class="n">alpha</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                <span class="n">predictor_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span>
+                <span class="n">training_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">,</span>
+                <span class="n">pareto</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">champion</span>
+            <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">chosen_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">champion</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="n">local_champion</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">chosen_actions</span></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="policy.get_score"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_score">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">pareto</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span>
         <span class="n">test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;EHVI&quot;</span><span class="p">:</span>
             <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
