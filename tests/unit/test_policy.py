@@ -60,10 +60,6 @@ def test_randomsearch(policy, mocker):
     write_spy.assert_called()
     assert simulator.call_count == N
 
-    # Too many actions requested
-    with pytest.raises(ValueError):
-        policy.random_search(2 * N, simulator=simulator)
-
 
 def test_bayes_search(policy, mocker):
     simulator = mocker.MagicMock(side_effect=lambda x: x)
