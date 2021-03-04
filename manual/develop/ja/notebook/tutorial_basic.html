@@ -107,6 +107,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#結果の確認">結果の確認</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#結果のシリアライズ">結果のシリアライズ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#並列化">並列化</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
@@ -512,7 +513,7 @@ div.rendered_html tbody tr:hover {
 <span></span><span class="c1"># Declare the class for calling the simulator.</span>
 <span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
@@ -524,7 +525,7 @@ div.rendered_html tbody tr:hover {
 
         <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
 
-        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
 </pre></div>
 </div>
 </div>
@@ -660,7 +661,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x139c17f10&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7fbef85dffa0&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -686,7 +687,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x139d1e190&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7fbf28816580&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -746,6 +747,21 @@ div.rendered_html tbody tr:hover {
 <div class="highlight"><pre>
 [-1.]
 </pre></div></div>
+</div>
+</div>
+<div class="section" id="並列化">
+<h2>並列化<a class="headerlink" href="#並列化" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>PHYSBO は全候補点に対する獲得関数の計算をMPI を用いて並列化出来ます。 MPI 並列には <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> を用います。</p>
+<p>並列化を有効化するには、 <code class="docutils literal notranslate"><span class="pre">policy</span></code> のコンストラクタのキーワード引数 <code class="docutils literal notranslate"><span class="pre">comm</span></code> に MPI コミュニケータ、たとえば <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> を渡してください。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># from mpi4py import MPI</span>
+<span class="c1"># policy = physbo.search.discrete.policy(X=test_X, comm=MPI.COMM_WORLD)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>

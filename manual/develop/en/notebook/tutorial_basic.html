@@ -350,7 +350,7 @@ is designed to find the maximum value of the objective function</strong>, it ret
 
         <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
 
-        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
 </pre></div>
 </div>
 </div>
@@ -487,7 +487,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x13b1822d0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7ff288463220&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -513,7 +513,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x13b3e3dd0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7ff28857e550&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -557,12 +557,34 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </div>
 <p>Finally, the candidate with the best score can be displayed as follows. You can see that we have arrived at the correct solution <span class="math notranslate nohighlight">\(x=-1\)</span>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[-1.]
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Parallelization">
+<h2>Parallelization<a class="headerlink" href="#Parallelization" title="Permalink to this headline">¶</a></h2>
+<p>PHYSBO can calculate acquisition functions for candidates in parallel by using MPI via <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> . To enable MPI parallelization, pass a MPI communicator such as <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> to a keyword argument, <code class="docutils literal notranslate"><span class="pre">comm</span></code> of the constructor of the <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># from mpi4py import MPI</span>
+<span class="c1"># policy = physbo.search.discrete.policy(test_X=X, comm=MPI.COMM_WORLD)</span>
 </pre></div>
 </div>
 </div>
