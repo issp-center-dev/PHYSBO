@@ -24,7 +24,7 @@ def run_simulator(simulator, action, comm=None):
 
 class policy(discrete.policy):
     def __init__(
-        self, test_X, num_objectives, comm=None, config=None, initial_actions=None
+        self, test_X, num_objectives, comm=None, config=None, initial_data=None
     ):
         self.num_objectives = num_objectives
         self.history = history(num_objectives=self.num_objectives)
@@ -39,8 +39,19 @@ class policy(discrete.policy):
 
         self.TS_candidate_num = None
 
-        if initial_actions is not None:
-            self.actions = sorted(list(set(self.actions) - set(initial_actions)))
+        if initial_data is not None:
+            if len(initial_data) != 2:
+                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+                raise RuntimeError(msg)
+            actions, fs = initial_data
+            if fs.shape[1] != self.num_objectives:
+                msg = "ERROR: initial_data[1].shape[1] != num_objectives"
+                raise RuntimeError(msg)
+            if len(actions) != fs.shape[0]:
+                msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
+                raise RuntimeError(msg)
+            self.write(actions, fs)
+            self.actions = sorted(list(set(self.actions) - set(actions)))
 
         if comm is None:
             self.mpicomm = None
