@@ -12,8 +12,6 @@ from ...misc import set_config
 
 from physbo.variable import variable
 
-MAX_SEACH = int(20000)
-
 
 def run_simulator(simulator, action, comm=None):
     if comm is None:
@@ -37,6 +35,8 @@ class policy:
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
             The first elements is the array of actions and the second is the array of value of objective functions
+        comm: MPI.Comm, optional
+            MPI Communicator
         """
         self.predictor = None
         self.training = variable()
@@ -54,7 +54,7 @@ class policy:
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = sorted(list(set(self.actions)-set(actions)))
+            self.actions = sorted(list(set(self.actions) - set(actions)))
 
         if comm is None:
             self.mpicomm = None
@@ -153,12 +153,6 @@ class policy:
 
         N = int(num_search_each_probe)
 
-        if int(max_num_probes) * N > len(self.actions):
-            raise ValueError(
-                "max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates"
-            )
-
         if is_disp:
             utility.show_interactive_mode(simulator, self.history)
 
@@ -168,6 +162,11 @@ class policy:
                 utility.show_start_message_multi_search(self.history.num_runs)
 
             action = self.get_random_action(N)
+
+            if len(action) == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                return copy.deepcopy(self.history)
 
             if simulator is None:
                 return action
@@ -209,7 +208,7 @@ class policy:
         is_disp: bool
              If true, process messages are outputted.
         simulator: callable
-            Callable (function or object with ``__call__``) 
+            Callable (function or object with ``__call__``)
             Here, action is an integer which represents the index of the candidate.
         score: str
             The type of aquision funciton.
@@ -261,6 +260,11 @@ class policy:
             alpha = self.config.search.alpha
             action = self.get_actions(score, N, K, alpha)
 
+            if len(action) == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                return copy.deepcopy(self.history)
+
             if simulator is None:
                 return action
 
@@ -298,6 +302,10 @@ class policy:
         actions = self.actions
 
         test = self.test.get_subset(actions)
+
+        if test.X.shape[0] == 0:
+            return np.zeros(0)
+
         if mode == "EI":
             f = search_score.EI(predictor, training, test)
         elif mode == "PI":
@@ -359,12 +367,12 @@ class policy:
 
     def get_actions(self, mode, N, K, alpha):
         """
-        Getting actions
+        Getting next candidates
 
         Parameters
         ----------
         mode: str
-            The type of aquision funciton.
+            The type of aquisition funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
         N: int
@@ -380,35 +388,43 @@ class policy:
         chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
-        f = self.get_score(mode, self.predictor, self.training, alpha)
+        f = self.get_score(
+            mode, predictor=self.predictor, training=self.training, alpha=alpha
+        )
         champion, local_champion, local_index = self._find_champion(f)
+        if champion == -1:
+            return np.zeros(0, dtype=int)
         if champion == local_champion:
             self.actions = self.delete_actions(local_index)
 
-        chosen_actions = np.zeros(N, dtype=int)
-        chosen_actions[0] = champion
-
+        chosen_actions = [champion]
         for n in range(1, N):
             f = self.get_marginal_score(mode, chosen_actions[0:n], K, alpha)
             champion, local_champion, local_index = self._find_champion(f)
+            if champion == -1:
+                break
             if champion == local_champion:
                 self.actions = self.delete_actions(local_index)
-            chosen_actions[n] = champion
-
-        return chosen_actions
+            chosen_actions.append(champion)
+        return np.array(chosen_actions)
 
     def _find_champion(self, f):
-        local_fmax = np.max(f)
-        local_index = np.argmax(f)
-        local_champion = self.actions[local_index]
+        if len(f) == 0:
+            local_fmax = -float("inf")
+            local_index = -1
+            local_champion = -1
+        else:
+            local_fmax = np.max(f)
+            local_index = np.argmax(f)
+            local_champion = self.actions[local_index]
         if self.mpisize == 1:
-            return local_champion, local_champion, local_index
+            champion = local_champion
         else:
             local_champions = self.mpicomm.allgather(local_champion)
             local_fs = self.mpicomm.allgather(local_fmax)
             champion_rank = np.argmax(local_fs)
             champion = local_champions[champion_rank]
-            return champion, local_champion, local_index
+        return champion, local_champion, local_index
 
     def get_random_action(self, N):
         """
@@ -423,9 +439,12 @@ class policy:
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = np.zeros(N, dtype=int)
         if self.mpisize == 1:
-            index = np.random.choice(len(self.actions), N, replace=False)
+            n = len(self.actions)
+            if n <= N:
+                index = np.arange(0, n)
+            else:
+                index = np.random.choice(len(self.actions), N, replace=False)
             action = self.actions[index]
             self.actions = self.delete_actions(index)
         else:
@@ -435,10 +454,13 @@ class policy:
                 hi = np.add.accumulate(nactions)
                 lo = np.roll(hi, 1)
                 lo[0] = 0
-                index = np.random.choice(hi[-1], N, replace=False)
+                if hi[-1] <= N:
+                    index = np.arange(0, hi[-1])
+                else:
+                    index = np.random.choice(hi[-1], N, replace=False)
                 ranks = np.searchsorted(hi, index, side="right")
-                for r,i in zip(ranks, index):
-                    local_indices[r].append(i-lo[r])
+                for r, i in zip(ranks, index):
+                    local_indices[r].append(i - lo[r])
             local_indices = self.mpicomm.scatter(local_indices, root=0)
             local_actions = self.actions[local_indices]
             self.actions = self.delete_actions(local_indices)

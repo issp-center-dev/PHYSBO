@@ -11,8 +11,6 @@ from ...blm import predictor as blm_predictor
 from ...misc import set_config
 from ...variable import variable
 
-MAX_SEACH = int(20000)
-
 
 def run_simulator(simulator, action, comm=None):
     if comm is None:
@@ -184,6 +182,11 @@ class policy(discrete.policy):
             alpha = self.config.search.alpha
             action = self.get_actions(score, N, K, alpha)
 
+            if len(action) == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                return copy.deepcopy(self.history)
+
             if simulator is None:
                 return action
 
@@ -199,31 +202,41 @@ class policy(discrete.policy):
 
     def get_actions(self, mode, N, K, alpha):
         f = self.get_score(
-            mode, self.predictor_list, self.training_list, self.history.pareto, alpha
+            mode=mode,
+            predictor_list=self.predictor_list,
+            training_list=self.training_list,
+            pareto=self.history.pareto,
+            alpha=alpha,
         )
         champion, local_champion, local_index = self._find_champion(f)
-        chosen_actions = np.zeros(N, dtype=int)
-        chosen_actions[0] = champion
+        if champion == -1:
+            return np.zeros(0, dtype=int)
         if champion == local_champion:
             self.actions = self.delete_actions(local_index)
 
+        chosen_actions = [champion]
         for n in range(1, N):
             f = self.get_score(
-                mode,
-                self.predictor_list,
-                self.training_list,
-                self.history.pareto,
-                alpha,
+                mode=mode,
+                predictor_list=self.predictor_list,
+                training_list=self.training_list,
+                pareto=self.history.pareto,
+                alpha=alpha,
             )
             champion, local_champion, local_index = self._find_champion(f)
-            chosen_actions[n] = champion
+            if champion == -1:
+                break
+            chosen_actions.append(champion)
             if champion == local_champion:
                 self.actions = self.delete_actions(local_index)
-        return chosen_actions
+        return np.array(chosen_actions)
 
     def get_score(self, mode, predictor_list, training_list, pareto, alpha=1):
         actions = self.actions
         test = self.test.get_subset(actions)
+
+        if test.X.shape[0] == 0:
+            return np.zeros(0)
 
         if mode == "EHVI":
             fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
