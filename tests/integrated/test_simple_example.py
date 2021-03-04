@@ -53,3 +53,18 @@ def test_bayes_search():
     print(best_action)
     assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
     assert best_action[-1] == 60
+
+
+def test_bayes_search_rand():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100)
+    best_fx, best_action = res.export_all_sequence_best_fx()
+    print(best_fx)
+    print(best_action)
+    assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
+    assert best_action[-1] == 60

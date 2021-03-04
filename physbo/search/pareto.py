@@ -23,13 +23,9 @@ class Rectangles(object):
         self.ub = np.r_[self.ub, ub]
 
 
-class domination_rule(object):
-    def __init__(self):
-        pass
-
-    def dominate(self, t1, t2):
-        """domination rule for maximization problem"""
-        return np.all(t1 >= t2) and np.any(t1 > t2)
+def dominate(t1, t2):
+    """domination rule for maximization problem"""
+    return np.all(t1 >= t2) and np.any(t1 > t2)
 
 
 class Pareto(object):
@@ -42,7 +38,7 @@ class Pareto(object):
         self.front_updated = False
 
         if self.dom_rule is None:
-            self.dom_rule = domination_rule()
+            self.dom_rule = dominate
 
         self.cells = Rectangles(num_objectives, int)
         self.reference_min = None
@@ -66,7 +62,7 @@ class Pareto(object):
             point = tt[k]
             is_front = True
             for i in range(len(self.front)):
-                if self.dom_rule.dominate(self.front[i], point):
+                if self.dom_rule(self.front[i], point):
                     is_front = False
                     break
 
@@ -74,7 +70,7 @@ class Pareto(object):
                 front_updated = True
                 dom_filter = np.full(len(self.front), True, dtype=bool)
                 for i in range(len(self.front)):
-                    if self.dom_rule.dominate(point, self.front[i]):
+                    if self.dom_rule(point, self.front[i]):
                         dom_filter[i] = False
 
                 self.front = np.r_[self.front[dom_filter], point[np.newaxis, :]]
