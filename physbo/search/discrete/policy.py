@@ -13,16 +13,6 @@ from ...misc import set_config
 from physbo.variable import variable
 
 
-def run_simulator(simulator, action, comm=None):
-    if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
-        t = simulator(action)
-    else:
-        t = 0.0
-    return comm.bcast(t, root=0)
-
-
 class policy:
     def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
@@ -40,10 +30,13 @@ class policy:
         """
         self.predictor = None
         self.training = variable()
-        self.test = self._set_test(test_X)
+        self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
-        self.config = self._set_config(config)
+        if config is None:
+            self.config = set_config()
+        else:
+            self.config = config
 
         if initial_data is not None:
             if len(initial_data) != 2:
@@ -80,24 +73,6 @@ class policy:
         """
         self.seed = seed
         np.random.seed(self.seed)
-
-    def delete_actions(self, index, actions=None):
-        """
-        Deleteing actions
-
-        Parameters
-        ----------
-        index: int
-            Index of an action to be deleted.
-        actions: numpy.ndarray
-            Array of actions.
-        Returns
-        -------
-        actions: numpy.ndarray
-            Array of actions which does not include action specified by index.
-        """
-        actions = self._set_unchosen_actions(actions)
-        return np.delete(actions, index)
 
     def write(self, action, t, X=None):
         """
@@ -161,7 +136,7 @@ class policy:
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(self.history.num_runs)
 
-            action = self.get_random_action(N)
+            action = self._get_random_action(N)
 
             if len(action) == 0:
                 if self.mpirank == 0:
@@ -171,7 +146,7 @@ class policy:
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -232,14 +207,15 @@ class policy:
             max_num_probes = 1
             simulator = None
 
-        is_rand_expans = False if num_rand_basis == 0 else True
+        is_rand_expans = num_rand_basis != 0
 
-        self.training = self._set_training(training)
+        if training is not None:
+            self.training = training
 
-        if predictor is None:
-            self.predictor = self._init_predictor(is_rand_expans)
-        else:
+        if predictor is not None:
             self.predictor = predictor
+        elif self.predictor is None:
+            self._init_predictor(is_rand_expans)
 
         N = int(num_search_each_probe)
 
@@ -258,7 +234,7 @@ class policy:
 
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self.get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha)
 
             if len(action) == 0:
                 if self.mpirank == 0:
@@ -268,7 +244,7 @@ class policy:
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -297,10 +273,12 @@ class policy:
         f: float or list of float
             Score defined in each mode.
         """
-        self._set_training(training)
-        self._set_predictor(predictor)
-        actions = self.actions
+        if training is not None:
+            self.training = training
+        if predictor is not None:
+            self.predictor = predictor
 
+        actions = self.actions
         test = self.test.get_subset(actions)
 
         if test.X.shape[0] == 0:
@@ -316,7 +294,7 @@ class policy:
             raise NotImplementedError("mode must be EI, PI or TS.")
         return f
 
-    def get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
         """
         Getting marginal scores.
 
@@ -365,7 +343,7 @@ class policy:
             f[k, :] = self.get_score(mode, predictor, train)
         return np.mean(f, axis=0)
 
-    def get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha):
         """
         Getting next candidates
 
@@ -395,16 +373,16 @@ class policy:
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
-            self.actions = self.delete_actions(local_index)
+            self.actions = self._delete_actions(local_index)
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self.get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
             if champion == local_champion:
-                self.actions = self.delete_actions(local_index)
+                self.actions = self._delete_actions(local_index)
             chosen_actions.append(champion)
         return np.array(chosen_actions)
 
@@ -426,7 +404,7 @@ class policy:
             champion = local_champions[champion_rank]
         return champion, local_champion, local_index
 
-    def get_random_action(self, N):
+    def _get_random_action(self, N):
         """
         Getting indexes of actions randomly.
 
@@ -446,7 +424,7 @@ class policy:
             else:
                 index = np.random.choice(len(self.actions), N, replace=False)
             action = self.actions[index]
-            self.actions = self.delete_actions(index)
+            self.actions = self._delete_actions(index)
         else:
             nactions = self.mpicomm.gather(len(self.actions), root=0)
             local_indices = [[] for _ in range(self.mpisize)]
@@ -463,7 +441,7 @@ class policy:
                     local_indices[r].append(i - lo[r])
             local_indices = self.mpicomm.scatter(local_indices, root=0)
             local_actions = self.actions[local_indices]
-            self.actions = self.delete_actions(local_indices)
+            self.actions = self._delete_actions(local_indices)
             action = self.mpicomm.allgather(local_actions)
             action = itertools.chain.from_iterable(action)
             action = np.array(list(action))
@@ -560,90 +538,24 @@ class policy:
         """
         return self.history
 
-    def _set_predictor(self, predictor=None):
+    def _init_predictor(self, is_rand_expans):
         """
-
-        Set predictor if defined.
-
-        Parameters
-        ----------
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
-
-        Returns
-        -------
-
-        """
-        if predictor is None:
-            predictor = self.predictor
-        return predictor
-
-    def _init_predictor(self, is_rand_expans, predictor=None):
-        """
-        Setting the initial predictor.
+        Initialize predictor.
 
         Parameters
         ----------
         is_rand_expans: bool
-        If true, physbo.blm.predictor is selected.
-        If false, physbo.gp.predictor is selected.
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
-
-        Returns
-        -------
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
+            If true, physbo.blm.predictor is selected.
+            If false, physbo.gp.predictor is selected.
         """
-        self.predictor = self._set_predictor(predictor)
-        if self.predictor is None:
-            if is_rand_expans:
-                self.predictor = blm_predictor(self.config)
-            else:
-                self.predictor = gp_predictor(self.config)
+        if is_rand_expans:
+            self.predictor = blm_predictor(self.config)
+        else:
+            self.predictor = gp_predictor(self.config)
 
-        return self.predictor
-
-    def _set_training(self, training=None):
+    def _make_variable_X(self, test_X):
         """
-
-        Set training dataset.
-
-        Parameters
-        ----------
-        training: physbo.variable
-            Training dataset.
-
-        Returns
-        -------
-        training: physbo.variable
-            Training dataset.
-        """
-        if training is None:
-            training = self.training
-        return training
-
-    def _set_unchosen_actions(self, actions=None):
-        """
-
-        Parameters
-        ----------
-        actions: numpy.ndarray
-            An array of indexes of the actions which are not chosen.
-
-        Returns
-        -------
-         actions: numpy.ndarray
-            An array of indexes of the actions which are not chosen.
-
-        """
-        if actions is None:
-            actions = self.actions
-        return actions
-
-    def _set_test(self, test_X):
-        """
-        Set test candidates.
+        Make a new *variable* with X=test_X
 
         Parameters
         ----------
@@ -659,25 +571,38 @@ class policy:
         elif isinstance(test_X, variable):
             test = test_X
         else:
-            raise TypeError(
-                "The type of test_X must \
-                             take ndarray or physbo.variable"
-            )
+            raise TypeError("The type of test_X must be ndarray or physbo.variable")
         return test
 
-    def _set_config(self, config=None):
+    def _delete_actions(self, index, actions=None):
         """
-        Set configure information.
+        Returns remaining actions
+
+        Notes
+        -----
+        This method itself does not modify *self*
 
         Parameters
         ----------
-        config: set_config object (physbo.misc.set_config)
-
+        index: int
+            Index of an action to be deleted.
+        actions: numpy.ndarray
+            Array of actions.
         Returns
         -------
-        config: set_config object (physbo.misc.set_config)
-
+        actions: numpy.ndarray
+            Array of actions which does not include action specified by index.
         """
-        if config is None:
-            config = set_config()
-        return config
+        if actions is None:
+            actions = self.actions
+        return np.delete(actions, index)
+
+
+def _run_simulator(simulator, action, comm=None):
+    if comm is None:
+        return simulator(action)
+    if comm.rank == 0:
+        t = simulator(action)
+    else:
+        t = 0.0
+    return comm.bcast(t, root=0)

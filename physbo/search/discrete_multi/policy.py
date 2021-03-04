@@ -12,16 +12,6 @@ from ...misc import set_config
 from ...variable import variable
 
 
-def run_simulator(simulator, action, comm=None):
-    if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
-        t = simulator(action)
-    else:
-        t = 0.0
-    return comm.bcast(t, root=0)
-
-
 class policy(discrete.policy):
     def __init__(
         self, test_X, num_objectives, comm=None, config=None, initial_data=None
@@ -31,11 +21,16 @@ class policy(discrete.policy):
 
         self.training_list = [variable() for i in range(self.num_objectives)]
         self.predictor_list = [None for i in range(self.num_objectives)]
-        self.test_list = [self._set_test(test_X) for i in range(self.num_objectives)]
+        self.test_list = [
+            self._make_variable_X(test_X) for i in range(self.num_objectives)
+        ]
         self.new_data_list = [None for i in range(self.num_objectives)]
 
         self.actions = np.arange(0, test_X.shape[0])
-        self.config = self._set_config(config)
+        if config is None:
+            self.config = set_config()
+        else:
+            self.config = config
 
         self.TS_candidate_num = None
 
@@ -101,12 +96,6 @@ class policy(discrete.policy):
 
         N = int(num_search_each_probe)
 
-        if int(max_num_probes) * N > len(self.actions):
-            raise ValueError(
-                "max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates"
-            )
-
         if is_disp:
             utility.show_interactive_mode(simulator, self.history)
 
@@ -117,12 +106,12 @@ class policy(discrete.policy):
                     self.history.num_runs, "random"
                 )
 
-            action = self.get_random_action(N)
+            action = self._get_random_action(N)
 
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -191,7 +180,7 @@ class policy(discrete.policy):
 
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self.get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha)
 
             if len(action) == 0:
                 if self.mpirank == 0:
@@ -201,7 +190,7 @@ class policy(discrete.policy):
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -211,7 +200,7 @@ class policy(discrete.policy):
 
         return copy.deepcopy(self.history)
 
-    def get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha):
         f = self.get_score(
             mode=mode,
             predictor_list=self.predictor_list,
@@ -223,7 +212,7 @@ class policy(discrete.policy):
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
-            self.actions = self.delete_actions(local_index)
+            self.actions = self._delete_actions(local_index)
 
         chosen_actions = [champion]
         for n in range(1, N):
@@ -239,7 +228,7 @@ class policy(discrete.policy):
                 break
             chosen_actions.append(champion)
             if champion == local_champion:
-                self.actions = self.delete_actions(local_index)
+                self.actions = self._delete_actions(local_index)
         return np.array(chosen_actions)
 
     def get_score(self, mode, predictor_list, training_list, pareto, alpha=1):
@@ -331,3 +320,13 @@ class policy(discrete.policy):
             training.X = data["X"]
             training.t = data["t"]
             training.Z = data["Z"]
+
+
+def _run_simulator(simulator, action, comm=None):
+    if comm is None:
+        return simulator(action)
+    if comm.rank == 0:
+        t = simulator(action)
+    else:
+        t = 0.0
+    return comm.bcast(t, root=0)

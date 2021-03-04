@@ -64,7 +64,7 @@ def test_randomsearch(policy, mocker):
 def test_bayes_search(policy, mocker):
     simulator = mocker.MagicMock(side_effect=lambda x: x)
     write_spy = mocker.spy(physbo.search.discrete.policy, "write")
-    get_actions_spy = mocker.spy(physbo.search.discrete.policy, "get_actions")
+    get_actions_spy = mocker.spy(physbo.search.discrete.policy, "_get_actions")
 
     N = 2
 
