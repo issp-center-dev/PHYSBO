@@ -18,7 +18,7 @@ def vlmop2_minus(x):
 
 class simulator:
     def __init__(self):
-        a = np.linspace(-2, 2, 101)
+        a = np.linspace(-2, 2, 11)
         self.X = np.array(list(product(a, a)))
         self.t = vlmop2_minus(self.X)
 
@@ -26,7 +26,7 @@ class simulator:
         return self.t[action]
 
 
-def test_multi_objective():
+def test_multi_objective_EHVI():
     sim = simulator()
     nrand = 10
     nsearch = 5
@@ -35,5 +35,72 @@ def test_multi_objective():
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI")
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.20374417006226475
+    vid_ref = 0.2392468337984477
     assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("EHVI", xs=sim.X)
+
+def test_multi_objective_HVPI():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="HVPI")
+    vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+    vid_ref = 0.25322554948754283
+    assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("HVPI", xs=sim.X)
+
+def test_multi_objective_TS():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
+    vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+    vid_ref = 0.17724278568874974
+    assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("TS", xs=sim.X)
+
+
+def test_multi_objective_EHVI_rand():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI", num_rand_basis=100)
+    vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+    vid_ref = 0.08400891973743863 
+    assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("EHVI", xs=sim.X)
+
+def test_multi_objective_HVPI_rand():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="HVPI", num_rand_basis=100)
+    vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+    vid_ref = 0.13374086517165518
+    assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("HVPI", xs=sim.X)
+
+def test_multi_objective_TS_rand():
+    sim = simulator()
+    nrand = 10
+    nsearch = 5
+    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy.set_seed(12345)
+    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100)
+    vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+    vid_ref = 0.134435814966692 
+    assert vid == pytest.approx(vid_ref, rel=1e-3)
+    policy.get_score("TS", xs=sim.X)

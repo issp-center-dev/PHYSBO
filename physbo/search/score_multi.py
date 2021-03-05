@@ -4,6 +4,32 @@ import scipy.stats
 from .pareto import Pareto
 
 
+def score(mode, predictor_list, test, training_list, **kwargs):
+    if test.X.shape[0] == 0:
+        return np.zeros(0)
+
+    if mode == "EHVI":
+        pareto = kwargs["pareto"]
+        fmean, fstd = _get_fmean_fstd(predictor_list, training_list, test)
+        f = EHVI(fmean, fstd, pareto)
+    elif mode == "HVPI":
+        pareto = kwargs["pareto"]
+        fmean, fstd = _get_fmean_fstd(predictor_list, training_list, test)
+        f = HVPI(fmean, fstd, pareto)
+    elif mode == "TS":
+        alpha = kwargs.get("alpha", 1.0)
+        reduced_candidate_num = kwargs["reduced_candidate_num"]
+        f = TS(
+            predictor_list,
+            training_list,
+            test,
+            alpha,
+            reduced_candidate_num=reduced_candidate_num,
+        )
+    else:
+        raise NotImplementedError("mode must be EHVI, HVPI or TS.")
+    return f
+
 def HVPI(fmean, fstd, pareto):
     """
     Calculate Hypervolume-based Probability of Improvement (HVPI).
@@ -145,3 +171,19 @@ def TS(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None)
     score_res[use_idx[chosen_idx]] = 1  # only chosen_idx th value is one.
 
     return score_res
+
+
+def _get_fmean_fstd(predictor_list, training_list, test):
+    fmean = [
+        predictor.get_post_fmean(training, test)
+        for predictor, training in zip(predictor_list, training_list)
+    ]
+    fcov = [
+        predictor.get_post_fcov(training, test)
+        for predictor, training in zip(predictor_list, training_list)
+    ]
+
+    # shape: (N, n_obj)
+    fmean = np.array(fmean).T
+    fstd = np.sqrt(np.array(fcov)).T
+    return fmean, fstd
