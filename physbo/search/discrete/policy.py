@@ -253,6 +253,18 @@ class policy:
         self._update_predictor()
         return copy.deepcopy(self.history)
 
+    def get_post_fmean(self, xs):
+        """ Calculate mean value of predictor (post distribution)
+        """
+        X = self._make_variable_X(xs)
+        return self.predictor.get_post_fmean(self.training, X)
+
+    def get_post_fcov(self, xs):
+        """ Calculate covariance of predictor (post distribution)
+        """
+        X = self._make_variable_X(xs)
+        return self.predictor.get_post_fcov(self.training, X)
+
     def get_score(
         self, mode, *, actions=None, xs=None, predictor=None, training=None, parallel=True, alpha=1
     ):
@@ -305,10 +317,7 @@ class policy:
         if xs is not None:
             if actions is not None:
                 raise RuntimeError("ERROR: both actions and xs are given")
-            if isinstance(xs, variable):
-                test = xs
-            else:
-                test = variable(X=xs)
+            test = self._make_variable_X(xs)
             if parallel and self.mpisize > 1:
                 actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
                 test = test.get_subset(actions[self.mpirank])
