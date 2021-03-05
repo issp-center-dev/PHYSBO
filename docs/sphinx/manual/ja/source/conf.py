@@ -21,13 +21,13 @@ sys.path.insert(0, os.path.abspath('../../../../../physbo'))
 # -- Project information -----------------------------------------------------
 
 project = "PHYSBO"
-copyright = "2020, PHYSBO developers"
+copyright = "2020-, PHYSBO developers"
 author = "PHYSBO developers"
 
 # The short X.Y version.
-version = '1.0-beta'
+version = '1.0'
 # The full version, including alpha/beta/rc tags.
-release = '1.0.0-beta'
+release = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 

@@ -37,7 +37,8 @@ Bibtex is given as follows::
 
 Main Developers
 ----------------------
-- ver. 1.0
+
+- ver. 1.0-
 
   - Ryo Tamura (International Center for Materials Nanoarchitectonics, National Institute for Materials Science)
   - Tsuyoshi Ueno (Magne-Max Capital Management Company)
