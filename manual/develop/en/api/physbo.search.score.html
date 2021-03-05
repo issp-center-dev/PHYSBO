@@ -43,10 +43,11 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>predictor</strong> (<em>predictor object</em>) – Base class is defined in physbo.predictor.</p></li>
-<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset. If already trained, the model does not use this.</p></li>
+<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset.
+If the predictor is not trained, use this for training.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – Inputs</p></li>
 <li><p><strong>fmax</strong> (<em>float</em>) – Max value of posterior probability distribution.
-If not set fmax, the max value of posterior mean of weights is set.</p></li>
+If not set, the maximum value of posterior mean for training is used.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -66,10 +67,11 @@ If not set fmax, the max value of posterior mean of weights is set.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>predictor</strong> (<em>predictor object</em>) – Base class is defined in physbo.predictor.</p></li>
-<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset. If already trained, the model does not use this.</p></li>
+<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset.
+If the predictor is not trained, use this for training.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – Inputs</p></li>
 <li><p><strong>fmax</strong> (<em>float</em>) – Max value of posterior probability distribution.
-If not set fmax, the max value of posterior mean of weights is set.</p></li>
+If not set, the maximum value of posterior mean for training is used.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -89,7 +91,8 @@ If not set fmax, the max value of posterior mean of weights is set.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>predictor</strong> (<em>predictor object</em>) – Base class is defined in physbo.predictor.</p></li>
-<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset. If already trained, the model does not use this.</p></li>
+<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset.
+If the predictor is not trained, use this for training.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – Inputs</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source
 (default: 1.0)</p></li>
@@ -100,6 +103,43 @@ If not set fmax, the max value of posterior mean of weights is set.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="physbo.search.score.score">
+<code class="sig-prename descclassname"><span class="pre">physbo.search.score.</span></code><code class="sig-name descname"><span class="pre">score</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/score.html#score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.score.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate scores (acquisition function) for test data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>str</em>) – <p>Kind of score.</p>
+<p>”EI”, “PI”, and “TS” are available.</p>
+</p></li>
+<li><p><strong>predictor</strong> (<em>predictor object</em>) – Base class is defined in physbo.predictor.</p></li>
+<li><p><strong>training</strong> (<em>physbo.variable</em>) – Training dataset.
+If the predictor is not trained, use this for training.</p></li>
+<li><p><strong>test</strong> (<em>physbo.variable</em>) – Inputs</p></li>
+</ul>
+</dd>
+<dt class="field-even">Other Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>fmax</strong> (<em>float</em>) – Max value of mean of posterior probability distribution.
+If not set, the maximum value of posterior mean for training is used.
+Used only for mode == “EI” and “PI”</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source (default: 1.0)
+Used only for mode == “TS”</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>score</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – If unknown mode is given</p>
 </dd>
 </dl>
 </dd></dl>

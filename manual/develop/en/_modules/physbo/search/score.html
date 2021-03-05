@@ -36,6 +36,64 @@
 <span class="kn">import</span> <span class="nn">scipy.stats</span>
 
 
+<div class="viewcode-block" id="score"><a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.score">[docs]</a><span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate scores (acquisition function) for test data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mode: str</span>
+<span class="sd">        Kind of score.</span>
+
+<span class="sd">        &quot;EI&quot;, &quot;PI&quot;, and &quot;TS&quot; are available.</span>
+
+<span class="sd">    predictor: predictor object</span>
+<span class="sd">        Base class is defined in physbo.predictor.</span>
+
+<span class="sd">    training: physbo.variable</span>
+<span class="sd">        Training dataset.</span>
+<span class="sd">        If the predictor is not trained, use this for training.</span>
+
+<span class="sd">    test: physbo.variable</span>
+<span class="sd">        Inputs</span>
+
+<span class="sd">    Other Parameters</span>
+<span class="sd">    ----------------</span>
+<span class="sd">    fmax: float</span>
+<span class="sd">        Max value of mean of posterior probability distribution.</span>
+<span class="sd">        If not set, the maximum value of posterior mean for training is used.</span>
+<span class="sd">        Used only for mode == &quot;EI&quot; and &quot;PI&quot;</span>
+
+<span class="sd">    alpha: float</span>
+<span class="sd">        noise for sampling source (default: 1.0)</span>
+<span class="sd">        Used only for mode == &quot;TS&quot;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score: numpy.ndarray</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        If unknown mode is given</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;EI&quot;</span><span class="p">:</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fmax&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">EI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">fmax</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;PI&quot;</span><span class="p">:</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fmax&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">fmax</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;TS&quot;</span><span class="p">:</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ERROR: mode must be EI, PI or TS.&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="EI"><a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.EI">[docs]</a><span class="k">def</span> <span class="nf">EI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Maximum expected improvement.</span>
@@ -43,14 +101,15 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    predictor: predictor object</span>
-<span class="sd">            Base class is defined in physbo.predictor.</span>
+<span class="sd">        Base class is defined in physbo.predictor.</span>
 <span class="sd">    training: physbo.variable</span>
-<span class="sd">            Training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        Training dataset.</span>
+<span class="sd">        If the predictor is not trained, use this for training.</span>
 <span class="sd">    test: physbo.variable</span>
-<span class="sd">            Inputs</span>
+<span class="sd">        Inputs</span>
 <span class="sd">    fmax: float</span>
-<span class="sd">            Max value of posterior probability distribution.</span>
-<span class="sd">            If not set fmax, the max value of posterior mean of weights is set.</span>
+<span class="sd">        Max value of posterior probability distribution.</span>
+<span class="sd">        If not set, the maximum value of posterior mean for training is used.</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    score: numpy.ndarray</span>
@@ -75,14 +134,15 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    predictor: predictor object</span>
-<span class="sd">            Base class is defined in physbo.predictor.</span>
+<span class="sd">        Base class is defined in physbo.predictor.</span>
 <span class="sd">    training: physbo.variable</span>
-<span class="sd">            Training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        Training dataset.</span>
+<span class="sd">        If the predictor is not trained, use this for training.</span>
 <span class="sd">    test: physbo.variable</span>
-<span class="sd">            Inputs</span>
+<span class="sd">        Inputs</span>
 <span class="sd">    fmax: float</span>
-<span class="sd">            Max value of posterior probability distribution.</span>
-<span class="sd">            If not set fmax, the max value of posterior mean of weights is set.</span>
+<span class="sd">        Max value of posterior probability distribution.</span>
+<span class="sd">        If not set, the maximum value of posterior mean for training is used.</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    score: numpy.ndarray</span>
@@ -106,14 +166,15 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    predictor: predictor object</span>
-<span class="sd">            Base class is defined in physbo.predictor.</span>
+<span class="sd">        Base class is defined in physbo.predictor.</span>
 <span class="sd">    training: physbo.variable</span>
-<span class="sd">            Training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        Training dataset.</span>
+<span class="sd">        If the predictor is not trained, use this for training.</span>
 <span class="sd">    test: physbo.variable</span>
-<span class="sd">            Inputs</span>
+<span class="sd">        Inputs</span>
 <span class="sd">    alpha: float</span>
-<span class="sd">            noise for sampling source</span>
-<span class="sd">            (default: 1.0)</span>
+<span class="sd">        noise for sampling source</span>
+<span class="sd">        (default: 1.0)</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    score: numpy.ndarray</span>

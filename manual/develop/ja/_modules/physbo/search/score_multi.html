@@ -169,6 +169,32 @@
 <span class="kn">from</span> <span class="nn">.pareto</span> <span class="kn">import</span> <span class="n">Pareto</span>
 
 
+<div class="viewcode-block" id="score"><a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.score">[ドキュメント]</a><span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;EHVI&quot;</span><span class="p">:</span>
+        <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pareto&quot;</span><span class="p">]</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">EHVI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">:</span>
+        <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pareto&quot;</span><span class="p">]</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">HVPI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;TS&quot;</span><span class="p">:</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">reduced_candidate_num</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;reduced_candidate_num&quot;</span><span class="p">]</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">TS</span><span class="p">(</span>
+            <span class="n">predictor_list</span><span class="p">,</span>
+            <span class="n">training_list</span><span class="p">,</span>
+            <span class="n">test</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="p">,</span>
+            <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;mode must be EHVI, HVPI or TS.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+
 <div class="viewcode-block" id="HVPI"><a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.HVPI">[ドキュメント]</a><span class="k">def</span> <span class="nf">HVPI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate Hypervolume-based Probability of Improvement (HVPI).</span>
@@ -310,6 +336,22 @@
     <span class="n">score_res</span><span class="p">[</span><span class="n">use_idx</span><span class="p">[</span><span class="n">chosen_idx</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># only chosen_idx th value is one.</span>
 
     <span class="k">return</span> <span class="n">score_res</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="n">fmean</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">fcov</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="c1"># shape: (N, n_obj)</span>
+    <span class="n">fmean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fmean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">fstd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span>
 </pre></div>
 
            </div>
