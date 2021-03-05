@@ -220,6 +220,22 @@ class policy(discrete.policy):
                 self.actions = self._delete_actions(local_index)
         return np.array(chosen_actions)
 
+    def get_post_fmean(self, xs):
+        X = self._make_variable_X(xs)
+        fmean = [
+            predictor.get_post_fmean(training, X)
+            for predictor, training in zip(self.predictor_list, self.training_list)
+        ]
+        return np.array(fmean).T
+
+    def get_post_fcov(self, xs):
+        X = self._make_variable_X(xs)
+        fcov = [
+            predictor.get_post_fcov(training, X)
+            for predictor, training in zip(self.predictor_list, self.training_list)
+        ]
+        return np.array(fcov).T
+
     def get_score(
         self,
         mode,
