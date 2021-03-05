@@ -11,20 +11,24 @@ from ...blm import predictor as blm_predictor
 from ...misc import set_config
 from ...variable import variable
 
+from typing import List, Optional
+
 
 class policy(discrete.policy):
+    new_data_list: List[Optional[variable]]
+
     def __init__(
         self, test_X, num_objectives, comm=None, config=None, initial_data=None
     ):
         self.num_objectives = num_objectives
         self.history = history(num_objectives=self.num_objectives)
 
-        self.training_list = [variable() for i in range(self.num_objectives)]
-        self.predictor_list = [None for i in range(self.num_objectives)]
+        self.training_list = [variable() for _ in range(self.num_objectives)]
+        self.predictor_list = [None for _ in range(self.num_objectives)]
         self.test_list = [
-            self._make_variable_X(test_X) for i in range(self.num_objectives)
+            self._make_variable_X(test_X) for _ in range(self.num_objectives)
         ]
-        self.new_data_list = [None for i in range(self.num_objectives)]
+        self.new_data_list = [None for _ in range(self.num_objectives)]
 
         self.actions = np.arange(0, test_X.shape[0])
         if config is None:
@@ -73,14 +77,18 @@ class policy(discrete.policy):
             else:
                 Z = predictor.get_basis(X) if predictor is not None else None
 
-            self.new_data_list[i] = variable(X, t[:, i], Z)
+            if self.new_data_list[i] is None:
+                self.new_data_list[i] = variable(X, t[:, i], Z)
+            else:
+                self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
 
-    def _switch_model(self, i):
-        self.training = self.training_list[i]
-        self.predictor = self.predictor_list[i]
-        self.test = self.test_list[i]
-        self.new_data = self.new_data_list[i]
+    def _model(self, i):
+        training = self.training_list[i]
+        predictor = self.predictor_list[i]
+        test = self.test_list[i]
+        new_data = self.new_data_list[i]
+        return {"training": training, "predictor": predictor, "test": test, "new_data": new_data}
 
     def random_search(
         self,
@@ -164,16 +172,9 @@ class policy(discrete.policy):
         for n in range(max_num_probes):
 
             if utility.is_learning(n, interval):
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.fit(self.training, num_rand_basis)
-                    self.test.Z = self.predictor.get_basis(self.test.X)
-                    self.training.Z = self.predictor.get_basis(self.training.X)
-                    self.predictor.prepare(self.training)
+                self._learn_hyperparameter(num_rand_basis)
             else:
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.update(self.training, self.new_data)
+                self._update_predictor()
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search_mo(self.history.num_runs, score)
@@ -197,17 +198,11 @@ class policy(discrete.policy):
                 utility.show_search_results_mo(
                     self.history, N, disp_pareto_set=disp_pareto_set
                 )
-
+        self._update_predictor()
         return copy.deepcopy(self.history)
 
     def _get_actions(self, mode, N, K, alpha):
-        f = self.get_score(
-            mode=mode,
-            predictor_list=self.predictor_list,
-            training_list=self.training_list,
-            pareto=self.history.pareto,
-            alpha=alpha,
-        )
+        f = self.get_score(mode=mode, alpha=alpha, parallel=False)
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:
             return np.zeros(0, dtype=int)
@@ -216,13 +211,7 @@ class policy(discrete.policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self.get_score(
-                mode=mode,
-                predictor_list=self.predictor_list,
-                training_list=self.training_list,
-                pareto=self.history.pareto,
-                alpha=alpha,
-            )
+            f = self.get_score(mode=mode, alpha=alpha, parallel=False)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
@@ -231,45 +220,57 @@ class policy(discrete.policy):
                 self.actions = self._delete_actions(local_index)
         return np.array(chosen_actions)
 
-    def get_score(self, mode, predictor_list, training_list, pareto, alpha=1):
-        actions = self.actions
-        test = self.test.get_subset(actions)
+    def get_score(
+        self,
+        mode,
+        actions=None,
+        xs=None,
+        predictor_list=None,
+        training_list=None,
+        pareto=None,
+        parallel=True,
+        alpha=1,
+    ):
+        if predictor_list is None:
+            predictor_list = self.predictor_list
+        if training_list is None:
+            training_list = self.training_list
+        if pareto is None:
+            pareto = self.history.pareto
 
-        if test.X.shape[0] == 0:
-            return np.zeros(0)
-
-        if mode == "EHVI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = search_score.EHVI(fmean, fstd, pareto)
-        elif mode == "HVPI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = search_score.HVPI(fmean, fstd, pareto)
-        elif mode == "TS":
-            f = search_score.TS(
-                predictor_list,
-                training_list,
-                test,
-                alpha,
-                reduced_candidate_num=self.TS_candidate_num,
-            )
+        if xs is not None:
+            if actions is not None:
+                raise RuntimeError("ERROR: both actions and xs are given")
+            if isinstance(xs, variable):
+                test = xs
+            else:
+                test = variable(X=xs)
+            if parallel and self.mpisize > 1:
+                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
+                test = test.get_subset(actions[self.mpirank])
         else:
-            raise NotImplementedError("mode must be EHVI, HVPI or TS.")
+            if actions is None:
+                actions = self.actions
+            else:
+                if isinstance(actions, int):
+                    actions = [actions]
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
+            test = self.test_list[0].get_subset(actions)
+
+        f = search_score.score(
+            mode,
+            predictor_list=predictor_list,
+            training_list=training_list,
+            test=test,
+            pareto=pareto,
+            reduced_candidate_num=self.TS_candidate_num,
+            alpha=alpha,
+        )
+        if parallel and self.mpisize>1:
+            fs = self.mpicomm.allgather(f)
+            f = np.hstack(fs)
         return f
-
-    def get_fmean_fstd(self, predictor_list, training_list, test):
-        fmean = [
-            predictor.get_post_fmean(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-        fcov = [
-            predictor.get_post_fcov(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-
-        # shape: (N, n_obj)
-        fmean = np.array(fmean).T
-        fstd = np.sqrt(np.array(fcov)).T
-        return fmean, fstd
 
     def save(self, file_history, file_training_list=None, file_predictor_list=None):
         if self.mpirank == 0:
@@ -320,6 +321,30 @@ class policy(discrete.policy):
             training.X = data["X"]
             training.t = data["t"]
             training.Z = data["Z"]
+
+    def _learn_hyperparameter(self, num_rand_basis):
+        for i in range(self.num_objectives):
+            m = self._model(i)
+            predictor = m["predictor"]
+            training = m["training"]
+            test = m["test"]
+
+            predictor.fit(training, num_rand_basis)
+            test.Z = predictor.get_basis(test.X)
+            training.Z = predictor.get_basis(training.X)
+            predictor.prepare(training)
+            self.new_data_list[i] = None
+            # self.predictor_list[i].fit(self.training_list[i], num_rand_basis)
+            # self.test_list[i].Z = self.predictor_list[i].get_basis(self.test_list[i].X)
+            # self.training_list[i].Z = self.predictor_list[i].get_basis(self.training_list[i].X)
+            # self.predictor_list[i].prepare(self.training_list[i])
+            # self.new_data_list[i] = None
+
+    def _update_predictor(self):
+        for i in range(self.num_objectives):
+            if self.new_data_list[i] is not None:
+                self.predictor_list[i].update(self.training_list[i], self.new_data_list[i])
+                self.new_data_list[i] = None
 
 
 def _run_simulator(simulator, action, comm=None):

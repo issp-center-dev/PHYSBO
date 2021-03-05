@@ -30,6 +30,7 @@ class policy:
         """
         self.predictor = None
         self.training = variable()
+        self.new_data = None
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
@@ -97,9 +98,12 @@ class policy:
         else:
             Z = self.predictor.get_basis(X) if self.predictor is not None else None
 
-        self.new_data = variable(X, t, Z)
         self.history.write(t, action)
         self.training.add(X=X, t=t, Z=Z)
+        if self.new_data is None:
+            self.new_data = variable(X=X, t=t, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -222,12 +226,9 @@ class policy:
         for n in range(max_num_probes):
 
             if utility.is_learning(n, interval):
-                self.predictor.fit(self.training, num_rand_basis)
-                self.test.Z = self.predictor.get_basis(self.test.X)
-                self.training.Z = self.predictor.get_basis(self.training.X)
-                self.predictor.prepare(self.training)
+                self._learn_hyperparameter(num_rand_basis)
             else:
-                self.predictor.update(self.training, self.new_data)
+                self._update_predictor()
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search(self.history.num_runs, score)
@@ -239,7 +240,7 @@ class policy:
             if len(action) == 0:
                 if self.mpirank == 0:
                     print("WARNING: All actions have already searched.")
-                return copy.deepcopy(self.history)
+                break
 
             if simulator is None:
                 return action
@@ -249,49 +250,84 @@ class policy:
 
             if is_disp:
                 utility.show_search_results(self.history, N)
-
+        self._update_predictor()
         return copy.deepcopy(self.history)
 
-    def get_score(self, mode, predictor=None, training=None, alpha=1):
+    def get_score(
+        self, mode, *, actions=None, xs=None, predictor=None, training=None, parallel=True, alpha=1
+    ):
         """
-        Getting score.
+        Calcualte score (acquisition function)
 
         Parameters
         ----------
         mode: str
-            The type of aquision funciton. TS, EI and PI are available.
+            The type of aquisition funciton. TS, EI and PI are available.
             These functions are defined in score.py.
+        actions: array of int
+            actions to calculate score
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate score
         predictor: predictor object
-            Base class is defined in physbo.predictor.
+            predictor used to calculate score.
+            If not given, self.predictor will be used.
         training:physbo.variable
             Training dataset.
+            If not given, self.training will be used.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True)
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+
         Returns
         -------
         f: float or list of float
             Score defined in each mode.
+
+        Raises
+        ------
+        RuntimeError
+            If both *actions* and *xs* are given
+
+        Notes
+        -----
+        When neither *actions* nor *xs* are given, scores for actions not yet searched will be calculated.
+
+        When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
+        If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
-        if training is not None:
-            self.training = training
-        if predictor is not None:
-            self.predictor = predictor
+        if training is None:
+            training = self.training
+        if predictor is None:
+            predictor = self.predictor
 
-        actions = self.actions
-        test = self.test.get_subset(actions)
-
-        if test.X.shape[0] == 0:
-            return np.zeros(0)
-
-        if mode == "EI":
-            f = search_score.EI(predictor, training, test)
-        elif mode == "PI":
-            f = search_score.PI(predictor, training, test)
-        elif mode == "TS":
-            f = search_score.TS(predictor, training, test, alpha)
+        if xs is not None:
+            if actions is not None:
+                raise RuntimeError("ERROR: both actions and xs are given")
+            if isinstance(xs, variable):
+                test = xs
+            else:
+                test = variable(X=xs)
+            if parallel and self.mpisize > 1:
+                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
+                test = test.get_subset(actions[self.mpirank])
         else:
-            raise NotImplementedError("mode must be EI, PI or TS.")
+            if actions is None:
+                actions = self.actions
+            else:
+                if isinstance(actions, int):
+                    actions = [actions]
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
+            test = self.test.get_subset(actions)
+
+        f = search_score.score(
+            mode, predictor=predictor, training=training, test=test, alpha=alpha
+        )
+        if parallel and self.mpisize>1:
+            fs = self.mpicomm.allgather(f)
+            f = np.hstack(fs)
         return f
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
@@ -340,7 +376,7 @@ class policy:
 
             predictor.update(train, virtual_train)
 
-            f[k, :] = self.get_score(mode, predictor, train)
+            f[k, :] = self.get_score(mode, predictor=predictor, training=train, parallel=False)
         return np.mean(f, axis=0)
 
     def _get_actions(self, mode, N, K, alpha):
@@ -367,7 +403,7 @@ class policy:
             An N-dimensional array of actions selected in each search process.
         """
         f = self.get_score(
-            mode, predictor=self.predictor, training=self.training, alpha=alpha
+            mode, predictor=self.predictor, training=self.training, alpha=alpha, parallel=False
         )
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:
@@ -552,6 +588,18 @@ class policy:
             self.predictor = blm_predictor(self.config)
         else:
             self.predictor = gp_predictor(self.config)
+
+    def _learn_hyperparameter(self, num_rand_basis):
+        self.predictor.fit(self.training, num_rand_basis)
+        self.test.Z = self.predictor.get_basis(self.test.X)
+        self.training.Z = self.predictor.get_basis(self.training.X)
+        self.predictor.prepare(self.training)
+        self.new_data = None
+
+    def _update_predictor(self):
+        if self.new_data is not None:
+            self.predictor.update(self.training, self.new_data)
+            self.new_data = None
 
     def _make_variable_X(self, test_X):
         """
