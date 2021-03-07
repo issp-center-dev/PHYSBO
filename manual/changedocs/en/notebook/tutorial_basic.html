@@ -98,8 +98,8 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Basic usage of PHYSBO</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Preparation-of-search-candidate-data">Preparation of search candidate data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Definition-of-simulator">Definition of simulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Defining-the-search-space">Defining the search space</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Defining-the-simulator-class">Defining the simulator class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Performing-optimization">Performing optimization</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Setting-policy">Setting policy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Random-Search">Random Search</a></li>
@@ -108,12 +108,14 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#Checking-the-results">Checking the results</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Serializing-the-results">Serializing the results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Prediction">Prediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Acquisition-function">Acquisition function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Parallelization">Parallelization</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">Gaussian process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">Running PHYSBO interactively</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_simulator.html">Definition of the simulator class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
 </ul>
@@ -465,15 +467,7 @@ div.rendered_html tbody tr:hover {
 <h1>Basic usage of PHYSBO<a class="headerlink" href="#Basic-usage-of-PHYSBO" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
-<p>In this tutorial, the problem of finding a stable interface structure for Cu is solved as an example. The values that have already been evaluated are used, although the evaluation of the objective function, i.e., the structural relaxation calculation, actually takes on the order of several hours per calculation. For more information on the problem setup, please refer to the following references</p>
-<ul class="simple">
-<li><ol class="upperalpha simple" start="19">
-<li><p>Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p></li>
-</ol>
-</li>
-</ul>
-<hr class="docutils" />
-<p>Let’s try each step using the sample data.</p>
+<p>In this tutorial, we will introduce how to define the simulator class and find the minimum value of a one-dimensional function using PHYSBO.</p>
 <p>First, we will import PHYSBO.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -485,140 +479,58 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 </div>
-<div class="section" id="Preparation-of-search-candidate-data">
-<h2>Preparation of search candidate data<a class="headerlink" href="#Preparation-of-search-candidate-data" title="Permalink to this headline">¶</a></h2>
-<p>First, load the data.</p>
+<div class="section" id="Defining-the-search-space">
+<h2>Defining the search space<a class="headerlink" href="#Defining-the-search-space" title="Permalink to this headline">¶</a></h2>
+<p>In the following example, the search space <code class="docutils literal notranslate"><span class="pre">X</span></code> is defined as a grid chopped by <code class="docutils literal notranslate"><span class="pre">window_num=10001</span></code> divisions from <code class="docutils literal notranslate"><span class="pre">x_min</span> <span class="pre">=</span> <span class="pre">-2.0</span></code> to <code class="docutils literal notranslate"><span class="pre">x_max</span> <span class="pre">=</span> <span class="pre">2.0</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">X</span></code> must be in <code class="docutils literal notranslate"><span class="pre">window_num</span></code> x <code class="docutils literal notranslate"><span class="pre">d</span></code> ndarray format (<code class="docutils literal notranslate"><span class="pre">d</span></code> is the number of dimensions, in this case one). In this case, <code class="docutils literal notranslate"><span class="pre">d</span></code> is the number of dimensions, in this case two, so we use reshape to transform it.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="c1">#In</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">physbo</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 
-<span class="k">def</span> <span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+<span class="c1">#In</span>
+<span class="c1">#Create candidate</span>
+<span class="n">window_num</span><span class="o">=</span><span class="mi">10001</span>
+<span class="n">x_max</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">x_min</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">window_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">window_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Defining-the-simulator-class">
+<h2>Defining the simulator class<a class="headerlink" href="#Defining-the-simulator-class" title="Permalink to this headline">¶</a></h2>
+<p>Here, we define the simulator class to set as the objective function.</p>
+<p>In this case, the problem is to find the minimum <span class="math notranslate nohighlight">\(x\)</span> such that <span class="math notranslate nohighlight">\(f(x) = 3 x^4 + 4 x ^3 + 1.0\)</span> (the answer is <span class="math notranslate nohighlight">\(x=-1.0\)</span>).</p>
+<p>In the simulator class, we define the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> function (or <code class="docutils literal notranslate"><span class="pre">__init__</span></code> if there are initial variables, etc.). (If there are initial variables, define <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.) The action indicates the index number of the grid to be retrieved from the search space, and is generally in the form of an ndarray so that multiple candidates can be calculated at once. In this case, we choose one candidate point from <code class="docutils literal notranslate"><span class="pre">X</span></code> as <code class="docutils literal notranslate"><span class="pre">action_idx=action[0]</span></code> to calculate only one candidate at a time. Since <strong>PHYSBO
+is designed to find the maximum value of the objective function</strong>, it returns the value of f(x) at the candidate point multiplied by -1.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<p>In the following, N is defined as the number of search candidates and d is defined as the dimensionality of the input parameters.</p>
-<div class="line-block">
-<div class="line">X is an N x d matrix, where each row represents a parameter set (a d-dimensional vector) for each candidate.</div>
-<div class="line">t is a vector of N dimensions, corresponding to the negative energy of each candidate (the value of the objective function to be optimized). Normally, when we perform Bayesian optimization, we start with only X given and t does not exist. Therefore, in actual use, the value of t can only be obtained by receiving a candidate Bayesian optimization proposal and evaluating it with a simulator. Since this is a tutorial, we will skip the calculations and give t in advance.</div>
-</div>
-<p><strong>PHYSBO assumes that the direction of optimization is “maximization”.</strong></p>
-<p>Therefore, the original problem setting is “energy minimization”, but when optimizing with PHYSBO, the objective function value is multiplied by a negative value and treated as a “negative energy maximization” problem.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">X</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-array([[0. , 1. , 0. ],
-       [0. , 1. , 0.1],
-       [0. , 1. , 0.2],
-       ...,
-       [8. , 1.5, 3.4],
-       [8. , 1.5, 3.5],
-       [8. , 1.5, 3.6]])
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">t</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-array([-1.01301176, -1.01487066, -1.02044168, ..., -1.11680203,
-       -2.48876352, -2.4971452 ])
-</pre></div></div>
-</div>
-<p>To scale the search parameters, standardize each column of X so that the mean is 0 and the variance is 1, respectively.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">X</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-array([[-1.71079785, -1.46385011, -1.68585446],
-       [-1.71079785, -1.46385011, -1.59219588],
-       [-1.71079785, -1.46385011, -1.4985373 ],
-       ...,
-       [ 1.71079785,  1.46385011,  1.4985373 ],
-       [ 1.71079785,  1.46385011,  1.59219588],
-       [ 1.71079785,  1.46385011,  1.68585446]])
-</pre></div></div>
-</div>
-</div>
-<div class="section" id="Definition-of-simulator">
-<h2>Definition of simulator<a class="headerlink" href="#Definition-of-simulator" title="Permalink to this headline">¶</a></h2>
-<div class="line-block">
-<div class="line">Define the simulator class called in PHYSBO.</div>
-<div class="line">The return value of the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method is the value of the objective function when action is given.</div>
-<div class="line">action is the ID of the search candidate (0, 1, …, N-1). , N-1).</div>
-</div>
-<div class="line-block">
-<div class="line">In this tutorial, we have defined a simulator that only returns the already computed value of t when action is given.</div>
-<div class="line">Please customize the simulator class if you want to apply it to other problems.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<span></span><span class="c1"># Declare the class for calling the simulator.</span>
+<span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+        <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">fx_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
+        <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;*********************&quot;</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Present optimum interactions&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
 </pre></div>
 </div>
 </div>
@@ -630,7 +542,7 @@ array([[-1.71079785, -1.46385011, -1.68585446],
 <p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
 <p>Next, set <code class="docutils literal notranslate"><span class="pre">test_X</span></code> to the matrix of search candidates (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -665,17 +577,20 @@ array([[-1.71079785, -1.46385011, -1.68585446],
 <li><p><code class="docutils literal notranslate"><span class="pre">simulator</span></code>: The simulator of the objective function (an object of class simulator).</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+<span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
 <p>When executed, the objective function value and its action ID for each step, and the best value up to now and its action ID will be printed as follows.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0020</span><span class="o">-</span><span class="n">th</span> <span class="n">step</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.048733</span> <span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="mi">1022</span><span class="p">)</span>
-   <span class="n">current</span> <span class="n">best</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.963795</span> <span class="p">(</span><span class="n">best</span> <span class="n">action</span><span class="o">=</span><span class="mi">5734</span><span class="p">)</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0020-th step: f(x) = -19.075990 (action=8288)
+   current best f(x) = -0.150313 (best action=2949)
 </pre></div>
 </div>
 </div>
@@ -700,12 +615,12 @@ If a negative value is specified, no hyperparameter will be learned.
 <li><p><code class="docutils literal notranslate"><span class="pre">num_rand_basis</span></code>: Number of basis functions. 0 means that a normal Gaussian process without Bayesian linear model will be used.</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
-                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -728,7 +643,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="line"><code class="docutils literal notranslate"><span class="pre">res.fx</span></code> and <code class="docutils literal notranslate"><span class="pre">best_fx</span></code> should range up to <code class="docutils literal notranslate"><span class="pre">res.total_num_search</span></code>, respectively.</div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -738,7 +653,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -747,23 +662,23 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7fe0d9310580&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7f816129d820&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_basic_22_1.png" src="../_images/notebook_tutorial_basic_22_1.png" />
+<img alt="../_images/notebook_tutorial_basic_15_1.png" src="../_images/notebook_tutorial_basic_15_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -773,19 +688,19 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7fe0d93eaaf0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7f8130b30f70&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_basic_23_1.png" src="../_images/notebook_tutorial_basic_23_1.png" />
+<img alt="../_images/notebook_tutorial_basic_16_1.png" src="../_images/notebook_tutorial_basic_16_1.png" />
 </div>
 </div>
 </div>
@@ -793,7 +708,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <h2>Serializing the results<a class="headerlink" href="#Serializing-the-results" title="Permalink to this headline">¶</a></h2>
 <p>The search results can be saved to an external file using the <code class="docutils literal notranslate"><span class="pre">save</span></code> method.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -802,7 +717,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -812,7 +727,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <p>Load the saved result file as follows:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -821,12 +736,101 @@ If a negative value is specified, no hyperparameter will be learned.
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>Finally, the candidate with the best score can be displayed as follows. You can see that we have arrived at the correct solution <span class="math notranslate nohighlight">\(x=-1\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[-1.002]
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Prediction">
+<h2>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">policy</span></code> serves <code class="docutils literal notranslate"><span class="pre">get_post_fmean</span></code> and <code class="docutils literal notranslate"><span class="pre">get_post_fcov</span></code> methods for calculating mean value and variance of Gaussian process (post distribution).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">var</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+<span class="n">xs</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">mean</span><span class="o">-</span><span class="n">std</span><span class="p">,</span> <span class="n">mean</span><span class="o">+</span><span class="n">std</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.collections.PolyCollection at 0x7f81613d8370&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_25_1.png" src="../_images/notebook_tutorial_basic_25_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Acquisition-function">
+<h2>Acquisition function<a class="headerlink" href="#Acquisition-function" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">policy</span></code> serves <code class="docutils literal notranslate"><span class="pre">get_score</span></code> method for calculating acquisition function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">scores</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x7f8130b84070&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_27_1.png" src="../_images/notebook_tutorial_basic_27_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Parallelization">
+<h2>Parallelization<a class="headerlink" href="#Parallelization" title="Permalink to this headline">¶</a></h2>
+<p>PHYSBO can calculate acquisition functions for candidates in parallel by using MPI via <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> . To enable MPI parallelization, pass a MPI communicator such as <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> to a keyword argument, <code class="docutils literal notranslate"><span class="pre">comm</span></code> of the constructor of the <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># from mpi4py import MPI</span>
+<span class="c1"># policy = physbo.search.discrete.policy(test_X=X, comm=MPI.COMM_WORLD)</span>
 </pre></div>
 </div>
 </div>

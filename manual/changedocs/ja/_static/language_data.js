@@ -13,7 +13,8 @@
 var stopwords = [];
 
 
-/* Non-minified version JS is _stemmer.js if file is provided */ 
+/* Non-minified version is copied as a separate JS file, is available */
+
 /**
  * Dummy stemmer for languages without stemming rules.
  */
@@ -22,7 +23,6 @@ var Stemmer = function() {
     return w;
   }
 }
-
 
 
 

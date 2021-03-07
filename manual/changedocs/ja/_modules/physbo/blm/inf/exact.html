@@ -34,8 +34,6 @@
         <script src="../../../../_static/doctools.js"></script>
         <script src="../../../../_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
 
@@ -193,10 +191,10 @@
     <span class="n">PsiT</span> <span class="o">=</span> <span class="n">Psi</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">PsiT</span><span class="p">,</span> <span class="n">Psi</span><span class="p">)</span> <span class="o">*</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">prec</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">G</span> <span class="o">+</span> <span class="n">blm</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_prec</span><span class="p">()</span>
-    <span class="n">L</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">PsiT</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
-    <span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="update_stats"><a class="viewcode-back" href="../../../../api/physbo.blm.inf.exact.html#physbo.blm.inf.exact.update_stats">[ドキュメント]</a><span class="k">def</span> <span class="nf">update_stats</span><span class="p">(</span><span class="n">blm</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">psi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -216,20 +214,20 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    =======</span>
-<span class="sd">    (L, b, alpha): Tuple</span>
+<span class="sd">    (U, b, alpha): Tuple</span>
 <span class="sd">        new auxially parameters</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    =====</span>
-<span class="sd">    ``blm.stats[0]`` (L) will be mutated while the others not.</span>
+<span class="sd">    ``blm.stats[0]`` (U) will be mutated while the others not.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">psi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">psi</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="n">L</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span> <span class="o">*</span> <span class="n">psi</span>
-    <span class="n">misc</span><span class="o">.</span><span class="n">cholupdate</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">prec</span><span class="p">))</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
+    <span class="n">misc</span><span class="o">.</span><span class="n">cholupdate</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">prec</span><span class="p">))</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">gauss_elim</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="sampling"><a class="viewcode-back" href="../../../../api/physbo.blm.inf.exact.html#physbo.blm.inf.exact.sampling">[ドキュメント]</a><span class="k">def</span> <span class="nf">sampling</span><span class="p">(</span><span class="n">blm</span><span class="p">,</span> <span class="n">w_mu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
@@ -261,11 +259,11 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
 
-    <span class="n">L</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">invLz</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">invUz</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">invLz</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">+</span> <span class="n">w_mu</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+    <span class="k">return</span> <span class="p">(</span><span class="n">invUz</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">+</span> <span class="n">w_mu</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="get_post_params_mean"><a class="viewcode-back" href="../../../../api/physbo.blm.inf.exact.html#physbo.blm.inf.exact.get_post_params_mean">[ドキュメント]</a><span class="k">def</span> <span class="nf">get_post_params_mean</span><span class="p">(</span><span class="n">blm</span><span class="p">):</span>
@@ -334,9 +332,9 @@
     <span class="k">if</span> <span class="n">Psi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Psi</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">basis</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-    <span class="n">L</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">R</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+        <span class="n">U</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
         <span class="n">Psi</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
         <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
