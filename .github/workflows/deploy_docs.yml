@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - '!gh-pages'
+      - changedocs
     tags: '*'
 
 jobs:
@@ -19,6 +20,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
+        fetch-depth: 0
 
     - name: Checkout gh-pages
       uses: actions/checkout@v2
@@ -38,6 +40,8 @@ jobs:
         pip install tox tox-gh-actions
 
     - name: Build docs with tox
+      env:
+        TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
       run: |
         cd main
         tox -e docs
