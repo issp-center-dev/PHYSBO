@@ -164,7 +164,7 @@ class model:
         numpy.ndarray
         """
         if Psi is None:
-            Psi = blm.lik.get_basis(Xtest)
+            Psi = self.lik.get_basis(Xtest)
         w_hat = self.sampling(N=N, alpha=alpha)
         return Psi.dot(w_hat) + self.lik.linear.bias
 

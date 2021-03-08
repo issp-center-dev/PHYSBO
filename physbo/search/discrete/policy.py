@@ -3,27 +3,14 @@ import copy
 import pickle as pickle
 import itertools
 
-from .results import history, history_mo
+from .results import history
 from .. import utility
+from .. import score as search_score
+from ...gp import predictor as gp_predictor
+from ...blm import predictor as blm_predictor
+from ...misc import set_config
 
-import physbo
-import physbo.gp
-import physbo.blm
-import physbo.misc
-import physbo.search.score
 from physbo.variable import variable
-
-MAX_SEACH = int(20000)
-
-
-def run_simulator(simulator, action, comm=None):
-    if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
-        t = simulator(action)
-    else:
-        t = 0.0
-    return comm.bcast(t, root=0)
 
 
 class policy:
@@ -38,13 +25,19 @@ class policy:
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
             The first elements is the array of actions and the second is the array of value of objective functions
+        comm: MPI.Comm, optional
+            MPI Communicator
         """
         self.predictor = None
         self.training = variable()
-        self.test = self._set_test(test_X)
+        self.new_data = None
+        self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
-        self.config = self._set_config(config)
+        if config is None:
+            self.config = set_config()
+        else:
+            self.config = config
 
         if initial_data is not None:
             if len(initial_data) != 2:
@@ -55,7 +48,7 @@ class policy:
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = sorted(list(set(self.actions)-set(actions)))
+            self.actions = sorted(list(set(self.actions) - set(actions)))
 
         if comm is None:
             self.mpicomm = None
@@ -82,24 +75,6 @@ class policy:
         self.seed = seed
         np.random.seed(self.seed)
 
-    def delete_actions(self, index, actions=None):
-        """
-        Deleteing actions
-
-        Parameters
-        ----------
-        index: int
-            Index of an action to be deleted.
-        actions: numpy.ndarray
-            Array of actions.
-        Returns
-        -------
-        actions: numpy.ndarray
-            Array of actions which does not include action specified by index.
-        """
-        actions = self._set_unchosen_actions(actions)
-        return np.delete(actions, index)
-
     def write(self, action, t, X=None):
         """
         Writing history (update history, not output to a file).
@@ -123,9 +98,12 @@ class policy:
         else:
             Z = self.predictor.get_basis(X) if self.predictor is not None else None
 
-        self.new_data = variable(X, t, Z)
         self.history.write(t, action)
         self.training.add(X=X, t=t, Z=Z)
+        if self.new_data is None:
+            self.new_data = variable(X=X, t=t, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -154,12 +132,6 @@ class policy:
 
         N = int(num_search_each_probe)
 
-        if int(max_num_probes) * N > len(self.actions):
-            raise ValueError(
-                "max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates"
-            )
-
         if is_disp:
             utility.show_interactive_mode(simulator, self.history)
 
@@ -168,12 +140,17 @@ class policy:
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(self.history.num_runs)
 
-            action = self.get_random_action(N)
+            action = self._get_random_action(N)
+
+            if len(action) == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                return copy.deepcopy(self.history)
 
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
@@ -210,7 +187,7 @@ class policy:
         is_disp: bool
              If true, process messages are outputted.
         simulator: callable
-            Callable (function or object with ``__call__``) 
+            Callable (function or object with ``__call__``)
             Here, action is an integer which represents the index of the candidate.
         score: str
             The type of aquision funciton.
@@ -234,82 +211,135 @@ class policy:
             max_num_probes = 1
             simulator = None
 
-        is_rand_expans = False if num_rand_basis == 0 else True
+        is_rand_expans = num_rand_basis != 0
 
-        self.training = self._set_training(training)
+        if training is not None:
+            self.training = training
 
-        if predictor is None:
-            self.predictor = self._init_predictor(is_rand_expans)
-        else:
+        if predictor is not None:
             self.predictor = predictor
+        elif self.predictor is None:
+            self._init_predictor(is_rand_expans)
 
         N = int(num_search_each_probe)
 
         for n in range(max_num_probes):
 
             if utility.is_learning(n, interval):
-                self.predictor.fit(self.training, num_rand_basis)
-                self.test.Z = self.predictor.get_basis(self.test.X)
-                self.training.Z = self.predictor.get_basis(self.training.X)
-                self.predictor.prepare(self.training)
+                self._learn_hyperparameter(num_rand_basis)
             else:
-                self.predictor.update(self.training, self.new_data)
+                self._update_predictor()
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search(self.history.num_runs, score)
 
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self.get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha)
+
+            if len(action) == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                break
 
             if simulator is None:
                 return action
 
-            t = run_simulator(simulator, action, self.mpicomm)
+            t = _run_simulator(simulator, action, self.mpicomm)
             self.write(action, t)
 
             if is_disp:
                 utility.show_search_results(self.history, N)
-
+        self._update_predictor()
         return copy.deepcopy(self.history)
 
-    def get_score(self, mode, predictor=None, training=None, alpha=1):
+    def get_post_fmean(self, xs):
+        """ Calculate mean value of predictor (post distribution)
         """
-        Getting score.
+        X = self._make_variable_X(xs)
+        return self.predictor.get_post_fmean(self.training, X)
+
+    def get_post_fcov(self, xs):
+        """ Calculate covariance of predictor (post distribution)
+        """
+        X = self._make_variable_X(xs)
+        return self.predictor.get_post_fcov(self.training, X)
+
+    def get_score(
+        self, mode, *, actions=None, xs=None, predictor=None, training=None, parallel=True, alpha=1
+    ):
+        """
+        Calcualte score (acquisition function)
 
         Parameters
         ----------
         mode: str
-            The type of aquision funciton. TS, EI and PI are available.
+            The type of aquisition funciton. TS, EI and PI are available.
             These functions are defined in score.py.
+        actions: array of int
+            actions to calculate score
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate score
         predictor: predictor object
-            Base class is defined in physbo.predictor.
+            predictor used to calculate score.
+            If not given, self.predictor will be used.
         training:physbo.variable
             Training dataset.
+            If not given, self.training will be used.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True)
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+
         Returns
         -------
         f: float or list of float
             Score defined in each mode.
-        """
-        self._set_training(training)
-        self._set_predictor(predictor)
-        actions = self.actions
 
-        test = self.test.get_subset(actions)
-        if mode == "EI":
-            f = physbo.search.score.EI(predictor, training, test)
-        elif mode == "PI":
-            f = physbo.search.score.PI(predictor, training, test)
-        elif mode == "TS":
-            f = physbo.search.score.TS(predictor, training, test, alpha)
+        Raises
+        ------
+        RuntimeError
+            If both *actions* and *xs* are given
+
+        Notes
+        -----
+        When neither *actions* nor *xs* are given, scores for actions not yet searched will be calculated.
+
+        When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
+        If you want to split the input array itself, set *parallel* be False and merge results by yourself.
+        """
+        if training is None:
+            training = self.training
+        if predictor is None:
+            predictor = self.predictor
+
+        if xs is not None:
+            if actions is not None:
+                raise RuntimeError("ERROR: both actions and xs are given")
+            test = self._make_variable_X(xs)
+            if parallel and self.mpisize > 1:
+                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
+                test = test.get_subset(actions[self.mpirank])
         else:
-            raise NotImplementedError("mode must be EI, PI or TS.")
+            if actions is None:
+                actions = self.actions
+            else:
+                if isinstance(actions, int):
+                    actions = [actions]
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
+            test = self.test.get_subset(actions)
+
+        f = search_score.score(
+            mode, predictor=predictor, training=training, test=test, alpha=alpha
+        )
+        if parallel and self.mpisize>1:
+            fs = self.mpicomm.allgather(f)
+            f = np.hstack(fs)
         return f
 
-    def get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
         """
         Getting marginal scores.
 
@@ -331,7 +361,7 @@ class policy:
         f: list
             N dimensional scores (score is defined in each mode)
         """
-        f = np.zeros((K, len(self.actions)))
+        f = np.zeros((K, len(self.actions)), dtype=float)
         new_test_local = self.test.get_subset(chosen_actions)
         if self.mpisize == 1:
             new_test = new_test_local
@@ -355,17 +385,17 @@ class policy:
 
             predictor.update(train, virtual_train)
 
-            f[k, :] = self.get_score(mode, predictor, train)
+            f[k, :] = self.get_score(mode, predictor=predictor, training=train, parallel=False)
         return np.mean(f, axis=0)
 
-    def get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha):
         """
-        Getting actions
+        Getting next candidates
 
         Parameters
         ----------
         mode: str
-            The type of aquision funciton.
+            The type of aquisition funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
         N: int
@@ -381,37 +411,45 @@ class policy:
         chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
-        f = self.get_score(mode, self.predictor, self.training, alpha)
+        f = self.get_score(
+            mode, predictor=self.predictor, training=self.training, alpha=alpha, parallel=False
+        )
         champion, local_champion, local_index = self._find_champion(f)
+        if champion == -1:
+            return np.zeros(0, dtype=int)
         if champion == local_champion:
-            self.actions = self.delete_actions(local_index)
+            self.actions = self._delete_actions(local_index)
 
-        chosen_actions = np.zeros(N, dtype=int)
-        chosen_actions[0] = champion
-
+        chosen_actions = [champion]
         for n in range(1, N):
-            f = self.get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
             champion, local_champion, local_index = self._find_champion(f)
+            if champion == -1:
+                break
             if champion == local_champion:
-                self.actions = self.delete_actions(local_index)
-            chosen_actions[n] = champion
-
-        return chosen_actions
+                self.actions = self._delete_actions(local_index)
+            chosen_actions.append(champion)
+        return np.array(chosen_actions)
 
     def _find_champion(self, f):
-        local_fmax = np.max(f)
-        local_index = np.argmax(f)
-        local_champion = self.actions[local_index]
+        if len(f) == 0:
+            local_fmax = -float("inf")
+            local_index = -1
+            local_champion = -1
+        else:
+            local_fmax = np.max(f)
+            local_index = np.argmax(f)
+            local_champion = self.actions[local_index]
         if self.mpisize == 1:
-            return local_champion, local_champion, local_index
+            champion = local_champion
         else:
             local_champions = self.mpicomm.allgather(local_champion)
             local_fs = self.mpicomm.allgather(local_fmax)
             champion_rank = np.argmax(local_fs)
             champion = local_champions[champion_rank]
-            return champion, local_champion, local_index
+        return champion, local_champion, local_index
 
-    def get_random_action(self, N):
+    def _get_random_action(self, N):
         """
         Getting indexes of actions randomly.
 
@@ -424,11 +462,14 @@ class policy:
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = np.zeros(N, dtype=np.int)
         if self.mpisize == 1:
-            index = np.random.choice(len(self.actions), N, replace=False)
+            n = len(self.actions)
+            if n <= N:
+                index = np.arange(0, n)
+            else:
+                index = np.random.choice(len(self.actions), N, replace=False)
             action = self.actions[index]
-            self.actions = self.delete_actions(index)
+            self.actions = self._delete_actions(index)
         else:
             nactions = self.mpicomm.gather(len(self.actions), root=0)
             local_indices = [[] for _ in range(self.mpisize)]
@@ -436,13 +477,16 @@ class policy:
                 hi = np.add.accumulate(nactions)
                 lo = np.roll(hi, 1)
                 lo[0] = 0
-                index = np.random.choice(hi[-1], N, replace=False)
+                if hi[-1] <= N:
+                    index = np.arange(0, hi[-1])
+                else:
+                    index = np.random.choice(hi[-1], N, replace=False)
                 ranks = np.searchsorted(hi, index, side="right")
-                for r,i in zip(ranks, index):
-                    local_indices[r].append(i-lo[r])
+                for r, i in zip(ranks, index):
+                    local_indices[r].append(i - lo[r])
             local_indices = self.mpicomm.scatter(local_indices, root=0)
             local_actions = self.actions[local_indices]
-            self.actions = self.delete_actions(local_indices)
+            self.actions = self._delete_actions(local_indices)
             action = self.mpicomm.allgather(local_actions)
             action = itertools.chain.from_iterable(action)
             action = np.array(list(action))
@@ -466,14 +510,15 @@ class policy:
         -------
 
         """
-        self.history.save(file_history)
+        if self.mpirank == 0:
+            self.history.save(file_history)
 
-        if file_training is not None:
-            self.training.save(file_training)
+            if file_training is not None:
+                self.training.save(file_training)
 
-        if file_predictor is not None:
-            with open(file_predictor, "wb") as f:
-                pickle.dump(self.predictor, f)
+            if file_predictor is not None:
+                with open(file_predictor, "wb") as f:
+                    pickle.dump(self.predictor, f)
 
     def load(self, file_history, file_training=None, file_predictor=None):
         """
@@ -538,90 +583,36 @@ class policy:
         """
         return self.history
 
-    def _set_predictor(self, predictor=None):
+    def _init_predictor(self, is_rand_expans):
         """
-
-        Set predictor if defined.
-
-        Parameters
-        ----------
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
-
-        Returns
-        -------
-
-        """
-        if predictor is None:
-            predictor = self.predictor
-        return predictor
-
-    def _init_predictor(self, is_rand_expans, predictor=None):
-        """
-        Setting the initial predictor.
+        Initialize predictor.
 
         Parameters
         ----------
         is_rand_expans: bool
-        If true, physbo.blm.predictor is selected.
-        If false, physbo.gp.predictor is selected.
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
-
-        Returns
-        -------
-        predictor: predictor object
-            Base class is defined in physbo.predictor.
+            If true, physbo.blm.predictor is selected.
+            If false, physbo.gp.predictor is selected.
         """
-        self.predictor = self._set_predictor(predictor)
-        if self.predictor is None:
-            if is_rand_expans:
-                self.predictor = physbo.blm.predictor(self.config)
-            else:
-                self.predictor = physbo.gp.predictor(self.config)
+        if is_rand_expans:
+            self.predictor = blm_predictor(self.config)
+        else:
+            self.predictor = gp_predictor(self.config)
 
-        return self.predictor
+    def _learn_hyperparameter(self, num_rand_basis):
+        self.predictor.fit(self.training, num_rand_basis)
+        self.test.Z = self.predictor.get_basis(self.test.X)
+        self.training.Z = self.predictor.get_basis(self.training.X)
+        self.predictor.prepare(self.training)
+        self.new_data = None
 
-    def _set_training(self, training=None):
+    def _update_predictor(self):
+        if self.new_data is not None:
+            self.predictor.update(self.training, self.new_data)
+            self.new_data = None
+
+    def _make_variable_X(self, test_X):
         """
-
-        Set training dataset.
-
-        Parameters
-        ----------
-        training: physbo.variable
-            Training dataset.
-
-        Returns
-        -------
-        training: physbo.variable
-            Training dataset.
-        """
-        if training is None:
-            training = self.training
-        return training
-
-    def _set_unchosen_actions(self, actions=None):
-        """
-
-        Parameters
-        ----------
-        actions: numpy.ndarray
-            An array of indexes of the actions which are not chosen.
-
-        Returns
-        -------
-         actions: numpy.ndarray
-            An array of indexes of the actions which are not chosen.
-
-        """
-        if actions is None:
-            actions = self.actions
-        return actions
-
-    def _set_test(self, test_X):
-        """
-        Set test candidates.
+        Make a new *variable* with X=test_X
 
         Parameters
         ----------
@@ -637,300 +628,38 @@ class policy:
         elif isinstance(test_X, variable):
             test = test_X
         else:
-            raise TypeError(
-                "The type of test_X must \
-                             take ndarray or physbo.variable"
-            )
+            raise TypeError("The type of test_X must be ndarray or physbo.variable")
         return test
 
-    def _set_config(self, config=None):
+    def _delete_actions(self, index, actions=None):
         """
-        Set configure information.
+        Returns remaining actions
+
+        Notes
+        -----
+        This method itself does not modify *self*
 
         Parameters
         ----------
-        config: set_config object (physbo.misc.set_config)
-
+        index: int
+            Index of an action to be deleted.
+        actions: numpy.ndarray
+            Array of actions.
         Returns
         -------
-        config: set_config object (physbo.misc.set_config)
-
+        actions: numpy.ndarray
+            Array of actions which does not include action specified by index.
         """
-        if config is None:
-            config = physbo.misc.set_config()
-        return config
+        if actions is None:
+            actions = self.actions
+        return np.delete(actions, index)
 
 
-class policy_mo(policy):
-    def __init__(self, test_X, num_objectives, comm=None, config=None, initial_actions=None):
-        self.num_objectives = num_objectives
-        self.history = history_mo(num_objectives=self.num_objectives)
-
-        self.training_list = [variable() for i in range(self.num_objectives)]
-        self.predictor_list = [None for i in range(self.num_objectives)]
-        self.test_list = [self._set_test(test_X) for i in range(self.num_objectives)]
-        self.new_data_list = [None for i in range(self.num_objectives)]
-
-        self.actions = np.arange(0, test_X.shape[0])
-        self.config = self._set_config(config)
-
-        self.TS_candidate_num = None
-
-        if initial_actions is not None:
-            self.actions = sorted(list(set(self.actions) - set(initial_actions)))
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-
-    def write(self, action, t, X=None):
-        self.history.write(t, action)
-        action = np.array(action)
-        t = np.array(t)
-
-        for i in range(self.num_objectives):
-            test = self.test_list[i]
-            predictor = self.predictor_list[i]
-
-            if X is None:
-                X = test.X[action, :]
-                Z = test.Z[action, :] if test.Z is not None else None
-            else:
-                Z = predictor.get_basis(X) if predictor is not None else None
-
-            self.new_data_list[i] = variable(X, t[:, i], Z)
-            self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-
-    def _switch_model(self, i):
-        self.training = self.training_list[i]
-        self.predictor = self.predictor_list[i]
-        self.test = self.test_list[i]
-        self.new_data = self.new_data_list[i]
-
-    def random_search(
-        self,
-        max_num_probes,
-        num_search_each_probe=1,
-        simulator=None,
-        is_disp=True,
-        disp_pareto_set=False,
-    ):
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if int(max_num_probes) * N > len(self.actions):
-            raise ValueError(
-                "max_num_probes * num_search_each_probe must \
-                be smaller than the length of candidates"
-            )
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search_mo(
-                    self.history.num_runs, "random"
-                )
-
-            action = self.get_random_action(N)
-
-            if simulator is None:
-                return action
-
-            t = run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
-
-    def bayes_search(
-        self,
-        training_list=None,
-        max_num_probes=None,
-        num_search_each_probe=1,
-        predictor_list=None,
-        is_disp=True,
-        disp_pareto_set=False,
-        simulator=None,
-        score="HVPI",
-        interval=0,
-        num_rand_basis=0,
-    ):
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = False if num_rand_basis == 0 else True
-
-        if training_list is not None:
-            self.training_list = training_list
-
-        if predictor_list is None:
-            if is_rand_expans:
-                self.predictor_list = [
-                    physbo.blm.predictor(self.config) for i in range(self.num_objectives)
-                ]
-            else:
-                self.predictor_list = [
-                    physbo.gp.predictor(self.config) for i in range(self.num_objectives)
-                ]
-        else:
-            self.predictor = predictor_list
-
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-
-            if utility.is_learning(n, interval):
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.fit(self.training, num_rand_basis)
-                    self.test.Z = self.predictor.get_basis(self.test.X)
-                    self.training.Z = self.predictor.get_basis(self.training.X)
-                    self.predictor.prepare(self.training)
-            else:
-                for i in range(self.num_objectives):
-                    self._switch_model(i)
-                    self.predictor.update(self.training, self.new_data)
-
-            if num_search_each_probe != 1:
-                utility.show_start_message_multi_search_mo(self.history.num_runs, score)
-
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self.get_actions(score, N, K, alpha)
-
-            if simulator is None:
-                return action
-
-            t = run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
-
-    def get_actions(self, mode, N, K, alpha):
-        f = self.get_score(
-            mode, self.predictor_list, self.training_list, self.history.pareto, alpha
-        )
-        champion, local_champion, local_index = self._find_champion(f)
-        chosen_actions = np.zeros(N, dtype=int)
-        chosen_actions[0] = champion
-        if champion == local_champion:
-            self.actions = self.delete_actions(local_index)
-
-        for n in range(1, N):
-            f = self.get_score(
-                mode,
-                self.predictor_list,
-                self.training_list,
-                self.history.pareto,
-                alpha,
-            )
-            champion, local_champion, local_index = self._find_champion(f)
-            chosen_actions[n] = champion
-            if champion == local_champion:
-                self.actions = self.delete_actions(local_index)
-        return chosen_actions
-
-    def get_score(self, mode, predictor_list, training_list, pareto, alpha=1):
-        actions = self.actions
-        test = self.test.get_subset(actions)
-
-        if mode == "EHVI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = physbo.search.score.EHVI(fmean, fstd, pareto)
-        elif mode == "HVPI":
-            fmean, fstd = self.get_fmean_fstd(predictor_list, training_list, test)
-            f = physbo.search.score.HVPI(fmean, fstd, pareto)
-        elif mode == "TS":
-            f = physbo.search.score.TS_MO(
-                predictor_list,
-                training_list,
-                test,
-                alpha,
-                reduced_candidate_num=self.TS_candidate_num,
-            )
-        else:
-            raise NotImplementedError("mode must be EHVI, HVPI or TS.")
-        return f
-
-    def get_fmean_fstd(self, predictor_list, training_list, test):
-        fmean = [
-            predictor.get_post_fmean(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-        fcov = [
-            predictor.get_post_fcov(training, test)
-            for predictor, training in zip(predictor_list, training_list)
-        ]
-
-        # shape: (N, n_obj)
-        fmean = np.array(fmean).T
-        fstd = np.sqrt(np.array(fcov)).T
-        return fmean, fstd
-
-    def load(self, file_history, file_training_list=None, file_predictor_list=None):
-        self.history.load(file_history)
-
-        if file_training_list is None:
-            N = self.history.total_num_search
-            X = self.test_list[0].X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
-            self.training_list = [
-                variable(X=X, t=t[:, i]) for i in range(self.num_objectives)
-            ]
-        else:
-            self.load_training_list(file_training_list)
-
-        if file_predictor_list is not None:
-            self.load_predictor_list(file_predictor_list)
-
-    def save_predictor_list(self, file_name):
-        with open(file_name, "wb") as f:
-            pickle.dump(self.predictor_list, f, 2)
-
-    def save_training_list(self, file_name):
-        obj = [
-            {"X": training.X, "t": training.t, "Z": training.Z}
-            for training in self.training_list
-        ]
-        with open(file_name, "wb") as f:
-            pickle.dump(obj, f, 2)
-
-    def load_predictor_list(self, file_name):
-        with open(file_name, "rb") as f:
-            self.predictor_list = pickle.load(f)
-
-    def load_training_list(self, file_name):
-        with open(file_name, "rb") as f:
-            data_list = pickle.load(f)
-
-        self.training_list = [variable() for i in range(self.num_objectives)]
-        for data, training in zip(data_list, self.training_list):
-            training.X = data["X"]
-            training.t = data["t"]
-            training.Z = data["Z"]
+def _run_simulator(simulator, action, comm=None):
+    if comm is None:
+        return simulator(action)
+    if comm.rank == 0:
+        t = simulator(action)
+    else:
+        t = 0.0
+    return comm.bcast(t, root=0)

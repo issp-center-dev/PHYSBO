@@ -27,36 +27,47 @@ def show_search_results(history, N):
             print("f(x)=%f (action = %d)" % (history.fx[n], history.chosen_actions[n]))
         print("\n")
 
-def show_search_results_mo(history, N, disp_pareto_set = False):
+
+def show_search_results_mo(history, N, disp_pareto_set=False):
     n = history.total_num_search
     pset, step = history.pareto.export_front()
 
-    def msg_pareto_set_updated(indent = False):
-        prefix = '   ' if indent else ''
+    def msg_pareto_set_updated(indent=False):
+        prefix = "   " if indent else ""
         if history.pareto.front_updated:
-            print(prefix + 'Pareto set updated.')
+            print(prefix + "Pareto set updated.")
             if disp_pareto_set:
-                print(prefix + 'current Pareto set = %s (steps = %s) \n'
-                    % (str(pset), str(step + 1)))
+                print(
+                    prefix
+                    + "current Pareto set = %s (steps = %s) \n"
+                    % (str(pset), str(step + 1))
+                )
             else:
-                print(prefix + 'the number of Pareto frontiers = %s \n' % str(len(step)))
+                print(
+                    prefix + "the number of Pareto frontiers = %s \n" % str(len(step))
+                )
 
     if N == 1:
-        print('%04d-th step: f(x) = %s (action = %d)'
-                % (n, str(history.fx[n-1]), history.chosed_actions[n-1]))
+        print(
+            "%04d-th step: f(x) = %s (action = %d)"
+            % (n, str(history.fx[n - 1]), history.chosen_actions[n - 1])
+        )
 
         msg_pareto_set_updated(indent=True)
 
     else:
         msg_pareto_set_updated()
 
-        print('list of simulation results')
+        print("list of simulation results")
         st = history.total_num_search - N
         en = history.total_num_search
         for n in range(st, en):
-            print('f(x) = %s (action = %d)'
-                % (str(history.fx[n-1]), history.chosed_actions[n-1]))
-        print('\n')
+            print(
+                "f(x) = %s (action = %d)"
+                % (str(history.fx[n - 1]), history.chosen_actions[n - 1])
+            )
+        print("\n")
+
 
 def show_start_message_multi_search(N, score=None):
     if score == "EI":
@@ -71,7 +82,7 @@ def show_start_message_multi_search(N, score=None):
 
 def show_interactive_mode(simulator, history):
     if simulator is None and history.total_num_search == 0:
-        print("interactive mode stars ... \n ")
+        print("interactive mode starts ... \n ")
 
 
 def length_vector(t):
@@ -81,8 +92,8 @@ def length_vector(t):
 
 def is_learning(n, interval):
     if interval == 0:
-        return True if n == 0 else False
+        return n==0
     elif interval > 0:
-        return True if np.mod(n, interval) == 0 else False
+        return np.mod(n, interval) == 0
     else:
         return False

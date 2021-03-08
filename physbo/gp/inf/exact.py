@@ -34,13 +34,13 @@ def eval_marlik(gp, X, t, params=None):
 
     A = G + B + 1e-8 * np.identity(ndata)
     res = t - fmu
-    L = scipy.linalg.cholesky(A, check_finite=False)
+    U = scipy.linalg.cholesky(A, check_finite=False)
     alpha = scipy.linalg.solve_triangular(
-        L.transpose(), res, lower=True, overwrite_b=False, check_finite=False
+        U.transpose(), res, lower=True, overwrite_b=False, check_finite=False
     )
     marlik = (
         0.5 * ndata * np.log(2 * np.pi)
-        + np.sum(np.log(np.diag(L)))
+        + np.sum(np.log(np.diag(U)))
         + 0.5 * np.inner(alpha, alpha)
     )
     return marlik
@@ -75,9 +75,9 @@ def get_grad_marlik(gp, X, t, params=None):
     B = gp.lik.get_cov(ndata, lik_params)
 
     A = G + B + 1e-8 * np.identity(ndata)
-    L = scipy.linalg.cholesky(A, check_finite=False)
+    U = scipy.linalg.cholesky(A, check_finite=False)
     res = t - fmu
-    alpha = misc.gauss_elim(L, res)
+    alpha = misc.gauss_elim(U, res)
     invA = scipy.linalg.inv(A, check_finite=False)
 
     grad_marlik = np.zeros(gp.num_params)
@@ -141,10 +141,10 @@ def prepare(gp, X, t, params=None):
     fmu = gp.prior.get_mean(ndata, params=prior_params)
     B = gp.lik.get_cov(ndata, params=lik_params)
     A = G + B + 1e-8 * np.identity(ndata)
-    L = scipy.linalg.cholesky(A, check_finite=False)
+    U = scipy.linalg.cholesky(A, check_finite=False)
     residual = t - fmu
-    alpha = misc.gauss_elim(L, residual)
-    stats = (L, alpha)
+    alpha = misc.gauss_elim(U, residual)
+    stats = (U, alpha)
 
     return stats
 
@@ -204,21 +204,21 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
 
     lik_params, prior_params = gp.decomp_params(params)
 
-    L = gp.stats[0]
+    U = gp.stats[0]
     alpha = gp.stats[1]
 
     G = gp.prior.get_cov(X=X, Z=Z, params=prior_params)
 
-    invLG = scipy.linalg.solve_triangular(
-        L.transpose(), G, lower=True, overwrite_b=False, check_finite=False
+    invUG = scipy.linalg.solve_triangular(
+        U.transpose(), G, lower=True, overwrite_b=False, check_finite=False
     )
 
     if diag:
         diagK = gp.prior.get_cov(X=Z, params=prior_params, diag=True)
-        diag_invLG2 = misc.diagAB(invLG.transpose(), invLG)
-        post_cov = diagK - diag_invLG2
+        diag_invUG2 = misc.diagAB(invUG.transpose(), invUG)
+        post_cov = diagK - diag_invUG2
     else:
         K = gp.prior.get_cov(X=Z, params=prior_params)
-        post_cov = K - np.dot(invLG.transpose(), invLG)
+        post_cov = K - np.dot(invUG.transpose(), invUG)
 
     return post_cov

@@ -195,6 +195,6 @@ class prior:
         """
         num_data = X.shape[0]
         G = self.get_cov(X) + 1e-8 * np.identity(num_data)
-        L = scipy.linalg.cholesky(G, check_finite=False)
+        U = scipy.linalg.cholesky(G, check_finite=False)
         Z = np.random.randn(N, num_data)
-        return np.dot(Z, L) + self.get_mean(num_data)
+        return np.dot(Z, U) + self.get_mean(num_data)

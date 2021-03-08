@@ -26,10 +26,10 @@ def prepare(blm, X, t, Psi=None):
     PsiT = Psi.transpose()
     G = np.dot(PsiT, Psi) * blm.lik.cov.prec
     A = G + blm.prior.get_prec()
-    L = scipy.linalg.cholesky(A, check_finite=False)
+    U = scipy.linalg.cholesky(A, check_finite=False)
     b = PsiT.dot(t - blm.lik.linear.bias)
-    alpha = misc.gauss_elim(L, b)
-    blm.stats = (L, b, alpha)
+    alpha = misc.gauss_elim(U, b)
+    blm.stats = (U, b, alpha)
 
 
 def update_stats(blm, x, t, psi=None):
@@ -49,20 +49,20 @@ def update_stats(blm, x, t, psi=None):
 
     Returns
     =======
-    (L, b, alpha): Tuple
+    (U, b, alpha): Tuple
         new auxially parameters
 
     Notes
     =====
-    ``blm.stats[0]`` (L) will be mutated while the others not.
+    ``blm.stats[0]`` (U) will be mutated while the others not.
     """
     if psi is None:
         psi = blm.lik.get_basis(x)
-    L = blm.stats[0]
+    U = blm.stats[0]
     b = blm.stats[1] + (t - blm.lik.linear.bias) * psi
-    misc.cholupdate(L, psi * np.sqrt(blm.lik.cov.prec))
-    alpha = misc.gauss_elim(L, b)
-    return (L, b, alpha)
+    misc.cholupdate(U, psi * np.sqrt(blm.lik.cov.prec))
+    alpha = misc.gauss_elim(U, b)
+    return (U, b, alpha)
 
 
 def sampling(blm, w_mu=None, N=1, alpha=1.0):
@@ -94,11 +94,11 @@ def sampling(blm, w_mu=None, N=1, alpha=1.0):
     else:
         z = np.random.randn(blm.nbasis, N) * alpha
 
-    L = blm.stats[0]
-    invLz = scipy.linalg.solve_triangular(
-        L, z, lower=False, overwrite_b=False, check_finite=False
+    U = blm.stats[0]
+    invUz = scipy.linalg.solve_triangular(
+        U, z, lower=False, overwrite_b=False, check_finite=False
     )
-    return (invLz.transpose() + w_mu).transpose()
+    return (invUz.transpose() + w_mu).transpose()
 
 
 def get_post_params_mean(blm):
@@ -167,9 +167,9 @@ def get_post_fcov(blm, X, Psi=None, diag=True):
     if Psi is None:
         Psi = blm.lik.linear.basis.get_basis(X)
 
-    L = blm.stats[0]
+    U = blm.stats[0]
     R = scipy.linalg.solve_triangular(
-        L.transpose(),
+        U.transpose(),
         Psi.transpose(),
         lower=True,
         overwrite_b=False,
