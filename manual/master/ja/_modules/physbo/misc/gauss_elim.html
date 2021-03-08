@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="ja" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>physbo.misc.gauss_elim &mdash; PHYSBO 0.3.0 ドキュメント</title>
+  <title>physbo.misc.gauss_elim &mdash; PHYSBO 1.0.0 ドキュメント</title>
   
 
   
@@ -16,7 +16,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -31,8 +34,6 @@
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -52,7 +53,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> PHYSBO
+            <a href="../../../index.html" class="icon icon-home"> PHYSBO
           
 
           
@@ -62,7 +63,7 @@
             
             
               <div class="version">
-                0.3.0
+                1.0
               </div>
             
           
@@ -136,6 +137,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -164,14 +167,14 @@
 <span class="kn">import</span> <span class="nn">scipy</span>
 
 
-<div class="viewcode-block" id="gauss_elim"><a class="viewcode-back" href="../../../api/physbo.misc.gauss_elim.html#physbo.misc.gauss_elim.gauss_elim">[ドキュメント]</a><span class="k">def</span> <span class="nf">gauss_elim</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<div class="viewcode-block" id="gauss_elim"><a class="viewcode-back" href="../../../api/physbo.misc.gauss_elim.html#physbo.misc.gauss_elim.gauss_elim">[ドキュメント]</a><span class="k">def</span> <span class="nf">gauss_elim</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate alpha using scipy.linalg.solve_triangular.</span>
-<span class="sd">    alpha = (L^T L)^-1 t = L^-1 [(L^T)-1 t]</span>
+<span class="sd">    alpha = (U^T U)^-1 t = U^-1 [(U^T)-1 t]</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    L: (M, M) array_like</span>
+<span class="sd">    U: (M, M) array_like</span>
 <span class="sd">    A triangular matrix</span>
 <span class="sd">    t: (M,) or (M, N) array_like</span>
 
@@ -181,11 +184,11 @@
 <span class="sd">    Solution to the system L^T alpha = t. Shape of return matches t.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">alpha</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">t</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">U</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">t</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
 
     <span class="n">alpha</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
-        <span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite_b</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">alpha</span></div>
 </pre></div>
@@ -194,28 +197,25 @@
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; 著作権 2020, PHYSBO developers
+        &#169; Copyright 2020-, PHYSBO developers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -223,6 +223,59 @@
 
   </div>
   
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: master
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../../../master/en/_modules/physbo/misc/gauss_elim.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../master/ja/_modules/physbo/misc/gauss_elim.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../../../develop/ja/_modules/physbo/misc/gauss_elim.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../master/ja/_modules/physbo/misc/gauss_elim.html">master</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ 
 
   <script type="text/javascript">
       jQuery(function () {
