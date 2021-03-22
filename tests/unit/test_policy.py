@@ -106,6 +106,9 @@ def test_get_score(policy, mocker):
     PI = mocker.patch("physbo.search.score.PI")
     TS = mocker.patch("physbo.search.score.TS")
 
+    simulator = mocker.MagicMock(return_value=1.0)
+    policy.random_search(2, simulator=simulator)
+
     policy.get_score("EI")
     EI.assert_called_once()
 

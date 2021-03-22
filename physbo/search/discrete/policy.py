@@ -221,6 +221,9 @@ class policy:
         elif self.predictor is None:
             self._init_predictor(is_rand_expans)
 
+        if max_num_probes == 0 and interval >= 0:
+            self._learn_hyperparameter(num_rand_basis)
+
         N = int(num_search_each_probe)
 
         for n in range(max_num_probes):
@@ -311,8 +314,23 @@ class policy:
         """
         if training is None:
             training = self.training
+
+        if training.X is None or training.X.shape[0] == 0:
+            msg = "ERROR: No training data is registered."
+            raise RuntimeError(msg)
+
         if predictor is None:
             predictor = self.predictor
+
+        if predictor is None:
+            print("Warning: Since policy.predictor is not yet set,")
+            print("         a GP predictor (num_rand_basis=0) is used for calculating scores.")
+            print("         If you want to use a BLM predictor (num_rand_basis>0),")
+            print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
+            print("         before calling get_score().")
+            predictor = gp_predictor(self.config)
+            predictor.fit(training, 0)
+            predictor.prepare(training)
 
         if xs is not None:
             if actions is not None:
