@@ -314,6 +314,11 @@ class policy:
         """
         if training is None:
             training = self.training
+
+        if training.X is None or training.X.shape[0] == 0:
+            msg = "ERROR: No training data is registered."
+            raise RuntimeError(msg)
+
         if predictor is None:
             predictor = self.predictor
 

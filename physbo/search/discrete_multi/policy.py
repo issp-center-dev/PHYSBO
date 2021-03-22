@@ -257,6 +257,9 @@ class policy(discrete.policy):
         if pareto is None:
             pareto = self.history.pareto
 
+        if training_list[0].X is None or training_list[0].X.shape[0] == 0:
+            msg = "ERROR: No training data is registered."
+            raise RuntimeError(msg)
 
         if predictor_list == [None] * self.num_objectives:
             print("Warning: Since policy.predictor_list is not yet set,")
