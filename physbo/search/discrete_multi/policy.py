@@ -165,7 +165,10 @@ class policy(discrete.policy):
                     gp_predictor(self.config) for i in range(self.num_objectives)
                 ]
         else:
-            self.predictor = predictor_list
+            self.predictor_list = predictor_list
+
+        if max_num_probes == 0 and interval >= 0:
+            self._learn_hyperparameter(num_rand_basis)
 
         N = int(num_search_each_probe)
 
@@ -253,6 +256,18 @@ class policy(discrete.policy):
             training_list = self.training_list
         if pareto is None:
             pareto = self.history.pareto
+
+
+        if predictor_list == [None] * self.num_objectives:
+            print("Warning: Since policy.predictor_list is not yet set,")
+            print("         GP predictors (num_rand_basis=0) is used for calculating scores.")
+            print("         If you want to use BLM predictors (num_rand_basis>0),")
+            print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
+            print("         before calling get_score().")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(training_list[i], 0)
+                predictor_list[i].prepare(training_list[i])
 
         if xs is not None:
             if actions is not None:
