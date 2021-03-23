@@ -256,17 +256,37 @@ class policy:
         self._update_predictor()
         return copy.deepcopy(self.history)
 
+    @staticmethod
+    def _warn_no_predictor(method_name):
+        print("Warning: Since policy.predictor is not yet set,")
+        print("         a GP predictor (num_rand_basis=0) is used for predicting")
+        print("         If you want to use a BLM predictor (num_rand_basis>0),")
+        print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
+        print("         before calling {}.".format(method_name))
+
     def get_post_fmean(self, xs):
         """ Calculate mean value of predictor (post distribution)
         """
         X = self._make_variable_X(xs)
-        return self.predictor.get_post_fmean(self.training, X)
+        predictor = self.predictor
+        if predictor is None:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor = gp_predictor(self.config)
+            predictor.fit(self.training, 0)
+            predictor.prepare(self.training)
+        return predictor.get_post_fmean(self.training, X)
 
     def get_post_fcov(self, xs):
         """ Calculate covariance of predictor (post distribution)
         """
         X = self._make_variable_X(xs)
-        return self.predictor.get_post_fcov(self.training, X)
+        predictor = self.predictor
+        if predictor is None:
+            self._warn_no_predictor("get_post_fcov()")
+            predictor = gp_predictor(self.config)
+            predictor.fit(self.training, 0)
+            predictor.prepare(self.training)
+        return predictor.get_post_fcov(self.training, X)
 
     def get_score(
         self, mode, *, actions=None, xs=None, predictor=None, training=None, parallel=True, alpha=1
@@ -323,11 +343,7 @@ class policy:
             predictor = self.predictor
 
         if predictor is None:
-            print("Warning: Since policy.predictor is not yet set,")
-            print("         a GP predictor (num_rand_basis=0) is used for calculating scores.")
-            print("         If you want to use a BLM predictor (num_rand_basis>0),")
-            print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
-            print("         before calling get_score().")
+            self._warn_no_predictor("get_score()")
             predictor = gp_predictor(self.config)
             predictor.fit(training, 0)
             predictor.prepare(training)

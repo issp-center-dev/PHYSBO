@@ -225,17 +225,31 @@ class policy(discrete.policy):
 
     def get_post_fmean(self, xs):
         X = self._make_variable_X(xs)
+        predictor_list = self.predictor_list[:]
+        if predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fmean()")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(self.training_list[i], 0)
+                predictor_list[i].prepare(self.training_list[i])
         fmean = [
             predictor.get_post_fmean(training, X)
-            for predictor, training in zip(self.predictor_list, self.training_list)
+            for predictor, training in zip(predictor_list, self.training_list)
         ]
         return np.array(fmean).T
 
     def get_post_fcov(self, xs):
         X = self._make_variable_X(xs)
+        predictor_list = self.predictor_list[:]
+        if predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fcov()")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(self.training_list[i], 0)
+                predictor_list[i].prepare(self.training_list[i])
         fcov = [
             predictor.get_post_fcov(training, X)
-            for predictor, training in zip(self.predictor_list, self.training_list)
+            for predictor, training in zip(predictor_list, self.training_list)
         ]
         return np.array(fcov).T
 
@@ -262,11 +276,7 @@ class policy(discrete.policy):
             raise RuntimeError(msg)
 
         if predictor_list == [None] * self.num_objectives:
-            print("Warning: Since policy.predictor_list is not yet set,")
-            print("         GP predictors (num_rand_basis=0) is used for calculating scores.")
-            print("         If you want to use BLM predictors (num_rand_basis>0),")
-            print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
-            print("         before calling get_score().")
+            self._warn_no_predictor("get_score()")
             for i in range(self.num_objectives):
                 predictor_list[i] = gp_predictor(self.config)
                 predictor_list[i].fit(training_list[i], 0)
