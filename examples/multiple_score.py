@@ -46,7 +46,7 @@ policy.set_seed(0)
 policy.random_search(max_num_probes=10, simulator=sim)
 
 # Bayesian search (100 times)
-#   score function (acquition function): expectation of improvement (EI)
+#   score function (acquisition function): expectation of improvement (EI)
 policy.bayes_search(max_num_probes=0, simulator=sim, score=score, interval=0)
 
 print("Mean values of prediction")
@@ -59,6 +59,6 @@ scores = policy.get_post_fcov(xs=test_X)
 print(np.sqrt(scores))
 print()
 
-print("Acquition function")
+print("Acquisition function")
 scores = policy.get_score(mode=score, xs=test_X)
 print(scores)
