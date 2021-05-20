@@ -165,7 +165,10 @@ class policy(discrete.policy):
                     gp_predictor(self.config) for i in range(self.num_objectives)
                 ]
         else:
-            self.predictor = predictor_list
+            self.predictor_list = predictor_list
+
+        if max_num_probes == 0 and interval >= 0:
+            self._learn_hyperparameter(num_rand_basis)
 
         N = int(num_search_each_probe)
 
@@ -222,17 +225,31 @@ class policy(discrete.policy):
 
     def get_post_fmean(self, xs):
         X = self._make_variable_X(xs)
+        predictor_list = self.predictor_list[:]
+        if predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fmean()")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(self.training_list[i], 0)
+                predictor_list[i].prepare(self.training_list[i])
         fmean = [
             predictor.get_post_fmean(training, X)
-            for predictor, training in zip(self.predictor_list, self.training_list)
+            for predictor, training in zip(predictor_list, self.training_list)
         ]
         return np.array(fmean).T
 
     def get_post_fcov(self, xs):
         X = self._make_variable_X(xs)
+        predictor_list = self.predictor_list[:]
+        if predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fcov()")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(self.training_list[i], 0)
+                predictor_list[i].prepare(self.training_list[i])
         fcov = [
             predictor.get_post_fcov(training, X)
-            for predictor, training in zip(self.predictor_list, self.training_list)
+            for predictor, training in zip(predictor_list, self.training_list)
         ]
         return np.array(fcov).T
 
@@ -253,6 +270,17 @@ class policy(discrete.policy):
             training_list = self.training_list
         if pareto is None:
             pareto = self.history.pareto
+
+        if training_list[0].X is None or training_list[0].X.shape[0] == 0:
+            msg = "ERROR: No training data is registered."
+            raise RuntimeError(msg)
+
+        if predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_score()")
+            for i in range(self.num_objectives):
+                predictor_list[i] = gp_predictor(self.config)
+                predictor_list[i].fit(training_list[i], 0)
+                predictor_list[i].prepare(training_list[i])
 
         if xs is not None:
             if actions is not None:
