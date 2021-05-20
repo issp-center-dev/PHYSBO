@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>physbo.search.discrete_multi.policy &mdash; PHYSBO 1.0.0 ドキュメント</title>
+  <title>physbo.search.discrete_multi.policy &mdash; PHYSBO 1.0.1 ドキュメント</title>
   
 
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -330,7 +333,10 @@
                     <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
                 <span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">predictor_list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="n">predictor_list</span>
+
+        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
 
         <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
 
@@ -387,17 +393,31 @@
 
 <div class="viewcode-block" id="policy.get_post_fmean"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_post_fmean">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
+        <span class="k">if</span> <span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="n">fmean</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fmean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
 
 <div class="viewcode-block" id="policy.get_post_fcov"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_post_fcov">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
+        <span class="k">if</span> <span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fcov()&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="n">fcov</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
 
@@ -418,6 +438,17 @@
             <span class="n">training_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span>
         <span class="k">if</span> <span class="n">pareto</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">pareto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span>
+
+        <span class="k">if</span> <span class="n">training_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">training_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: No training data is registered.&quot;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_score()&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">xs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">actions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
