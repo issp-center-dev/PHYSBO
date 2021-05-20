@@ -1,0 +1,30 @@
+physbo.search package
+=====================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   physbo.search.discrete
+   physbo.search.discrete_multi
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   physbo.search.pareto
+   physbo.search.score
+   physbo.search.score_multi
+   physbo.search.utility
+
+Module contents
+---------------
+
+.. automodule:: physbo.search
+   :members:
+   :undoc-members:
+   :show-inheritance:
