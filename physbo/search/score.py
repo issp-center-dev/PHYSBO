@@ -145,4 +145,4 @@ def TS(predictor, training, test, alpha=1):
     -------
     score: numpy.ndarray
     """
-    return predictor.get_post_samples(training, test, alpha=alpha)
+    return (predictor.get_post_samples(training, test, alpha=alpha)).flatten()

@@ -7,6 +7,7 @@ import tempfile
 
 import pytest
 import numpy as np
+import numpy.testing
 
 
 physbo = pytest.importorskip("physbo")
@@ -101,19 +102,30 @@ def test_saveload(policy, X):
         assert policy.history.num_runs == policy2.history.num_runs
 
 
-def test_get_score(policy, mocker):
-    EI = mocker.patch("physbo.search.score.EI")
-    PI = mocker.patch("physbo.search.score.PI")
-    TS = mocker.patch("physbo.search.score.TS")
+def test_get_score(policy, mocker, X):
+    simulator = mocker.MagicMock(return_value=1.0)
+    policy.random_search(2, simulator=simulator)
+    policy.set_seed(137)
 
-    policy.get_score("EI")
-    EI.assert_called_once()
+    res = policy.get_score("EI", xs=X)
+    ref = np.array([
+        3.98940120e-07,
+        3.98934542e-07,
+        3.98924610e-07,
+        3.98914969e-07,
+        3.98911183e-07,
+        3.98914969e-07,
+    ])
+    numpy.testing.assert_allclose(res, ref)
 
-    policy.get_score("PI")
-    PI.assert_called_once()
+    res = policy.get_score("PI", xs=X)
+    print(res)
+    ref = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+    numpy.testing.assert_allclose(res, ref)
 
-    policy.get_score("TS")
-    TS.assert_called_once()
+    res = policy.get_score("TS", xs=X)
+    ref = np.array([1.00000021, 0.99999978, 0.9999993, 0.9999991, 0.99999905, 0.99999888])
+    numpy.testing.assert_allclose(res, ref)
 
     with pytest.raises(NotImplementedError):
         policy.get_score("XX")

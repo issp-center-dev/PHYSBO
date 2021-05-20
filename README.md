@@ -12,7 +12,7 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
     - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
 - Latest (develop branch)
     - [English](https://issp-center.dev.github.io/PHYSBO/manual/develop/en/index.html)
-    - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/en/index.html)
+    - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/index.html)
 
 ## Required Packages
 
