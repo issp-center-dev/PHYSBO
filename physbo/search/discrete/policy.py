@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import pickle as pickle
 import itertools
+import time
 
 from .results import history
 from .. import utility
@@ -75,7 +76,16 @@ class policy:
         self.seed = seed
         np.random.seed(self.seed)
 
-    def write(self, action, t, X=None):
+    def write(
+        self,
+        action,
+        t,
+        X=None,
+        time_total=None,
+        time_update_predictor=None,
+        time_get_action=None,
+        time_run_simulator=None,
+    ):
         """
         Writing history (update history, not output to a file).
 
@@ -87,6 +97,18 @@ class policy:
             N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
+        time_total: numpy.ndarray
+            N dimenstional array. The total elapsed time in each step.
+            If None (default), filled by 0.0.
+        time_update_predictor: numpy.ndarray
+            N dimenstional array. The elapsed time for updating predictor (e.g., learning hyperparemters) in each step.
+            If None (default), filled by 0.0.
+        time_get_action: numpy.ndarray
+            N dimenstional array. The elapsed time for getting next action in each step.
+            If None (default), filled by 0.0.
+        time_run_simulator: numpy.ndarray
+            N dimenstional array. The elapsed time for running the simulator in each step.
+            If None (default), filled by 0.0.
 
         Returns
         -------
@@ -98,7 +120,14 @@ class policy:
         else:
             Z = self.predictor.get_basis(X) if self.predictor is not None else None
 
-        self.history.write(t, action)
+        self.history.write(
+            t,
+            action,
+            time_total=time_total,
+            time_update_predictor=time_update_predictor,
+            time_get_action=time_get_action,
+            time_run_simulator=time_run_simulator,
+        )
         self.training.add(X=X, t=t, Z=Z)
         if self.new_data is None:
             self.new_data = variable(X=X, t=t, Z=Z)
@@ -137,12 +166,16 @@ class policy:
 
         for n in range(0, max_num_probes):
 
+            time_total = time.time()
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(self.history.num_runs)
 
+            time_get_action = time.time()
             action = self._get_random_action(N)
+            time_get_action = time.time() - time_get_action
 
-            if len(action) == 0:
+            N_indeed = len(action)
+            if N_indeed == 0:
                 if self.mpirank == 0:
                     print("WARNING: All actions have already searched.")
                 return copy.deepcopy(self.history)
@@ -150,11 +183,22 @@ class policy:
             if simulator is None:
                 return action
 
+            time_run_simulator = time.time()
             t = _run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
+            time_run_simulator = time.time() - time_run_simulator
+
+            time_total = time.time() - time_total
+            self.write(
+                action,
+                t,
+                time_total=[time_total] * N_indeed,
+                time_update_predictor=np.zeros(N_indeed, dtype=float),
+                time_get_action=[time_get_action] * N_indeed,
+                time_run_simulator=[time_run_simulator] * N_indeed,
+            )
 
             if is_disp:
-                utility.show_search_results(self.history, N)
+                utility.show_search_results(self.history, N_indeed)
 
         return copy.deepcopy(self.history)
 
@@ -227,20 +271,26 @@ class policy:
         N = int(num_search_each_probe)
 
         for n in range(max_num_probes):
+            time_total = time.time()
 
+            time_update_predictor = time.time()
             if utility.is_learning(n, interval):
                 self._learn_hyperparameter(num_rand_basis)
             else:
                 self._update_predictor()
+            time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search(self.history.num_runs, score)
 
+            time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
             action = self._get_actions(score, N, K, alpha)
+            time_get_action = time.time() - time_get_action
 
-            if len(action) == 0:
+            N_indeed = len(action)
+            if N_indeed == 0:
                 if self.mpirank == 0:
                     print("WARNING: All actions have already searched.")
                 break
@@ -248,11 +298,22 @@ class policy:
             if simulator is None:
                 return action
 
+            time_run_simulator = time.time()
             t = _run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
+            time_run_simulator = time.time() - time_run_simulator
+
+            time_total = time.time() - time_total
+            self.write(
+                action,
+                t,
+                time_total=[time_total] * N_indeed,
+                time_update_predictor=[time_update_predictor] * N_indeed,
+                time_get_action=[time_get_action] * N_indeed,
+                time_run_simulator=[time_run_simulator] * N_indeed,
+            )
 
             if is_disp:
-                utility.show_search_results(self.history, N)
+                utility.show_search_results(self.history, N_indeed)
         self._update_predictor()
         return copy.deepcopy(self.history)
 
@@ -265,8 +326,7 @@ class policy:
         print("         before calling {}.".format(method_name))
 
     def get_post_fmean(self, xs):
-        """ Calculate mean value of predictor (post distribution)
-        """
+        """Calculate mean value of predictor (post distribution)"""
         X = self._make_variable_X(xs)
         predictor = self.predictor
         if predictor is None:
@@ -277,8 +337,7 @@ class policy:
         return predictor.get_post_fmean(self.training, X)
 
     def get_post_fcov(self, xs):
-        """ Calculate covariance of predictor (post distribution)
-        """
+        """Calculate covariance of predictor (post distribution)"""
         X = self._make_variable_X(xs)
         predictor = self.predictor
         if predictor is None:
@@ -289,7 +348,15 @@ class policy:
         return predictor.get_post_fcov(self.training, X)
 
     def get_score(
-        self, mode, *, actions=None, xs=None, predictor=None, training=None, parallel=True, alpha=1
+        self,
+        mode,
+        *,
+        actions=None,
+        xs=None,
+        predictor=None,
+        training=None,
+        parallel=True,
+        alpha=1
     ):
         """
         Calcualte score (acquisition function)
@@ -368,7 +435,7 @@ class policy:
         f = search_score.score(
             mode, predictor=predictor, training=training, test=test, alpha=alpha
         )
-        if parallel and self.mpisize>1:
+        if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
@@ -419,7 +486,9 @@ class policy:
 
             predictor.update(train, virtual_train)
 
-            f[k, :] = self.get_score(mode, predictor=predictor, training=train, parallel=False)
+            f[k, :] = self.get_score(
+                mode, predictor=predictor, training=train, parallel=False
+            )
         return np.mean(f, axis=0)
 
     def _get_actions(self, mode, N, K, alpha):
@@ -446,7 +515,11 @@ class policy:
             An N-dimensional array of actions selected in each search process.
         """
         f = self.get_score(
-            mode, predictor=self.predictor, training=self.training, alpha=alpha, parallel=False
+            mode,
+            predictor=self.predictor,
+            training=self.training,
+            alpha=alpha,
+            parallel=False,
         )
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:
