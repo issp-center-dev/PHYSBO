@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import pickle as pickle
+import time
 
 from .results import history
 from .. import discrete
@@ -62,8 +63,24 @@ class policy(discrete.policy):
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
 
-    def write(self, action, t, X=None):
-        self.history.write(t, action)
+    def write(
+        self,
+        action,
+        t,
+        X=None,
+        time_total=None,
+        time_update_predictor=None,
+        time_get_action=None,
+        time_run_simulator=None,
+    ):
+        self.history.write(
+            t,
+            action,
+            time_total=time_total,
+            time_update_predictor=time_update_predictor,
+            time_get_action=time_get_action,
+            time_run_simulator=time_run_simulator,
+        )
         action = np.array(action)
         t = np.array(t)
 
@@ -88,7 +105,12 @@ class policy(discrete.policy):
         predictor = self.predictor_list[i]
         test = self.test_list[i]
         new_data = self.new_data_list[i]
-        return {"training": training, "predictor": predictor, "test": test, "new_data": new_data}
+        return {
+            "training": training,
+            "predictor": predictor,
+            "test": test,
+            "new_data": new_data,
+        }
 
     def random_search(
         self,
@@ -109,18 +131,32 @@ class policy(discrete.policy):
 
         for n in range(0, max_num_probes):
 
+            time_total = time.time()
             if is_disp and N > 1:
                 utility.show_start_message_multi_search_mo(
                     self.history.num_runs, "random"
                 )
 
+            time_get_action = time.time()
             action = self._get_random_action(N)
+            time_get_action = time.time() - time_get_action
 
             if simulator is None:
                 return action
 
+            time_run_simulator = time.time()
             t = _run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
+            time_run_simulator = time.time() - time_run_simulator
+
+            time_total = time.time() - time_total
+            self.write(
+                action,
+                t,
+                time_total=[time_total] * N,
+                time_update_predictor=np.zeros(N, dtype=float),
+                time_get_action=[time_get_action] * N,
+                time_run_simulator=[time_run_simulator] * N,
+            )
 
             if is_disp:
                 utility.show_search_results_mo(
@@ -173,20 +209,25 @@ class policy(discrete.policy):
         N = int(num_search_each_probe)
 
         for n in range(max_num_probes):
-
+            time_total = time.time()
+            time_update_predictor = time.time()
             if utility.is_learning(n, interval):
                 self._learn_hyperparameter(num_rand_basis)
             else:
                 self._update_predictor()
+            time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
                 utility.show_start_message_multi_search_mo(self.history.num_runs, score)
 
+            time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
             action = self._get_actions(score, N, K, alpha)
+            time_get_action = time.time() - time_get_action
 
-            if len(action) == 0:
+            N_indeed = len(action)
+            if N_indeed == 0:
                 if self.mpirank == 0:
                     print("WARNING: All actions have already searched.")
                 return copy.deepcopy(self.history)
@@ -194,8 +235,19 @@ class policy(discrete.policy):
             if simulator is None:
                 return action
 
+            time_run_simulator = time.time()
             t = _run_simulator(simulator, action, self.mpicomm)
-            self.write(action, t)
+            time_run_simulator = time.time() - time_run_simulator
+
+            time_total = time.time() - time_total
+            self.write(
+                action,
+                t,
+                time_total=[time_total] * N_indeed,
+                time_update_predictor=[time_update_predictor] * N_indeed,
+                time_get_action=[time_get_action] * N_indeed,
+                time_run_simulator=[time_run_simulator] * N_indeed,
+            )
 
             if is_disp:
                 utility.show_search_results_mo(
@@ -311,7 +363,7 @@ class policy(discrete.policy):
             reduced_candidate_num=self.TS_candidate_num,
             alpha=alpha,
         )
-        if parallel and self.mpisize>1:
+        if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
@@ -387,7 +439,9 @@ class policy(discrete.policy):
     def _update_predictor(self):
         for i in range(self.num_objectives):
             if self.new_data_list[i] is not None:
-                self.predictor_list[i].update(self.training_list[i], self.new_data_list[i])
+                self.predictor_list[i].update(
+                    self.training_list[i], self.new_data_list[i]
+                )
                 self.new_data_list[i] = None
 
 
