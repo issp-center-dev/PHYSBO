@@ -67,7 +67,7 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for aca
 This package is distributed under GNU General Public License version 3 (GPL v3) or later.
 We hope that you cite the following reference when you publish the results using PHYSBO:
 
-“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, arXiv2110.07900.
+[“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, arXiv2110.07900.](https://arxiv.org/abs/2110.07900)
 
 Bibtex
 
