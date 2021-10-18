@@ -65,6 +65,21 @@ pip3 uninstall physbo
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
 This package is distributed under GNU General Public License version 3 (GPL v3) or later.
+We hope that you cite the following reference when you publish the results using PHYSBO:
+
+“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, arXiv2110.07900.
+
+Bibtex
+
+@misc{motoyama2021bayesian,
+      title={Bayesian optimization package: PHYSBO}, 
+      author={Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
+      year={2021},
+      eprint={2110.07900},
+      archivePrefix={arXiv},
+      primaryClass={physics.comp-ph}
+}
+
 
 ### Copyright
 
