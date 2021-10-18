@@ -18,22 +18,19 @@ Citation
 
 When citing PHYSBO, please cite the following reference:
 
-Tsuyoshi Ueno, Trevor David Rhone, Zhufeng Hou, Teruyasu Mizoguchi and Koji Tsuda,
-COMBO: An Efficient Bayesian Optimization Library for Materials Science,
-Materials Discovery 4, 18-21 (2016). Available from https://doi.org/10.1016/j.md.2016.04.001
+Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda,
+Bayesian optimization package: PHYSBO,
+arXiv:2110.07900. Available from https://arxiv.org/abs/2110.07900.
 
-Bibtex is given as follows::
+Bibtex is given as follows: ::
 
-    @article{Ueno2016,
-    title = "COMBO: An Efficient Bayesian Optimization Library for Materials Science ",
-    journal = "Materials Discovery",
-    volume = "4",
-    pages = "18-21",
-    year = "2016",
-    doi = "http://dx.doi.org/10.1016/j.md.2016.04.001",
-    url = "http://www.sciencedirect.com/science/article/pii/S2352924516300035",
-    author = "Tsuyoshi Ueno and Trevor David Rhone and Zhufeng Hou and Teruyasu Mizoguchi and Koji Tsuda",
-    }
+  @misc{motoyama2021bayesian,
+  title={Bayesian optimization package: PHYSBO},
+  author={Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
+  year={2021},
+  eprint={2110.07900},
+  archivePrefix={arXiv},
+  primaryClass={physics.comp-ph} }
 
 Main Developers
 ----------------------
