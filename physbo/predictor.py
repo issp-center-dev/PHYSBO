@@ -65,7 +65,7 @@ class base_predictor(object):
     def delete_stats(self, *args, **kwds):
         """
 
-        Default function to delete status
+        Default function to delete status.
         This function must be overwritten in each model.
 
         Parameters
