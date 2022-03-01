@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../../../../../physbo"))
 # -- Project information -----------------------------------------------------
 
 project = "PHYSBO"
-copyright = "2020, PHYSBO developers"
+copyright = "2020-, PHYSBO developers"
 author = "PHYSBO developers"
 
 # The short X.Y version.
