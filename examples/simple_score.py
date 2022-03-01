@@ -31,7 +31,7 @@ scores = policy.get_post_fmean(xs=test_X)
 print(scores)
 print()
 
-print("Standard derivations of prediction")
+print("Standard deviations of prediction")
 scores = policy.get_post_fcov(xs=test_X)
 print(np.sqrt(scores))
 print()
