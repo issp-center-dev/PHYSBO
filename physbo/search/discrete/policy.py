@@ -49,7 +49,7 @@ class policy:
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = sorted(list(set(self.actions) - set(actions)))
+            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
