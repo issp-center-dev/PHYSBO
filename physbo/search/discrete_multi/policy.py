@@ -218,7 +218,7 @@ class policy(discrete.policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search_mo(self.history.num_runs, score)
+                utility.show_start_message_multi_search(self.history.num_runs, score)
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
