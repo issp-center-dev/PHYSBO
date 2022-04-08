@@ -343,13 +343,13 @@
 
         <span class="n">chosen_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">champion</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_marginal_score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
             <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="k">break</span>
-            <span class="n">chosen_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">champion</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="n">local_champion</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
+            <span class="n">chosen_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">champion</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
 
 <div class="viewcode-block" id="policy.get_post_fmean"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_post_fmean">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
@@ -444,6 +444,64 @@
             <span class="n">fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
             <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">f</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getting marginal scores.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mode: str</span>
+<span class="sd">            The type of aquision funciton.</span>
+<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
+<span class="sd">            These functions are defined in score.py.</span>
+<span class="sd">        chosen_actions: numpy.ndarray</span>
+<span class="sd">            Array of selected actions.</span>
+<span class="sd">        K: int</span>
+<span class="sd">            The total number of search candidates.</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">            not used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        f: list</span>
+<span class="sd">            N dimensional scores (score is defined in each mode)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="c1"># draw K samples of the values of objective function of chosen actions</span>
+        <span class="n">new_test_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+        <span class="n">virtual_t_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+            <span class="n">new_test_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
+            <span class="n">virtual_t_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_test_local</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_test_local</span>
+                <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">virtual_t_local</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">nt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">new_test_local</span><span class="p">):</span>
+                    <span class="n">new_test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
+                <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">virtual_t_local</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">]</span>
+            <span class="n">training_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+                <span class="n">virtual_train</span> <span class="o">=</span> <span class="n">new_test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span>
+
+                <span class="k">if</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
+
+                <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">virtual_train</span><span class="p">)</span>
+
+            <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
+                <span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="o">=</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="o">=</span><span class="n">training_list</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
 <div class="viewcode-block" id="policy.save"><a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.save">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
