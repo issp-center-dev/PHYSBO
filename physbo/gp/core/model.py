@@ -309,9 +309,9 @@ class model:
         Parameters
         ----------
         X: numpy.ndarray
-            inputs
+            training datasets
         Z: numpy.ndarray
-            feature maps
+            input for sampling objective values
         params: numpy.ndarray
             Parameters
         N: int
@@ -327,6 +327,8 @@ class model:
             params = np.copy(self.params)
 
         ndata = Z.shape[0]
+        if ndata == 0:
+            return np.zeros((N, 0))
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False) + self.lik.get_cov(
             ndata
