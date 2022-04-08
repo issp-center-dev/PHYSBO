@@ -181,7 +181,7 @@ class predictor(physbo.predictor.base_predictor):
 
         Returns
         =======
-        numpy.ndarray
+        numpy.ndarray (N x len(test))
         """
         if self.blm.stats is None:
             self.prepare(training)

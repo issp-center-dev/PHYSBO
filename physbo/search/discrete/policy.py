@@ -453,7 +453,7 @@ class policy:
         chosen_actions: numpy.ndarray
             Array of selected actions.
         K: int
-            The total number of search candidates.
+            The number of samples for evaluating score.
         alpha: float
             not used.
 
@@ -463,15 +463,19 @@ class policy:
             N dimensional scores (score is defined in each mode)
         """
         f = np.zeros((K, len(self.actions)), dtype=float)
+
+        # draw K samples of the values of objective function of chosen actions
         new_test_local = self.test.get_subset(chosen_actions)
+        virtual_t_local = self.predictor.get_predict_samples(self.training, new_test_local, K)
         if self.mpisize == 1:
             new_test = new_test_local
+            virtual_t = virtual_t_local
         else:
             new_test = variable()
             for nt in self.mpicomm.allgather(new_test_local):
                 new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-
-        virtual_t = self.predictor.get_predict_samples(self.training, new_test, K)
+            virtual_t = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
+        # virtual_t = self.predictor.get_predict_samples(self.training, new_test, K)
 
         for k in range(K):
             predictor = copy.deepcopy(self.predictor)

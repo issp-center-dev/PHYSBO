@@ -266,13 +266,13 @@ class policy(discrete.policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self.get_score(mode=mode, alpha=alpha, parallel=False)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
-            chosen_actions.append(champion)
             if champion == local_champion:
                 self.actions = self._delete_actions(local_index)
+            chosen_actions.append(champion)
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
@@ -367,6 +367,64 @@ class policy(discrete.policy):
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
+
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
+        """
+        Getting marginal scores.
+
+        Parameters
+        ----------
+        mode: str
+            The type of aquision funciton.
+            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+            These functions are defined in score.py.
+        chosen_actions: numpy.ndarray
+            Array of selected actions.
+        K: int
+            The total number of search candidates.
+        alpha: float
+            not used.
+
+        Returns
+        -------
+        f: list
+            N dimensional scores (score is defined in each mode)
+        """
+        f = np.zeros((K, len(self.actions)), dtype=float)
+
+        # draw K samples of the values of objective function of chosen actions
+        new_test_list = [variable() for _ in range(self.num_objectives)]
+        virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
+        for i in range(self.num_objectives):
+            new_test_local = self.test_list[i].get_subset(chosen_actions)
+            virtual_t_local = self.predictor_list[i].get_predict_samples(self.training_list[i], new_test_local, K)
+            if self.mpisize == 1:
+                new_test_list[i] = new_test_local
+                virtual_t_list[i] = virtual_t_local
+            else:
+                for nt in self.mpicomm.allgather(new_test_local):
+                    new_test_list[i].add(X=nt.X, t=nt.t, Z=nt.Z)
+                virtual_t_list[i] = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
+
+        for k in range(K):
+            predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
+            training_list = [copy.deepcopy(t) for t in self.training_list]
+
+            for i in range(self.num_objectives):
+                virtual_train = new_test_list[i]
+                virtual_train.t = virtual_t_list[i][k, :]
+
+                if virtual_train.Z is None:
+                    training_list[i].add(virtual_train.X, virtual_train.t)
+                else:
+                    training_list[i].add(virtual_train.X, virtual_train.t, virtual_train.Z)
+
+                predictor_list[i].update(training_list[i], virtual_train)
+
+            f[k, :] = self.get_score(
+                mode, predictor_list=predictor_list, training_list=training_list, parallel=False
+            )
+        return np.mean(f, axis=0)
 
     def save(self, file_history, file_training_list=None, file_predictor_list=None):
         if self.mpirank == 0:
