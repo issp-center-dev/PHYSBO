@@ -219,7 +219,7 @@ class base_predictor(object):
         """
 
         Default function to save information by using pickle.dump function.
-        The protocol version is set as 2.
+        The protocol version is set as 3.
 
         Parameters
         ----------
@@ -230,8 +230,8 @@ class base_predictor(object):
         -------
 
         """
-        with open(file_name, "w") as f:
-            pickle.dump(self.__dict__, f, 2)
+        with open(file_name, "wb") as f:
+            pickle.dump(self.__dict__, f, 4)
 
     def load(self, file_name):
         """
@@ -248,6 +248,7 @@ class base_predictor(object):
         -------
 
         """
-        with open(file_name) as f:
+        with open(file_name, "rb") as f:
             tmp_dict = pickle.load(f)
-            self.update(tmp_dict)
+            self.config = tmp_dict["config"]
+            self.model = tmp_dict["model"]
