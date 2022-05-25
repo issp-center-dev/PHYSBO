@@ -67,17 +67,21 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for aca
 This package is distributed under GNU General Public License version 3 (GPL v3) or later.
 We hope that you cite the following reference when you publish the results using PHYSBO:
 
-[“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, arXiv2110.07900.](https://arxiv.org/abs/2110.07900)
+[“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, Computer Physics Communications Volume 278, September 2022, 108405.](https://doi.org/10.1016/j.cpc.2022.108405)
 
 Bibtex
 
-@misc{motoyama2021bayesian,
-      title={Bayesian optimization package: PHYSBO}, 
-      author={Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
-      year={2021},
-      eprint={2110.07900},
-      archivePrefix={arXiv},
-      primaryClass={physics.comp-ph}
+@misc{@article{MOTOYAMA2022108405,
+title = {Bayesian optimization package: PHYSBO},
+journal = {Computer Physics Communications},
+volume = {278},
+pages = {108405},
+year = {2022},
+issn = {0010-4655},
+doi = {https://doi.org/10.1016/j.cpc.2022.108405},
+url = {https://www.sciencedirect.com/science/article/pii/S0010465522001242},
+author = {Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
+keywords = {Bayesian optimization, Multi-objective optimization, Materials screening, Effective model estimation}
 }
 
 
