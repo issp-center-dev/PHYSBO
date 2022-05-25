@@ -95,10 +95,10 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
  First, set the optimization policy (the search space is passed to policy as an argument at this stage). You can choose between the following two optimization methods.
   
-  - `random_search`  
-  - `bayes_search`
+  - ``random_search``
+  - ``bayes_search``
 
-  In `random_search`, we randomly select parameters from the search space and search for the largest objective function among them. It is used to prepare an initial set of parameters as a preprocessing step for Bayesian optimization. `bayes_search` performs Bayesian optimization. The type of score (acquisition function) in Bayesian optimization can be one of the following.
+  In ``random_search``, we randomly select parameters from the search space and search for the largest objective function among them. It is used to prepare an initial set of parameters as a preprocessing step for Bayesian optimization. ``bayes_search`` performs Bayesian optimization. The type of score (acquisition function) in Bayesian optimization can be one of the following.
 
   - TS (Thompson Sampling): Sample one regression function from the posterior probability distribution of the learned Gaussian process, and select the point where the predicetd value becomes maximum as a next candidate.
   - EI (Expected Improvement): Select the point where the expected value of the difference between the predicted value by the Gaussian process and the maximum value in the current situation becomes the maximum as a next candidate.
