@@ -2,7 +2,7 @@
 
 Bayesian optimization has been proven as an effective tool in accelerating scientific discovery.
 A standard implementation (e.g., scikit-learn), however, can accommodate only small training data.
-PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf).
+PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf) and [PHYSBO's report](https://doi.org/10.1016/j.cpc.2022.108405) (open access).
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for academic use.
 
 ## Document
@@ -71,6 +71,7 @@ We hope that you cite the following reference when you publish the results using
 
 Bibtex
 
+```
 @misc{@article{MOTOYAMA2022108405,
 title = {Bayesian optimization package: PHYSBO},
 journal = {Computer Physics Communications},
@@ -79,11 +80,10 @@ pages = {108405},
 year = {2022},
 issn = {0010-4655},
 doi = {https://doi.org/10.1016/j.cpc.2022.108405},
-url = {https://www.sciencedirect.com/science/article/pii/S0010465522001242},
 author = {Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
 keywords = {Bayesian optimization, Multi-objective optimization, Materials screening, Effective model estimation}
 }
-
+```
 
 ### Copyright
 
