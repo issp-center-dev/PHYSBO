@@ -28,17 +28,21 @@ PHYSBOを引用する際には、以下の文献を引用してください、
 
 Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda,
 Bayesian optimization package: PHYSBO,
-arXiv:2110.07900. Available from https://arxiv.org/abs/2110.07900.
+Computer Physics Communications Volume 278, September 2022, 108405. Available from https://www.sciencedirect.com/science/article/pii/S0010465522001242?via%3Dihub (open access).
 
 Bibtexは以下の通りです。 ::
 
-  @misc{motoyama2021bayesian,
-  title={Bayesian optimization package: PHYSBO},
-  author={Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
-  year={2021},
-  eprint={2110.07900},
-  archivePrefix={arXiv},
-  primaryClass={physics.comp-ph} }
+  @misc{@article{MOTOYAMA2022108405,
+  title = {Bayesian optimization package: PHYSBO},
+  journal = {Computer Physics Communications},
+  volume = {278},
+  pages = {108405},
+  year = {2022},
+  issn = {0010-4655},
+  doi = {https://doi.org/10.1016/j.cpc.2022.108405},
+  author = {Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
+  keywords = {Bayesian optimization, Multi-objective optimization, Materials screening, Effective model estimation}
+  }
   
 主な開発者
 ----------------------
