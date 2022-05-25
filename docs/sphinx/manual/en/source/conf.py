@@ -81,7 +81,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.bibtex",
     "sphinx.ext.napoleon",
     "nbsphinx",
 ]
@@ -97,6 +96,7 @@ templates_path = ["../../_templates"]
 exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
     if t in tags:
+        print(t)
         exclude_patterns.append("api")
 
 # The suffix(es) of source filenames.

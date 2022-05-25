@@ -43,7 +43,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.bibtex",
     "sphinx.ext.napoleon",
     "nbsphinx",
 ]
@@ -101,7 +100,8 @@ master_doc = "index"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_docclass = {"manual": "jsbook"}
+latex_engine = 'uplatex'
+# latex_docclass = {"manual": "jsbook"}
 latex_logo = "../../_static/logo.png"
 
 
