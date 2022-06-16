@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -319,6 +320,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -327,10 +329,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -342,12 +348,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -375,9 +384,9 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="PHYSBO-の基本">
-<h1>PHYSBO の基本<a class="headerlink" href="#PHYSBO-の基本" title="このヘッドラインへのパーマリンク"></a></h1>
+<h1>PHYSBO の基本<a class="headerlink" href="#PHYSBO-の基本" title="Permalink to this heading"></a></h1>
 <section id="はじめに">
-<h2>はじめに<a class="headerlink" href="#はじめに" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>はじめに<a class="headerlink" href="#はじめに" title="Permalink to this heading"></a></h2>
 <p>本チュートリアルでは例として、一次元の関数の最小値を求める例題を解きます。 はじめに、PHYSBOをインポートします。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -389,7 +398,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Permalink to this heading"></a></h2>
 <p>最初に関数を探索する空間を定義します。 以下の例では、探索空間<code class="docutils literal notranslate"><span class="pre">X</span></code>を <code class="docutils literal notranslate"><span class="pre">x_min</span> <span class="pre">=</span> <span class="pre">-2.0</span></code>から<code class="docutils literal notranslate"><span class="pre">x_max</span> <span class="pre">=</span> <span class="pre">2.0</span></code>まで<code class="docutils literal notranslate"><span class="pre">window_num=10001</span></code>分割で刻んだグリッドで定義しています。 なお、<code class="docutils literal notranslate"><span class="pre">X</span></code>は <code class="docutils literal notranslate"><span class="pre">window_num</span></code> x <code class="docutils literal notranslate"><span class="pre">d</span></code> のndarray形式にする必要があります(<code class="docutils literal notranslate"><span class="pre">d</span></code>は次元数、この場合は1次元)。そのため、reshapeを行って変形しています。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -413,7 +422,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="simulatorクラスの定義">
-<h2>simulatorクラスの定義<a class="headerlink" href="#simulatorクラスの定義" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>simulatorクラスの定義<a class="headerlink" href="#simulatorクラスの定義" title="Permalink to this heading"></a></h2>
 <p>目的関数を定義するためのsimulatorクラスをここで定義します。</p>
 <p>今回は<span class="math notranslate nohighlight">\(f(x) = 3 x^4 + 4 x ^3 + 1.0\)</span> が最小となるxを探索するという問題設定にしています(答えは<span class="math notranslate nohighlight">\(x=-1.0\)</span>)。</p>
 <p>simulatorクラスでは、<code class="docutils literal notranslate"><span class="pre">__call__</span></code>関数を定義します(初期変数などがある場合は<code class="docutils literal notranslate"><span class="pre">__init__</span></code>を定義します)。 actionは探索空間の中から取り出すグリッドのindex番号を示しており、複数の候補を一度に計算できるように一般的にndarrayの形式を取っています。 今回は一つの候補のみを毎回計算するため、<code class="docutils literal notranslate"><span class="pre">action_idx=action[0]</span></code>として<code class="docutils literal notranslate"><span class="pre">X</span></code>から候補点を一つ選んでいます。 <strong>PHYSBOでは目的関数値が最大となる</strong>ものを求める仕様になっているため、候補点でのf(x)の値に-1をかけたものを返しています。</p>
@@ -442,9 +451,9 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="最適化の実行">
-<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Permalink to this heading"></a></h2>
 <section id="policy-のセット">
-<h3>policy のセット<a class="headerlink" href="#policy-のセット" title="このヘッドラインへのパーマリンク"></a></h3>
+<h3>policy のセット<a class="headerlink" href="#policy-のセット" title="Permalink to this heading"></a></h3>
 <p>まず、最適化の <code class="docutils literal notranslate"><span class="pre">policy</span></code> をセットします。</p>
 <p><code class="docutils literal notranslate"><span class="pre">test_X</span></code> に探索候補の行列 (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>) を指定します。</p>
 <div class="nbinput nblast docutils container">
@@ -473,7 +482,7 @@ div.rendered_html tbody tr:hover {
 <p>また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの「インタラクティブに実行する」の項目を参照してください。</p>
 </section>
 <section id="ランダムサーチ">
-<h3>ランダムサーチ<a class="headerlink" href="#ランダムサーチ" title="このヘッドラインへのパーマリンク"></a></h3>
+<h3>ランダムサーチ<a class="headerlink" href="#ランダムサーチ" title="Permalink to this heading"></a></h3>
 <p>まず初めに、ランダムサーチを行ってみましょう。</p>
 <p>ベイズ最適化の実行には、目的関数値が2つ以上求まっている必要があるため（初期に必要なデータ数は、最適化したい問題、パラメータの次元dに依存して変わります）、まずランダムサーチを実行します。</p>
 <p><strong>引数</strong></p>
@@ -498,7 +507,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="ベイズ最適化">
-<h3>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="このヘッドラインへのパーマリンク"></a></h3>
+<h3>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="Permalink to this heading"></a></h3>
 <p>続いて、ベイズ最適化を以下のように実行します。</p>
 <p><strong>引数</strong></p>
 <ul class="simple">
@@ -529,7 +538,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="結果の確認">
-<h2>結果の確認<a class="headerlink" href="#結果の確認" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>結果の確認<a class="headerlink" href="#結果の確認" title="Permalink to this heading"></a></h2>
 <div class="line-block">
 <div class="line">探索結果 res は history クラスのオブジェクト (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.history</span></code>) として返されます。</div>
 <div class="line">以下より探索結果を参照します。</div>
@@ -604,7 +613,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="結果のシリアライズ">
-<h2>結果のシリアライズ<a class="headerlink" href="#結果のシリアライズ" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>結果のシリアライズ<a class="headerlink" href="#結果のシリアライズ" title="Permalink to this heading"></a></h2>
 <p>探索結果は <code class="docutils literal notranslate"><span class="pre">save</span></code> メソッドにより外部ファイルに保存できます。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -651,7 +660,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="回帰">
-<h2>回帰<a class="headerlink" href="#回帰" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>回帰<a class="headerlink" href="#回帰" title="Permalink to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">get_post_fmean</span></code>, <code class="docutils literal notranslate"><span class="pre">get_post_fcov</span></code> メソッドでガウス過程（事後分布）の期待値と分散を計算可能です。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -686,7 +695,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="獲得関数">
-<h2>獲得関数<a class="headerlink" href="#獲得関数" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>獲得関数<a class="headerlink" href="#獲得関数" title="Permalink to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">get_score</span></code> メソッドで獲得関数を計算可能です。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -715,7 +724,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="並列化">
-<h2>並列化<a class="headerlink" href="#並列化" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>並列化<a class="headerlink" href="#並列化" title="Permalink to this heading"></a></h2>
 <p>PHYSBO は全候補点に対する獲得関数の計算をMPI を用いて並列化出来ます。 MPI 並列には <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> を用います。</p>
 <p>並列化を有効化するには、 <code class="docutils literal notranslate"><span class="pre">policy</span></code> のコンストラクタのキーワード引数 <code class="docutils literal notranslate"><span class="pre">comm</span></code> に MPI コミュニケータ、たとえば <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> を渡してください。</p>
 <div class="nbinput nblast docutils container">
