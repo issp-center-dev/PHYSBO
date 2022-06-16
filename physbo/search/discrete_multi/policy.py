@@ -133,8 +133,8 @@ class policy(discrete.policy):
 
             time_total = time.time()
             if is_disp and N > 1:
-                utility.show_start_message_multi_search_mo(
-                    self.history.num_runs, "random"
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, score="random"
                 )
 
             time_get_action = time.time()
