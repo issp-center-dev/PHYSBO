@@ -33,21 +33,14 @@ class simulator(object):
 
 sim = simulator(test_X)
 
-# actions = np.arange(N)
-# np.random.shuffle(actions)
-# n = 10
-# actions = actions[0:n]
-# data = sim(actions)
-# policy = physbo.search.discrete_multi.policy(test_X, num_objectives=2, initial_data=[actions, data])
-
 policy = physbo.search.discrete_multi.policy(test_X, num_objectives=2)
 policy.set_seed(0)
 # Random search (10 times)
 policy.random_search(max_num_probes=10, simulator=sim)
 
-# Bayesian search (100 times)
+# Bayesian search (40 times)
 #   score function (acquisition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=0, simulator=sim, score=score, interval=0)
+policy.bayes_search(max_num_probes=40, simulator=sim, score=score, interval=0)
 
 print("Mean values of prediction")
 scores = policy.get_post_fmean(xs=test_X)
