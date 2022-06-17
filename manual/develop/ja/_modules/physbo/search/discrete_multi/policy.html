@@ -260,6 +260,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
 
+        <span class="n">old_disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">is_disp</span>
+
         <span class="k">if</span> <span class="n">max_num_probes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_num_probes</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
@@ -308,9 +311,11 @@
             <span class="k">if</span> <span class="n">N_indeed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: All actions have already searched.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
                 <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
                 <span class="k">return</span> <span class="n">action</span>
 
             <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -332,6 +337,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="n">disp_pareto_set</span>
                 <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>

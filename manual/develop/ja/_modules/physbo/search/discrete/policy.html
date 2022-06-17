@@ -138,7 +138,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">size</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
 <div class="viewcode-block" id="policy.set_seed"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.set_seed">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -329,6 +329,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
 
+        <span class="n">old_disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">is_disp</span>
+
         <span class="k">if</span> <span class="n">max_num_probes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_num_probes</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
@@ -374,6 +377,7 @@
                 <span class="k">break</span>
 
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
                 <span class="k">return</span> <span class="n">action</span>
 
             <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -393,6 +397,7 @@
             <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
                 <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N_indeed</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
     <span class="nd">@staticmethod</span>
