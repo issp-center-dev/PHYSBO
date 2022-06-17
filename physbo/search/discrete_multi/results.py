@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import copy
 
 from .. import pareto
 
@@ -17,10 +18,26 @@ class history(object):
         self.chosen_actions = np.zeros(MAX_SEARCH, dtype=int)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
-        self.time_total = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_update_predictor = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_get_action = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_run_simulator = np.zeros(MAX_SEARCH, dtype=float)
+        self._time_total = np.zeros(MAX_SEARCH, dtype=float)
+        self._time_update_predictor = np.zeros(MAX_SEARCH, dtype=float)
+        self._time_get_action = np.zeros(MAX_SEARCH, dtype=float)
+        self._time_run_simulator = np.zeros(MAX_SEARCH, dtype=float)
+
+    @property
+    def time_total(self):
+        return copy.copy(self._time_total[0:self.num_runs])
+
+    @property
+    def time_update_predictor(self):
+        return copy.copy(self._time_update_predictor[0:self.num_runs])
+
+    @property
+    def time_get_action(self):
+        return copy.copy(self._time_get_action[0:self.num_runs])
+
+    @property
+    def time_run_simulator(self):
+        return copy.copy(self._time_run_simulator[0:self.num_runs])
 
     def write(
         self,
@@ -57,19 +74,19 @@ class history(object):
 
         if time_total is None:
             time_total = np.zeros(N, dtype=float)
-        self.time_total[st:en] = time_total
+        self._time_total[st:en] = time_total
 
         if time_update_predictor is None:
             time_update_predictor = np.zeros(N, dtype=float)
-        self.time_update_predictor[st:en] = time_update_predictor
+        self._time_update_predictor[st:en] = time_update_predictor
 
         if time_get_action is None:
             time_get_action = np.zeros(N, dtype=float)
-        self.time_get_action[st:en] = time_get_action
+        self._time_get_action[st:en] = time_get_action
 
         if time_run_simulator is None:
             time_run_simulator = np.zeros(N, dtype=float)
-        self.time_run_simulator[st:en] = time_run_simulator
+        self._time_run_simulator[st:en] = time_run_simulator
 
     def export_pareto_front(self):
         return self.pareto.export_front()
