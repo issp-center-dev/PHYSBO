@@ -1,5 +1,10 @@
+### This example describes how to save elapsed time
+
+
 import numpy as np
+import matplotlib.pyplot as plt
 import physbo
+
 
 # Make a set of candidates, test_X
 D = 3  # The number of params (the dimension of parameter space)
@@ -31,3 +36,20 @@ policy.bayes_search(max_num_probes=40, simulator=simulator, score="EI")
 # best_actions[i] and best_fx[i] stores the best action and value up to the i-th search (random + bayes)
 best_fx, best_actions = policy.history.export_sequence_best_fx()
 print(f"best_fx: {best_fx[-1]} at {test_X[best_actions[-1], :]}")
+
+fig, ax = plt.subplots()
+ax.plot(policy.history.time_total, marker="o")
+fig.savefig("time_total.pdf")
+ax.clear()
+
+ax.plot(policy.history.time_update_predictor, marker="o")
+fig.savefig("time_update_predictor.pdf")
+ax.clear()
+
+ax.plot(policy.history.time_get_action, marker="o")
+fig.savefig("time_get_action.pdf")
+ax.clear()
+
+ax.plot(policy.history.time_run_simulator, marker="o")
+fig.savefig("time_run_simulator.pdf")
+ax.clear()

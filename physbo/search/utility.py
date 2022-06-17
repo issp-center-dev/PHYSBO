@@ -70,14 +70,9 @@ def show_search_results_mo(history, N, disp_pareto_set=False):
 
 
 def show_start_message_multi_search(N, score=None):
-    if score == "EI":
-        print("%04d-th multiple probe search (EI) \n" % (N + 1))
-    elif score == "PI":
-        print("%04d-th multiple probe search (PI) \n" % (N + 1))
-    elif score == "TS":
-        print("%04d-th multiple probe search (TS) \n" % (N + 1))
-    else:
-        print("%04d-th multiple probe search (random) \n" % (N + 1))
+    if score is None:
+        score = "random"
+    print(f"{N+1:04}-th multiple probe search ({score})")
 
 
 def show_interactive_mode(simulator, history):
@@ -92,7 +87,7 @@ def length_vector(t):
 
 def is_learning(n, interval):
     if interval == 0:
-        return n==0
+        return n == 0
     elif interval > 0:
         return np.mod(n, interval) == 0
     else:

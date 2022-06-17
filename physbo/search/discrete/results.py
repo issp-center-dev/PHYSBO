@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import pickle
 
 from .. import utility
@@ -14,7 +15,36 @@ class history:
         self.chosen_actions = np.zeros(MAX_SEARCH, dtype=int)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
-    def write(self, t, action):
+        self.time_total_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_update_predictor_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_get_action_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_run_simulator_ = np.zeros(MAX_SEARCH, dtype=float)
+
+    @property
+    def time_total(self):
+        return copy.copy(self.time_total_[0:self.num_runs])
+
+    @property
+    def time_update_predictor(self):
+        return copy.copy(self.time_update_predictor_[0:self.num_runs])
+
+    @property
+    def time_get_action(self):
+        return copy.copy(self.time_get_action_[0:self.num_runs])
+
+    @property
+    def time_run_simulator(self):
+        return copy.copy(self.time_run_simulator_[0:self.num_runs])
+
+    def write(
+        self,
+        t,
+        action,
+        time_total=None,
+        time_update_predictor=None,
+        time_get_action=None,
+        time_run_simulator=None,
+    ):
         """
         Overwrite fx and chosen_actions by t and action.
 
@@ -24,6 +54,18 @@ class history:
             N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
         action: numpy.ndarray
             N dimensional array. The indexes of actions of each search candidate.
+        time_total: numpy.ndarray
+            N dimenstional array. The total elapsed time in each step.
+            If None (default), filled by 0.0.
+        time_update_predictor: numpy.ndarray
+            N dimenstional array. The elapsed time for updating predictor (e.g., learning hyperparemters) in each step.
+            If None (default), filled by 0.0.
+        time_get_action: numpy.ndarray
+            N dimenstional array. The elapsed time for getting next action in each step.
+            If None (default), filled by 0.0.
+        time_run_simulator: numpy.ndarray
+            N dimenstional array. The elapsed time for running the simulator in each step.
+            If None (default), filled by 0.0.
         Returns
         -------
 
@@ -37,6 +79,22 @@ class history:
         self.chosen_actions[st:en] = action
         self.num_runs += 1
         self.total_num_search += N
+
+        if time_total is None:
+            time_total = np.zeros(N, dtype=float)
+        self.time_total_[st:en] = time_total
+
+        if time_update_predictor is None:
+            time_update_predictor = np.zeros(N, dtype=float)
+        self.time_update_predictor_[st:en] = time_update_predictor
+
+        if time_get_action is None:
+            time_get_action = np.zeros(N, dtype=float)
+        self.time_get_action_[st:en] = time_get_action
+
+        if time_run_simulator is None:
+            time_run_simulator = np.zeros(N, dtype=float)
+        self.time_run_simulator_[st:en] = time_run_simulator
 
     def export_sequence_best_fx(self):
         """

@@ -6,7 +6,7 @@ import physbo
 # Make a set of candidates, test_X
 D = 2  # The number of params (the dimension of parameter space)
 Nx = 11  # The number of candidates
-N = Nx*Nx
+N = Nx * Nx
 
 # score = "HVPI"
 score = "EHVI"
@@ -38,9 +38,9 @@ policy.set_seed(0)
 # Random search (10 times)
 policy.random_search(max_num_probes=10, simulator=sim)
 
-# Bayesian search (100 times)
+# Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=0, simulator=sim, score=score, interval=0)
+policy.bayes_search(max_num_probes=40, simulator=sim, score=score, interval=0)
 
 print("Pareto fronts:")
 res = policy.history

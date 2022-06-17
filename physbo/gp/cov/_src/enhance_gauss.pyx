@@ -37,11 +37,10 @@ def grad_width64( np.ndarray[DTYPE64_t, ndim = 2] X, np.ndarray[DTYPE64_t, ndim 
 
     for d in xrange( D ):
         for i in xrange( N ):
-            for j in xrange( i, N ):
+            for j in xrange( i+1, N ):
                 gradG[d,i,j]= ( X[i,d] - X[j,d] )/width[d]
                 gradG[d,i,j]= gradG[d,i,j]**2 * G[i,j]
-                if i != j:
-                    gradG[ d, j, i ] = gradG[ d, i, j ]
+                gradG[ d, j, i ] = gradG[ d, i, j ]
     return gradG
 
 @cython.boundscheck( False )
@@ -73,9 +72,8 @@ def grad_width32( np.ndarray[DTYPE32_t, ndim = 2] X, np.ndarray[DTYPE32_t, ndim 
 
     for d in xrange( D ):
         for i in xrange( N ):
-            for j in xrange( i, N ):
+            for j in xrange( i+1, N ):
                 gradG[d,i,j]= ( X[i,d] - X[j,d] )/width[d]
                 gradG[d,i,j]= gradG[d,i,j]**2 * G[i,j]
-                if i != j:
-                    gradG[ d, j, i ] = gradG[ d, i, j ]
+                gradG[ d, j, i ] = gradG[ d, i, j ]
     return gradG
