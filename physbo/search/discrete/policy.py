@@ -60,7 +60,7 @@ class policy:
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-            self.config.learning.is_disp = self.mpirank == 0
+            self.config.learning.is_disp = (self.config.learning.is_disp and self.mpirank == 0)
 
     def set_seed(self, seed):
         """
@@ -251,6 +251,9 @@ class policy:
         if self.mpirank != 0:
             is_disp = False
 
+        old_disp = self.config.learning.is_disp
+        self.config.learning.is_disp = is_disp
+
         if max_num_probes is None:
             max_num_probes = 1
             simulator = None
@@ -296,6 +299,7 @@ class policy:
                 break
 
             if simulator is None:
+                self.config.learning.is_disp = old_disp
                 return action
 
             time_run_simulator = time.time()
@@ -315,6 +319,7 @@ class policy:
             if is_disp:
                 utility.show_search_results(self.history, N_indeed)
         self._update_predictor()
+        self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
     @staticmethod
