@@ -182,6 +182,9 @@ class policy(discrete.policy):
         if self.mpirank != 0:
             is_disp = False
 
+        old_disp = self.config.learning.is_disp
+        self.config.learning.is_disp = is_disp
+
         if max_num_probes is None:
             max_num_probes = 1
             simulator = None
@@ -230,9 +233,11 @@ class policy(discrete.policy):
             if N_indeed == 0:
                 if self.mpirank == 0:
                     print("WARNING: All actions have already searched.")
+                self.config.learning.is_disp = old_disp
                 return copy.deepcopy(self.history)
 
             if simulator is None:
+                self.config.learning.is_disp = old_disp
                 return action
 
             time_run_simulator = time.time()
@@ -254,6 +259,7 @@ class policy(discrete.policy):
                     self.history, N, disp_pareto_set=disp_pareto_set
                 )
         self._update_predictor()
+        self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
     def _get_actions(self, mode, N, K, alpha):
