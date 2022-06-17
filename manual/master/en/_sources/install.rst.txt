@@ -111,7 +111,7 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
     
     ii). Run the simulator with the selected parameters.
 
-  The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the "Exploring multiple candidates at once" section of the tutorial. Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside. In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO. For more details, please refer to the "Running Interactively" section of the tutorial.  
+  The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the "Exploring multiple candidates at once" section of the tutorial. Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside. In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYSBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO. For more details, please refer to the "Running Interactively" section of the tutorial.  
     
 4. Check numerical results
 

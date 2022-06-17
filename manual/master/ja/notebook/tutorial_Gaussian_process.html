@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ガウス過程 &mdash; PHYSBO 1.0.1 ドキュメント</title>
+  <title>ガウス過程 &mdash; PHYSBO 1.1.0 ドキュメント</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -34,7 +35,7 @@
             <a href="../index.html" class="icon icon-home"> PHYSBO
           </a>
               <div class="version">
-                1.0
+                1.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -309,6 +310,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -317,10 +319,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -332,12 +338,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -365,12 +374,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="ガウス過程">
-<h1>ガウス過程<a class="headerlink" href="#ガウス過程" title="このヘッドラインへのパーマリンク"></a></h1>
+<h1>ガウス過程<a class="headerlink" href="#ガウス過程" title="Permalink to this heading"></a></h1>
 <p>PHYSBOではガウス過程回帰を実行しながらベイズ最適化を行なっています。</p>
 <p>そのため、学習データが与えられた際にガウス過程回帰を実行することもでき、学習済みモデルを利用したテストデータの予測も行うことができます。</p>
 <p>ここでは、その手順について紹介します。</p>
 <section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Permalink to this heading"></a></h2>
 <p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
 <p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を <code class="docutils literal notranslate"><span class="pre">data</span></code> ディレクトリ以下に保存し、次のように読み出します。</p>
 <div class="nbinput nblast docutils container">
@@ -394,7 +403,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="学習データの定義">
-<h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="Permalink to this heading"></a></h2>
 <p>対象データのうち、ランダムに選んだ1割をトレーニングデータとして利用し、別のランダムに選んだ1割をテストデータとして利用します。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -430,7 +439,7 @@ Ntest = 1798
 </div>
 </section>
 <section id="ガウス過程の学習と予測">
-<h2>ガウス過程の学習と予測<a class="headerlink" href="#ガウス過程の学習と予測" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>ガウス過程の学習と予測<a class="headerlink" href="#ガウス過程の学習と予測" title="Permalink to this heading"></a></h2>
 <p>以下のプロセスでガウス過程を学習し、テストデータの予測を行います。</p>
 <ol class="arabic simple">
 <li><p>ガウス過程のモデルを生成します。</p></li>
@@ -599,7 +608,7 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 </div>
 </section>
 <section id="訓練済みモデルによる予測">
-<h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="Permalink to this heading"></a></h2>
 <p>学習済みモデルのパラメタをgp_paramsとして読み出し、これを用いた予測を行います。</p>
 <p>gp_paramsおよび学習データ(X_train, t_train)を記憶しておくことで、訓練済みモデルによる予測が可能となります。</p>
 <p>学習されたパラメタを準備(学習の直後に行う必要あり)</p>
@@ -714,14 +723,8 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 0.004179032574484333
 </pre></div></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
-</div>
+<p>(注) 上の例では事前に登録されているXと同じものを利用して予測を行いました。 学習済みのモデルを利用してXに含まれていないパラメータ X_new に対して予測をしたい場合には、 学習モデルで使用したデータXの平均(X_{mean})と標準偏差(X_{std})を求めていただいたうえで、 X_{new} = (X_{new} - X_{mean}) / X_{std} の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、X_{new}が一つのデータの場合には事前に変換する必要があります。
+例えば、X_{new}が実数である場合には、 X_new = np.array(X_new).reshape(1) などとして変換する必要があります。</p>
 </section>
 </section>
 

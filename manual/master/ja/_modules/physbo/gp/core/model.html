@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.gp.core.model &mdash; PHYSBO 1.0.1 ドキュメント</title>
+  <title>physbo.gp.core.model &mdash; PHYSBO 1.1.0 ドキュメント</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,6 +13,7 @@
         <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../../_static/doctools.js"></script>
         <script src="../../../../_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -29,7 +30,7 @@
             <a href="../../../../index.html" class="icon icon-home"> PHYSBO
           </a>
               <div class="version">
-                1.0
+                1.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -386,9 +387,9 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        X: numpy.ndarray</span>
-<span class="sd">            inputs</span>
+<span class="sd">            training datasets</span>
 <span class="sd">        Z: numpy.ndarray</span>
-<span class="sd">            feature maps</span>
+<span class="sd">            input for sampling objective values</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters</span>
 <span class="sd">        N: int</span>
@@ -404,6 +405,8 @@
             <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
         <span class="n">ndata</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ndata</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
         <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span>
             <span class="n">ndata</span>

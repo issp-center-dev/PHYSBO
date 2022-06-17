@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>アルゴリズム &mdash; PHYSBO 1.0.1 ドキュメント</title>
+  <title>アルゴリズム &mdash; PHYSBO 1.1.0 ドキュメント</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/translations.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -34,7 +35,7 @@
             <a href="index.html" class="icon icon-home"> PHYSBO
           </a>
               <div class="version">
-                1.0
+                1.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -108,10 +109,10 @@
 }
 </style>
 <section id="chap-algorithm">
-<span id="id1"></span><h1>アルゴリズム<a class="headerlink" href="#chap-algorithm" title="このヘッドラインへのパーマリンク"></a></h1>
+<span id="id1"></span><h1>アルゴリズム<a class="headerlink" href="#chap-algorithm" title="Permalink to this heading"></a></h1>
 <p>ここでは、ベイズ最適化に関する説明を行います。技術的な詳細については、<a class="reference external" href="https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf">こちらの文献</a> を参照してください。</p>
 <section id="id3">
-<h2>ベイズ最適化<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>ベイズ最適化<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
 <p>ベイズ最適化は、複雑なシミュレーションや、実世界における実験タスクなど、目的関数（特性値など）の評価に大きなコストがかかるような場合に利用できる手法です。つまり、「できるだけ少ない実験・シミュレーション回数でより良い目的関数（材料特性など）を持つ説明変数（材料の組成、構造、プロセスやシミュレーションパラメータなど）を見つけ出す」ことが、ベイズ最適化によって解かれる問題です。ベイズ最適化では、探索する説明変数（ベクトル <span class="math notranslate nohighlight">\({\bf x}\)</span> で表す）の候補をあらかじめリストアップした状況からスタートします。そして、候補の中から目的関数 <span class="math notranslate nohighlight">\(y\)</span> が良くなると考えられる候補を、機械学習（ガウス過程回帰を利用）による予測をうまく利用することで選定します。その候補に対して実験・シミュレーションを行い目的関数の値を評価します。機械学習による選定・実験シミュレーションによる評価を繰り返すことにより、できるだけ少ない回数で最適化が可能となります。</p>
 <p>ベイズ最適化のアルゴリズムの詳細を以下に示します。</p>
 <ul class="simple">
@@ -157,7 +158,7 @@ PIスコアは、現在得られている <span class="math notranslate nohighli
 <p>ステップ２で選定された獲得関数が最大となる候補 <span class="math notranslate nohighlight">\({\bf x}^*\)</span> に対して実験またはシミュレーションを行い、目的関数値 <span class="math notranslate nohighlight">\(y\)</span> を見積もります。これにより学習データが一つ追加されます。このステップ２、３を繰り返すことで、スコアのよい候補を探索します。</p>
 </section>
 <section id="physbo">
-<h2>PHYSBOによるベイズ最適化の高速化<a class="headerlink" href="#physbo" title="このヘッドラインへのパーマリンク"></a></h2>
+<h2>PHYSBOによるベイズ最適化の高速化<a class="headerlink" href="#physbo" title="Permalink to this heading"></a></h2>
 <p>PHYSBOでは、random feature map、トンプソンサンプリング、コレスキー分解を利用することで、
 ベイズ最適化の高速化を実現しています。
 まず、random feature mapについて説明します。
