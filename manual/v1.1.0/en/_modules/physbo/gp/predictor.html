@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physbo.gp.predictor &mdash; PHYSBO 1.1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PHYSBO
+          </a>
+              <div class="version">
+                1.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>physbo.gp.predictor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for physbo.gp.predictor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">physbo.predictor</span>
+
+
+<div class="viewcode-block" id="predictor"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor">[docs]</a><span class="k">class</span> <span class="nc">predictor</span><span class="p">(</span><span class="n">physbo</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">base_predictor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; predictor &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        config: physbo.misc.set_config</span>
+<span class="sd">            configuration</span>
+<span class="sd">        model: physbo.gp.core.model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+<div class="viewcode-block" id="predictor.fit"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fitting model to training dataset</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            dataset for training</span>
+<span class="sd">        num_basis: int</span>
+<span class="sd">            the number of basis (default: self.config.predict.num_basis)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete_stats</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="predictor.get_basis"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_basis">[docs]</a>    <span class="k">def</span> <span class="nf">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args</span>
+<span class="sd">        kwds</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="predictor.get_post_params"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_post_params">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args</span>
+<span class="sd">        kwds</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="predictor.update"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="predictor.prepare"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.prepare">[docs]</a>    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializing model by using training data set</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            dataset for training</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="predictor.delete_stats"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.delete_stats">[docs]</a>    <span class="k">def</span> <span class="nf">delete_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="predictor.get_post_fmean"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_post_fmean">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculating posterior mean value of model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            inputs</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="predictor.get_post_fcov"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_post_fcov">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculating posterior variance-covariance matrix of model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            inputs</span>
+<span class="sd">        diag: bool</span>
+<span class="sd">            Diagonlization flag in physbo.exact.get_post_fcov function.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="n">diag</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="predictor.get_post_samples"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_post_samples">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drawing samples of mean values of model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            inputs (not used)</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">            tuning parameter of the covariance by multiplying alpha**2 for np.random.multivariate_normal.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="predictor.get_predict_samples"><a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.get_predict_samples">[docs]</a>    <span class="k">def</span> <span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drawing samples of values of model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            inputs</span>
+<span class="sd">        N: int</span>
+<span class="sd">            number of samples</span>
+<span class="sd">            (default: 1)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray (N x len(test))</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v1.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../v1.1.0/en/_modules/physbo/gp/predictor.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../v1.1.0/ja/_modules/physbo/gp/predictor.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../../../develop/en/_modules/physbo/gp/predictor.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../master/en/_modules/physbo/gp/predictor.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../v1.1.0/en/_modules/physbo/gp/predictor.html">v1.1.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
