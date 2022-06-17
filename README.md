@@ -88,4 +88,4 @@ keywords = {Bayesian optimization, Multi-objective optimization, Materials scree
 ### Copyright
 
 © *2020- The University of Tokyo. All rights reserved.*
-This software was developed with the support of \"*Project for advancement of software usability in materials science*\" of The Institute for Solid State Physics, The University of Tokyo. 
+This software was developed with the support of \"*Project for advancement of software usability in materials science*\" of The Institute for Solid State Physics, The University of Tokyo.
