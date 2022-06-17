@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import pickle
 
 from .. import utility
@@ -14,10 +15,26 @@ class history:
         self.chosen_actions = np.zeros(MAX_SEARCH, dtype=int)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
-        self.time_total = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_update_predictor = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_get_action = np.zeros(MAX_SEARCH, dtype=float)
-        self.time_run_simulator = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_total_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_update_predictor_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_get_action_ = np.zeros(MAX_SEARCH, dtype=float)
+        self.time_run_simulator_ = np.zeros(MAX_SEARCH, dtype=float)
+
+    @property
+    def time_total(self):
+        return copy.copy(self.time_total_[0:self.num_runs])
+
+    @property
+    def time_update_predictor(self):
+        return copy.copy(self.time_update_predictor_[0:self.num_runs])
+
+    @property
+    def time_get_action(self):
+        return copy.copy(self.time_get_action_[0:self.num_runs])
+
+    @property
+    def time_run_simulator(self):
+        return copy.copy(self.time_run_simulator_[0:self.num_runs])
 
     def write(
         self,
@@ -65,19 +82,19 @@ class history:
 
         if time_total is None:
             time_total = np.zeros(N, dtype=float)
-        self.time_total[st:en] = time_total
+        self.time_total_[st:en] = time_total
 
         if time_update_predictor is None:
             time_update_predictor = np.zeros(N, dtype=float)
-        self.time_update_predictor[st:en] = time_update_predictor
+        self.time_update_predictor_[st:en] = time_update_predictor
 
         if time_get_action is None:
             time_get_action = np.zeros(N, dtype=float)
-        self.time_get_action[st:en] = time_get_action
+        self.time_get_action_[st:en] = time_get_action
 
         if time_run_simulator is None:
             time_run_simulator = np.zeros(N, dtype=float)
-        self.time_run_simulator[st:en] = time_run_simulator
+        self.time_run_simulator_[st:en] = time_run_simulator
 
     def export_sequence_best_fx(self):
         """
