@@ -61,6 +61,10 @@ pip3 uninstall physbo
 
 ['examples/simple.py'](https://github.com/issp-center-dev/PHYSBO/examples/simple.py) is a simple example.
 
+## Data repository
+
+A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery](http://isspns-container.issp.u-tokyo.ac.jp/repo/12).
+
 ## License
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
