@@ -456,6 +456,9 @@ class policy(discrete.policy):
         if file_predictor_list is not None:
             self.load_predictor_list(file_predictor_list)
 
+        N = self.history.total_num_search
+        self.actions = self._delete_actions(self.history.chosen_actions[:N])
+
     def save_predictor_list(self, file_name):
         with open(file_name, "wb") as f:
             pickle.dump(self.predictor_list, f, 2)
