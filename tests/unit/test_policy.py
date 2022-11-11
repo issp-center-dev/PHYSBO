@@ -99,6 +99,7 @@ def test_saveload(policy, X):
             file_training=os.path.join(tempdir, "training.npz"),
             file_predictor=os.path.join(tempdir, "predictor.dump"),
         )
+        numpy.testing.assert_array_equal(policy.actions, policy2.actions)
         assert policy.history.num_runs == policy2.history.num_runs
 
 
