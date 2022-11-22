@@ -42,6 +42,15 @@ def policy():
     return physbo.search.discrete.policy(test_X=X)
 
 
+def test_write(policy, X):
+    simulator = lambda x: 1.0
+    ACTIONS = np.array([0, 1], np.int32)
+
+    policy.write(ACTIONS, np.apply_along_axis(simulator, 1, X[ACTIONS]))
+    numpy.testing.assert_array_equal(ACTIONS, policy.history.chosen_actions[:len(ACTIONS)])
+    assert len(X) - len(ACTIONS) == len(policy.actions)
+
+
 def test_randomsearch(policy, mocker):
     simulator = mocker.MagicMock(return_value=1.0)
     write_spy = mocker.spy(physbo.search.discrete.policy, "write")

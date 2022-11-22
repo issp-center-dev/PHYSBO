@@ -129,6 +129,9 @@ class policy:
             time_run_simulator=time_run_simulator,
         )
         self.training.add(X=X, t=t, Z=Z)
+        local_index = np.searchsorted(self.actions, action)
+        local_index = local_index[np.take(self.actions, local_index, mode='clip') == action]
+        self.actions = self._delete_actions(local_index)
         if self.new_data is None:
             self.new_data = variable(X=X, t=t, Z=Z)
         else:
