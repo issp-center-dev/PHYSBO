@@ -205,10 +205,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -383,21 +384,21 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import physbo
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
+import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
 
 
-<span class="k">def</span> <span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+def load_data():
+    A =  np.asarray(np.loadtxt(&#39;data/s5-210.csv&#39;,skiprows=1, delimiter=&#39;,&#39;) )
+    X = A[:,0:3]
+    t  = -A[:,3]
+    return X, t
 
-<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+X, t = load_data()
+X = physbo.misc.centering(X)
 </pre></div>
 </div>
 </div>
@@ -413,12 +414,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class simulator:
+    def __init__( self ):
+        _, self.t = load_data()
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+    def __call__( self, action ):
+        return self.t[action]
 </pre></div>
 </div>
 </div>
@@ -427,8 +428,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">()</span>
-<span class="n">sim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">123</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sim = simulator()
+sim([1,12,123])
 </pre></div>
 </div>
 </div>
@@ -448,11 +449,11 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># set policy
+policy = physbo.search.discrete.policy(test_X=X)
 
-<span class="c1"># set seed</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
+# set seed
+policy.set_seed( 0 )
 </pre></div>
 </div>
 </div>
@@ -467,10 +468,10 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res = policy.random_search(max_num_probes=2, num_search_each_probe=10, simulator=simulator())
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span>
-                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+res = policy.bayes_search(max_num_probes=8, num_search_each_probe=10, simulator=simulator(), score=&#39;EI&#39;,
+                                                  interval=2, num_rand_basis=100)
 </pre></div>
 </div>
 </div>
@@ -481,7 +482,7 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.plot(res.fx[0:res.total_num_search])
 </pre></div>
 </div>
 </div>
@@ -505,8 +506,8 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>best_fx, best_action = res.export_all_sequence_best_fx()
+plt.plot(best_fx)
 </pre></div>
 </div>
 </div>
@@ -532,8 +533,8 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>best_fx, best_action = res.export_sequence_best_fx()
+plt.plot(best_fx)
 </pre></div>
 </div>
 </div>

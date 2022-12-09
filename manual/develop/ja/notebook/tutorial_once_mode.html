@@ -206,10 +206,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -390,19 +391,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import physbo
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+import numpy as np
 
 
-<span class="k">def</span> <span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+def load_data():
+    A =  np.asarray(np.loadtxt(&#39;data/s5-210.csv&#39;,skiprows=1, delimiter=&#39;,&#39;) )
+    X = A[:,0:3]
+    t  = -A[:,3]
+    return X, t
 
-<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+X, t = load_data()
+X = physbo.misc.centering(X)
 </pre></div>
 </div>
 </div>
@@ -414,11 +415,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
-<span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">calculated_ids</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="mi">20</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">calculated_ids</span><span class="p">)</span>
-<span class="n">t_initial</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">calculated_ids</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import random
+random.seed(0)
+calculated_ids = random.sample(range(t.size), 20)
+print(calculated_ids)
+t_initial = t[calculated_ids]
 </pre></div>
 </div>
 </div>
@@ -438,11 +439,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy のセット</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">initial_data</span><span class="o">=</span><span class="p">[</span><span class="n">calculated_ids</span><span class="p">,</span> <span class="n">t_initial</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># policy のセット
+policy = physbo.search.discrete.policy(test_X=X, initial_data=[calculated_ids, t_initial])
 
-<span class="c1"># シード値のセット</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
+# シード値のセット
+policy.set_seed( 0 )
 </pre></div>
 </div>
 </div>
@@ -454,8 +455,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;TS&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">X</span><span class="p">[</span><span class="n">actions</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>actions = policy.bayes_search(max_num_probes=1, simulator=None, score=&quot;TS&quot;, interval=0,  num_rand_basis = 5000)
+print(actions, X[actions])
 </pre></div>
 </div>
 </div>

@@ -205,10 +205,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -393,19 +394,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import physbo
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+import numpy as np
 
 
-<span class="k">def</span> <span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+def load_data():
+    A =  np.asarray(np.loadtxt(&#39;data/s5-210.csv&#39;,skiprows=1, delimiter=&#39;,&#39;) )
+    X = A[:,0:3]
+    t  = -A[:,3]
+    return X, t
 
-<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+X, t = load_data()
+X = physbo.misc.centering(X)
 </pre></div>
 </div>
 </div>
@@ -416,12 +417,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class simulator:
+    def __init__( self ):
+        _, self.t = load_data()
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+    def __call__( self, action ):
+        return self.t[action]
 </pre></div>
 </div>
 </div>
@@ -432,11 +433,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Set policy
+policy = physbo.search.discrete.policy(test_X=X)
 
-<span class="c1"># Set seed</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
+# Set seed
+policy.set_seed( 0 )
 </pre></div>
 </div>
 </div>
@@ -452,31 +453,31 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>simulator = simulator()
 
-<span class="sd">&#39;&#39;&#39; 1st step (random sampling) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">t</span>  <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+&#39;&#39;&#39; 1st step (random sampling) &#39;&#39;&#39;
+actions = policy.random_search(max_num_probes=1, simulator=None)
+t  = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 
-<span class="sd">&#39;&#39;&#39; 2nd step (random sampling) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+&#39;&#39;&#39; 2nd step (random sampling) &#39;&#39;&#39;
+actions = policy.random_search(max_num_probes=1, simulator=None)
+t = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 
-<span class="sd">&#39;&#39;&#39; 3rd step (bayesian optimization) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+&#39;&#39;&#39; 3rd step (bayesian optimization) &#39;&#39;&#39;
+actions = policy.bayes_search(max_num_probes=1, simulator=None, score=&#39;EI&#39;, interval=0,  num_rand_basis = 5000)
+t = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 
-<span class="sd">&#39;&#39;&#39; 4-th step (bayesian optimization) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+&#39;&#39;&#39; 4-th step (bayesian optimization) &#39;&#39;&#39;
+actions = policy.bayes_search(max_num_probes=1, simulator=None, score=&#39;EI&#39;, interval=0,  num_rand_basis = 5000)
+t = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 </pre></div>
 </div>
 </div>
@@ -493,7 +494,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_history</span><span class="o">=</span><span class="s1">&#39;history.npz&#39;</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="s1">&#39;training.npz&#39;</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="s1">&#39;predictor.dump&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy.save(file_history=&#39;history.npz&#39;, file_training=&#39;training.npz&#39;, file_predictor=&#39;predictor.dump&#39;)
 </pre></div>
 </div>
 </div>
@@ -501,27 +502,27 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># delete policy</span>
-<span class="k">del</span> <span class="n">policy</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># delete policy
+del policy
 
-<span class="c1"># load policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="o">=</span><span class="s1">&#39;history.npz&#39;</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="s1">&#39;training.npz&#39;</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="s1">&#39;predictor.dump&#39;</span><span class="p">)</span>
+# load policy
+policy = physbo.search.discrete.policy(test_X=X)
+policy.load(file_history=&#39;history.npz&#39;, file_training=&#39;training.npz&#39;, file_predictor=&#39;predictor.dump&#39;)
 
-<span class="sd">&#39;&#39;&#39; 5-th step (bayesian optimization) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+&#39;&#39;&#39; 5-th step (bayesian optimization) &#39;&#39;&#39;
+actions = policy.bayes_search(max_num_probes=1, simulator=None, score=&#39;EI&#39;, interval=0,  num_rand_basis = 5000)
+t = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 
-<span class="c1"># It is also possible to specify predictor and training separately.</span>
-<span class="sd">&#39;&#39;&#39; 6-th step (bayesian optimization) &#39;&#39;&#39;</span>
-<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                            <span class="n">predictor</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-                                            <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+# It is also possible to specify predictor and training separately.
+&#39;&#39;&#39; 6-th step (bayesian optimization) &#39;&#39;&#39;
+actions = policy.bayes_search(max_num_probes=1,
+                                            predictor=policy.predictor, training=policy.training,
+                                            simulator=None, score=&#39;EI&#39;, interval=0,  num_rand_basis = 5000)
+t = simulator(actions)
+policy.write(actions, t)
+physbo.search.utility.show_search_results(policy.history, 10)
 </pre></div>
 </div>
 </div>

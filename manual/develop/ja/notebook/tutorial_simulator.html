@@ -189,10 +189,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -367,19 +368,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">import</span> <span class="nn">physbo</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#In
+import numpy as np
+import scipy
+import physbo
+import itertools
 
-<span class="c1">#In</span>
-<span class="c1">#Create candidate</span>
-<span class="n">window_num</span><span class="o">=</span><span class="mi">10001</span>
-<span class="n">x_max</span> <span class="o">=</span> <span class="mf">2.0</span>
-<span class="n">x_min</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+#In
+#Create candidate
+window_num=10001
+x_max = 2.0
+x_min = -2.0
 
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">window_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">window_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+X = np.linspace(x_min,x_max,window_num).reshape(window_num, 1)
 </pre></div>
 </div>
 </div>
@@ -393,22 +394,22 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
-<span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Declare the class for calling the simulator.
+class simulator:
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
-        <span class="n">fx_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
-        <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    def __call__(self, action ):
+        action_idx = action[0]
+        x = X[action_idx][0]
+        fx = 3.0*x**4 + 4.0*x**3 + 1.0
+        fx_list.append(fx)
+        x_list.append(X[action_idx][0])
 
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;*********************&quot;</span><span class="p">)</span>
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Present optimum interactions&quot;</span><span class="p">)</span>
+        print (&quot;*********************&quot;)
+        print (&quot;Present optimum interactions&quot;)
 
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
+        print (&quot;x_opt=&quot;, x_list[np.argmin(np.array(fx_list))])
 
-        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span>
+        return -fx, x
 </pre></div>
 </div>
 </div>
@@ -420,27 +421,27 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
-<span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="c1">#In</span>
-<span class="c1"># Design of policy</span>
-<span class="c1"># Declaring the policy by</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-<span class="c1"># test_X is the set of candidates which is represented by numpy.array.</span>
-<span class="c1"># Each row vector represents the feature vector of the corresponding candidate</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fx_list=[]
+x_list = []
+#In
+# Design of policy
+# Declaring the policy by
+policy = physbo.search.discrete.policy(test_X=X)
+# test_X is the set of candidates which is represented by numpy.array.
+# Each row vector represents the feature vector of the corresponding candidate
 
-<span class="c1"># set the seed parameter</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+# set the seed parameter
+policy.set_seed( 1 )
 
 
-<span class="c1"># If you want to perform the initial random search before starting the Bayesian optimization,</span>
-<span class="c1"># the random sampling is performed by</span>
+# If you want to perform the initial random search before starting the Bayesian optimization,
+# the random sampling is performed by
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
-<span class="c1"># Input:</span>
-<span class="c1"># max_num_probes: number of random search</span>
-<span class="c1"># simulator = simulator</span>
-<span class="c1"># output: combo.search.discreate.results (class)</span>
+res = policy.random_search(max_num_probes=50, simulator=simulator())
+# Input:
+# max_num_probes: number of random search
+# simulator = simulator
+# output: combo.search.discreate.results (class)
 </pre></div>
 </div>
 </div>
@@ -452,20 +453,20 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># single query Bayesian search</span>
-<span class="c1"># The single query version of COMBO is performed by</span>
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span> <span class="mi">150</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
-                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># single query Bayesian search
+# The single query version of COMBO is performed by
+res = policy.bayes_search(max_num_probes= 150, simulator=simulator(), score=&#39;TS&#39;,
+                                                  interval=20, num_rand_basis=5000)
 
-<span class="c1"># Input</span>
-<span class="c1"># max_num_probes: number of searching by Bayesian optimization</span>
-<span class="c1"># simulator: the class of simulator which is defined above</span>
-<span class="c1"># score: the type of aquision funciton. TS, EI and PI are available</span>
-<span class="c1"># interval: the timing for learning the hyper parameter.</span>
-<span class="c1">#               In this case, the hyper parameter is learned at each 20 steps</span>
-<span class="c1">#               If you set the negative value to interval, the hyper parameter learning is not performed</span>
-<span class="c1">#               If you set zero to interval, the hyper parameter learning is performed only at the first step</span>
-<span class="c1"># num_rand_basis: the number of basis function. If you choose 0,  ordinary Gaussian process runs</span>
+# Input
+# max_num_probes: number of searching by Bayesian optimization
+# simulator: the class of simulator which is defined above
+# score: the type of aquision funciton. TS, EI and PI are available
+# interval: the timing for learning the hyper parameter.
+#               In this case, the hyper parameter is learned at each 20 steps
+#               If you set the negative value to interval, the hyper parameter learning is not performed
+#               If you set zero to interval, the hyper parameter learning is performed only at the first step
+# num_rand_basis: the number of basis function. If you choose 0,  ordinary Gaussian process runs
 </pre></div>
 </div>
 </div>
@@ -477,17 +478,17 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
-<span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#In
+best_fx, best_action = res.export_all_sequence_best_fx()
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="c1"># The result of searching is summarized in the class combo.search.discrete.results.history()</span>
-<span class="c1"># res.fx: observed negative energy at each step</span>
-<span class="c1"># res.chosen_actions: history of choosed actions</span>
-<span class="c1"># fbest, best_action= res.export_all_sequence_best_fx(): current best fx and current best action</span>
-<span class="c1">#                                                                                                   that has been observed until each step</span>
-<span class="c1"># res.total_num_search: total number of search</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+import matplotlib.pyplot as plt
+# The result of searching is summarized in the class combo.search.discrete.results.history()
+# res.fx: observed negative energy at each step
+# res.chosen_actions: history of choosed actions
+# fbest, best_action= res.export_all_sequence_best_fx(): current best fx and current best action
+#                                                                                                   that has been observed until each step
+# res.total_num_search: total number of search
+plt.plot(res.fx[0:res.total_num_search])
 </pre></div>
 </div>
 </div>
@@ -495,7 +496,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.plot(best_fx)
 </pre></div>
 </div>
 </div>
@@ -503,7 +504,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_action</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.plot(best_action)
 </pre></div>
 </div>
 </div>
@@ -512,7 +513,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(X[int(best_action[-1])])
 </pre></div>
 </div>
 </div>

@@ -215,10 +215,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -393,7 +394,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import physbo
 </pre></div>
 </div>
 </div>
@@ -405,19 +406,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">import</span> <span class="nn">physbo</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#In
+import numpy as np
+import scipy
+import physbo
+import itertools
 
-<span class="c1">#In</span>
-<span class="c1">#Create candidate</span>
-<span class="n">window_num</span><span class="o">=</span><span class="mi">10001</span>
-<span class="n">x_max</span> <span class="o">=</span> <span class="mf">2.0</span>
-<span class="n">x_min</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+#In
+#Create candidate
+window_num=10001
+x_max = 2.0
+x_min = -2.0
 
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">window_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">window_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+X = np.linspace(x_min,x_max,window_num).reshape(window_num, 1)
 </pre></div>
 </div>
 </div>
@@ -432,22 +433,22 @@ is designed to find the maximum value of the objective function</strong>, it ret
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
-<span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Declare the class for calling the simulator.
+class simulator:
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
-        <span class="n">fx_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
-        <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    def __call__(self, action ):
+        action_idx = action[0]
+        x = X[action_idx][0]
+        fx = 3.0*x**4 + 4.0*x**3 + 1.0
+        fx_list.append(fx)
+        x_list.append(X[action_idx][0])
 
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;*********************&quot;</span><span class="p">)</span>
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Present optimum interactions&quot;</span><span class="p">)</span>
+        print (&quot;*********************&quot;)
+        print (&quot;Present optimum interactions&quot;)
 
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
+        print (&quot;x_opt=&quot;, x_list[np.argmin(np.array(fx_list))])
 
-        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
+        return -fx
 </pre></div>
 </div>
 </div>
@@ -462,11 +463,11 @@ is designed to find the maximum value of the objective function</strong>, it ret
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># set policy
+policy = physbo.search.discrete.policy(test_X=X)
 
-<span class="c1"># set seed</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+# set seed
+policy.set_seed(0)
 </pre></div>
 </div>
 </div>
@@ -497,10 +498,10 @@ tutorial.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
-<span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fx_list=[]
+x_list = []
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+res = policy.random_search(max_num_probes=20, simulator=simulator())
 </pre></div>
 </div>
 </div>
@@ -534,8 +535,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
-                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res = policy.bayes_search(max_num_probes=50, simulator=simulator(), score=&#39;TS&#39;,
+                                                  interval=0, num_rand_basis=500)
 </pre></div>
 </div>
 </div>
@@ -561,8 +562,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import matplotlib.pyplot as plt
+%matplotlib inline
 </pre></div>
 </div>
 </div>
@@ -570,7 +571,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.plot(res.fx[0:res.total_num_search])
 </pre></div>
 </div>
 </div>
@@ -594,8 +595,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>best_fx, best_action = res.export_all_sequence_best_fx()
+plt.plot(best_fx)
 </pre></div>
 </div>
 </div>
@@ -623,7 +624,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res.save(&#39;search_result.npz&#39;)
 </pre></div>
 </div>
 </div>
@@ -631,7 +632,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">del</span> <span class="n">res</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>del res
 </pre></div>
 </div>
 </div>
@@ -640,8 +641,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">history</span><span class="p">()</span>
-<span class="n">res</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res = physbo.search.discrete.results.history()
+res.load(&#39;search_result.npz&#39;)
 </pre></div>
 </div>
 </div>
@@ -650,7 +651,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(X[int(best_action[-1])])
 </pre></div>
 </div>
 </div>
@@ -670,14 +671,14 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="n">var</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
-<span class="n">xs</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean = policy.get_post_fmean(X)
+var = policy.get_post_fcov(X)
+std = np.sqrt(var)
+xs = X[:,0]
 
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">mean</span><span class="o">-</span><span class="n">std</span><span class="p">,</span> <span class="n">mean</span><span class="o">+</span><span class="n">std</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.1</span><span class="p">)</span>
+ax = plt.subplot()
+ax.plot(xs, mean)
+ax.fill_between(xs, mean-std, mean+std, color=&quot;blue&quot;, alpha=.1)
 </pre></div>
 </div>
 </div>
@@ -705,8 +706,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scores</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>scores = policy.get_score(mode=&quot;EI&quot;, xs=X)
+plt.plot(scores)
 </pre></div>
 </div>
 </div>
@@ -734,8 +735,8 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># from mpi4py import MPI</span>
-<span class="c1"># policy = physbo.search.discrete.policy(test_X=X, comm=MPI.COMM_WORLD)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># from mpi4py import MPI
+# policy = physbo.search.discrete.policy(test_X=X, comm=MPI.COMM_WORLD)
 </pre></div>
 </div>
 </div>

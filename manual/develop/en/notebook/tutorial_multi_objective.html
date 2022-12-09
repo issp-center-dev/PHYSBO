@@ -222,10 +222,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -408,10 +409,10 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">physbo</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import numpy as np
+import matplotlib.pyplot as plt
+import physbo
+%matplotlib inline
 </pre></div>
 </div>
 </div>
@@ -439,12 +440,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">vlmop2_minus</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">y1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="n">y2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def vlmop2_minus(x):
+    n = x.shape[1]
+    y1 = 1 - np.exp(-1 * np.sum((x - 1/np.sqrt(n)) ** 2, axis = 1))
+    y2 = 1 - np.exp(-1 * np.sum((x + 1/np.sqrt(n)) ** 2, axis = 1))
 
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="o">-</span><span class="n">y1</span><span class="p">,</span> <span class="o">-</span><span class="n">y2</span><span class="p">]</span>
+    return np.c_[-y1, -y2]
 </pre></div>
 </div>
 </div>
@@ -456,9 +457,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
-<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
-<span class="n">test_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import itertools
+a = np.linspace(-2,2,101)
+test_X = np.array(list(itertools.product(a, a)))
 </pre></div>
 </div>
 </div>
@@ -466,7 +467,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>test_X
 </pre></div>
 </div>
 </div>
@@ -489,7 +490,7 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>test_X.shape
 </pre></div>
 </div>
 </div>
@@ -509,12 +510,12 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">vlmop2_minus</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class simulator(object):
+    def __init__(self, X):
+        self.t = vlmop2_minus(X)
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+    def __call__( self, action):
+        return self.t[action]
 </pre></div>
 </div>
 </div>
@@ -522,7 +523,7 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simu</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>simu = simulator(test_X)
 </pre></div>
 </div>
 </div>
@@ -536,12 +537,12 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 1&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure()
+plt.imshow(simu.t[:,0].reshape((101,101)), vmin=-1.0, vmax=0.0, origin=&quot;lower&quot;, extent=[-2.0, 2.0, -2.0, 2.0])
+plt.title(&quot;objective 1&quot;)
+plt.colorbar()
+plt.plot([1.0/np.sqrt(2.0)], [1.0/np.sqrt(2.0)], &#39;*&#39;)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -559,13 +560,13 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot objective 2</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 2&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot objective 2
+plt.figure()
+plt.imshow(simu.t[:,1].reshape((101,101)), vmin=-1.0, vmax=0.0, origin=&quot;lower&quot;, extent=[-2.0, 2.0, -2.0, 2.0])
+plt.title(&quot;objective 2&quot;)
+plt.colorbar()
+plt.plot([-1.0/np.sqrt(2.0)], [-1.0/np.sqrt(2.0)], &#39;*&#39;)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -591,8 +592,8 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
 </pre></div>
 </div>
 </div>
@@ -603,10 +604,10 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
 
-<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+res_random = policy.random_search(max_num_probes=50, simulator=simu)
 </pre></div>
 </div>
 </div>
@@ -622,9 +623,9 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
+res_random = policy.random_search(max_num_probes=50, simulator=simu, disp_pareto_set=True)
 </pre></div>
 </div>
 </div>
@@ -636,7 +637,7 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res_random</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_random.fx[0:res_random.num_runs]
 </pre></div>
 </div>
 </div>
@@ -646,8 +647,8 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res_random</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
-<span class="n">front</span><span class="p">,</span> <span class="n">front_num</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>front, front_num = res_random.export_pareto_front()
+front, front_num
 </pre></div>
 </div>
 </div>
@@ -675,19 +676,19 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_pareto_front</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
-    <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
-    <span class="n">dominated</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">num_runs</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">]</span>
-    <span class="n">points</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="p">:]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_pareto_front(res):
+    front, front_num = res.export_pareto_front()
+    dominated = [i for i in range(res.num_runs) if i not in front_num]
+    points = res.fx[dominated, :]
 
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">front</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">front</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Pareto front&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Objective 1&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Objective 2&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+    plt.figure(figsize=(7, 7))
+    plt.scatter(res.fx[dominated,0], res.fx[dominated,1], c = &quot;blue&quot;)
+    plt.scatter(front[:, 0], front[:, 1], c = &quot;red&quot;)
+    plt.title(&#39;Pareto front&#39;)
+    plt.xlabel(&#39;Objective 1&#39;)
+    plt.ylabel(&#39;Objective 2&#39;)
+    plt.xlim([-1.0,0.0])
+    plt.ylim([-1.0,0.0])
 </pre></div>
 </div>
 </div>
@@ -695,7 +696,7 @@ array([[-2.  , -2.  ],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_random</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_pareto_front(res_random)
 </pre></div>
 </div>
 </div>
@@ -715,7 +716,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_random.pareto.volume_in_dominance([-1,-1],[0,0])
 </pre></div>
 </div>
 </div>
@@ -754,11 +755,11 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+policy.random_search(max_num_probes=10, simulator=simu)
+res_HVPI = policy.bayes_search(max_num_probes=40, simulator=simu, score=&#39;HVPI&#39;, interval=10)
 </pre></div>
 </div>
 </div>
@@ -769,7 +770,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_HVPI</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_pareto_front(res_HVPI)
 </pre></div>
 </div>
 </div>
@@ -787,7 +788,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_HVPI.pareto.volume_in_dominance([-1,-1],[0,0])
 </pre></div>
 </div>
 </div>
@@ -816,11 +817,11 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_EHVI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EHVI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+policy.random_search(max_num_probes=10, simulator=simu)
+res_EHVI = policy.bayes_search(max_num_probes=40, simulator=simu, score=&#39;EHVI&#39;, interval=10)
 </pre></div>
 </div>
 </div>
@@ -830,7 +831,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_EHVI</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_pareto_front(res_EHVI)
 </pre></div>
 </div>
 </div>
@@ -848,7 +849,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_EHVI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_EHVI.pareto.volume_in_dominance([-1,-1],[0,0])
 </pre></div>
 </div>
 </div>
@@ -877,11 +878,11 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)
+policy.set_seed(0)
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_TS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+policy.random_search(max_num_probes=10, simulator=simu)
+res_TS = policy.bayes_search(max_num_probes=40, simulator=simu, score=&#39;TS&#39;, interval=10, num_rand_basis=5000)
 </pre></div>
 </div>
 </div>
@@ -891,7 +892,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_TS</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_pareto_front(res_TS)
 </pre></div>
 </div>
 </div>
@@ -909,7 +910,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_TS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_TS.pareto.volume_in_dominance([-1,-1],[0,0])
 </pre></div>
 </div>
 </div>
@@ -935,14 +936,14 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X_sparse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
-<span class="n">simu_sparse</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X_sparse</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>test_X_sparse = np.array(list(itertools.product(np.linspace(-2, 2, 21), repeat=2)))
+simu_sparse = simulator(test_X_sparse)
 
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_sparse</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+policy = physbo.search.discrete_multi.policy(test_X=test_X_sparse, num_objectives=2)
+policy.set_seed(0)
 
-<span class="n">N</span> <span class="o">=</span> <span class="n">test_X_sparse</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">res_all</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_sparse</span><span class="p">)</span>
+N = test_X_sparse.shape[0]
+res_all = policy.random_search(max_num_probes=N, simulator=simu_sparse)
 </pre></div>
 </div>
 </div>
@@ -950,7 +951,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_all</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_pareto_front(res_all)
 </pre></div>
 </div>
 </div>
@@ -965,7 +966,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_all</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>res_all.pareto.volume_in_dominance([-1,-1],[0,0])
 </pre></div>
 </div>
 </div>
