@@ -99,6 +99,9 @@ class policy(discrete.policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
+        local_index = np.searchsorted(self.actions, action)
+        local_index = local_index[np.take(self.actions, local_index, mode='clip') == action]
+        self.actions = self._delete_actions(local_index)
 
     def _model(self, i):
         training = self.training_list[i]
