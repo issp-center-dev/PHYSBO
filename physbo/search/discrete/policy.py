@@ -335,6 +335,7 @@ class policy:
 
     def get_post_fmean(self, xs):
         """Calculate mean value of predictor (post distribution)"""
+        self._update_predictor()
         X = self._make_variable_X(xs)
         predictor = self.predictor
         if predictor is None:
@@ -346,6 +347,7 @@ class policy:
 
     def get_post_fcov(self, xs):
         """Calculate covariance of predictor (post distribution)"""
+        self._update_predictor()
         X = self._make_variable_X(xs)
         predictor = self.predictor
         if predictor is None:
@@ -415,6 +417,7 @@ class policy:
             raise RuntimeError(msg)
 
         if predictor is None:
+            self._update_predictor()
             predictor = self.predictor
 
         if predictor is None:

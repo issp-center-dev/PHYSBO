@@ -285,6 +285,7 @@ class policy(discrete.policy):
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
+        self._update_predictor()
         X = self._make_variable_X(xs)
         predictor_list = self.predictor_list[:]
         if predictor_list == [None] * self.num_objectives:
@@ -300,6 +301,7 @@ class policy(discrete.policy):
         return np.array(fmean).T
 
     def get_post_fcov(self, xs):
+        self._update_predictor()
         X = self._make_variable_X(xs)
         predictor_list = self.predictor_list[:]
         if predictor_list == [None] * self.num_objectives:
@@ -326,6 +328,7 @@ class policy(discrete.policy):
         alpha=1,
     ):
         if predictor_list is None:
+            self._update_predictor()
             predictor_list = self.predictor_list
         if training_list is None:
             training_list = self.training_list
