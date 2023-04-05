@@ -285,14 +285,18 @@ class policy(discrete.policy):
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
-        X = self._make_variable_X(xs)
-        predictor_list = self.predictor_list[:]
-        if predictor_list == [None] * self.num_objectives:
+        if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fmean()")
+            predictor_list = []
             for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(self.training_list[i], 0)
-                predictor_list[i].prepare(self.training_list[i])
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
         fmean = [
             predictor.get_post_fmean(training, X)
             for predictor, training in zip(predictor_list, self.training_list)
@@ -300,14 +304,18 @@ class policy(discrete.policy):
         return np.array(fmean).T
 
     def get_post_fcov(self, xs):
-        X = self._make_variable_X(xs)
-        predictor_list = self.predictor_list[:]
-        if predictor_list == [None] * self.num_objectives:
+        if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fcov()")
+            predictor_list = []
             for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(self.training_list[i], 0)
-                predictor_list[i].prepare(self.training_list[i])
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
         fcov = [
             predictor.get_post_fcov(training, X)
             for predictor, training in zip(predictor_list, self.training_list)
@@ -325,8 +333,6 @@ class policy(discrete.policy):
         parallel=True,
         alpha=1,
     ):
-        if predictor_list is None:
-            predictor_list = self.predictor_list
         if training_list is None:
             training_list = self.training_list
         if pareto is None:
@@ -336,12 +342,18 @@ class policy(discrete.policy):
             msg = "ERROR: No training data is registered."
             raise RuntimeError(msg)
 
-        if predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_score()")
-            for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(training_list[i], 0)
-                predictor_list[i].prepare(training_list[i])
+        if predictor_list is None:
+            if self.predictor_list == [None] * self.num_objectives:
+                self._warn_no_predictor("get_score()")
+                predictor_list = []
+                for i in range(self.num_objectives):
+                    predictor = gp_predictor(self.config)
+                    predictor.fit(training_list[i], 0)
+                    predictor.prepare(training_list[i])
+                    predictor_list.append(predictor)
+            else:
+                self._update_predictor()
+                predictor_list = self.predictor_list
 
         if xs is not None:
             if actions is not None:

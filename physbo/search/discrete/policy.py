@@ -336,24 +336,28 @@ class policy:
     def get_post_fmean(self, xs):
         """Calculate mean value of predictor (post distribution)"""
         X = self._make_variable_X(xs)
-        predictor = self.predictor
-        if predictor is None:
+        if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-        return predictor.get_post_fmean(self.training, X)
+            return predictor.get_post_fmean(self.training, X)
+        else:
+            self._update_predictor()
+            return self.predictor.get_post_fmean(self.training, X)
 
     def get_post_fcov(self, xs):
         """Calculate covariance of predictor (post distribution)"""
         X = self._make_variable_X(xs)
-        predictor = self.predictor
-        if predictor is None:
+        if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-        return predictor.get_post_fcov(self.training, X)
+            return predictor.get_post_fcov(self.training, X)
+        else:
+            self._update_predictor()
+            return self.predictor.get_post_fcov(self.training, X)
 
     def get_score(
         self,
@@ -415,13 +419,14 @@ class policy:
             raise RuntimeError(msg)
 
         if predictor is None:
-            predictor = self.predictor
-
-        if predictor is None:
-            self._warn_no_predictor("get_score()")
-            predictor = gp_predictor(self.config)
-            predictor.fit(training, 0)
-            predictor.prepare(training)
+            if self.predictor is None:
+                self._warn_no_predictor("get_score()")
+                predictor = gp_predictor(self.config)
+                predictor.fit(training, 0)
+                predictor.prepare(training)
+            else:
+                self._update_predictor()
+                predictor = self.predictor
 
         if xs is not None:
             if actions is not None:
