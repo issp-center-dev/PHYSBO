@@ -179,7 +179,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">new_data_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
         <span class="n">local_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
-        <span class="n">local_index</span> <span class="o">=</span> <span class="n">local_index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">local_index</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;clip&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">action</span><span class="p">]</span>
+        <span class="n">local_index</span> <span class="o">=</span> <span class="n">local_index</span><span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">local_index</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;clip&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">action</span>
+        <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
@@ -202,7 +204,6 @@
         <span class="n">is_disp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -212,7 +213,6 @@
             <span class="n">utility</span><span class="o">.</span><span class="n">show_interactive_mode</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_num_probes</span><span class="p">):</span>
-
             <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">is_disp</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
@@ -260,7 +260,6 @@
         <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -497,14 +496,18 @@
         <span class="n">virtual_t_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
             <span class="n">new_test_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
-            <span class="n">virtual_t_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_test_local</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+            <span class="n">virtual_t_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_test_local</span><span class="p">,</span> <span class="n">K</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">new_test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_test_local</span>
                 <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">virtual_t_local</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">nt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">new_test_local</span><span class="p">):</span>
                     <span class="n">new_test_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
-                <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">virtual_t_local</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">virtual_t_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">virtual_t_local</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">]</span>
@@ -517,12 +520,17 @@
                 <span class="k">if</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
+                    <span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                        <span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span>
+                    <span class="p">)</span>
 
                 <span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">training_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">virtual_train</span><span class="p">)</span>
 
             <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="o">=</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="o">=</span><span class="n">training_list</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">mode</span><span class="p">,</span>
+                <span class="n">predictor_list</span><span class="o">=</span><span class="n">predictor_list</span><span class="p">,</span>
+                <span class="n">training_list</span><span class="o">=</span><span class="n">training_list</span><span class="p">,</span>
+                <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
