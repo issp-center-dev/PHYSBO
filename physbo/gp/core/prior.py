@@ -3,7 +3,7 @@ import scipy
 
 
 class prior:
-    """ prior of gaussian process """
+    """prior of gaussian process"""
 
     def __init__(self, mean, cov):
         """

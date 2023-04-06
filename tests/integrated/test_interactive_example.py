@@ -16,9 +16,11 @@ class simulator:
     def __init__(self):
         self.nslice = 11
         self.dim = 2
-        self.N = self.nslice ** self.dim
+        self.N = self.nslice**self.dim
         self.X = np.zeros((self.N, self.dim))
-        for i, x in enumerate(product(np.linspace(0.0, 1.0, self.nslice), repeat=self.dim)):
+        for i, x in enumerate(
+            product(np.linspace(0.0, 1.0, self.nslice), repeat=self.dim)
+        ):
             self.X[i, :] = list(x)
 
     def __call__(self, actions):
@@ -32,14 +34,18 @@ def test_interactive():
     policy = physbo.search.discrete.policy(test_X=sim.X)
     policy.set_seed(12345)
 
-    actions = policy.random_search(max_num_probes=1, num_search_each_probe=nrand, simulator=None)
+    actions = policy.random_search(
+        max_num_probes=1, num_search_each_probe=nrand, simulator=None
+    )
     targets = sim(actions)
     print(actions)
     print(targets)
     policy.write(actions, targets)
     physbo.search.utility.show_search_results(policy.history, nrand)
 
-    actions = policy.bayes_search(max_num_probes=1, num_search_each_probe=nsearch, simulator=None, score='TS')
+    actions = policy.bayes_search(
+        max_num_probes=1, num_search_each_probe=nsearch, simulator=None, score="TS"
+    )
     targets = sim(actions)
     print(actions)
     print(targets)

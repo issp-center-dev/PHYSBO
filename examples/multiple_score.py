@@ -6,7 +6,7 @@ import physbo
 # Make a set of candidates, test_X
 D = 2  # The number of params (the dimension of parameter space)
 Nx = 11  # The number of candidates
-N = Nx*Nx
+N = Nx * Nx
 
 # score = "HVPI"
 score = "EHVI"

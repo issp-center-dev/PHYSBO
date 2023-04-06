@@ -39,6 +39,7 @@ def test_multi_objective_EHVI():
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("EHVI", xs=sim.X)
 
+
 def test_multi_objective_HVPI():
     sim = simulator()
     nrand = 10
@@ -51,6 +52,7 @@ def test_multi_objective_HVPI():
     vid_ref = 0.25322554948754283
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("HVPI", xs=sim.X)
+
 
 def test_multi_objective_TS():
     sim = simulator()
@@ -73,11 +75,14 @@ def test_multi_objective_EHVI_rand():
     policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
-    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI", num_rand_basis=100)
+    res = policy.bayes_search(
+        max_num_probes=nsearch, simulator=sim, score="EHVI", num_rand_basis=100
+    )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.08400891973743863 
+    vid_ref = 0.08400891973743863
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("EHVI", xs=sim.X)
+
 
 def test_multi_objective_HVPI_rand():
     sim = simulator()
@@ -86,11 +91,14 @@ def test_multi_objective_HVPI_rand():
     policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
-    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="HVPI", num_rand_basis=100)
+    res = policy.bayes_search(
+        max_num_probes=nsearch, simulator=sim, score="HVPI", num_rand_basis=100
+    )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
     vid_ref = 0.13374086517165518
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("HVPI", xs=sim.X)
+
 
 def test_multi_objective_TS_rand():
     sim = simulator()
@@ -99,8 +107,10 @@ def test_multi_objective_TS_rand():
     policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
-    res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100)
+    res = policy.bayes_search(
+        max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100
+    )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.134435814966692 
+    vid_ref = 0.134435814966692
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("TS", xs=sim.X)

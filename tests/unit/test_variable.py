@@ -12,6 +12,7 @@ def X():
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [2.0, 2.0, 2.0], [3.0, 3.0, 3.0]]
     )
 
+
 @pytest.fixture
 def t():
     return np.array([0.0, 1.0, 2.0, 3.0])
@@ -19,9 +20,8 @@ def t():
 
 @pytest.fixture
 def Z():
-    return np.array(
-        [[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]
-    )
+    return np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+
 
 @pytest.fixture
 def variable(X, t, Z):
@@ -80,19 +80,19 @@ def test_add(variable, X, t, Z, mocker):
 def test_add_X(variable, X):
     n = X.shape[0]
     variable.add_X(X)
-    assert np.array_equal(variable.X[n:2*n, :], X)
+    assert np.array_equal(variable.X[n : 2 * n, :], X)
 
 
 def test_add_t(variable, t):
     n = t.shape[0]
     variable.add_t(t)
-    assert np.array_equal(variable.t[n:2*n], t)
+    assert np.array_equal(variable.t[n : 2 * n], t)
 
 
 def test_add_Z(variable, Z):
     n = Z.shape[0]
     variable.add_Z(Z)
-    assert np.array_equal(variable.Z[n:2*n, :], Z)
+    assert np.array_equal(variable.Z[n : 2 * n, :], Z)
 
 
 def test_save_load(variable, tmpdir):

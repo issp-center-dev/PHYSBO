@@ -17,7 +17,7 @@ class simulator:
         np.random.seed(12345)
         self.nslice = 11
         self.dim = 2
-        self.N = self.nslice ** self.dim
+        self.N = self.nslice**self.dim
         self.X = np.zeros((self.N, self.dim))
         self.t = np.zeros(self.N)
         for i, x in enumerate(

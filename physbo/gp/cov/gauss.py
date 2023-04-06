@@ -5,7 +5,7 @@ from ._src.enhance_gauss import grad_width64
 
 
 class gauss:
-    """ gaussian kernel """
+    """gaussian kernel"""
 
     def __init__(
         self,
@@ -68,7 +68,7 @@ class gauss:
         print(" Parameters of Gaussian kernel \n ")
         print(" width  = ", +self.width)
         print(" scale  = ", +self.scale)
-        print(" scale2 = ", +self.scale ** 2)
+        print(" scale2 = ", +self.scale**2)
         print(" \n")
 
     def prepare(self, params=None):
@@ -122,7 +122,7 @@ class gauss:
             grad[0 : self.num_params - 1, :, :] = grad_width64(X, width, G)
         else:
             pairwise_dists = spatial.distance.pdist(X / width, "euclidean")
-            grad[0, :, :] = G * spatial.distance.squareform(pairwise_dists ** 2)
+            grad[0, :, :] = G * spatial.distance.squareform(pairwise_dists**2)
 
         grad[-1, :, :] = 2 * G
         return grad
@@ -150,7 +150,7 @@ class gauss:
             covariant matrix
         """
         params, width, scale = self.prepare(params)
-        scale2 = scale ** 2
+        scale2 = scale**2
 
         if Z is None:
             if diag:
@@ -332,7 +332,7 @@ class gauss:
         tupple (W, b, amp)
         """
         params, width, scale = self.prepare(params)
-        scale2 = scale ** 2
+        scale2 = scale**2
         amp = np.sqrt((2 * scale2) / num_basis)
         W = np.random.randn(num_basis, self.num_dim) / width
         b = np.random.rand(num_basis) * 2 * np.pi

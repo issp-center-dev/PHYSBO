@@ -309,7 +309,7 @@ class online(object):
 
 
 class adam(online):
-    """ default """
+    """default"""
 
     def __init__(self, gp, config):
         """
@@ -351,7 +351,7 @@ class adam(online):
         """
         grad = self.gp.get_grad_marlik(params, X, t)
         self.m = self.m * self.beta + grad * (1 - self.beta)
-        self.v = self.v * self.gamma + grad ** 2 * (1 - self.gamma)
+        self.v = self.v * self.gamma + grad**2 * (1 - self.gamma)
         hat_m = self.m / (1 - self.beta ** (self.num_iter))
         hat_v = self.v / (1 - self.gamma ** (self.num_iter))
         return -self.alpha * hat_m / (np.sqrt(hat_v) + self.epsilon)

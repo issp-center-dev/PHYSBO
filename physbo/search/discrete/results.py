@@ -22,19 +22,19 @@ class history:
 
     @property
     def time_total(self):
-        return copy.copy(self.time_total_[0:self.num_runs])
+        return copy.copy(self.time_total_[0 : self.num_runs])
 
     @property
     def time_update_predictor(self):
-        return copy.copy(self.time_update_predictor_[0:self.num_runs])
+        return copy.copy(self.time_update_predictor_[0 : self.num_runs])
 
     @property
     def time_get_action(self):
-        return copy.copy(self.time_get_action_[0:self.num_runs])
+        return copy.copy(self.time_get_action_[0 : self.num_runs])
 
     @property
     def time_run_simulator(self):
-        return copy.copy(self.time_run_simulator_[0:self.num_runs])
+        return copy.copy(self.time_run_simulator_[0 : self.num_runs])
 
     def write(
         self,

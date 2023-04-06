@@ -1,4 +1,4 @@
-from .centering  import centering
+from .centering import centering
 from .gauss_elim import gauss_elim
 from .set_config import set_config
 from ._src.diagAB import diagAB_64 as diagAB

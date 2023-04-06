@@ -100,7 +100,9 @@ class policy(discrete.policy):
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
         local_index = np.searchsorted(self.actions, action)
-        local_index = local_index[np.take(self.actions, local_index, mode='clip') == action]
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == action
+        ]
         self.actions = self._delete_actions(local_index)
 
     def _model(self, i):
@@ -123,7 +125,6 @@ class policy(discrete.policy):
         is_disp=True,
         disp_pareto_set=False,
     ):
-
         if self.mpirank != 0:
             is_disp = False
 
@@ -133,7 +134,6 @@ class policy(discrete.policy):
             utility.show_interactive_mode(simulator, self.history)
 
         for n in range(0, max_num_probes):
-
             time_total = time.time()
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(
@@ -181,7 +181,6 @@ class policy(discrete.policy):
         interval=0,
         num_rand_basis=0,
     ):
-
         if self.mpirank != 0:
             is_disp = False
 
@@ -418,14 +417,18 @@ class policy(discrete.policy):
         virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
         for i in range(self.num_objectives):
             new_test_local = self.test_list[i].get_subset(chosen_actions)
-            virtual_t_local = self.predictor_list[i].get_predict_samples(self.training_list[i], new_test_local, K)
+            virtual_t_local = self.predictor_list[i].get_predict_samples(
+                self.training_list[i], new_test_local, K
+            )
             if self.mpisize == 1:
                 new_test_list[i] = new_test_local
                 virtual_t_list[i] = virtual_t_local
             else:
                 for nt in self.mpicomm.allgather(new_test_local):
                     new_test_list[i].add(X=nt.X, t=nt.t, Z=nt.Z)
-                virtual_t_list[i] = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
+                virtual_t_list[i] = np.concatenate(
+                    self.mpicomm.allgather(virtual_t_local), axis=1
+                )
 
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
@@ -438,12 +441,17 @@ class policy(discrete.policy):
                 if virtual_train.Z is None:
                     training_list[i].add(virtual_train.X, virtual_train.t)
                 else:
-                    training_list[i].add(virtual_train.X, virtual_train.t, virtual_train.Z)
+                    training_list[i].add(
+                        virtual_train.X, virtual_train.t, virtual_train.Z
+                    )
 
                 predictor_list[i].update(training_list[i], virtual_train)
 
             f[k, :] = self.get_score(
-                mode, predictor_list=predictor_list, training_list=training_list, parallel=False
+                mode,
+                predictor_list=predictor_list,
+                training_list=training_list,
+                parallel=False,
             )
         return np.mean(f, axis=0)
 

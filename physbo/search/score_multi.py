@@ -30,6 +30,7 @@ def score(mode, predictor_list, test, training_list, **kwargs):
         raise NotImplementedError("mode must be EHVI, HVPI or TS.")
     return f
 
+
 def HVPI(fmean, fstd, pareto):
     """
     Calculate Hypervolume-based Probability of Improvement (HVPI).
