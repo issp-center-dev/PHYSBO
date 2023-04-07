@@ -64,7 +64,7 @@ def show_search_results_mo(history, N, disp_pareto_set=False):
         for n in range(st, en):
             print(
                 "f(x) = %s (action = %d)"
-                % (str(history.fx[n - 1]), history.chosen_actions[n - 1])
+                % (str(history.fx[n]), history.chosen_actions[n])
             )
         print("\n")
 

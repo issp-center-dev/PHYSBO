@@ -2,7 +2,7 @@ import physbo.predictor
 
 
 class predictor(physbo.predictor.base_predictor):
-    """ predictor """
+    """predictor"""
 
     def __init__(self, config, model=None):
         """

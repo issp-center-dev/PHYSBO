@@ -14,7 +14,7 @@ test_X[0, :] = 0.0  # true solution
 
 
 def simulator(actions: np.ndarray) -> np.ndarray:
-    """ Objective function
+    """Objective function
 
     Quadratic function, -Σ_i x_i^2
     Receives an array of actions (indices of candidates) and returns the corresponding results as an array

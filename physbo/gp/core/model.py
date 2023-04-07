@@ -301,7 +301,7 @@ class model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha ** 2, N)
+        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """

@@ -2,7 +2,7 @@ import numpy as np
 
 
 class zero:
-    """ zero """
+    """zero"""
 
     def __init__(self):
         self.num_params = 0

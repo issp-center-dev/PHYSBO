@@ -72,7 +72,7 @@ class adam:
         """
         g = self.grad(params, *args, **kwargs)
         self.m = self.m * self.beta + g * (1 - self.beta)
-        self.v = self.v * self.gamma + g ** 2 * (1 - self.gamma)
+        self.v = self.v * self.gamma + g**2 * (1 - self.gamma)
         hat_m = self.m / (1 - self.beta ** (self.epoch + 1))
         hat_v = self.v / (1 - self.gamma ** (self.epoch + 1))
         self.epoch += 1

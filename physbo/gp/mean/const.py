@@ -2,7 +2,7 @@ import numpy as np
 
 
 class const:
-    """ constant """
+    """constant"""
 
     def __init__(self, params=None, max_params=1e12, min_params=-1e12):
         """

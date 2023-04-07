@@ -99,6 +99,11 @@ class policy(discrete.policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
+        local_index = np.searchsorted(self.actions, action)
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == action
+        ]
+        self.actions = self._delete_actions(local_index)
 
     def _model(self, i):
         training = self.training_list[i]
@@ -120,7 +125,6 @@ class policy(discrete.policy):
         is_disp=True,
         disp_pareto_set=False,
     ):
-
         if self.mpirank != 0:
             is_disp = False
 
@@ -130,7 +134,6 @@ class policy(discrete.policy):
             utility.show_interactive_mode(simulator, self.history)
 
         for n in range(0, max_num_probes):
-
             time_total = time.time()
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(
@@ -178,7 +181,6 @@ class policy(discrete.policy):
         interval=0,
         num_rand_basis=0,
     ):
-
         if self.mpirank != 0:
             is_disp = False
 
@@ -282,14 +284,18 @@ class policy(discrete.policy):
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
-        X = self._make_variable_X(xs)
-        predictor_list = self.predictor_list[:]
-        if predictor_list == [None] * self.num_objectives:
+        if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fmean()")
+            predictor_list = []
             for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(self.training_list[i], 0)
-                predictor_list[i].prepare(self.training_list[i])
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
         fmean = [
             predictor.get_post_fmean(training, X)
             for predictor, training in zip(predictor_list, self.training_list)
@@ -297,14 +303,18 @@ class policy(discrete.policy):
         return np.array(fmean).T
 
     def get_post_fcov(self, xs):
-        X = self._make_variable_X(xs)
-        predictor_list = self.predictor_list[:]
-        if predictor_list == [None] * self.num_objectives:
+        if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fcov()")
+            predictor_list = []
             for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(self.training_list[i], 0)
-                predictor_list[i].prepare(self.training_list[i])
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
         fcov = [
             predictor.get_post_fcov(training, X)
             for predictor, training in zip(predictor_list, self.training_list)
@@ -322,8 +332,6 @@ class policy(discrete.policy):
         parallel=True,
         alpha=1,
     ):
-        if predictor_list is None:
-            predictor_list = self.predictor_list
         if training_list is None:
             training_list = self.training_list
         if pareto is None:
@@ -333,12 +341,18 @@ class policy(discrete.policy):
             msg = "ERROR: No training data is registered."
             raise RuntimeError(msg)
 
-        if predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_score()")
-            for i in range(self.num_objectives):
-                predictor_list[i] = gp_predictor(self.config)
-                predictor_list[i].fit(training_list[i], 0)
-                predictor_list[i].prepare(training_list[i])
+        if predictor_list is None:
+            if self.predictor_list == [None] * self.num_objectives:
+                self._warn_no_predictor("get_score()")
+                predictor_list = []
+                for i in range(self.num_objectives):
+                    predictor = gp_predictor(self.config)
+                    predictor.fit(training_list[i], 0)
+                    predictor.prepare(training_list[i])
+                    predictor_list.append(predictor)
+            else:
+                self._update_predictor()
+                predictor_list = self.predictor_list
 
         if xs is not None:
             if actions is not None:
@@ -403,14 +417,18 @@ class policy(discrete.policy):
         virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
         for i in range(self.num_objectives):
             new_test_local = self.test_list[i].get_subset(chosen_actions)
-            virtual_t_local = self.predictor_list[i].get_predict_samples(self.training_list[i], new_test_local, K)
+            virtual_t_local = self.predictor_list[i].get_predict_samples(
+                self.training_list[i], new_test_local, K
+            )
             if self.mpisize == 1:
                 new_test_list[i] = new_test_local
                 virtual_t_list[i] = virtual_t_local
             else:
                 for nt in self.mpicomm.allgather(new_test_local):
                     new_test_list[i].add(X=nt.X, t=nt.t, Z=nt.Z)
-                virtual_t_list[i] = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
+                virtual_t_list[i] = np.concatenate(
+                    self.mpicomm.allgather(virtual_t_local), axis=1
+                )
 
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
@@ -423,12 +441,17 @@ class policy(discrete.policy):
                 if virtual_train.Z is None:
                     training_list[i].add(virtual_train.X, virtual_train.t)
                 else:
-                    training_list[i].add(virtual_train.X, virtual_train.t, virtual_train.Z)
+                    training_list[i].add(
+                        virtual_train.X, virtual_train.t, virtual_train.Z
+                    )
 
                 predictor_list[i].update(training_list[i], virtual_train)
 
             f[k, :] = self.get_score(
-                mode, predictor_list=predictor_list, training_list=training_list, parallel=False
+                mode,
+                predictor_list=predictor_list,
+                training_list=training_list,
+                parallel=False,
             )
         return np.mean(f, axis=0)
 
@@ -455,6 +478,9 @@ class policy(discrete.policy):
 
         if file_predictor_list is not None:
             self.load_predictor_list(file_predictor_list)
+
+        N = self.history.total_num_search
+        self.actions = self._delete_actions(self.history.chosen_actions[:N])
 
     def save_predictor_list(self, file_name):
         with open(file_name, "wb") as f:

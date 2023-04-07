@@ -60,7 +60,9 @@ class policy:
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-            self.config.learning.is_disp = (self.config.learning.is_disp and self.mpirank == 0)
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
 
     def set_seed(self, seed):
         """
@@ -129,6 +131,11 @@ class policy:
             time_run_simulator=time_run_simulator,
         )
         self.training.add(X=X, t=t, Z=Z)
+        local_index = np.searchsorted(self.actions, action)
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == action
+        ]
+        self.actions = self._delete_actions(local_index)
         if self.new_data is None:
             self.new_data = variable(X=X, t=t, Z=Z)
         else:
@@ -165,7 +172,6 @@ class policy:
             utility.show_interactive_mode(simulator, self.history)
 
         for n in range(0, max_num_probes):
-
             time_total = time.time()
             if is_disp and N > 1:
                 utility.show_start_message_multi_search(self.history.num_runs)
@@ -333,24 +339,28 @@ class policy:
     def get_post_fmean(self, xs):
         """Calculate mean value of predictor (post distribution)"""
         X = self._make_variable_X(xs)
-        predictor = self.predictor
-        if predictor is None:
+        if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-        return predictor.get_post_fmean(self.training, X)
+            return predictor.get_post_fmean(self.training, X)
+        else:
+            self._update_predictor()
+            return self.predictor.get_post_fmean(self.training, X)
 
     def get_post_fcov(self, xs):
         """Calculate covariance of predictor (post distribution)"""
         X = self._make_variable_X(xs)
-        predictor = self.predictor
-        if predictor is None:
+        if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-        return predictor.get_post_fcov(self.training, X)
+            return predictor.get_post_fcov(self.training, X)
+        else:
+            self._update_predictor()
+            return self.predictor.get_post_fcov(self.training, X)
 
     def get_score(
         self,
@@ -412,13 +422,14 @@ class policy:
             raise RuntimeError(msg)
 
         if predictor is None:
-            predictor = self.predictor
-
-        if predictor is None:
-            self._warn_no_predictor("get_score()")
-            predictor = gp_predictor(self.config)
-            predictor.fit(training, 0)
-            predictor.prepare(training)
+            if self.predictor is None:
+                self._warn_no_predictor("get_score()")
+                predictor = gp_predictor(self.config)
+                predictor.fit(training, 0)
+                predictor.prepare(training)
+            else:
+                self._update_predictor()
+                predictor = self.predictor
 
         if xs is not None:
             if actions is not None:
@@ -471,7 +482,9 @@ class policy:
 
         # draw K samples of the values of objective function of chosen actions
         new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = self.predictor.get_predict_samples(self.training, new_test_local, K)
+        virtual_t_local = self.predictor.get_predict_samples(
+            self.training, new_test_local, K
+        )
         if self.mpisize == 1:
             new_test = new_test_local
             virtual_t = virtual_t_local
@@ -668,6 +681,9 @@ class policy:
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
+
+        N = self.history.total_num_search
+        self.actions = self._delete_actions(self.history.chosen_actions[:N])
 
     def export_predictor(self):
         """

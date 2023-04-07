@@ -17,8 +17,9 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 ## Required Packages
 
 - Python >= 3.6
-- numpy
-- scipy
+    - No longer tested with Python 3.6
+- NumPy
+- SciPy
 
 ## Install
 
@@ -42,6 +43,7 @@ pip3 install physbo
         ```
 
     1. Install via pip
+
         ``` bash
         # ./PHYSBO is the root directory of PHYSBO
         # pip install options such as --user are avaiable

@@ -25,19 +25,19 @@ class history(object):
 
     @property
     def time_total(self):
-        return copy.copy(self._time_total[0:self.num_runs])
+        return copy.copy(self._time_total[0 : self.num_runs])
 
     @property
     def time_update_predictor(self):
-        return copy.copy(self._time_update_predictor[0:self.num_runs])
+        return copy.copy(self._time_update_predictor[0 : self.num_runs])
 
     @property
     def time_get_action(self):
-        return copy.copy(self._time_get_action[0:self.num_runs])
+        return copy.copy(self._time_get_action[0 : self.num_runs])
 
     @property
     def time_run_simulator(self):
-        return copy.copy(self._time_run_simulator[0:self.num_runs])
+        return copy.copy(self._time_run_simulator[0 : self.num_runs])
 
     def write(
         self,

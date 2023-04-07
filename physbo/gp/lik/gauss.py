@@ -3,7 +3,7 @@ import numpy as np
 
 
 class gauss:
-    """ Gaussian likelihood function """
+    """Gaussian likelihood function"""
 
     def __init__(self, std=1, max_params=1e6, min_params=1e-6):
         """
@@ -99,7 +99,7 @@ class gauss:
             Diagonal element matrix of exp(2.0*params)
         """
         std = self.trans_params(params)
-        var = std ** 2
+        var = std**2
         return var * np.identity(num_data)
 
     def get_grad(self, num_data, params=None):
@@ -119,7 +119,7 @@ class gauss:
             Diagonal element matrix of 2.0 * exp(2.0*params)
         """
         std = self.trans_params(params)
-        var = std ** 2
+        var = std**2
         return var * np.identity(num_data) * 2
 
     def set_params(self, params):
