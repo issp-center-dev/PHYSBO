@@ -7,4 +7,4 @@ from . import predictor
 from .predictor import base_predictor
 from .variable import variable
 
-__version__ = "1.2-dev"
+__version__ = "1.1.1"
