@@ -4,10 +4,10 @@ from physbo import blm
 from physbo.gp import inf
 from physbo.gp.core import learning
 from physbo.gp.core.prior import prior
-
+from physbo.misc import set_config
 
 class model:
-    def __init__(self, lik, mean, cov, inf="exact"):
+    def __init__(self, lik, mean, cov, xtrain=None, ytrain=None, inf="exact"):
         """
 
         Parameters
@@ -20,6 +20,8 @@ class model:
         self.lik = lik
         self.prior = prior(mean=mean, cov=cov)
         self.inf = inf
+        self.xtrain = xtrain
+        self.ytrain = ytrain
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)
         self.stats = ()
@@ -301,7 +303,7 @@ class model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        return np.random.multivariate_normal(fmean, fcov * alpha ** 2, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """
@@ -411,3 +413,71 @@ class model:
             params = bfgs.run(X, t)
 
         self.set_params(params)
+
+class GP_sfs(model):
+
+    def __init__(self, lik, mean, cov, xtrain=None, ytrain=None, inf="exact",config=None):
+        super().__init__(lik, mean, cov, xtrain, ytrain, inf)
+
+        self.config = config
+
+    def fit(self, X, t):
+        """
+        Fitting function (update parameters)
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+        t:  numpy.ndarray
+            N dimensional array.
+            The negative energy of each search candidate (value of the objective function to be optimized).
+        config: physbo.misc.set_config object
+
+        """
+        #config = set_config()
+        method = self.config.learning.method
+
+        if method == "adam":
+            adam = learning.adam(self, self.config)
+            params = adam.run(X, t)
+
+        if method in ("bfgs", "batch"):
+            bfgs = learning.batch(self, self.config)
+            params = bfgs.run(X, t)
+
+        self.set_params(params)
+
+        self.prepare(X, t, params=None)
+
+    def prepare(self, X, t, params=None):
+        return super().prepare(X, t, params)
+    
+    def get_post_fmean(self, X, Z, params=None):
+        return super().get_post_fmean(X, Z, params)
+
+    def predict(self, Z, params=None):
+        """
+        Calculating posterior mean of model (function)
+
+        Parameters
+        ==========
+        X: numpy.ndarray
+            inputs
+        Z: numpy.ndarray
+            feature maps
+        params: numpy.ndarray
+            Parameters
+        See also
+        ========
+        physbo.gp.inf.exact.get_post_fmean
+        """
+
+        if params is None:
+            params = np.copy(self.params)
+
+        if self.inf == "exact":
+            post_fmu = inf.exact.get_post_fmean(self, Z, Z, params)
+
+        return post_fmu
