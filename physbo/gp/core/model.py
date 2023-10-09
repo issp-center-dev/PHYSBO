@@ -5,9 +5,10 @@ from physbo.gp import inf
 from physbo.gp.core import learning
 from physbo.gp.core.prior import prior
 from physbo.misc import set_config
+from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 
 class model:
-    def __init__(self, lik, mean, cov, xtrain=None, ytrain=None, inf="exact"):
+    def __init__(self, lik, mean, cov, inf="exact"):
         """
 
         Parameters
@@ -20,8 +21,6 @@ class model:
         self.lik = lik
         self.prior = prior(mean=mean, cov=cov)
         self.inf = inf
-        self.xtrain = xtrain
-        self.ytrain = ytrain
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)
         self.stats = ()
@@ -414,12 +413,15 @@ class model:
 
         self.set_params(params)
 
-class GP_sfs(model):
+class sfs(model):
 
-    def __init__(self, lik, mean, cov, xtrain=None, ytrain=None, inf="exact",config=None):
-        super().__init__(lik, mean, cov, xtrain, ytrain, inf)
+    def __init__(self, lik, mean, cov, inf="exact",config=None):
+        super().__init__(lik, mean, cov, inf)
 
         self.config = config
+
+    def prepare(self, X, t, params=None):
+        return super().prepare(X, t, params)
 
     def fit(self, X, t):
         """
@@ -451,8 +453,7 @@ class GP_sfs(model):
 
         self.prepare(X, t, params=None)
 
-    def prepare(self, X, t, params=None):
-        return super().prepare(X, t, params)
+        self.xtrain = X
     
     def get_post_fmean(self, X, Z, params=None):
         return super().get_post_fmean(X, Z, params)
@@ -478,6 +479,14 @@ class GP_sfs(model):
             params = np.copy(self.params)
 
         if self.inf == "exact":
-            post_fmu = inf.exact.get_post_fmean(self, Z, Z, params)
+            post_fmu = inf.exact.get_post_fmean(self, self.xtrain, Z, params)
 
         return post_fmu
+    
+    def get_params(self,deep=True):
+
+        mean = self.prior.mean
+        cov = self.prior.cov
+        config = self.config
+
+        return {"lik":self.lik,"mean":mean,"cov":cov,"config":config}
