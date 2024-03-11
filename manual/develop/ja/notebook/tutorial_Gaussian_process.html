@@ -1,21 +1,25 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="ja" >
+<html class="writer-html5" lang="ja" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ガウス過程 &mdash; PHYSBO 1.2-dev ドキュメント</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <title>ガウス過程 &mdash; PHYSBO 1.1.1 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script src="../_static/translations.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=c1e142d6"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/translations.js?v=4dbe4bdc"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -38,7 +42,7 @@
             
           </a>
               <div class="version">
-                1.2
+                1.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -99,12 +103,12 @@
            <div itemprop="articleBody">
              
   <section id="ガウス過程">
-<h1>ガウス過程<a class="headerlink" href="#ガウス過程" title="この見出しへのパーマリンク"></a></h1>
+<h1>ガウス過程<a class="headerlink" href="#ガウス過程" title="Link to this heading"></a></h1>
 <p>PHYSBOではガウス過程回帰を実行しながらベイズ最適化を行なっています。</p>
 <p>そのため、学習データが与えられた際にガウス過程回帰を実行することもでき、学習済みモデルを利用したテストデータの予測も行うことができます。</p>
 <p>ここでは、その手順について紹介します。</p>
 <section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="この見出しへのパーマリンク"></a></h2>
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
 <p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
 <p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を <code class="docutils literal notranslate"><span class="pre">data</span></code> ディレクトリ以下に保存し、次のように読み出します。</p>
 <div class="nbinput nblast docutils container">
@@ -128,7 +132,7 @@
 </div>
 </section>
 <section id="学習データの定義">
-<h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="この見出しへのパーマリンク"></a></h2>
+<h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="Link to this heading"></a></h2>
 <p>対象データのうち、ランダムに選んだ1割をトレーニングデータとして利用し、別のランダムに選んだ1割をテストデータとして利用します。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -164,7 +168,7 @@ Ntest = 1798
 </div>
 </section>
 <section id="ガウス過程の学習と予測">
-<h2>ガウス過程の学習と予測<a class="headerlink" href="#ガウス過程の学習と予測" title="この見出しへのパーマリンク"></a></h2>
+<h2>ガウス過程の学習と予測<a class="headerlink" href="#ガウス過程の学習と予測" title="Link to this heading"></a></h2>
 <p>以下のプロセスでガウス過程を学習し、テストデータの予測を行います。</p>
 <ol class="arabic simple">
 <li><p>ガウス過程のモデルを生成します。</p></li>
@@ -333,7 +337,7 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 </div>
 </section>
 <section id="訓練済みモデルによる予測">
-<h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="この見出しへのパーマリンク"></a></h2>
+<h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="Link to this heading"></a></h2>
 <p>学習済みモデルのパラメタをgp_paramsとして読み出し、これを用いた予測を行います。</p>
 <p>gp_paramsおよび学習データ(X_train, t_train)を記憶しておくことで、訓練済みモデルによる予測が可能となります。</p>
 <p>学習されたパラメタを準備(学習の直後に行う必要あり)</p>
