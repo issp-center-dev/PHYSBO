@@ -68,8 +68,7 @@ Bibtexは以下の通りです。 ::
 
 ライセンス
 ----------------------
-| 本ソフトウェアのプログラムパッケージおよびソースコード一式はGNU
-  General Public License version 3（GPL v3）に準じて配布されています。
+| PHYSBO v2 のソースコードは Mozilla Public License version 2.0（MPL v2）のもとで公開・頒布されています。
 
 Copyright (c) <2020-> The University of Tokyo. All rights reserved.
 
