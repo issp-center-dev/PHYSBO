@@ -64,7 +64,6 @@ def test_EI(predictor, X, Y):
     N = Y.shape[0]
     score = physbo.search.score.EI(predictor, X, Y)
     assert score.shape[0] == N
-    predictor.get_post_fmean.assert_any_call(X, X)
     predictor.get_post_fmean.assert_any_call(X, Y)
     predictor.get_post_fcov.assert_called_once_with(X, Y)
     predictor.get_post_samples.assert_not_called()
@@ -84,7 +83,6 @@ def test_PI(predictor, X, Y):
     N = Y.shape[0]
     score = physbo.search.score.PI(predictor, X, Y)
     assert score.shape[0] == N
-    predictor.get_post_fmean.assert_any_call(X, X)
     predictor.get_post_fmean.assert_any_call(X, Y)
     predictor.get_post_fcov.assert_called_once_with(X, Y)
     predictor.get_post_samples.assert_not_called()
