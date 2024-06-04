@@ -26,14 +26,14 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - From PyPI (recommended)
 
 ```bash
-pip3 install physbo
+python3 -m pip install physbo
 ```
 
 - From source (for developers)
     1. Update pip (>= 19.0)
 
         ```bash
-        pip3 install -U pip
+        python3 -m pip install -U pip
         ```
 
     1. Download or clone the github repository
@@ -48,7 +48,7 @@ pip3 install physbo
         # ./PHYSBO is the root directory of PHYSBO
         # pip install options such as --user are avaiable
 
-        pip3 install ./PHYSBO
+        python3 -m pip install ./PHYSBO
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
@@ -56,7 +56,7 @@ pip3 install physbo
 ## Uninstall
 
 ```bash
-pip3 uninstall physbo
+python3 -m pip uninstall physbo
 ```
 
 ## Usage
@@ -70,7 +70,7 @@ A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery
 ## License
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
-This package is distributed under GNU General Public License version 3 (GPL v3) or later.
+PHYSBO v2 is distributed under Mozilla Public License version 2.0 (MPL v2).
 We hope that you cite the following reference when you publish the results using PHYSBO:
 
 [“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, Computer Physics Communications Volume 278, September 2022, 108405.](https://doi.org/10.1016/j.cpc.2022.108405)
