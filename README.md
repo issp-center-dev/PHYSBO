@@ -18,7 +18,7 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 
 - Python >= 3.6
     - No longer tested with Python 3.6
-- NumPy
+- NumPy < 2.0.0
 - SciPy
 
 ## Install
