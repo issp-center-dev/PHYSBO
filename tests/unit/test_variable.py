@@ -36,15 +36,6 @@ def test_get_subset(variable, X, t, Z, index):
     assert np.array_equal(var2.Z, Z[index, :])
 
 
-def test_delete(variable, mocker):
-    delete_X = mocker.patch("physbo.variable.delete_X")
-    delete_t = mocker.patch("physbo.variable.delete_t")
-    delete_Z = mocker.patch("physbo.variable.delete_Z")
-    variable.delete(1)
-    delete_X.assert_called_once_with(1)
-    delete_t.assert_called_once_with(1)
-    delete_Z.assert_called_once_with(1)
-
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_X(variable, X, index):
@@ -68,13 +59,10 @@ def test_delete_Z(variable, Z, index):
 
 
 def test_add(variable, X, t, Z, mocker):
-    add_X = mocker.patch("physbo.variable.add_X")
-    add_t = mocker.patch("physbo.variable.add_t")
-    add_Z = mocker.patch("physbo.variable.add_Z")
     variable.add(X, t, Z)
-    add_X.assert_called_once_with(X)
-    add_t.assert_called_once_with(t)
-    add_Z.assert_called_once_with(Z)
+    assert np.array_equal(variable.X, np.vstack((X,X)))
+    assert np.array_equal(variable.t, np.hstack((t,t)))
+    assert np.array_equal(variable.Z, np.vstack((Z,Z)))
 
 
 def test_add_X(variable, X):
