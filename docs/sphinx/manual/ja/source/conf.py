@@ -26,9 +26,9 @@ copyright = "2020-, PHYSBO developers"
 author = "PHYSBO developers"
 
 # The short X.Y version.
-version = "1.1"
+version = "2.0"
 # The full version, including alpha/beta/rc tags.
-release = "1.1.1"
+release = "2.0.0"
 
 # -- General configuration ---------------------------------------------------
 
