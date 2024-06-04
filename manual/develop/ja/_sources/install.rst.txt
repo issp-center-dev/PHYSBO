@@ -9,7 +9,7 @@
 PHYSBOの実行環境・必要なパッケージは以下の通りです。
 
 * Python >= 3.6
-* numpy
+* numpy < 2.0.0
 * scipy
 
 
