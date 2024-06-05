@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>インタラクティブに実行する &mdash; PHYSBO 2.0.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=c8adcb1d"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/translations.js?v=4dbe4bdc"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="既存の計算結果を読み込んで実行する" href="tutorial_once_mode.html" />
+    <link rel="prev" title="ガウス過程" href="tutorial_Gaussian_process.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+              <div class="version">
+                2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">インタラクティブに実行する</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulator-の定義">simulator の定義</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#最適化の実行">最適化の実行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#中断と再開">中断と再開</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">インタラクティブに実行する</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_interactive_mode.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="インタラクティブに実行する">
+<h1>インタラクティブに実行する<a class="headerlink" href="#インタラクティブに実行する" title="Link to this heading"></a></h1>
+<p>以下の流れで、PHYSBO をインタラクティブに実行することができます。</p>
+<ol class="arabic simple">
+<li><p>PHYSBO から次に実行するパラメータを得ます。</p></li>
+<li><p>PHYSBO の外部で評価値を得ます。</p></li>
+<li><p>評価値をPHYSBOに登録します。</p></li>
+</ol>
+<p>例えば、以下の様な場合に適しています。</p>
+<ul class="simple">
+<li><p>人手による実験を行い、その評価値をPHYSBOに与えたい。</p></li>
+<li><p>simulator の実行を別プロセスで行うなど、柔軟に実行制御を行いたい。</p></li>
+</ul>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>これまでのチュートリアルと同様、データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を <code class="docutils literal notranslate"><span class="pre">data</span></code> ディレクトリ以下に保存し、次のように読み出します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">physbo</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="k">def</span> <span class="nf">load_data</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="simulator-の定義">
+<h2>simulator の定義<a class="headerlink" href="#simulator-の定義" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">simulator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="最適化の実行">
+<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy のセット</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+
+<span class="c1"># シード値のセット</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>各探索ステップでは以下の処理を行っています。</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_num_probes=1,</span> <span class="pre">simulator=None</span></code> として random_search または bayes_search を実行して action ID (パラメータ)を得る。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t</span>&#160; <span class="pre">=</span> <span class="pre">simulator(actions)</span></code> により評価値(の array) を得る。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">policy.write(actions,</span> <span class="pre">t)</span></code>により action ID (パラメータ) に対する評価値を登録する。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">physbo.search.utility.show_search_results</span></code> により履歴を表示する。</p></li>
+</ol>
+<p>以下では、ランダムサンプリングを２回（1st, and 2nd steps）、ベイズ最適化による提案を２回（3rd, and 4th steps）を行います。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">()</span>
+
+<span class="sd">&#39;&#39;&#39; 1st step (random sampling) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">t</span>  <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39; 2nd step (random sampling) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39; 3rd step (bayesian optimization) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39; 4-th step (bayesian optimization) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="中断と再開">
+<h2>中断と再開<a class="headerlink" href="#中断と再開" title="Link to this heading"></a></h2>
+<p>以下の predictor, training, history を外部ファイルに保存することで、最適化プロセスを中断し、途中から再開することができます。</p>
+<ul class="simple">
+<li><p>predictor: 目的関数の予測モデル</p></li>
+<li><p>training: predictor の学習に用いるデータ (<code class="docutils literal notranslate"><span class="pre">physbo.variable</span></code> オブジェクト）</p></li>
+<li><p>history: 最適化実行の履歴 (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.history</span></code> オブジェクト)</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_history</span><span class="o">=</span><span class="s1">&#39;history.npz&#39;</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="s1">&#39;training.npz&#39;</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="s1">&#39;predictor.dump&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy を削除</span>
+<span class="k">del</span> <span class="n">policy</span>
+
+<span class="c1"># 保存した policy をロード</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="o">=</span><span class="s1">&#39;history.npz&#39;</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="s1">&#39;training.npz&#39;</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="s1">&#39;predictor.dump&#39;</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39; 5-th step (bayesian optimization) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># predictor と training を個別に指定することも可</span>
+<span class="sd">&#39;&#39;&#39; 6-th step (bayesian optimization) &#39;&#39;&#39;</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                            <span class="n">predictor</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
+                                            <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="n">num_rand_basis</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_Gaussian_process.html" class="btn btn-neutral float-left" title="ガウス過程" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_once_mode.html" class="btn btn-neutral float-right" title="既存の計算結果を読み込んで実行する" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v2.0.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v2.0.0/en/notebook/tutorial_interactive_mode.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.0.0/ja/notebook/tutorial_interactive_mode.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_interactive_mode.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_interactive_mode.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.0.0/ja/notebook/tutorial_interactive_mode.html">v2.0.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
