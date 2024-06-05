@@ -8,7 +8,7 @@ Required Packages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Python >= 3.6
-* numpy
+* numpy < 2.0.0
 * scipy
 
 Download and Install

@@ -1,19 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="ja" >
+<html class="writer-html5" lang="ja" data-content_root="../../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.search.discrete.policy &mdash; PHYSBO 1.1.1 ドキュメント</title>
-      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <title>physbo.search.discrete.policy &mdash; PHYSBO 2.0.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
-        <script src="../../../../_static/doctools.js"></script>
-        <script src="../../../../_static/sphinx_highlight.js"></script>
-        <script src="../../../../_static/translations.js"></script>
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=c8adcb1d"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/translations.js?v=4dbe4bdc"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="索引" href="../../../../genindex.html" />
@@ -32,7 +36,7 @@
             
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -78,7 +82,14 @@
            <div itemprop="articleBody">
              
   <h1>physbo.search.discrete.policy のソースコード</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
@@ -94,7 +105,9 @@
 <span class="kn">from</span> <span class="nn">physbo.variable</span> <span class="kn">import</span> <span class="n">variable</span>
 
 
-<div class="viewcode-block" id="policy"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy">[ドキュメント]</a><span class="k">class</span> <span class="nc">policy</span><span class="p">:</span>
+<div class="viewcode-block" id="policy">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy">[ドキュメント]</a>
+<span class="k">class</span> <span class="nc">policy</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -144,7 +157,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="policy.set_seed"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.set_seed">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
+<div class="viewcode-block" id="policy.set_seed">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.set_seed">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting a seed parameter for np.random.</span>
 
@@ -158,7 +173,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.write"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.write">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span>
+
+<div class="viewcode-block" id="policy.write">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.write">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">action</span><span class="p">,</span>
         <span class="n">t</span><span class="p">,</span>
@@ -221,7 +239,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.random_search"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.random_search">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">random_search</span><span class="p">(</span>
+
+<div class="viewcode-block" id="policy.random_search">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.random_search">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">random_search</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">max_num_probes</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -288,7 +309,10 @@
 
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.bayes_search"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.bayes_search">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">bayes_search</span><span class="p">(</span>
+
+<div class="viewcode-block" id="policy.bayes_search">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.bayes_search">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">bayes_search</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">max_num_probes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -408,6 +432,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
+
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_warn_no_predictor</span><span class="p">(</span><span class="n">method_name</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Since policy.predictor is not yet set,&quot;</span><span class="p">)</span>
@@ -416,7 +441,9 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         call bayes_search(max_num_probes=0, num_rand_basis=nrb)&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         before calling </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method_name</span><span class="p">))</span>
 
-<div class="viewcode-block" id="policy.get_post_fmean"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_post_fmean">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+<div class="viewcode-block" id="policy.get_post_fmean">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_post_fmean">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate mean value of predictor (post distribution)&quot;&quot;&quot;</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -429,7 +456,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.get_post_fcov"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_post_fcov">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="policy.get_post_fcov">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_post_fcov">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate covariance of predictor (post distribution)&quot;&quot;&quot;</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -442,7 +472,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.get_score"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_score">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_score</span><span class="p">(</span>
+
+<div class="viewcode-block" id="policy.get_score">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.get_score">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_score</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">mode</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
@@ -535,6 +568,7 @@
             <span class="n">fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
             <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">f</span></div>
+
 
     <span class="k">def</span> <span class="nf">_get_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -701,7 +735,9 @@
             <span class="n">action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">action</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">action</span>
 
-<div class="viewcode-block" id="policy.save"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.save">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="policy.save">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.save">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Saving history, training and predictor into the corresponding files.</span>
@@ -729,7 +765,10 @@
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_predictor</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                     <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="policy.load"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.load">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="policy.load">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.load">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Loading files about history, training and predictor.</span>
@@ -765,7 +804,10 @@
         <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="policy.export_predictor"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_predictor">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">export_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="policy.export_predictor">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_predictor">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">export_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returning the predictor dataset</span>
 
@@ -775,7 +817,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span></div>
 
-<div class="viewcode-block" id="policy.export_training"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_training">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">export_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="policy.export_training">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_training">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">export_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returning the training dataset</span>
 
@@ -785,7 +830,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span></div>
 
-<div class="viewcode-block" id="policy.export_history"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_history">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">export_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="policy.export_history">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.policy.html#physbo.search.discrete.policy.policy.export_history">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">export_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returning the information of the history.</span>
 
@@ -794,6 +842,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span></div>
+
 
     <span class="k">def</span> <span class="nf">_init_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_rand_expans</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -865,6 +914,7 @@
         <span class="k">if</span> <span class="n">actions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span></div>
+
 
 
 <span class="k">def</span> <span class="nf">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

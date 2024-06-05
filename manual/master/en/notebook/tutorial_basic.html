@@ -1,20 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Basic usage of PHYSBO &mdash; PHYSBO 1.1.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <title>Basic usage of PHYSBO &mdash; PHYSBO 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=51b770b3"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -37,7 +41,7 @@
             PHYSBO
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -108,9 +112,9 @@
            <div itemprop="articleBody">
              
   <section id="Basic-usage-of-PHYSBO">
-<h1>Basic usage of PHYSBO<a class="headerlink" href="#Basic-usage-of-PHYSBO" title="Permalink to this heading"></a></h1>
+<h1>Basic usage of PHYSBO<a class="headerlink" href="#Basic-usage-of-PHYSBO" title="Link to this heading"></a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading"></a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading"></a></h2>
 <p>In this tutorial, we will introduce how to define the simulator class and find the minimum value of a one-dimensional function using PHYSBO.</p>
 <p>First, we will import PHYSBO.</p>
 <div class="nbinput nblast docutils container">
@@ -123,7 +127,7 @@
 </div>
 </section>
 <section id="Defining-the-search-space">
-<h2>Defining the search space<a class="headerlink" href="#Defining-the-search-space" title="Permalink to this heading"></a></h2>
+<h2>Defining the search space<a class="headerlink" href="#Defining-the-search-space" title="Link to this heading"></a></h2>
 <p>In the following example, the search space <code class="docutils literal notranslate"><span class="pre">X</span></code> is defined as a grid chopped by <code class="docutils literal notranslate"><span class="pre">window_num=10001</span></code> divisions from <code class="docutils literal notranslate"><span class="pre">x_min</span> <span class="pre">=</span> <span class="pre">-2.0</span></code> to <code class="docutils literal notranslate"><span class="pre">x_max</span> <span class="pre">=</span> <span class="pre">2.0</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">X</span></code> must be in <code class="docutils literal notranslate"><span class="pre">window_num</span></code> x <code class="docutils literal notranslate"><span class="pre">d</span></code> ndarray format (<code class="docutils literal notranslate"><span class="pre">d</span></code> is the number of dimensions, in this case one). In this case, <code class="docutils literal notranslate"><span class="pre">d</span></code> is the number of dimensions, in this case two, so we use reshape to transform it.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -147,7 +151,7 @@
 </div>
 </section>
 <section id="Defining-the-simulator-class">
-<h2>Defining the simulator class<a class="headerlink" href="#Defining-the-simulator-class" title="Permalink to this heading"></a></h2>
+<h2>Defining the simulator class<a class="headerlink" href="#Defining-the-simulator-class" title="Link to this heading"></a></h2>
 <p>Here, we define the simulator class to set as the objective function.</p>
 <p>In this case, the problem is to find the minimum <span class="math notranslate nohighlight">\(x\)</span> such that <span class="math notranslate nohighlight">\(f(x) = 3 x^4 + 4 x ^3 + 1.0\)</span> (the answer is <span class="math notranslate nohighlight">\(x=-1.0\)</span>).</p>
 <p>In the simulator class, we define the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> function (or <code class="docutils literal notranslate"><span class="pre">__init__</span></code> if there are initial variables, etc.). (If there are initial variables, define <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.) The action indicates the index number of the grid to be retrieved from the search space, and is generally in the form of an ndarray so that multiple candidates can be calculated at once. In this case, we choose one candidate point from <code class="docutils literal notranslate"><span class="pre">X</span></code> as <code class="docutils literal notranslate"><span class="pre">action_idx=action[0]</span></code> to calculate only one candidate at a time. Since <strong>PHYSBO
@@ -177,9 +181,9 @@ is designed to find the maximum value of the objective function</strong>, it ret
 </div>
 </section>
 <section id="Performing-optimization">
-<h2>Performing optimization<a class="headerlink" href="#Performing-optimization" title="Permalink to this heading"></a></h2>
+<h2>Performing optimization<a class="headerlink" href="#Performing-optimization" title="Link to this heading"></a></h2>
 <section id="Setting-policy">
-<h3>Setting policy<a class="headerlink" href="#Setting-policy" title="Permalink to this heading"></a></h3>
+<h3>Setting policy<a class="headerlink" href="#Setting-policy" title="Link to this heading"></a></h3>
 <p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
 <p>Next, set <code class="docutils literal notranslate"><span class="pre">test_X</span></code> to the matrix of search candidates (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>).</p>
 <div class="nbinput nblast docutils container">
@@ -209,7 +213,7 @@ is designed to find the maximum value of the objective function</strong>, it ret
 tutorial.</p>
 </section>
 <section id="Random-Search">
-<h3>Random Search<a class="headerlink" href="#Random-Search" title="Permalink to this heading"></a></h3>
+<h3>Random Search<a class="headerlink" href="#Random-Search" title="Link to this heading"></a></h3>
 <p>First of all, let’s perform a random search.</p>
 <p>Since Bayesian optimization requires at least two objective function values to be obtained (the initial number of data required depends on the problem to be optimized and the dimension d of the parameters), we will first perform a random search.</p>
 <p><strong>argument</strong>.</p>
@@ -235,7 +239,7 @@ tutorial.</p>
 </div>
 </section>
 <section id="Bayesian-Optimization">
-<h3>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this heading"></a></h3>
+<h3>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Link to this heading"></a></h3>
 <p>Next, we run the Bayesian optimization as follows.</p>
 <p><strong>argument</strong>.</p>
 <ul class="simple">
@@ -266,7 +270,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </section>
 </section>
 <section id="Checking-the-results">
-<h2>Checking the results<a class="headerlink" href="#Checking-the-results" title="Permalink to this heading"></a></h2>
+<h2>Checking the results<a class="headerlink" href="#Checking-the-results" title="Link to this heading"></a></h2>
 <div class="line-block">
 <div class="line">The search result <code class="docutils literal notranslate"><span class="pre">res</span></code> is returned as an object of the <code class="docutils literal notranslate"><span class="pre">history</span></code> class (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.history</span></code>).</div>
 <div class="line">The following is a reference to the search results.</div>
@@ -341,7 +345,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </section>
 <section id="Serializing-the-results">
-<h2>Serializing the results<a class="headerlink" href="#Serializing-the-results" title="Permalink to this heading"></a></h2>
+<h2>Serializing the results<a class="headerlink" href="#Serializing-the-results" title="Link to this heading"></a></h2>
 <p>The search results can be saved to an external file using the <code class="docutils literal notranslate"><span class="pre">save</span></code> method.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -388,7 +392,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </section>
 <section id="Prediction">
-<h2>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this heading"></a></h2>
+<h2>Prediction<a class="headerlink" href="#Prediction" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">policy</span></code> serves <code class="docutils literal notranslate"><span class="pre">get_post_fmean</span></code> and <code class="docutils literal notranslate"><span class="pre">get_post_fcov</span></code> methods for calculating mean value and variance of Gaussian process (post distribution).</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -423,7 +427,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </section>
 <section id="Acquisition-function">
-<h2>Acquisition function<a class="headerlink" href="#Acquisition-function" title="Permalink to this heading"></a></h2>
+<h2>Acquisition function<a class="headerlink" href="#Acquisition-function" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">policy</span></code> serves <code class="docutils literal notranslate"><span class="pre">get_score</span></code> method for calculating acquisition function.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -452,7 +456,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 </section>
 <section id="Parallelization">
-<h2>Parallelization<a class="headerlink" href="#Parallelization" title="Permalink to this heading"></a></h2>
+<h2>Parallelization<a class="headerlink" href="#Parallelization" title="Link to this heading"></a></h2>
 <p>PHYSBO can calculate acquisition functions for candidates in parallel by using MPI via <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> . To enable MPI parallelization, pass a MPI communicator such as <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> to a keyword argument, <code class="docutils literal notranslate"><span class="pre">comm</span></code> of the constructor of the <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:

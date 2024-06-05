@@ -52,8 +52,8 @@ Main Developers
 License
 ----------------------
 
-GNU General Public License version 3
+PHYSBO v2 is distributed under `the Mozilla Public License version 2.0 (MPL v2) <https://www.mozilla.org/en-US/MPL/2.0/>`_.
 
 Copyright (c) <2020-> The University of Tokyo. All rights reserved.
 
-Part of this software is developed under the support of “Project for advancement of software usability in materials science” by The Institute for Solid State Physics, The University of Tokyo.
+Part of this software is developed under the support of "Project for advancement of software usability in materials science" by The Institute for Solid State Physics, The University of Tokyo.

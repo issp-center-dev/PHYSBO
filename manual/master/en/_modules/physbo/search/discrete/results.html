@@ -1,18 +1,22 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.search.discrete.results &mdash; PHYSBO 1.1.1 documentation</title>
-      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <title>physbo.search.discrete.results &mdash; PHYSBO 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
-        <script src="../../../../_static/doctools.js"></script>
-        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=51b770b3"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -31,7 +35,7 @@
             PHYSBO
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -77,7 +81,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for physbo.search.discrete.results</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 
@@ -86,7 +97,9 @@
 <span class="n">MAX_SEARCH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30000</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="history"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history">[docs]</a><span class="k">class</span> <span class="nc">history</span><span class="p">:</span>
+<div class="viewcode-block" id="history">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history">[docs]</a>
+<span class="k">class</span> <span class="nc">history</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -115,7 +128,9 @@
     <span class="k">def</span> <span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
 
-<div class="viewcode-block" id="history.write"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span>
+<div class="viewcode-block" id="history.write">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">t</span><span class="p">,</span>
         <span class="n">action</span><span class="p">,</span>
@@ -175,7 +190,10 @@
             <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_run_simulator</span></div>
 
-<div class="viewcode-block" id="history.export_sequence_best_fx"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_sequence_best_fx">[docs]</a>    <span class="k">def</span> <span class="nf">export_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="history.export_sequence_best_fx">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_sequence_best_fx">[docs]</a>
+    <span class="k">def</span> <span class="nf">export_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export fx and actions at each sequence.</span>
 <span class="sd">        (The total number of data is num_runs.)</span>
@@ -194,7 +212,10 @@
 
         <span class="k">return</span> <span class="n">best_fx</span><span class="p">,</span> <span class="n">best_actions</span></div>
 
-<div class="viewcode-block" id="history.export_all_sequence_best_fx"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_all_sequence_best_fx">[docs]</a>    <span class="k">def</span> <span class="nf">export_all_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="history.export_all_sequence_best_fx">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_all_sequence_best_fx">[docs]</a>
+    <span class="k">def</span> <span class="nf">export_all_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export all fx and actions at each sequence.</span>
 <span class="sd">         (The total number of data is total_num_research.)</span>
@@ -219,7 +240,10 @@
 
         <span class="k">return</span> <span class="n">best_fx</span><span class="p">,</span> <span class="n">best_actions</span></div>
 
-<div class="viewcode-block" id="history.save"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+
+<div class="viewcode-block" id="history.save">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.save">[docs]</a>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Save the information of the history.</span>
 
@@ -242,7 +266,10 @@
             <span class="n">terminal_num_run</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">],</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="history.load"><a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+
+<div class="viewcode-block" id="history.load">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.load">[docs]</a>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load the information of the history.</span>
 
@@ -261,7 +288,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">=</span> <span class="n">N</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;fx&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;chosen_actions&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;terminal_num_run&quot;</span><span class="p">]</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;terminal_num_run&quot;</span><span class="p">]</span></div>
+</div>
+
 </pre></div>
 
            </div>

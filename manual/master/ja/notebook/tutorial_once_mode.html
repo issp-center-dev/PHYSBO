@@ -1,21 +1,25 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="ja" >
+<html class="writer-html5" lang="ja" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>既存の計算結果を読み込んで実行する &mdash; PHYSBO 1.1.1 ドキュメント</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <title>既存の計算結果を読み込んで実行する &mdash; PHYSBO 2.0.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script src="../_static/translations.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=c8adcb1d"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/translations.js?v=4dbe4bdc"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -38,7 +42,7 @@
             
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -99,7 +103,7 @@
            <div itemprop="articleBody">
              
   <section id="既存の計算結果を読み込んで実行する">
-<h1>既存の計算結果を読み込んで実行する<a class="headerlink" href="#既存の計算結果を読み込んで実行する" title="この見出しへのパーマリンク"></a></h1>
+<h1>既存の計算結果を読み込んで実行する<a class="headerlink" href="#既存の計算結果を読み込んで実行する" title="Link to this heading"></a></h1>
 <p>以下の流れで、既存のaction ID(パラメータ)とその評価値を読み込み、PHYSBO を実行することができます。</p>
 <ol class="arabic simple">
 <li><p>外部ファイルを読み込み、既存のaction ID(パラメータ)と評価値を読み込む。</p></li>
@@ -108,7 +112,7 @@
 </ol>
 <p>時間制限の関係上、PHYSBO をずっと開いたままにできないため、インタラクティブに実行できないといった場合に、利用することができます。</p>
 <section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="この見出しへのパーマリンク"></a></h2>
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
 <p>これまでのチュートリアルと同様、データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を <code class="docutils literal notranslate"><span class="pre">data</span></code> ディレクトリ以下に保存し、次のように読み出します。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -132,7 +136,7 @@
 </div>
 </section>
 <section id="事前に計算したデータの用意">
-<h2>事前に計算したデータの用意<a class="headerlink" href="#事前に計算したデータの用意" title="この見出しへのパーマリンク"></a></h2>
+<h2>事前に計算したデータの用意<a class="headerlink" href="#事前に計算したデータの用意" title="Link to this heading"></a></h2>
 <p>上述の <code class="docutils literal notranslate"><span class="pre">load_data</span></code> 関数では全てのXとtが格納されています。ここでは事前に計算したとして、actoin IDのリストをランダムに20個取得し、その評価値を得ます。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -156,7 +160,7 @@
 </div>
 </section>
 <section id="action-ID(パラメータ)と評価値をPHYSBOに登録">
-<h2>action ID(パラメータ)と評価値をPHYSBOに登録<a class="headerlink" href="#action-ID(パラメータ)と評価値をPHYSBOに登録" title="この見出しへのパーマリンク"></a></h2>
+<h2>action ID(パラメータ)と評価値をPHYSBOに登録<a class="headerlink" href="#action-ID(パラメータ)と評価値をPHYSBOに登録" title="Link to this heading"></a></h2>
 <p>policyの初期変数　<code class="docutils literal notranslate"><span class="pre">initial_data</span></code> に <code class="docutils literal notranslate"><span class="pre">calculated_ids</span></code> と <code class="docutils literal notranslate"><span class="pre">t[calculated_ids]</span></code> をリストとして登録します。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -172,7 +176,7 @@
 </div>
 </section>
 <section id="PHYSBO-から次に実行するパラメータを取得">
-<h2>PHYSBO から次に実行するパラメータを取得<a class="headerlink" href="#PHYSBO-から次に実行するパラメータを取得" title="この見出しへのパーマリンク"></a></h2>
+<h2>PHYSBO から次に実行するパラメータを取得<a class="headerlink" href="#PHYSBO-から次に実行するパラメータを取得" title="Link to this heading"></a></h2>
 <p>ベイズ最適化を行い、次の候補点を得ます。</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:

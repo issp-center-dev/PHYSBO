@@ -1,20 +1,24 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian process &mdash; PHYSBO 1.1.1 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <title>Gaussian process &mdash; PHYSBO 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=51b770b3"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -37,7 +41,7 @@
             PHYSBO
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -98,12 +102,12 @@
            <div itemprop="articleBody">
              
   <section id="Gaussian-process">
-<h1>Gaussian process<a class="headerlink" href="#Gaussian-process" title="Permalink to this heading"></a></h1>
+<h1>Gaussian process<a class="headerlink" href="#Gaussian-process" title="Link to this heading"></a></h1>
 <p>PHYSBO performs Bayesian optimization while running Gaussian process regression.</p>
 <p>Therefore, it is possible to run Gaussian process regression given training data, and to predict test data using the trained model.</p>
 <p>In this section, the procedure is introduced.</p>
 <section id="Preparation-of-search-candidate-data">
-<h2>Preparation of search candidate data<a class="headerlink" href="#Preparation-of-search-candidate-data" title="Permalink to this heading"></a></h2>
+<h2>Preparation of search candidate data<a class="headerlink" href="#Preparation-of-search-candidate-data" title="Link to this heading"></a></h2>
 <p>In this tutorial, the problem of finding a stable interface structure for Cu is used as an example. The values that have already been evaluated are used, although the evaluation of the objective function, i.e., the structural relaxation calculation, actually takes on the order of several hours per calculation. For more information on the problem setup, please refer to the following references</p>
 <ul class="simple">
 <li><ol class="upperalpha simple" start="19">
@@ -133,7 +137,7 @@
 </div>
 </section>
 <section id="Defining-training-data">
-<h2>Defining training data<a class="headerlink" href="#Defining-training-data" title="Permalink to this heading"></a></h2>
+<h2>Defining training data<a class="headerlink" href="#Defining-training-data" title="Link to this heading"></a></h2>
 <p>A randomly selected 10% of the target data will be used as training data, and another randomly selected 10% will be used as test data.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -169,7 +173,7 @@ Ntest = 1798
 </div>
 </section>
 <section id="Learning-and-Prediction-of-Gaussian-Processes">
-<h2>Learning and Prediction of Gaussian Processes<a class="headerlink" href="#Learning-and-Prediction-of-Gaussian-Processes" title="Permalink to this heading"></a></h2>
+<h2>Learning and Prediction of Gaussian Processes<a class="headerlink" href="#Learning-and-Prediction-of-Gaussian-Processes" title="Link to this heading"></a></h2>
 <p>The following process is used to learn the Gaussian process and predict the test data.</p>
 <ol class="arabic simple">
 <li><p>Generate a model of the Gaussian process</p></li>
@@ -338,7 +342,7 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 </section>
 <section id="Prediction-by-trained-models">
-<h2>Prediction by trained models<a class="headerlink" href="#Prediction-by-trained-models" title="Permalink to this heading"></a></h2>
+<h2>Prediction by trained models<a class="headerlink" href="#Prediction-by-trained-models" title="Link to this heading"></a></h2>
 <p>Read the parameters of the trained model as gp_params and make predictions using them.</p>
 <p>By storing gp_params and training data (X_train, t_train), prediction by the trained model is possible.</p>
 <p>Prepare the learned parameters (must be done immediately after learning)</p>

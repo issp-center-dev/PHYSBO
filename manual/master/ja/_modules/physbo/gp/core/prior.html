@@ -1,19 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="ja" >
+<html class="writer-html5" lang="ja" data-content_root="../../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.gp.core.prior &mdash; PHYSBO 1.1.1 ドキュメント</title>
-      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <title>physbo.gp.core.prior &mdash; PHYSBO 2.0.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
-        <script src="../../../../_static/doctools.js"></script>
-        <script src="../../../../_static/sphinx_highlight.js"></script>
-        <script src="../../../../_static/translations.js"></script>
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=c8adcb1d"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/translations.js?v=4dbe4bdc"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="索引" href="../../../../genindex.html" />
@@ -32,7 +36,7 @@
             
           </a>
               <div class="version">
-                1.1
+                2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -78,11 +82,20 @@
            <div itemprop="articleBody">
              
   <h1>physbo.gp.core.prior のソースコード</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy</span>
 
 
-<div class="viewcode-block" id="prior"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior">[ドキュメント]</a><span class="k">class</span> <span class="nc">prior</span><span class="p">:</span>
+<div class="viewcode-block" id="prior">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior">[ドキュメント]</a>
+<span class="k">class</span> <span class="nc">prior</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;prior of gaussian process&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">):</span>
@@ -100,7 +113,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_params</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
-<div class="viewcode-block" id="prior.cat_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.cat_params">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span><span class="p">):</span>
+<div class="viewcode-block" id="prior.cat_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.cat_params">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -115,7 +130,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.decomp_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.decomp_params">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">decomp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.decomp_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.decomp_params">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">decomp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        decomposing the parameters to those of mean values and covariance matrix for priors</span>
 
@@ -136,7 +154,10 @@
         <span class="n">cov_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="p">:]</span>
         <span class="k">return</span> <span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span></div>
 
-<div class="viewcode-block" id="prior.get_mean"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_mean">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.get_mean">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_mean">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculating the mean value of priors</span>
 
@@ -154,7 +175,10 @@
             <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="prior.get_cov"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_cov">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.get_cov">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_cov">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculating the variance-covariance matrix of priors</span>
 
@@ -177,7 +201,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="p">:],</span> <span class="n">diag</span><span class="o">=</span><span class="n">diag</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.get_grad_mean"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_grad_mean">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_grad_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.get_grad_mean">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_grad_mean">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_grad_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculating the gradiant of mean values of priors</span>
 
@@ -199,7 +226,10 @@
         <span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">get_grad</span><span class="p">(</span><span class="n">num_data</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">mean_params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.get_grad_cov"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_grad_cov">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">get_grad_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.get_grad_cov">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.get_grad_cov">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">get_grad_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculating the covariance matrix priors</span>
 
@@ -220,7 +250,10 @@
         <span class="n">mean_params</span><span class="p">,</span> <span class="n">cov_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">get_grad</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">cov_params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.set_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_params">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.set_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_params">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting parameters</span>
 
@@ -233,7 +266,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_mean_params</span><span class="p">(</span><span class="n">mean_params</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_cov_params</span><span class="p">(</span><span class="n">cov_params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.set_mean_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_mean_params">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">set_mean_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.set_mean_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_mean_params">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">set_mean_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting parameters for mean values of priors</span>
 
@@ -246,7 +282,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.set_cov_params"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_cov_params">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">set_cov_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.set_cov_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.set_cov_params">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">set_cov_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting parameters for covariance matrix of priors</span>
 
@@ -258,7 +297,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="prior.sampling"><a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.sampling">[ドキュメント]</a>    <span class="k">def</span> <span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+<div class="viewcode-block" id="prior.sampling">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.prior.html#physbo.gp.core.prior.prior.sampling">[ドキュメント]</a>
+    <span class="k">def</span> <span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sampling from GP prior</span>
 
@@ -277,7 +319,9 @@
         <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span>
         <span class="n">U</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">num_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mean</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
