@@ -183,8 +183,8 @@ class history:
 
         """
         data = np.load(filename)
-        M = data["num_runs"]
-        N = data["total_num_search"]
+        M = int(data["num_runs"])
+        N = int(data["total_num_search"])
         self.num_runs = M
         self.total_num_search = N
         self.fx[0:N] = data["fx"]
