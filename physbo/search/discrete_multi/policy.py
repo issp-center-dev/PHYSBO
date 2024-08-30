@@ -490,7 +490,13 @@ class policy(discrete.policy):
             self.load_predictor_list(file_predictor_list)
 
         N = self.history.total_num_search
-        self.actions = self._delete_actions(self.history.chosen_actions[:N])
+
+        visited = self.history.chosen_actions[:N]
+        local_index = np.searchsorted(self.actions, visited)
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == visited
+        ]
+        self.actions = self._delete_actions(local_index)
 
     def save_predictor_list(self, file_name):
         with open(file_name, "wb") as f:
