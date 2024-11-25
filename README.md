@@ -61,7 +61,7 @@ python3 -m pip uninstall physbo
 
 ## Usage
 
-['examples/simple.py'](https://github.com/issp-center-dev/PHYSBO/examples/simple.py) is a simple example.
+['examples/simple.py'](./examples/simple.py) is a simple example.
 
 ## Data repository
 
