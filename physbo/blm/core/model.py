@@ -224,7 +224,7 @@ class model:
         physbo.blm.inf.exact.get_post_fcov
         """
         if self.method == "exact":
-            fcov = inf.exact.get_post_fcov(self, X, Psi, diag=True)
+            fcov = inf.exact.get_post_fcov(self, X, Psi, diag=diag)
         else:
             pass
         return fcov
