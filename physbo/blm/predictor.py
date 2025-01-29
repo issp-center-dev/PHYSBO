@@ -106,7 +106,7 @@ class predictor(physbo.predictor.base_predictor):
             self.prepare(training)
         return self.blm.get_post_fmean(test.X, test.Z)
 
-    def get_post_fcov(self, training, test):
+    def get_post_fcov(self, training, test, diag=True):
         """
         calculates posterior variance-covariance matrix of model
 
@@ -123,7 +123,7 @@ class predictor(physbo.predictor.base_predictor):
         """
         if self.blm.stats is None:
             self.prepare(training)
-        return self.blm.get_post_fcov(test.X, test.Z)
+        return self.blm.get_post_fcov(test.X, test.Z, diag)
 
     def get_post_params(self, training, test):
         """

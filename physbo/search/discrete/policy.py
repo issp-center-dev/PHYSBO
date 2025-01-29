@@ -360,7 +360,7 @@ class policy:
             self._update_predictor()
             return self.predictor.get_post_fmean(self.training, X)
 
-    def get_post_fcov(self, xs):
+    def get_post_fcov(self, xs, diag=True):
         """Calculate covariance of predictor (post distribution)"""
         X = self._make_variable_X(xs)
         if self.predictor is None:
@@ -368,10 +368,10 @@ class policy:
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-            return predictor.get_post_fcov(self.training, X)
+            return predictor.get_post_fcov(self.training, X, diag)
         else:
             self._update_predictor()
-            return self.predictor.get_post_fcov(self.training, X)
+            return self.predictor.get_post_fcov(self.training, X, diag)
 
     def get_score(
         self,
