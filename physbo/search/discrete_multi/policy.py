@@ -294,6 +294,23 @@ class policy(discrete.policy):
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
+        """
+        Calculate mean value of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives).
+        """
         if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
@@ -312,7 +329,24 @@ class policy(discrete.policy):
         ]
         return np.array(fmean).T
 
-    def get_post_fcov(self, xs):
+    def get_post_fcov(self, xs, diag=True):
+        """
+        Calculate covariance of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.
+        """
         if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fcov()")
             predictor_list = []
@@ -326,10 +360,14 @@ class policy(discrete.policy):
             predictor_list = self.predictor_list[:]
         X = self._make_variable_X(xs)
         fcov = [
-            predictor.get_post_fcov(training, X)
+            predictor.get_post_fcov(training, X, diag)
             for predictor, training in zip(predictor_list, self.training_list)
         ]
-        return np.array(fcov).T
+        arr = np.array(fcov)
+        if diag:
+            return arr.T
+        else:
+            return np.einsum("nij->ijn", arr)
 
     def get_score(
         self,
