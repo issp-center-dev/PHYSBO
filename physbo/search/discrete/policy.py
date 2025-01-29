@@ -348,7 +348,21 @@ class policy:
         print("         before calling {}.".format(method_name))
 
     def get_post_fmean(self, xs):
-        """Calculate mean value of predictor (post distribution)"""
+        """
+        Calculate mean value of predictor (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate mean value
+            shape is (num_points, num_parameters)
+
+        Returns
+        -------
+        fmean: numpy.ndarray
+            Mean value of the post distribution.
+            Returned shape is (num_points).
+        """
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
@@ -361,7 +375,23 @@ class policy:
             return self.predictor.get_post_fmean(self.training, X)
 
     def get_post_fcov(self, xs, diag=True):
-        """Calculate covariance of predictor (post distribution)"""
+        """
+        Calculate covariance of predictor (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false.
+        """
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
