@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.search.discrete.results &mdash; PHYSBO 2.0.2 ドキュメント</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+  <title>physbo.search.discrete.results &mdash; PHYSBO 2.1.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=5b2dc56e"></script>
+      <script src="../../../../_static/documentation_options.js?v=b9788144"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../../../_static/translations.js?v=4755f45a"></script>
@@ -84,19 +84,19 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utility</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 
 <span class="n">MAX_SEARCH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30000</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="history">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history">[ドキュメント]</a>
-<span class="k">class</span> <span class="nc">history</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">history</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -109,24 +109,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">time_total</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_total</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_total_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">time_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_update_predictor_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">time_get_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_get_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_get_action_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
 
 <div class="viewcode-block" id="history.write">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.write">[ドキュメント]</a>
-    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">t</span><span class="p">,</span>
         <span class="n">action</span><span class="p">,</span>
@@ -189,7 +189,7 @@
 
 <div class="viewcode-block" id="history.export_sequence_best_fx">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_sequence_best_fx">[ドキュメント]</a>
-    <span class="k">def</span> <span class="nf">export_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export fx and actions at each sequence.</span>
 <span class="sd">        (The total number of data is num_runs.)</span>
@@ -211,7 +211,7 @@
 
 <div class="viewcode-block" id="history.export_all_sequence_best_fx">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.export_all_sequence_best_fx">[ドキュメント]</a>
-    <span class="k">def</span> <span class="nf">export_all_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_all_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export all fx and actions at each sequence.</span>
 <span class="sd">         (The total number of data is total_num_research.)</span>
@@ -239,7 +239,7 @@
 
 <div class="viewcode-block" id="history.save">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.save">[ドキュメント]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Save the information of the history.</span>
 
@@ -265,7 +265,7 @@
 
 <div class="viewcode-block" id="history.load">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.results.html#physbo.search.discrete.results.history.load">[ドキュメント]</a>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load the information of the history.</span>
 
