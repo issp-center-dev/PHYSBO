@@ -1,0 +1,287 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Algorithm &mdash; PHYSBO 2.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="physbo package" href="api/physbo.html" />
+    <link rel="prev" title="Multi-objective optimization" href="notebook/tutorial_multi_objective.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PHYSBO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithm</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bayesian-optimization">Bayesian optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#accelerating-bayesian-optimization-with-physbo">Accelerating Bayesian Optimization with PHYSBO</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Algorithm</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/algorithm.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="algorithm">
+<span id="chap-algorithm"></span><h1>Algorithm<a class="headerlink" href="#algorithm" title="Link to this heading"></a></h1>
+<p>This section describes an overview of Bayesian optimization. For technical details, please refer to <a class="reference external" href="https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf">this reference</a> .</p>
+<section id="bayesian-optimization">
+<h2>Bayesian optimization<a class="headerlink" href="#bayesian-optimization" title="Link to this heading"></a></h2>
+<p>Bayesian optimization is a method that can be used in complex simulations or real-world experimental tasks where the evaluation of the objective function (e.g., property values) is very costly. In other words, Bayesian optimization solves the problem of finding explanatory variables (material composition, structure, process and simulation parameters, etc.) that have a better objective function (material properties, etc.) with as few experiments and simulations as possible. In Bayesian optimization, we start from a situation where we have a list of candidates for the explanatory variables to be searched (represented by the vector <span class="math notranslate nohighlight">\({\bf x}\)</span>). Then, from among the candidates, the one that is expected to improve the objective function <span class="math notranslate nohighlight">\(y\)</span> is selected by making good use of prediction by machine learning (using Gaussian process regression). We then evaluate the value of the objective function by performing experiments and simulations on the candidates. By repeating the process of selection by machine learning and evaluation by experimental simulation, optimization can be achieved in as few times as possible.</p>
+<p>The details of the Bayesian optimization algorithm are described below.</p>
+<ul class="simple">
+<li><p>Step1: Initialization</p></li>
+</ul>
+<p>Prepare the space to be explored in advance. In other words, list up the composition, structure, process, simulation parameters, etc. of the candidate materials as a vector <span class="math notranslate nohighlight">\({\bf x}\)</span>. At this stage, the value of the objective function is not known. A few candidates are chosen as initial conditions and  the value of the objective function <span class="math notranslate nohighlight">\(y\)</span> is estimated by experiment or simulation. This gives us the training data <span class="math notranslate nohighlight">\(D = \{ {\bf x}_i, y_i \}_{(i=1, \cdots, N)}\)</span> with the explanatory variables <span class="math notranslate nohighlight">\({\bf x}\)</span> and the objective function <span class="math notranslate nohighlight">\(y\)</span>.</p>
+<ul class="simple">
+<li><p>Step2: Selection of candidates</p></li>
+</ul>
+<p>Using the training data, learn a Gaussian process. For Gaussian process, the mean of the predictions at arbitary <span class="math notranslate nohighlight">\({\bf x}\)</span> is <span class="math notranslate nohighlight">\(\mu_c ({\bf x})\)</span> and the variance is <span class="math notranslate nohighlight">\(\sigma_c ({\bf x})\)</span> are given as follows</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mu_c ({\bf x}) &amp;= {\bf k}({\bf x})^T (K+\sigma^2 I)^{-1}{\bf y},\\\sigma_c({\bf x}) &amp;= k({\bf x}, {\bf x}) + \sigma^2 - {\bf k}({\bf x})^T  (K+\sigma^2 I)^{-1}{\bf k}({\bf x}),\end{aligned}\end{align} \]</div>
+<p>where <span class="math notranslate nohighlight">\(k({\bf x}, {\bf x}')\)</span> is a function called as a kernel, and it represents the similarity of two vectors. In general, the following Gaussian kernel is used:</p>
+<div class="math notranslate nohighlight">
+\[k({\bf x}, {\bf x}') = \exp \left[ -\frac{1}{2\eta^2}||{\bf x} - {\bf x}'||^2 \right].\]</div>
+<p>Using this kernel function, <span class="math notranslate nohighlight">\({\bf k}({\bf x})\)</span> and <span class="math notranslate nohighlight">\(K\)</span> are computed as follows</p>
+<div class="math notranslate nohighlight">
+\[{\bf k}({\bf x}) = \left( k({\bf x}_1, {\bf x}), k({\bf x}_2, {\bf x}), \cdots, k({\bf x}_N, {\bf x}) \right)^\top\]</div>
+<div class="math notranslate nohighlight">
+ \[
+ K = \left(
+ \begin{array}{cccc}
+    k({\bf x}_1, {\bf x}_1) &amp; k({\bf x}_1, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_1, {\bf x}_N) \\
+    k({\bf x}_2, {\bf x}_1) &amp; k({\bf x}_2, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_2, {\bf x}_N) \\
+   \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+    k({\bf x}_N, {\bf x}_1) &amp; k({\bf x}_N, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_N, {\bf x}_N)
+ \end{array}
+ \right)
+ \]</div><p>For all candidates that have not yet been tested or simulated, the prediction <span class="math notranslate nohighlight">\(\mu_c ({\bf x})\)</span> and the variance associated with the uncertainty of the prediction <span class="math notranslate nohighlight">\(\sigma_c ({\bf x})\)</span> are estimated. Using this, the acquisition function is calculated. Then, the candidate <span class="math notranslate nohighlight">\({\bf x}^*\)</span> is selected that maximizes the acquisition function from among the candidates for which we do not yet know the value of the objective function. In this case, <span class="math notranslate nohighlight">\(\sigma\)</span> and <span class="math notranslate nohighlight">\(\eta\)</span> are called hyperparameters, and PHYSBO will automatically set the best value.</p>
+<p>As an acquisition function, for example, Maximum Probability of Improvement (PI) and Maximum Expected Improvement (EI) are useful.
+The score of PI is defined as follows.</p>
+<div class="math notranslate nohighlight">
+\[\text{PI} (\mathbf{x}) = \Phi (z (\mathbf{x})), \ \ \ z(\mathbf{x}) = \frac{\mu_c (\mathbf{x}) - y_{\max}}{\sigma_c (\mathbf{x})},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Phi(\cdot)\)</span> is the cumulative distribution function.
+The PI score represents the probability of exceeding the maximum <span class="math notranslate nohighlight">\(y_{\max}\)</span> of the currently obtained <span class="math notranslate nohighlight">\(y\)</span>.
+In addition, the EI score is the expected value of the difference between the predicted value and the current maximum <span class="math notranslate nohighlight">\(y_{\max}\)</span> and is given by</p>
+<div class="math notranslate nohighlight">
+\[\text{EI} (\mathbf{x}) = [\mu_c (\mathbf{x})-y_{\max}] \Phi (z (\mathbf{x})) + \sigma_c (\mathbf{x}) \phi (z (\mathbf{x})), \ \ \ z(\mathbf{x}) = \frac{\mu_c (\mathbf{x}) - y_{\max}}{\sigma_c (\mathbf{x})},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\phi(\cdot)\)</span> is a probability density function.</p>
+<ul class="simple">
+<li><p>Step3: Experiment (Simulation)</p></li>
+</ul>
+<p>Perform an experiment or simulation on the candidate <span class="math notranslate nohighlight">\({\bf x}^*\)</span> with the largest acquisition function selected in step 2, and estimate the objective function value <span class="math notranslate nohighlight">\(y\)</span>. This will add one more piece of training data. Repeat steps 2 and 3 to search for candidates with good scores.</p>
+</section>
+<section id="accelerating-bayesian-optimization-with-physbo">
+<h2>Accelerating Bayesian Optimization with PHYSBO<a class="headerlink" href="#accelerating-bayesian-optimization-with-physbo" title="Link to this heading"></a></h2>
+<p>In PHYSBO, random feature map, Thompson sampling, and Cholesky decomposition are used to accelerate the calculation of Bayesian optimization.
+First, the random feature map is introduced.
+By introducing the random feature map <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span>, we can approximate the Gaussian kernel <span class="math notranslate nohighlight">\(k(\mathbf{x},\mathbf{x}')\)</span> as follows.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top,\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)\)</span>.
+Then, <span class="math notranslate nohighlight">\(\boldsymbol{\omega}\)</span> is generated from <span class="math notranslate nohighlight">\(p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)\)</span> and <span class="math notranslate nohighlight">\(b\)</span> is chosen uniformly from <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span> is chosen uniformly from <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span>.
+This approximation is strictly valid in the limit of <span class="math notranslate nohighlight">\(l \to \infty\)</span>, where the value of <span class="math notranslate nohighlight">\(l\)</span> is the dimension of the random feature map.</p>
+<blockquote>
+<div><p><span class="math notranslate nohighlight">\(\Phi\)</span> can be represented as a <span class="math notranslate nohighlight">\(l\)</span> row <span class="math notranslate nohighlight">\(n\)</span> column matrix with <span class="math notranslate nohighlight">\(\phi(\mathbf{x}_i)\)</span> in each column by <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> vector of training data as follows:</p>
+</div></blockquote>
+<div class="math notranslate nohighlight">
+\[\Phi = ( \phi(\mathbf{x}_1),..., \phi(\mathbf{x}_n) ).\]</div>
+<p>It is seen that the following relation is satisfied:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+K= \Phi^\top \Phi.\end{split}\]</div>
+<p>Next, a method that uses Thompson sampling to make the computation time for candidate prediction <span class="math notranslate nohighlight">\(O(l)\)</span> is introduced.
+Note that using EI or PI will result in <span class="math notranslate nohighlight">\(O(l^2)\)</span> because of the need to evaluate the variance.
+In order to perform Thompson sampling, the Bayesian linear model defined below is used.</p>
+<div class="math notranslate nohighlight">
+\[y = \mathbf{w}^\top \phi (\mathbf{x}),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\phi(\mathbf{x})\)</span> is random feature map described above and <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is a coefficient vector.
+In a Gaussian process, when the training data <span class="math notranslate nohighlight">\(D\)</span> is given, this <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is determined to follow the following Gaussian distribution.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
+<p>In Thompson sampling, one coefficient vector is sampled according to this posterior probability distribution and set to <span class="math notranslate nohighlight">\(\mathbf{w}^*\)</span>, which represents the acquisition function as follows</p>
+<div class="math notranslate nohighlight">
+\[\text{TS} (\mathbf{x}) = {\mathbf{w}^*}^\top \phi (\mathbf{x}).\]</div>
+<p>The <span class="math notranslate nohighlight">\(\mathbf{x}^*\)</span> that maximizes <span class="math notranslate nohighlight">\(\text{TS} (\mathbf{x})\)</span>  will be selected as the next candidate.
+In this case, <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span> is an <span class="math notranslate nohighlight">\(l\)</span> dimensional vector, so the acquisition function can be computed with <span class="math notranslate nohighlight">\(O(l)\)</span>.</p>
+<p>Next, the manner for accelerating the sampling of <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is introduced.
+The matrix <span class="math notranslate nohighlight">\(A\)</span> is defined as follows.</p>
+<div class="math notranslate nohighlight">
+\[A = \frac{1}{\sigma^2} \Phi \Phi^\top +I\]</div>
+<p>Then the posterior probability distribution is given as</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{w}|D) = \mathcal{N} \left( \frac{1}{\sigma^2} A^{-1} \Phi \mathbf{y}, A^{-1} \right).\]</div>
+<p>Therefore, in order to sample <span class="math notranslate nohighlight">\(\mathbf{w}\)</span>, we need to calculate <span class="math notranslate nohighlight">\(A^{-1}\)</span>.
+Now consider the case of the newly added <span class="math notranslate nohighlight">\((\mathbf{x}', y')\)</span> in the Bayesian optimization iteration.
+With the addition of this data, the matrix <span class="math notranslate nohighlight">\(A\)</span> is updated as</p>
+<div class="math notranslate nohighlight">
+\[A' = A + \frac{1}{\sigma^2} \phi (\mathbf{x}') \phi (\mathbf{x}')^\top.\]</div>
+<p>This update can be done using the Cholesky decomposition ( <span class="math notranslate nohighlight">\(A= L^\top L\)</span> ), which reduces the time it takes to compute <span class="math notranslate nohighlight">\(A^{-1}\)</span> to <span class="math notranslate nohighlight">\(O(l^2)\)</span>.
+If we compute <span class="math notranslate nohighlight">\(A^{-1}\)</span> at every step, the numerical cost becomes <span class="math notranslate nohighlight">\(O(l^3)\)</span>.
+The <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is obtained by</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{w}^* = \boldsymbol{\mu} + \mathbf{w}_0,\]</div>
+<p>where  <span class="math notranslate nohighlight">\(\mathbf{w}_0\)</span> is sampled from <span class="math notranslate nohighlight">\(\mathcal{N} (0,A^{-1})\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> is calculated by</p>
+<div class="math notranslate nohighlight">
+\[L^\top L \boldsymbol{\mu} = \frac{1}{\sigma^2} \Phi \mathbf{y}.\]</div>
+<p>By using these techniques, a computation time becomes almost linear in the number of training data.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="notebook/tutorial_multi_objective.html" class="btn btn-neutral float-left" title="Multi-objective optimization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/physbo.html" class="btn btn-neutral float-right" title="physbo package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v2.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../v2.1.0/en/algorithm.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../v2.1.0/ja/algorithm.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/en/algorithm.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/en/algorithm.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../v2.1.0/en/algorithm.html">v2.1.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulatorクラスの定義 &mdash; PHYSBO 2.1.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=b9788144"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">チュートリアル</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">simulatorクラスの定義</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_simulator.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simulatorクラスの定義">
+<h1>simulatorクラスの定義<a class="headerlink" href="#simulatorクラスの定義" title="Link to this heading"></a></h1>
+<p>PHYSBOではSimulator関数を使用して目的関数を定義します。 ここでは、一次元の関数の最小値を求める例題をもとに、simulatorクラスの定義方法について紹介します。</p>
+<section id="探索空間の定義">
+<h2>探索空間の定義<a class="headerlink" href="#探索空間の定義" title="Link to this heading"></a></h2>
+<p>その他のチュートリアルと同じように、最初に関数を探索する空間を定義します。 以下の例では、探索空間<code class="docutils literal notranslate"><span class="pre">X</span></code>を <code class="docutils literal notranslate"><span class="pre">x_min</span> <span class="pre">=</span> <span class="pre">-2.0</span></code>から<code class="docutils literal notranslate"><span class="pre">x_max</span> <span class="pre">=</span> <span class="pre">2.0</span></code>まで<code class="docutils literal notranslate"><span class="pre">window_num=10001</span></code>分割で刻んだグリッドで定義しています。 なお、<code class="docutils literal notranslate"><span class="pre">X</span></code>は <code class="docutils literal notranslate"><span class="pre">window_num</span></code> x <code class="docutils literal notranslate"><span class="pre">d</span></code> のndarray形式にする必要があります(<code class="docutils literal notranslate"><span class="pre">d</span></code>は次元数、この場合は2次元)。そのため、reshapeを行って変形しています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+
+<span class="c1">#In</span>
+<span class="c1">#Create candidate</span>
+<span class="n">window_num</span><span class="o">=</span><span class="mi">10001</span>
+<span class="n">x_max</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">x_min</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">window_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">window_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="id2">
+<h2>simulatorクラスの定義<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p>目的関数を定義するためのsimulatorクラスをここで定義します。</p>
+<p>今回はf(x) = 3 x^4 + 4 x ^3 + 1.0 が最小となるxを探索するという問題設定にしています(答えはx=-1.0)。</p>
+<p>simulatorクラスでは、<code class="docutils literal notranslate"><span class="pre">__call__</span></code>関数を定義します(初期変数などがある場合は<code class="docutils literal notranslate"><span class="pre">__init__</span></code>を定義します)。 actionは探索空間の中から取り出すグリッドのindex番号を示しており、複数の候補を一度に計算できるように一般的にndarrayの形式を取っています。 今回は一つの候補のみを毎回計算するため、<code class="docutils literal notranslate"><span class="pre">action_idx=action[0]</span></code>として<code class="docutils literal notranslate"><span class="pre">X</span></code>から候補点を一つ選んでいます。 PHYSBOでは目的関数値が最大となるものを求める仕様になっているため、候補点でのf(x)の値に-1をかけたものを返しています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">:</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+        <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">fx_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
+        <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;*********************&quot;</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Present optimum interactions&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="ランダムサーチ">
+<h2>ランダムサーチ<a class="headerlink" href="#ランダムサーチ" title="Link to this heading"></a></h2>
+<p>ベイズ最適化を行う前に、探索空間からランダムに候補点を選び目的関数値を評価することで、事前にトレーニングデータを用意します(飛ばすことも可能です)。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#In</span>
+<span class="c1"># Design of policy</span>
+<span class="c1"># Declaring the policy by</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="c1"># test_X is the set of candidates which is represented by numpy.array.</span>
+<span class="c1"># Each row vector represents the feature vector of the corresponding candidate</span>
+
+<span class="c1"># set the seed parameter</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+
+
+<span class="c1"># If you want to perform the initial random search before starting the Bayesian optimization,</span>
+<span class="c1"># the random sampling is performed by</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+<span class="c1"># Input:</span>
+<span class="c1"># max_num_probes: number of random search</span>
+<span class="c1"># simulator = simulator</span>
+<span class="c1"># output: combo.search.discreate.results (class)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="ベイズ最適化">
+<h2>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="Link to this heading"></a></h2>
+<p>定義したsimulatorに対してベイズ最適化を実施します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># single query Bayesian search</span>
+<span class="c1"># The single query version of COMBO is performed by</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span> <span class="mi">150</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+
+<span class="c1"># Input</span>
+<span class="c1"># max_num_probes: number of searching by Bayesian optimization</span>
+<span class="c1"># simulator: the class of simulator which is defined above</span>
+<span class="c1"># score: the type of aquision funciton. TS, EI and PI are available</span>
+<span class="c1"># interval: the timing for learning the hyper parameter.</span>
+<span class="c1">#               In this case, the hyper parameter is learned at each 20 steps</span>
+<span class="c1">#               If you set the negative value to interval, the hyper parameter learning is not performed</span>
+<span class="c1">#               If you set zero to interval, the hyper parameter learning is performed only at the first step</span>
+<span class="c1"># num_rand_basis: the number of basis function. If you choose 0,  ordinary Gaussian process runs</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="結果表示">
+<h2>結果表示<a class="headerlink" href="#結果表示" title="Link to this heading"></a></h2>
+<p>得られた結果のうち、一番よいスコアを持つものは<code class="docutils literal notranslate"><span class="pre">export_all_sequence_best_fx()</span></code>を用いることで取り出すことができます。 また、これまでの全ての履歴をみたい場合には、<code class="docutils literal notranslate"><span class="pre">chosen_actions</span></code>を呼び出すことで表示することができます。以下、結果を表示するサンプルスクリプトを記載します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
+<span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># The result of searching is summarized in the class combo.search.discrete.results.history()</span>
+<span class="c1"># res.fx: observed negative energy at each step</span>
+<span class="c1"># res.chosen_actions: history of choosed actions</span>
+<span class="c1"># fbest, best_action= res.export_all_sequence_best_fx(): current best fx and current best action</span>
+<span class="c1">#                                                                                                   that has been observed until each step</span>
+<span class="c1"># res.total_num_search: total number of search</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_action</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>最後に、一番よいスコアを持つ候補は以下のようにして表示することができます。正しい解 x=-1に行き着いていることがわかります。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v2.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v2.1.0/en/notebook/tutorial_simulator.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.1.0/ja/notebook/tutorial_simulator.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_simulator.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_simulator.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.1.0/ja/notebook/tutorial_simulator.html">v2.1.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,812 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多目的最適化 &mdash; PHYSBO 2.1.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=b9788144"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="アルゴリズム" href="../algorithm.html" />
+    <link rel="prev" title="複数候補を一度に探索する" href="tutorial_multi_probe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">多目的最適化</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#テスト関数">テスト関数</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulator-の定義">simulator の定義</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#関数のプロット">関数のプロット</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#1つ目の目的関数">1つ目の目的関数</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#2つ目の目的関数">2つ目の目的関数</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#最適化の実行">最適化の実行</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#policy-のセット">policy のセット</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ランダムサーチ">ランダムサーチ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#結果の確認">結果の確認</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#ベイズ最適化">ベイズ最適化</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#HVPI-(HyperVolume-based-Probability-of-Improvement)">HVPI (HyperVolume-based Probability of Improvement)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#EHVI-(Expected-Hyper-Volume-Improvement)">EHVI (Expected Hyper-Volume Improvement)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#TS-(Thompson-Sampling)">TS (Thompson Sampling)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#付録：全探索">付録：全探索</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">多目的最適化</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_multi_objective.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="多目的最適化">
+<h1>多目的最適化<a class="headerlink" href="#多目的最適化" title="Link to this heading"></a></h1>
+<div class="line-block">
+<div class="line">最適化したい目的関数が複数 (<span class="math notranslate nohighlight">\(p\)</span> 個) ある場合は、多目的最適化をおこないます。</div>
+<div class="line">本チュートリアルでは、「解」は目的関数の組 <span class="math notranslate nohighlight">\(y = (y_1(x), y_2(x), \dots, y_p(x))\)</span> を意味することに注意してください。</div>
+<div class="line">解の大小関係 <span class="math notranslate nohighlight">\(\prec\)</span> を以下のように定義します。</div>
+</div>
+<p><span class="math notranslate nohighlight">\(y \prec y^{'}\Longleftrightarrow \forall \ i \le p, y_i \le y^{'}_i \land \exists \ j \le p, y_j &lt; y^{'}_j\)</span></p>
+<div class="line-block">
+<div class="line">（最大化問題における） <strong>パレート解</strong> とは、上記の大小関係の上で、自身よりも大きな解がないような解を指します。</div>
+<div class="line">すなわち、任意の目的関数の値を改善しようとした場合、他の目的関数のうちどれかひとつは悪化するような解です。</div>
+<div class="line">目的関数間にトレードオフが存在する場合は、パレート解は複数存在するため、それらを効率的に求めることが課題となります。</div>
+</div>
+<p>PHYSBOでは、パレート解を効率的に求めるためのベイズ最適化手法を実装しています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<section id="テスト関数">
+<h2>テスト関数<a class="headerlink" href="#テスト関数" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">本チュートリアルでは、多目的最適化のベンチマーク関数である VLMOP2 を利用します。</div>
+<div class="line">目的関数の数は2つです。</div>
+</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{split}
+    y_1(\vec{x}) &amp;= 1 - \exp\left[-\sum_{i=1}^N\left( x_i - 1/\sqrt{N}\right)^2\right] \\
+    y_2(\vec{x}) &amp;= 1 - \exp\left[-\sum_{i=1}^N\left( x_i + 1/\sqrt{N}\right)^2\right]
+\end{split}\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(y_1\)</span> と <span class="math notranslate nohighlight">\(y_2\)</span> はそれぞれ <span class="math notranslate nohighlight">\(x_1 = x_2 = \cdots x_N = 1/\sqrt{N}\)</span> と <span class="math notranslate nohighlight">\(x_1 = x_2 = \cdots x_N = -1/\sqrt{N}\)</span> に最小値があり、その値はともに０です。また、上界は1 です。</p>
+<p>PHYSBO は最大化問題を仮定するため、-1を掛けたものをあらためて目的関数とします。</p>
+<ul class="simple">
+<li><p>参考文献</p>
+<ul>
+<li><p>Van Veldhuizen, David A. Multiobjective evolutionary algorithms: classifications, analyses, and new innovations. No. AFIT/DS/ENG/99-01. AIR FORCE INST OF TECH WRIGHT-PATTERSONAFB OH SCHOOL OF ENGINEERING, 1999.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">vlmop2_minus</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="o">-</span><span class="n">y1</span><span class="p">,</span> <span class="o">-</span><span class="n">y2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>入力空間 <span class="math notranslate nohighlight">\(\vec{x}\)</span> は 2次元とし、[-2, 2] × [-2, 2] の上で候補点をグリッド状に生成します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="n">test_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-2.  , -2.  ],
+       [-2.  , -1.96],
+       [-2.  , -1.92],
+       ...,
+       [ 2.  ,  1.92],
+       [ 2.  ,  1.96],
+       [ 2.  ,  2.  ]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(10201, 2)
+</pre></div></div>
+</div>
+</section>
+<section id="simulator-の定義">
+<h2>simulator の定義<a class="headerlink" href="#simulator-の定義" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">vlmop2_minus</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simu</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="関数のプロット">
+<h2>関数のプロット<a class="headerlink" href="#関数のプロット" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">2つの目的関数をそれぞれプロットしてみましょう。</div>
+<div class="line">1つ目の目的関数は右上にピークがあり、2つ目の目的関数は左下にピークがあるようなトレードオフがある状態となっています。 （星はピークの位置です）</div>
+</div>
+<section id="1つ目の目的関数">
+<h3>1つ目の目的関数<a class="headerlink" href="#1つ目の目的関数" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 1&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_12_0.png" src="../_images/notebook_tutorial_multi_objective_12_0.png" />
+</div>
+</div>
+</section>
+<section id="2つ目の目的関数">
+<h3>2つ目の目的関数<a class="headerlink" href="#2つ目の目的関数" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot objective 2</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">simu</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">)),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;objective 2&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)],</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_14_0.png" src="../_images/notebook_tutorial_multi_objective_14_0.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="最適化の実行">
+<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Link to this heading"></a></h2>
+<section id="policy-のセット">
+<h3>policy のセット<a class="headerlink" href="#policy-のセット" title="Link to this heading"></a></h3>
+<div class="line-block">
+<div class="line">多目的最適化用の <code class="docutils literal notranslate"><span class="pre">physbo.search.discrete_multi.policy</span></code> を利用します。</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">num_objectives</span></code> に目的関数の数を指定してください。</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="line-block">
+<div class="line">通常の <code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.policy</span></code> (目的関数が1つの場合）と同じく、<code class="docutils literal notranslate"><span class="pre">random_search</span></code> または <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> メソッドを呼ぶことで最適化を行います。</div>
+<div class="line">基本的なAPIや利用方法は <code class="docutils literal notranslate"><span class="pre">discrete.policy</span></code> とおおよそ共通しています。</div>
+</div>
+</section>
+<section id="ランダムサーチ">
+<h3>ランダムサーチ<a class="headerlink" href="#ランダムサーチ" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="line-block">
+<div class="line">目的関数の評価値(の array) とそのときの action ID が表示されます。</div>
+<div class="line">また、パレート解集合 (Pareto set) が更新されたときにメッセージを表示します。</div>
+</div>
+<div class="line-block">
+<div class="line">Pareto set が更新された際に中身を表示したい場合は、<code class="docutils literal notranslate"><span class="pre">disp_pareto_set=True</span></code> と指定します。</div>
+<div class="line">Pareto set は1つ目の目的関数値の昇順でソートされています。</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="結果の確認">
+<h3>結果の確認<a class="headerlink" href="#結果の確認" title="Link to this heading"></a></h3>
+<p>#### 評価値の履歴</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res_random</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<section id="パレート解の取得">
+<h4>パレート解の取得<a class="headerlink" href="#パレート解の取得" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res_random</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
+<span class="n">front</span><span class="p">,</span> <span class="n">front_num</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(array([[-0.95713719, -0.09067194],
+        [-0.92633083, -0.29208351],
+        [-0.63329589, -0.63329589],
+        [-0.52191048, -0.72845916],
+        [-0.26132949, -0.87913689],
+        [-0.17190645, -0.91382463]]),
+ array([40,  3, 19, 16, 29, 41]))
+</pre></div></div>
+</div>
+</section>
+<section id="解（評価値）のプロット">
+<h4>解（評価値）のプロット<a class="headerlink" href="#解（評価値）のプロット" title="Link to this heading"></a></h4>
+<p>これ以降、図示する空間が <span class="math notranslate nohighlight">\(y = (y_1, y_2)\)</span> であり <span class="math notranslate nohighlight">\(x = (x_1, x_2)\)</span> ではないことにあらためて注意してください。</p>
+<p>赤のプロットがパレート解です。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_pareto_front</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+    <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
+    <span class="n">dominated</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">num_runs</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">]</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">front</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">front</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Pareto front&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Objective 1&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Objective 2&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_random</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_28_0.png" src="../_images/notebook_tutorial_multi_objective_28_0.png" />
+</div>
+</div>
+</section>
+<section id="劣解領域-(dominated-region)-の体積を計算">
+<h4>劣解領域 (dominated region) の体積を計算<a class="headerlink" href="#劣解領域-(dominated-region)-の体積を計算" title="Link to this heading"></a></h4>
+<div class="line-block">
+<div class="line">パレート解ではない解、すなわち、「自らよりも優れた解 <span class="math notranslate nohighlight">\(y'\)</span> が存在する解 <span class="math notranslate nohighlight">\(y\)</span> 」 を劣解と呼びます (<span class="math notranslate nohighlight">\(\exists y' y \prec y'\)</span>)。</div>
+<div class="line">解空間（の部分空間）のうち、劣解の占める空間である劣解領域の体積は、多目的最適化の結果を示す指標のひとつです。</div>
+<div class="line">この値が大きいほど、より良いパレート解が多く求まっていることになります。</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">res_random.pareto.volume_in_dominance(ref_min,</span> <span class="pre">ref_max)</span></code> は、 <code class="docutils literal notranslate"><span class="pre">ref_min</span></code>, <code class="docutils literal notranslate"><span class="pre">ref_max</span></code> で指定された矩形(hyper-rectangle) 中の劣解領域体積を計算します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.2376881844865093
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+<section id="ベイズ最適化">
+<h2>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="Link to this heading"></a></h2>
+<p>多目的の場合の <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> では、<code class="docutils literal notranslate"><span class="pre">score</span></code> には以下のいずれかを指定します。</p>
+<ul class="simple">
+<li><p>HVPI (HyperVolume-based Probability of Improvement)</p></li>
+<li><p>EHVI (Expected Hyper-Volume Improvement)</p></li>
+<li><p>TS (Thompson Sampling)</p></li>
+</ul>
+<p>以下、score を変えてそれぞれ 50回 (ランダムサーチ10回 + ベイズ最適化 40回) 評価を行います。</p>
+<section id="HVPI-(HyperVolume-based-Probability-of-Improvement)">
+<h3>HVPI (HyperVolume-based Probability of Improvement)<a class="headerlink" href="#HVPI-(HyperVolume-based-Probability-of-Improvement)" title="Link to this heading"></a></h3>
+<p>多次元の目的関数空間における非劣解領域 (non-dominated region) の改善確率を score として求めます。</p>
+<ul class="simple">
+<li><p>参考文献</p>
+<ul>
+<li><p>Couckuyt, Ivo, Dirk Deschrijver, and Tom Dhaene. 「Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization.」 Journal of Global Optimization 60.3 (2014): 575-594.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="パレート解のプロット">
+<h4>パレート解のプロット<a class="headerlink" href="#パレート解のプロット" title="Link to this heading"></a></h4>
+<p>ランダムサンプリングと比較して、パレート解が多く求まっていることが分かります。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_HVPI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_35_0.png" src="../_images/notebook_tutorial_multi_objective_35_0.png" />
+</div>
+</div>
+</section>
+<section id="劣解領域体積">
+<h4>劣解領域体積<a class="headerlink" href="#劣解領域体積" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.32877907991633726
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="EHVI-(Expected-Hyper-Volume-Improvement)">
+<h3>EHVI (Expected Hyper-Volume Improvement)<a class="headerlink" href="#EHVI-(Expected-Hyper-Volume-Improvement)" title="Link to this heading"></a></h3>
+<p>多次元の目的関数空間における非劣解領域 (non-dominated region) の改善期待値を score として求めます。</p>
+<ul class="simple">
+<li><p>参考文献</p>
+<ul>
+<li><p>Couckuyt, Ivo, Dirk Deschrijver, and Tom Dhaene. 「Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization.」 Journal of Global Optimization 60.3 (2014): 575-594.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_EHVI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EHVI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="id15">
+<h4>パレート解のプロット<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_EHVI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_41_0.png" src="../_images/notebook_tutorial_multi_objective_41_0.png" />
+</div>
+</div>
+</section>
+<section id="id16">
+<h4>劣解領域体積<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_EHVI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.3200467412741881
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="TS-(Thompson-Sampling)">
+<h3>TS (Thompson Sampling)<a class="headerlink" href="#TS-(Thompson-Sampling)" title="Link to this heading"></a></h3>
+<div class="line-block">
+<div class="line">単目的の場合の Thompson Sampling では、各候補(test_X)について、目的関数の事後分布からサンプリングを行い、値が最大となる候補を次の探索点として推薦します。</div>
+<div class="line">多目的の場合は、サンプリングした値についてパレートルールの上で最大となる候補、つまりパレート最適な候補の中からランダムに1つ選択して次の探索点とします。</div>
+</div>
+<ul class="simple">
+<li><p>参考文献</p>
+<ul>
+<li><p>Yahyaa, Saba Q., and Bernard Manderick. 「Thompson sampling for multi-objective multi-armed bandits problem.」 Proc. Eur. Symp. Artif. Neural Netw., Comput. Intell. Mach. Learn.. 2015.</p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_TS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="id17">
+<h4>パレート解のプロット<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_TS</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_47_0.png" src="../_images/notebook_tutorial_multi_objective_47_0.png" />
+</div>
+</div>
+</section>
+<section id="id18">
+<h4>劣解領域体積<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_TS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.16415446221006114
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+<section id="付録：全探索">
+<h2>付録：全探索<a class="headerlink" href="#付録：全探索" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">random_search</span></code> で <code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code> に全データ数 (<code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">test_X.shape[0]</span></code>) を渡すと手軽に全探索できます。</div>
+<div class="line">全データの評価には時間がかかるため、あらかじめデータ数を減らしておきます。</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X_sparse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
+<span class="n">simu_sparse</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">test_X_sparse</span><span class="p">)</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_sparse</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="n">test_X_sparse</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">res_all</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_sparse</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_all</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_53_0.png" src="../_images/notebook_tutorial_multi_objective_53_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_all</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.30051687493437484
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_multi_probe.html" class="btn btn-neutral float-left" title="複数候補を一度に探索する" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../algorithm.html" class="btn btn-neutral float-right" title="アルゴリズム" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v2.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v2.1.0/en/notebook/tutorial_multi_objective.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.1.0/ja/notebook/tutorial_multi_objective.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_multi_objective.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_multi_objective.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v2.1.0/ja/notebook/tutorial_multi_objective.html">v2.1.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
