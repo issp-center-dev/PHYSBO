@@ -19,7 +19,7 @@ class prior:
         ----------
         mean: numpy.ndarray
             mean values of prior
-        cov: numpy.ndarray
+        cov: physbo.gp.cov.gauss
             covariance matrix of priors
         """
         self.mean = mean
@@ -94,10 +94,13 @@ class prior:
         params: numpy.ndarray
            Parameters.
         diag: bool
-            If X is the diagonalization matrix, true.
+            If true, only variances (diagonal elements) are returned.
+
         Returns
         -------
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
         """
         if params is None:
             params = np.copy(self.params)

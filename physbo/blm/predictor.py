@@ -101,6 +101,8 @@ class predictor(physbo.predictor.base_predictor):
         Returns
         =======
         numpy.ndarray
+            Returned shape is (num_points),
+            where num_points is the number of points in test.
         """
         if self.blm.stats is None:
             self.prepare(training)
@@ -116,10 +118,13 @@ class predictor(physbo.predictor.base_predictor):
             training dataset. If already trained, the model does not use this.
         test: physbo.variable
             inputs
-
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
         Returns
         =======
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in test.
         """
         if self.blm.stats is None:
             self.prepare(training)

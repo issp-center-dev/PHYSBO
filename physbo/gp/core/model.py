@@ -269,11 +269,13 @@ class model:
         params: numpy.ndarray
             Parameters
         diag: bool
-            If X is the diagonalization matrix, true.
+            If true, only variances (diagonal elements) are returned.
 
         Returns
         -------
-        physbo.gp.inf.exact.get_post_fcov
+        numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
 
         """
         if params is None:

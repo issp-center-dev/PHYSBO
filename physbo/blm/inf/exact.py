@@ -170,6 +170,8 @@ def get_post_fcov(blm, X, Psi=None, diag=True):
     Returns
     =======
     numpy.ndarray
+        Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+        where num_points is the number of points in X.
     """
     if Psi is None:
         Psi = blm.lik.linear.basis.get_basis(X)

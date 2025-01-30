@@ -218,6 +218,8 @@ class model:
         Returns
         =======
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
 
         See also
         ========

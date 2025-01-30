@@ -149,12 +149,14 @@ class gauss:
             Parameters
 
         diag: bool
-            If X is the diagonalization matrix, true.
+            If true, only variances (diagonal elements) are returned.
 
         Returns
         -------
         G: numpy.ndarray
             covariant matrix
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
         """
         params, width, scale = self.prepare(params)
         scale2 = scale**2

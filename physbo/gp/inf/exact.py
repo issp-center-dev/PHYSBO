@@ -203,10 +203,13 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
     params: numpy.ndarray
         Parameters.
     diag: bool
-        If X is the diagonalization matrix, true.
+        If true, only variances (diagonal elements) are returned.
+
     Returns
     -------
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
     """
 
     lik_params, prior_params = gp.decomp_params(params)
