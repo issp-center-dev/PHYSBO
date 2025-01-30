@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.search.discrete_multi.policy &mdash; PHYSBO 2.1-dev documentation</title>
+  <title>physbo.search.discrete_multi.policy &mdash; PHYSBO 2.2-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=6fddfc0f"></script>
+      <script src="../../../../_static/documentation_options.js?v=b33cbb84"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -385,6 +385,23 @@
 <div class="viewcode-block" id="policy.get_post_fmean">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_post_fmean">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate mean value of predictors (post distribution)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xs: physbo.variable or np.ndarray</span>
+<span class="sd">            input parameters to calculate covariance</span>
+<span class="sd">            shape is (num_points, num_parameters)</span>
+<span class="sd">        diag: bool</span>
+<span class="sd">            If true, only variances (diagonal elements) are returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fcov: numpy.ndarray</span>
+<span class="sd">            Covariance matrix of the post distribution.</span>
+<span class="sd">            Returned shape is (num_points, num_objectives).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -406,7 +423,24 @@
 
 <div class="viewcode-block" id="policy.get_post_fcov">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete_multi.policy.html#physbo.search.discrete_multi.policy.policy.get_post_fcov">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate covariance of predictors (post distribution)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xs: physbo.variable or np.ndarray</span>
+<span class="sd">            input parameters to calculate covariance</span>
+<span class="sd">            shape is (num_points, num_parameters)</span>
+<span class="sd">        diag: bool</span>
+<span class="sd">            If true, only variances (diagonal elements) are returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fcov: numpy.ndarray</span>
+<span class="sd">            Covariance matrix of the post distribution.</span>
+<span class="sd">            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fcov()&quot;</span><span class="p">)</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -420,10 +454,14 @@
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
         <span class="n">fcov</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_list</span><span class="p">)</span>
         <span class="p">]</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">diag</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">arr</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;nij-&gt;ijn&quot;</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="policy.get_score">
