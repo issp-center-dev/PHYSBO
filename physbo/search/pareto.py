@@ -1,5 +1,12 @@
-import numpy as np
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import numpy as np
+import time
 
 class Rectangles(object):
     def __init__(self, n_dim, dtype):
@@ -149,7 +156,7 @@ class Pareto(object):
         self.cells.add(lb_idx, ub_idx)
 
     def __included_in_non_dom_region(self, p):
-        return np.all([np.any(pf <= p) for pf in self.front])
+        return np.all(np.any(self.front <= p, axis=1)) # revised on 2025/03/25, vectorized with np.any
 
     def __divide_using_binary_search(self):
         front = np.r_[
@@ -158,16 +165,22 @@ class Pareto(object):
             np.full((1, self.num_objectives), np.inf),
         ]
 
-        # Pareto front indices when sorted on each dimension's front value in ascending order.
-        # (indices start from 1)
-        # Index 0 means anti-ideal value, index `self.front.shape[0] + 1` means ideal point.
+        # Pareto front indices sorted in each dimension
         front_idx = np.r_[
             np.zeros((1, self.num_objectives), dtype=int),
             np.argsort(self.front, axis=0) + 1,
             np.full((1, self.num_objectives), self.front.shape[0] + 1, dtype=int),
         ]
 
+        print("front_idx shape", front_idx.shape)
+
         rect_candidates = [[np.copy(front_idx[0]), np.copy(front_idx[-1])]]
+
+        call_time = 0
+
+        start_time = time.time()
+
+        # modified on 2025/03/25, optimized checking of non-dominated region
 
         while rect_candidates:
             rect = rect_candidates.pop()
@@ -177,23 +190,38 @@ class Pareto(object):
             lb = [front[lb_idx[d], d] for d in range(self.num_objectives)]
             ub = [front[ub_idx[d], d] for d in range(self.num_objectives)]
 
+            # first check if lb is in the non-dominated region, if so, add it to the cells
             if self.__included_in_non_dom_region(lb):
                 self.cells.add([lb_idx], [ub_idx])
+                call_time += 1
+                continue
 
-            elif self.__included_in_non_dom_region(ub):
-                rect_sizes = rect[1] - rect[0]
+            # when lb is not in the non-dominated region, check if ub is in the non-dominated region
+            # if ub is in the non-dominated region, it means that the whole rectangle is in the dominated region
+            if not self.__included_in_non_dom_region(ub):
+                call_time += 1
+                continue
 
-                # divide rectangle by the dimension with largest size
-                if np.any(rect_sizes > 1):
-                    div_dim = np.argmax(rect_sizes)
-                    div_point = rect[0][div_dim] + int(round(rect_sizes[div_dim] / 2.0))
+            # only when lb is not in the non-dominated region and ub is in the non-dominated region,
+            # we need to divide the rectangle into two sub-rectangles
 
-                    # add divided left rectangle
-                    left_ub_idx = np.copy(rect[1])
-                    left_ub_idx[div_dim] = div_point
-                    rect_candidates.append([np.copy(rect[0]), left_ub_idx])
+            rect_sizes = rect[1] - rect[0]
+            if np.any(rect_sizes > 1):
+                div_dim = np.argmax(rect_sizes)
+                div_point = rect[0][div_dim] + int(round(rect_sizes[div_dim] / 2.0))
 
-                    # add divided right rectangle
-                    right_lb_idx = np.copy(rect[0])
-                    right_lb_idx[div_dim] = div_point
-                    rect_candidates.append([right_lb_idx, np.copy(rect[1])])
+                # Left sub-rectangle
+                left_ub_idx = np.copy(rect[1])
+                left_ub_idx[div_dim] = div_point
+                rect_candidates.append([np.copy(rect[0]), left_ub_idx])
+
+                # Right sub-rectangle
+                right_lb_idx = np.copy(rect[0])
+                right_lb_idx[div_dim] = div_point
+                rect_candidates.append([right_lb_idx, np.copy(rect[1])])
+
+        end_time = time.time()
+
+        print("Execution time:", end_time - start_time)
+
+        print("call_time", call_time)
