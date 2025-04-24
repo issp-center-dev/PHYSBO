@@ -5,20 +5,20 @@ A standard implementation (e.g., scikit-learn), however, can accommodate only sm
 PHYSBO is highly scalable due to an efficient protocol that employs Thompson sampling, random feature maps, one-rank Cholesky update and automatic hyperparameter tuning. Technical features are described in [COMBO's document](https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf) and [PHYSBO's report](https://doi.org/10.1016/j.cpc.2022.108405) (open access).
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for academic use.
 
-## Document
+## Documentation
 
 - Stable (master branch)
     - [English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/index.html)
     - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
 - Latest (develop branch)
-    - [English](https://issp-center.dev.github.io/PHYSBO/manual/develop/en/index.html)
+    - [English](https://issp-center-dev.github.io/PHYSBO/manual/develop/en/index.html)
     - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/index.html)
 
-## Required Packages
+## Dependencies
 
 - Python >= 3.6
     - No longer tested with Python 3.6
-- NumPy
+- NumPy < 2.0.0
 - SciPy
 
 ## Install
@@ -26,14 +26,14 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - From PyPI (recommended)
 
 ```bash
-pip3 install physbo
+python3 -m pip install physbo
 ```
 
 - From source (for developers)
     1. Update pip (>= 19.0)
 
         ```bash
-        pip3 install -U pip
+        python3 -m pip install -U pip
         ```
 
     1. Download or clone the github repository
@@ -48,7 +48,7 @@ pip3 install physbo
         # ./PHYSBO is the root directory of PHYSBO
         # pip install options such as --user are avaiable
 
-        pip3 install ./PHYSBO
+        python3 -m pip install ./PHYSBO
         ```
 
     1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
@@ -56,12 +56,14 @@ pip3 install physbo
 ## Uninstall
 
 ```bash
-pip3 uninstall physbo
+python3 -m pip uninstall physbo
 ```
 
 ## Usage
 
-['examples/simple.py'](https://github.com/issp-center-dev/PHYSBO/examples/simple.py) is a simple example.
+For an introductory tutorial please consult the documentation. ([English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/notebook/tutorial_basic.html) / [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/install.html#id2))  
+
+['examples/simple.py'](./examples/simple.py) is a simple example.
 
 ## Data repository
 
@@ -70,7 +72,7 @@ A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery
 ## License
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
-This package is distributed under GNU General Public License version 3 (GPL v3) or later.
+PHYSBO v2 is distributed under Mozilla Public License version 2.0 (MPL v2).
 We hope that you cite the following reference when you publish the results using PHYSBO:
 
 [“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, Computer Physics Communications Volume 278, September 2022, 108405.](https://doi.org/10.1016/j.cpc.2022.108405)

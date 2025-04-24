@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import numpy as np
 import copy
 import pickle as pickle
@@ -51,7 +58,7 @@ class policy(discrete.policy):
                 msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = sorted(list(set(self.actions) - set(actions)))
+            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
@@ -99,11 +106,14 @@ class policy(discrete.policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-        local_index = np.searchsorted(self.actions, action)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == action
-        ]
-        self.actions = self._delete_actions(local_index)
+        
+        # remove action from candidates if exists
+        if len(self.actions) > 0:
+            local_index = np.searchsorted(self.actions, action)
+            local_index = local_index[
+                np.take(self.actions, local_index, mode="clip") == action
+            ]
+            self.actions = self._delete_actions(local_index)
 
     def _model(self, i):
         training = self.training_list[i]
@@ -284,6 +294,23 @@ class policy(discrete.policy):
         return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
+        """
+        Calculate mean value of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives).
+        """
         if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
@@ -302,7 +329,24 @@ class policy(discrete.policy):
         ]
         return np.array(fmean).T
 
-    def get_post_fcov(self, xs):
+    def get_post_fcov(self, xs, diag=True):
+        """
+        Calculate covariance of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.
+        """
         if self.predictor_list == [None] * self.num_objectives:
             self._warn_no_predictor("get_post_fcov()")
             predictor_list = []
@@ -316,10 +360,14 @@ class policy(discrete.policy):
             predictor_list = self.predictor_list[:]
         X = self._make_variable_X(xs)
         fcov = [
-            predictor.get_post_fcov(training, X)
+            predictor.get_post_fcov(training, X, diag)
             for predictor, training in zip(predictor_list, self.training_list)
         ]
-        return np.array(fcov).T
+        arr = np.array(fcov)
+        if diag:
+            return arr.T
+        else:
+            return np.einsum("nij->ijn", arr)
 
     def get_score(
         self,
@@ -480,7 +528,13 @@ class policy(discrete.policy):
             self.load_predictor_list(file_predictor_list)
 
         N = self.history.total_num_search
-        self.actions = self._delete_actions(self.history.chosen_actions[:N])
+
+        visited = self.history.chosen_actions[:N]
+        local_index = np.searchsorted(self.actions, visited)
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == visited
+        ]
+        self.actions = self._delete_actions(local_index)
 
     def save_predictor_list(self, file_name):
         with open(file_name, "wb") as f:

@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 # -*- coding:utf-8 -*-
 import numpy as np
 from scipy import spatial
@@ -142,12 +149,14 @@ class gauss:
             Parameters
 
         diag: bool
-            If X is the diagonalization matrix, true.
+            If true, only variances (diagonal elements) are returned.
 
         Returns
         -------
         G: numpy.ndarray
             covariant matrix
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
         """
         params, width, scale = self.prepare(params)
         scale2 = scale**2

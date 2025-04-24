@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import physbo.predictor
 
 
@@ -108,10 +115,13 @@ class predictor(physbo.predictor.base_predictor):
         test: physbo.variable
             inputs
         diag: bool
-            Diagonlization flag in physbo.exact.get_post_fcov function.
+            If true, only variances (diagonal elements) are returned.
+
         Returns
         -------
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in test.
 
         """
         if self.model.stats is None:

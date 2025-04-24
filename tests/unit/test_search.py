@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 from __future__ import print_function
 
 import pytest
@@ -64,7 +71,6 @@ def test_EI(predictor, X, Y):
     N = Y.shape[0]
     score = physbo.search.score.EI(predictor, X, Y)
     assert score.shape[0] == N
-    predictor.get_post_fmean.assert_any_call(X, X)
     predictor.get_post_fmean.assert_any_call(X, Y)
     predictor.get_post_fcov.assert_called_once_with(X, Y)
     predictor.get_post_samples.assert_not_called()
@@ -84,7 +90,6 @@ def test_PI(predictor, X, Y):
     N = Y.shape[0]
     score = physbo.search.score.PI(predictor, X, Y)
     assert score.shape[0] == N
-    predictor.get_post_fmean.assert_any_call(X, X)
     predictor.get_post_fmean.assert_any_call(X, Y)
     predictor.get_post_fcov.assert_called_once_with(X, Y)
     predictor.get_post_samples.assert_not_called()

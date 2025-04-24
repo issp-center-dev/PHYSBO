@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import numpy as np
 import pickle
 import copy
@@ -111,8 +118,8 @@ class history(object):
         with open(filename, "rb") as f:
             data = pickle.load(f)
 
-        M = data["num_runs"]
-        N = data["total_num_search"]
+        M = int(data["num_runs"])
+        N = int(data["total_num_search"])
         self.num_runs = M
         self.total_num_search = N
         self.fx[0:N] = data["fx"]

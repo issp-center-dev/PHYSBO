@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import numpy as np
 import copy
 import pickle as pickle
@@ -131,11 +138,15 @@ class policy:
             time_run_simulator=time_run_simulator,
         )
         self.training.add(X=X, t=t, Z=Z)
-        local_index = np.searchsorted(self.actions, action)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == action
-        ]
-        self.actions = self._delete_actions(local_index)
+
+        # remove the selected actions from the list of candidates if exists
+        if len(self.actions) > 0:
+            local_index = np.searchsorted(self.actions, action)
+            local_index = local_index[
+                np.take(self.actions, local_index, mode="clip") == action
+            ]
+            self.actions = self._delete_actions(local_index)
+
         if self.new_data is None:
             self.new_data = variable(X=X, t=t, Z=Z)
         else:
@@ -337,7 +348,21 @@ class policy:
         print("         before calling {}.".format(method_name))
 
     def get_post_fmean(self, xs):
-        """Calculate mean value of predictor (post distribution)"""
+        """
+        Calculate mean value of predictor (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate mean value
+            shape is (num_points, num_parameters)
+
+        Returns
+        -------
+        fmean: numpy.ndarray
+            Mean value of the post distribution.
+            Returned shape is (num_points).
+        """
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
@@ -349,18 +374,34 @@ class policy:
             self._update_predictor()
             return self.predictor.get_post_fmean(self.training, X)
 
-    def get_post_fcov(self, xs):
-        """Calculate covariance of predictor (post distribution)"""
+    def get_post_fcov(self, xs, diag=True):
+        """
+        Calculate covariance of predictor (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false.
+        """
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-            return predictor.get_post_fcov(self.training, X)
+            return predictor.get_post_fcov(self.training, X, diag)
         else:
             self._update_predictor()
-            return self.predictor.get_post_fcov(self.training, X)
+            return self.predictor.get_post_fcov(self.training, X, diag)
 
     def get_score(
         self,
@@ -683,7 +724,13 @@ class policy:
                 self.predictor = pickle.load(f)
 
         N = self.history.total_num_search
-        self.actions = self._delete_actions(self.history.chosen_actions[:N])
+
+        visited = self.history.chosen_actions[:N]
+        local_index = np.searchsorted(self.actions, visited)
+        local_index = local_index[
+            np.take(self.actions, local_index, mode="clip") == visited
+        ]
+        self.actions = self._delete_actions(local_index)
 
     def export_predictor(self):
         """

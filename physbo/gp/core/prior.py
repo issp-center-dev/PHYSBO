@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import numpy as np
 import scipy
 
@@ -12,7 +19,7 @@ class prior:
         ----------
         mean: numpy.ndarray
             mean values of prior
-        cov: numpy.ndarray
+        cov: physbo.gp.cov.gauss
             covariance matrix of priors
         """
         self.mean = mean
@@ -87,10 +94,13 @@ class prior:
         params: numpy.ndarray
            Parameters.
         diag: bool
-            If X is the diagonalization matrix, true.
+            If true, only variances (diagonal elements) are returned.
+
         Returns
         -------
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in X.
         """
         if params is None:
             params = np.copy(self.params)

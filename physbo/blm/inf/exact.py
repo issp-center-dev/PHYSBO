@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import numpy as np
 import scipy
 
@@ -163,6 +170,8 @@ def get_post_fcov(blm, X, Psi=None, diag=True):
     Returns
     =======
     numpy.ndarray
+        Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+        where num_points is the number of points in X.
     """
     if Psi is None:
         Psi = blm.lik.linear.basis.get_basis(X)

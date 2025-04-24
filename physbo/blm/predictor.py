@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (C) 2020- The University of Tokyo
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import physbo.predictor
 
 
@@ -94,12 +101,14 @@ class predictor(physbo.predictor.base_predictor):
         Returns
         =======
         numpy.ndarray
+            Returned shape is (num_points),
+            where num_points is the number of points in test.
         """
         if self.blm.stats is None:
             self.prepare(training)
         return self.blm.get_post_fmean(test.X, test.Z)
 
-    def get_post_fcov(self, training, test):
+    def get_post_fcov(self, training, test, diag=True):
         """
         calculates posterior variance-covariance matrix of model
 
@@ -109,14 +118,17 @@ class predictor(physbo.predictor.base_predictor):
             training dataset. If already trained, the model does not use this.
         test: physbo.variable
             inputs
-
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
         Returns
         =======
         numpy.ndarray
+            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+            where num_points is the number of points in test.
         """
         if self.blm.stats is None:
             self.prepare(training)
-        return self.blm.get_post_fcov(test.X, test.Z)
+        return self.blm.get_post_fcov(test.X, test.Z, diag)
 
     def get_post_params(self, training, test):
         """
