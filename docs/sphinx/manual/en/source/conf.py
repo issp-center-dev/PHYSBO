@@ -34,7 +34,7 @@ author = "PHYSBO developers"
 # The short X.Y version.
 version = "2.2"
 # The full version, including alpha/beta/rc tags.
-release = "2.2-dev"
+release = "2.2.0"
 
 # for jupyter-notebook
 
