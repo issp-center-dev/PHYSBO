@@ -1,0 +1,418 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physbo.search.pareto &mdash; PHYSBO 2.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=b33cbb84"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PHYSBO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">physbo.search.pareto</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for physbo.search.pareto</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<div class="viewcode-block" id="Rectangles">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Rectangles">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Rectangles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initilize a set of hyper-rectangle.</span>
+
+<span class="sd">        :param n_dim: dimension of rectangles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span> <span class="o">=</span> <span class="n">n_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Rectangles.add">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Rectangles.add">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add new rectangles.</span>
+
+<span class="sd">        :param lb: lower bounds of rectangles</span>
+<span class="sd">        :param ub: upper bounds of rectangles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="n">lb</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="p">,</span> <span class="n">ub</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="dominate">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.dominate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dominate</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;domination rule for maximization problem&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">t1</span> <span class="o">&gt;=</span> <span class="n">t2</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">t1</span> <span class="o">&gt;</span> <span class="n">t2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Pareto">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Pareto</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_objectives</span><span class="p">,</span> <span class="n">dom_rule</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dom_rule</span> <span class="o">=</span> <span class="n">dom_rule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dom_rule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dom_rule</span> <span class="o">=</span> <span class="n">dominate</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">Rectangles</span><span class="p">(</span><span class="n">num_objectives</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Pareto.update_front">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.update_front">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_front</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the non-dominated set of points.</span>
+
+<span class="sd">        Pareto set is sorted on the first objective in ascending order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tt</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tt</span> <span class="o">=</span> <span class="n">t</span>
+
+        <span class="n">front_updated</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tt</span><span class="p">)):</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">tt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">is_front</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dom_rule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">point</span><span class="p">):</span>
+                    <span class="n">is_front</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">is_front</span><span class="p">:</span>
+                <span class="n">front_updated</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">dom_filter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dom_rule</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                        <span class="n">dom_filter</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">dom_filter</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">front_num</span><span class="p">[</span><span class="n">dom_filter</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">front_updated</span><span class="p">:</span>
+            <span class="n">sorted_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">divide_non_dominated_region</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span> <span class="o">=</span> <span class="n">front_updated</span></div>
+
+
+<div class="viewcode-block" id="Pareto.export_front">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.export_front">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_front</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span></div>
+
+
+<div class="viewcode-block" id="Pareto.set_reference_min">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.set_reference_min">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_reference_min</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># estimate reference min point</span>
+            <span class="n">front_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="n">front_min</span>
+            <span class="n">reference_min</span> <span class="o">=</span> <span class="n">front_min</span> <span class="o">-</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="o">=</span> <span class="n">reference_min</span></div>
+
+
+<div class="viewcode-block" id="Pareto.set_reference_max">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.set_reference_max">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_reference_max</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_max</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">reference_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># estimate reference max point</span>
+            <span class="n">front_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">reference_max</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">100</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="n">reference_max</span></div>
+
+
+<div class="viewcode-block" id="Pareto.volume_in_dominance">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.volume_in_dominance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">volume_in_dominance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_min</span><span class="p">,</span> <span class="n">ref_max</span><span class="p">,</span> <span class="n">dominance_ratio</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">ref_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ref_min</span><span class="p">)</span>
+        <span class="n">ref_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ref_max</span><span class="p">)</span>
+        <span class="n">v_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">ref_max</span> <span class="o">-</span> <span class="n">ref_min</span><span class="p">)</span>
+
+        <span class="n">front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[[</span><span class="n">ref_min</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="p">[</span><span class="n">ref_max</span><span class="p">]]</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="n">front</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="n">ax</span><span class="p">]</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="n">front</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">ub</span><span class="p">,</span> <span class="n">ax</span><span class="p">]</span>
+
+        <span class="n">v_non_dom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">ub</span> <span class="o">-</span> <span class="n">lb</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">dominance_ratio</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">v_all</span> <span class="o">-</span> <span class="n">v_non_dom</span><span class="p">)</span> <span class="o">/</span> <span class="n">v_all</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v_all</span> <span class="o">-</span> <span class="n">v_non_dom</span></div>
+
+
+<div class="viewcode-block" id="Pareto.divide_non_dominated_region">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.divide_non_dominated_region">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">divide_non_dominated_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_binary_search</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># clear rectangles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">Rectangles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force_binary_search</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__divide_2d</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__divide_using_binary_search</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__divide_2d</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Divide non-dominated region into vertical rectangles for the case of 2-objectives.</span>
+
+<span class="sd">        Assumes that Pareto set has been sorted on the first objective in ascending order.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            In 2-dimensional cases, the second objective has be sorted in decending order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">lb_idx</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n_cells</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cells</span><span class="p">)]</span>
+        <span class="n">ub_idx</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_cells</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cells</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lb_idx</span><span class="p">,</span> <span class="n">ub_idx</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__included_in_non_dom_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># revised on 2025/03/25, vectorized with np.any</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__divide_using_binary_search</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Pareto front indices sorted in each dimension</span>
+        <span class="n">front_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;front_idx shape&quot;</span><span class="p">,</span> <span class="n">front_idx</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">rect_candidates</span> <span class="o">=</span> <span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">front_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">front_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]]</span>
+
+        <span class="n">call_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># modified on 2025/03/25, optimized checking of non-dominated region</span>
+
+        <span class="k">while</span> <span class="n">rect_candidates</span><span class="p">:</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="n">rect_candidates</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+            <span class="n">lb_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">front_idx</span><span class="p">[</span><span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">d</span><span class="p">],</span> <span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+            <span class="n">ub_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">front_idx</span><span class="p">[</span><span class="n">rect</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">d</span><span class="p">],</span> <span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+            <span class="n">lb</span> <span class="o">=</span> <span class="p">[</span><span class="n">front</span><span class="p">[</span><span class="n">lb_idx</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+            <span class="n">ub</span> <span class="o">=</span> <span class="p">[</span><span class="n">front</span><span class="p">[</span><span class="n">ub_idx</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
+
+            <span class="c1"># first check if lb is in the non-dominated region, if so, add it to the cells</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__included_in_non_dom_region</span><span class="p">(</span><span class="n">lb</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">lb_idx</span><span class="p">],</span> <span class="p">[</span><span class="n">ub_idx</span><span class="p">])</span>
+                <span class="n">call_time</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># when lb is not in the non-dominated region, check if ub is in the non-dominated region</span>
+            <span class="c1"># if ub is in the non-dominated region, it means that the whole rectangle is in the dominated region</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__included_in_non_dom_region</span><span class="p">(</span><span class="n">ub</span><span class="p">):</span>
+                <span class="n">call_time</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># only when lb is not in the non-dominated region and ub is in the non-dominated region,</span>
+            <span class="c1"># we need to divide the rectangle into two sub-rectangles</span>
+
+            <span class="n">rect_sizes</span> <span class="o">=</span> <span class="n">rect</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">rect_sizes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">div_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">rect_sizes</span><span class="p">)</span>
+                <span class="n">div_point</span> <span class="o">=</span> <span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">div_dim</span><span class="p">]</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">rect_sizes</span><span class="p">[</span><span class="n">div_dim</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
+
+                <span class="c1"># Left sub-rectangle</span>
+                <span class="n">left_ub_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">left_ub_idx</span><span class="p">[</span><span class="n">div_dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">div_point</span>
+                <span class="n">rect_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">left_ub_idx</span><span class="p">])</span>
+
+                <span class="c1"># Right sub-rectangle</span>
+                <span class="n">right_lb_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">right_lb_idx</span><span class="p">[</span><span class="n">div_dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">div_point</span>
+                <span class="n">rect_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">right_lb_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Execution time:&quot;</span><span class="p">,</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;call_time&quot;</span><span class="p">,</span> <span class="n">call_time</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: develop
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../develop/en/_modules/physbo/search/pareto.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../develop/ja/_modules/physbo/search/pareto.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../develop/en/_modules/physbo/search/pareto.html">develop</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../master/en/_modules/physbo/search/pareto.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
