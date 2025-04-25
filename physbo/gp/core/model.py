@@ -12,7 +12,6 @@ from physbo.gp import inf
 from physbo.gp.core import learning
 from physbo.gp.core.prior import prior
 from physbo.misc import set_config
-from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 
 class model:
     def __init__(self, lik, mean, cov, inf="exact"):
