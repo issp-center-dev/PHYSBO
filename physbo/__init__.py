@@ -14,4 +14,4 @@ from . import predictor
 from .predictor import base_predictor
 from .variable import variable
 
-__version__ = "2.2.0"
+__version__ = "3.0-dev"
