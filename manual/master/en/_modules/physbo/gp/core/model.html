@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.gp.core.model &mdash; PHYSBO 2.1.0 documentation</title>
+  <title>physbo.gp.core.model &mdash; PHYSBO 2.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=20623aea"></script>
+      <script src="../../../../_static/documentation_options.js?v=b21de401"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -89,7 +89,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">physbo.gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">inf</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">physbo.gp.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">physbo.gp.core.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">prior</span>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">physbo.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_config</span>
 
 <div class="viewcode-block" id="model">
 <a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.model">[docs]</a>
@@ -425,7 +425,7 @@
 
         <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
         <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span> <span class="o">*</span> <span class="n">alpha</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="model.predict_sampling">
@@ -547,6 +547,102 @@
             <span class="n">params</span> <span class="o">=</span> <span class="n">bfgs</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="sfs">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">sfs</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lik</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">inf</span><span class="o">=</span><span class="s2">&quot;exact&quot;</span><span class="p">,</span><span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lik</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">inf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+
+<div class="viewcode-block" id="sfs.prepare">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs.prepare">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sfs.fit">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fitting function (update parameters)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
+
+<span class="sd">        t:  numpy.ndarray</span>
+<span class="sd">            N dimensional array.</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">        config: physbo.misc.set_config object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#config = set_config()</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">method</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+            <span class="n">adam</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">adam</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;bfgs&quot;</span><span class="p">,</span> <span class="s2">&quot;batch&quot;</span><span class="p">):</span>
+            <span class="n">bfgs</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">bfgs</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xtrain</span> <span class="o">=</span> <span class="n">X</span></div>
+
+    
+<div class="viewcode-block" id="sfs.get_post_fmean">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs.get_post_fmean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sfs.predict">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculating posterior mean of model (function)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            inputs</span>
+<span class="sd">        Z: numpy.ndarray</span>
+<span class="sd">            feature maps</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Parameters</span>
+<span class="sd">        See also</span>
+<span class="sd">        ========</span>
+<span class="sd">        physbo.gp.inf.exact.get_post_fmean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+            <span class="n">post_fmu</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtrain</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">post_fmu</span></div>
+
+    
+<div class="viewcode-block" id="sfs.get_params">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.model.html#physbo.gp.core.model.sfs.get_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lik&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="p">,</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span><span class="n">mean</span><span class="p">,</span><span class="s2">&quot;cov&quot;</span><span class="p">:</span><span class="n">cov</span><span class="p">,</span><span class="s2">&quot;config&quot;</span><span class="p">:</span><span class="n">config</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
