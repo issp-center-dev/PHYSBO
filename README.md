@@ -50,8 +50,6 @@ python3 -m pip install physbo
         python3 -m pip install ./PHYSBO
         ```
 
-    1. Note: Do not `import physbo` at the root directory of the repository because `import physbo` does not try to import the installed PHYSBO but one in the repository, which includes Cython codes not compiled.
-
 ## Uninstall
 
 ```bash
