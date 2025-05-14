@@ -7,7 +7,7 @@
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 
 import numpy
 
@@ -17,37 +17,38 @@ compile_flags = [
 ext_mods = [
     Extension(
         name="physbo.misc._src.traceAB",
-        sources=["physbo/misc/_src/traceAB.pyx"],
+        sources=["src/physbo/misc/_src/traceAB.pyx"],
         include_dirs=[numpy.get_include()],
         extra_compile_args=compile_flags,
     ),
     Extension(
         name="physbo.misc._src.cholupdate",
-        sources=["physbo/misc/_src/cholupdate.pyx"],
+        sources=["src/physbo/misc/_src/cholupdate.pyx"],
         include_dirs=[numpy.get_include()],
         extra_compile_args=compile_flags,
     ),
     Extension(
         name="physbo.misc._src.diagAB",
-        sources=["physbo/misc/_src/diagAB.pyx"],
+        sources=["src/physbo/misc/_src/diagAB.pyx"],
         include_dirs=[numpy.get_include()],
         extra_compile_args=compile_flags,
     ),
     Extension(
         name="physbo.gp.cov._src.enhance_gauss",
-        sources=["physbo/gp/cov/_src/enhance_gauss.pyx"],
+        sources=["src/physbo/gp/cov/_src/enhance_gauss.pyx"],
         include_dirs=[numpy.get_include()],
         extra_compile_args=compile_flags,
     ),
     Extension(
         name="physbo.misc._src.logsumexp",
-        sources=["physbo/misc/_src/logsumexp.pyx"],
+        sources=["src/physbo/misc/_src/logsumexp.pyx"],
         include_dirs=[numpy.get_include()],
         extra_compile_args=compile_flags,
     ),
 ]
 setup(
-    package_dir={"physbo": "physbo"},
+    package_dir={"physbo": "src/physbo"},
+    packages=find_packages(where="src"),
     cmdclass={"build_ext": build_ext},
     ext_modules=ext_mods,
 )
