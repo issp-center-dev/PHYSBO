@@ -436,6 +436,41 @@ class policy(discrete.policy):
             f = np.hstack(fs)
         return f
 
+    def get_permutation_importance(self, n_perm: int):
+        """
+        Calculate permutation importance of models
+
+        Parameters
+        ----------
+        n_perm: int
+            The number of permutations
+
+        Returns
+        -------
+        pis: numpy.ndarray
+            Permutation importance of models
+            shape is (num_parameters, num_objectives)
+        """
+
+        if self.predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor_list = []
+            for i in range(self.num_objectives):
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+
+        pis = [
+            predictor.get_permutation_importance(training, n_perm)
+            for predictor, training in zip(predictor_list, self.training_list)
+        ]
+        return np.array(pis).T
+
+
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
         """
         Getting marginal scores.

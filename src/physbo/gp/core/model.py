@@ -420,6 +420,38 @@ class model:
             params = bfgs.run(X, t)
 
         self.set_params(params)
+    
+    def get_permutation_importance(self, X, t, n_perm: int):
+        """
+        Calculating permutation importance of model
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t:  numpy.ndarray
+            N dimensional array.
+            The negative energy of each search candidate (value of the objective function to be optimized).
+        n_perm: int
+            Number of permutations
+        """
+
+        n_features = X.shape[1]
+        scores = np.zeros(X.shape[1])
+        
+        self.prepare(X, t)
+        fmean = self.get_post_fmean(X, X)
+        MSE_base = np.mean((fmean - t) ** 2)
+
+        for i in range(X.shape[1]):
+            X_perm = X.copy()
+            for _ in range(n_perm):
+                X_perm[:, i] = np.random.permutation(X_perm[:, i])
+                fmean = self.get_post_fmean(X_perm, X_perm)
+                scores[i] += np.mean((fmean - t) ** 2) - MSE_base
+            scores[i] /= n_perm
+
+        return scores
 
 class sfs(model):
 

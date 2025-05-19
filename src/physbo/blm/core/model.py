@@ -231,6 +231,28 @@ class model:
             pass
         return fcov
 
+    def get_permutation_importance(self, X, t, n_perm: int):
+        """
+        Calculating permutation importance of model
+        """
+        
+        n_features = X.shape[1]
+        scores = np.zeros(n_features)
+
+        self.prepare(X, t)
+        fmean = self.get_post_fmean(X, X)
+        MSE_base = np.mean((fmean - t) ** 2)
+
+        for i in range(n_features):
+            X_perm = X.copy()
+            for _ in range(n_perm):
+                X_perm[:, i] = np.random.permutation(X_perm[:, i])
+                fmean = self.get_post_fmean(X_perm, X_perm)
+                scores[i] += np.mean((fmean - t) ** 2) - MSE_base
+            scores[i] /= n_perm
+
+        return scores
+
     def _set_options(self, options):
         """
         read options

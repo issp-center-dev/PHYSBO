@@ -205,6 +205,26 @@ class base_predictor(object):
         """
         raise NotImplementedError
 
+    def get_permutation_importance(self, training, num_permutations=10):
+        """
+        Calculate permutation importance of the predictor.
+
+        Parameters
+        ----------
+        training: physbo.variable
+            training dataset. If already trained, the model does not use this.
+        test: physbo.variable
+            input X
+        num_permutations: int
+            number of permutations
+
+        Returns
+        -------
+        numpy.ndarray
+            permutation importance
+        """
+        return self.model.get_permutation_importance(training.X, training.t, num_permutations)
+
     def update(self, *args, **kwds):
         """
 

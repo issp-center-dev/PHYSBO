@@ -28,7 +28,7 @@ class policy:
         Parameters
         ----------
         test_X: numpy.ndarray or physbo.variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+            The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: set_config object (physbo.misc.set_config)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
@@ -121,6 +121,12 @@ class policy:
 
         Returns
         -------
+
+        Note
+        ----
+        In this function, (X, t, Z) is added to the training data set (self.training), but not yet to predictor (self.predictor).
+        self.newdata means such data.
+        To add (X, t, Z) to the predictor, call self._update_predictor() after self.write().
 
         """
         if X is None:
@@ -402,6 +408,21 @@ class policy:
         else:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
+
+    def get_permutation_importance(self, n_perm: int):
+        """
+        Calculating permutation importance of model
+        """
+
+        if self.predictor is None:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor = gp_predictor(self.config)
+            predictor.fit(self.training, 0)
+            predictor.prepare(self.training)
+            return predictor.get_permutation_importance(self.training, n_perm)
+        else:
+            self._update_predictor()
+            return self.predictor.get_permutation_importance(self.training, n_perm)
 
     def get_score(
         self,
@@ -785,6 +806,10 @@ class policy:
         self.new_data = None
 
     def _update_predictor(self):
+        """
+        Updating predictor by using new_data, which means a subset of the trained data (self.training) that is not yet added to the predictor.
+        """
+
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data)
             self.new_data = None
