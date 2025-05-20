@@ -5,14 +5,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 import itertools
 
 import numpy as np
 import physbo
 
+num_rand_basis = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+print("num_rand_basis = ", num_rand_basis)
+
 # Make a set of candidates, test_X
 D = 3  # The number of params (the dimension of parameter space)
-Nx = 21  # The number of candidates
+Nx = 11  # The number of candidates
 N = Nx ** D
 
 # score = "HVPI"
@@ -42,6 +46,6 @@ policy.random_search(max_num_probes=30, simulator=simulator)
 
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=20, simulator=simulator, score=score, interval=0)
+policy.bayes_search(max_num_probes=20, simulator=simulator, score=score, interval=0, num_rand_basis=num_rand_basis)
 
 print(policy.get_permutation_importance(n_perm=20))

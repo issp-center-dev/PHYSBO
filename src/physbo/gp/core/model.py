@@ -420,7 +420,7 @@ class model:
             params = bfgs.run(X, t)
 
         self.set_params(params)
-    
+
     def get_permutation_importance(self, X, t, n_perm: int):
         """
         Calculating permutation importance of model
@@ -438,7 +438,7 @@ class model:
 
         n_features = X.shape[1]
         scores = np.zeros(X.shape[1])
-        
+
         self.prepare(X, t)
         fmean = self.get_post_fmean(X, X)
         MSE_base = np.mean((fmean - t) ** 2)
@@ -447,7 +447,7 @@ class model:
             X_perm = X.copy()
             for _ in range(n_perm):
                 X_perm[:, i] = np.random.permutation(X_perm[:, i])
-                fmean = self.get_post_fmean(X_perm, X_perm)
+                fmean = self.get_post_fmean(X, X_perm)
                 scores[i] += np.mean((fmean - t) ** 2) - MSE_base
             scores[i] /= n_perm
 

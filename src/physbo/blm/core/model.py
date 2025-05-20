@@ -235,7 +235,7 @@ class model:
         """
         Calculating permutation importance of model
         """
-        
+
         n_features = X.shape[1]
         scores = np.zeros(n_features)
 
@@ -247,7 +247,7 @@ class model:
             X_perm = X.copy()
             for _ in range(n_perm):
                 X_perm[:, i] = np.random.permutation(X_perm[:, i])
-                fmean = self.get_post_fmean(X_perm, X_perm)
+                fmean = self.get_post_fmean(X, X_perm)
                 scores[i] += np.mean((fmean - t) ** 2) - MSE_base
             scores[i] /= n_perm
 

@@ -8,6 +8,12 @@
 import numpy as np
 import physbo
 
+import sys
+
+num_rand_basis = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+
+print("num_rand_basis = ", num_rand_basis)
+
 np.random.seed(137)
 
 # Make a set of candidates, test_X
@@ -32,12 +38,12 @@ def simulator(actions: np.ndarray) -> np.ndarray:
 policy = physbo.search.discrete.policy(test_X)
 policy.set_seed(12345)
 
-# Random search (10 times)
-policy.random_search(max_num_probes=30, simulator=simulator)
+# Random search (20 times)
+policy.random_search(max_num_probes=20, simulator=simulator)
 
-# Bayesian search (40 times)
+# Bayesian search (30 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=10, simulator=simulator, score="EI")
+policy.bayes_search(max_num_probes=30, simulator=simulator, score="EI", num_rand_basis=num_rand_basis)
 
 print("weights = ", weights)
-print("permutation importance = ", policy.get_permutation_importance(n_perm=10))
+print("permutation importance = ", policy.get_permutation_importance(n_perm=30))
