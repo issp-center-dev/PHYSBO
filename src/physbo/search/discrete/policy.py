@@ -412,6 +412,18 @@ class policy:
     def get_permutation_importance(self, n_perm: int):
         """
         Calculating permutation importance of model
+
+        Parameters
+        ==========
+        n_perm: int
+            number of permutations
+
+        Returns
+        =======
+        importance_mean: numpy.ndarray
+            importance_mean
+        importance_std: numpy.ndarray
+            importance_std
         """
 
         if self.predictor is None:

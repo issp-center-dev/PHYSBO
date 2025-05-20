@@ -434,24 +434,33 @@ class model:
             The negative energy of each search candidate (value of the objective function to be optimized).
         n_perm: int
             Number of permutations
-        """
 
+        Returns
+        =======
+        numpy.ndarray
+            importance_mean
+        numpy.ndarray
+            importance_std
+        """
         n_features = X.shape[1]
-        scores = np.zeros(X.shape[1])
+        importance_mean = np.zeros(n_features)
+        importance_std = np.zeros(n_features)
 
         self.prepare(X, t)
         fmean = self.get_post_fmean(X, X)
         MSE_base = np.mean((fmean - t) ** 2)
 
-        for i in range(X.shape[1]):
+        for i in range(n_features):
             X_perm = X.copy()
-            for _ in range(n_perm):
+            scores = np.zeros(n_perm)
+            for i_perm in range(n_perm):
                 X_perm[:, i] = np.random.permutation(X_perm[:, i])
                 fmean = self.get_post_fmean(X, X_perm)
-                scores[i] += np.mean((fmean - t) ** 2) - MSE_base
-            scores[i] /= n_perm
+                scores[i_perm] = np.mean((fmean - t) ** 2) - MSE_base
+            importance_mean[i] = np.mean(scores)
+            importance_std[i] = np.std(scores)
 
-        return scores
+        return importance_mean, importance_std
 
 class sfs(model):
 

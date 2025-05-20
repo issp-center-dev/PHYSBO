@@ -5,10 +5,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
 import numpy as np
+import matplotlib.pyplot as plt
+
 import physbo
 
-import sys
 
 num_rand_basis = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
@@ -45,5 +47,18 @@ policy.random_search(max_num_probes=20, simulator=simulator)
 #   score function (acquition function): expectation of improvement (EI)
 policy.bayes_search(max_num_probes=30, simulator=simulator, score="EI", num_rand_basis=num_rand_basis)
 
-print("weights = ", weights)
-print("permutation importance = ", policy.get_permutation_importance(n_perm=30))
+importance_mean, importance_std = policy.get_permutation_importance(n_perm=30)
+
+
+plt.figure(figsize=(8, 5))
+plt.barh(
+    range(D),
+    importance_mean,
+    xerr=importance_std,
+)
+plt.gca().invert_yaxis()
+plt.xlabel("Permutation Importance")
+plt.ylabel("Parameters")
+plt.tight_layout()
+print("save permutation_importance.pdf")
+plt.savefig("permutation_importance.pdf")

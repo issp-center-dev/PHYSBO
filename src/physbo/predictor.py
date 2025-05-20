@@ -221,7 +221,9 @@ class base_predictor(object):
         Returns
         -------
         numpy.ndarray
-            permutation importance
+            importance_mean
+        numpy.ndarray
+            importance_std
         """
         return self.model.get_permutation_importance(training.X, training.t, num_permutations)
 

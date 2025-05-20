@@ -9,6 +9,7 @@ import sys
 import itertools
 
 import numpy as np
+import matplotlib.pyplot as plt
 import physbo
 
 num_rand_basis = int(sys.argv[1]) if len(sys.argv) > 1 else 0
@@ -48,4 +49,32 @@ policy.random_search(max_num_probes=30, simulator=simulator)
 #   score function (acquition function): expectation of improvement (EI)
 policy.bayes_search(max_num_probes=20, simulator=simulator, score=score, interval=0, num_rand_basis=num_rand_basis)
 
-print(policy.get_permutation_importance(n_perm=20))
+importance_mean, importance_std = policy.get_permutation_importance(n_perm=20)
+
+
+num_objectives = importance_mean.shape[1]
+
+fig, ax = plt.subplots(num_objectives, 1, figsize=(8, 5))
+for i in range(num_objectives):
+    ax[i].barh(
+        range(D),
+        importance_mean[:, i],
+        xerr=importance_std[:, i],
+    )
+    ax[i].invert_yaxis()
+    ax[i].set_ylabel("Parameters")
+    ax[i].text(0.8, 0.1, f"{i}-th objective", transform=ax[i].transAxes)
+ax[-1].set_xlabel("Permutation Importance")
+
+# to share the same x-axis
+xmin = np.inf
+xmax = -np.inf
+for i in range(2):
+    xmin_ax, xmax_ax = ax[i].get_xlim()
+    xmin = min(xmin, xmin_ax)
+    xmax = max(xmax, xmax_ax)
+for i in range(num_objectives):
+    ax[i].set_xlim(xmin, xmax)
+
+print("save permutation_importance.pdf")
+fig.savefig("permutation_importance.pdf")

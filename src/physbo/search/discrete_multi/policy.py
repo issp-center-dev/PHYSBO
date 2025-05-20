@@ -447,9 +447,10 @@ class policy(discrete.policy):
 
         Returns
         -------
-        pis: numpy.ndarray
-            Permutation importance of models
-            shape is (num_parameters, num_objectives)
+        importance_mean: numpy.ndarray
+            importance_mean (num_parameters, num_objectives)
+        importance_std: numpy.ndarray
+            importance_std (num_parameters, num_objectives)
         """
 
         if self.predictor_list == [None] * self.num_objectives:
@@ -464,12 +465,13 @@ class policy(discrete.policy):
             self._update_predictor()
             predictor_list = self.predictor_list[:]
 
-        pis = [
-            predictor.get_permutation_importance(training, n_perm)
-            for predictor, training in zip(predictor_list, self.training_list)
-        ]
-        return np.array(pis).T
+        importance_mean = [None for _ in range(self.num_objectives)]
+        importance_std = [None for _ in range(self.num_objectives)]
 
+        for i in range(self.num_objectives):
+            importance_mean[i], importance_std[i] = predictor_list[i].get_permutation_importance(self.training_list[i], n_perm)
+
+        return np.array(importance_mean).T, np.array(importance_std).T
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
         """
