@@ -105,7 +105,7 @@
 
 <div class="viewcode-block" id="predictor.fit">
 <a class="viewcode-back" href="../../../api/physbo.gp.predictor.html#physbo.gp.predictor.predictor.fit">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fitting model to training dataset</span>
 
@@ -114,11 +114,14 @@
 <span class="sd">        training: physbo.variable</span>
 <span class="sd">            dataset for training</span>
 <span class="sd">        num_basis: int</span>
+<span class="sd">            Not used for gp.model</span>
 <span class="sd">            the number of basis (default: self.config.predict.num_basis)</span>
+<span class="sd">        comm: MPI.Comm</span>
+<span class="sd">            MPI communicator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_stats</span><span class="p">()</span></div>
 
 
