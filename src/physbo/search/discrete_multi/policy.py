@@ -106,7 +106,7 @@ class policy(discrete.policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-        
+
         # remove action from candidates if exists
         if len(self.actions) > 0:
             local_index = np.searchsorted(self.actions, action)
@@ -436,7 +436,7 @@ class policy(discrete.policy):
             f = np.hstack(fs)
         return f
 
-    def get_permutation_importance(self, n_perm: int):
+    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
         """
         Calculate permutation importance of models
 
@@ -444,6 +444,8 @@ class policy(discrete.policy):
         ----------
         n_perm: int
             The number of permutations
+        split_features_parallel: bool
+            If true, split features in parallel.
 
         Returns
         -------
@@ -469,7 +471,14 @@ class policy(discrete.policy):
         importance_std = [None for _ in range(self.num_objectives)]
 
         for i in range(self.num_objectives):
-            importance_mean[i], importance_std[i] = predictor_list[i].get_permutation_importance(self.training_list[i], n_perm)
+            importance_mean[i], importance_std[i] = predictor_list[
+                i
+            ].get_permutation_importance(
+                self.training_list[i],
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
 
         return np.array(importance_mean).T, np.array(importance_std).T
 

@@ -205,7 +205,7 @@ class base_predictor(object):
         """
         raise NotImplementedError
 
-    def get_permutation_importance(self, training, num_permutations=10):
+    def get_permutation_importance(self, training, num_permutations=10, comm=None, split_features_parallel=False):
         """
         Calculate permutation importance of the predictor.
 
@@ -217,6 +217,10 @@ class base_predictor(object):
             input X
         num_permutations: int
             number of permutations
+        comm: MPI.Comm
+            MPI communicator
+        split_features_parallel: bool
+            If true, split features in parallel.
 
         Returns
         -------
@@ -225,7 +229,7 @@ class base_predictor(object):
         numpy.ndarray
             importance_std
         """
-        return self.model.get_permutation_importance(training.X, training.t, num_permutations)
+        return self.model.get_permutation_importance(training.X, training.t, num_permutations, comm=comm, split_features_parallel=split_features_parallel)
 
     def update(self, *args, **kwds):
         """

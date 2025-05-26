@@ -409,7 +409,7 @@ class policy:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
 
-    def get_permutation_importance(self, n_perm: int):
+    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
         """
         Calculating permutation importance of model
 
@@ -417,6 +417,8 @@ class policy:
         ==========
         n_perm: int
             number of permutations
+        split_features_parallel: bool
+            If true, split features in parallel.
 
         Returns
         =======
@@ -431,10 +433,20 @@ class policy:
             predictor = gp_predictor(self.config)
             predictor.fit(self.training, 0)
             predictor.prepare(self.training)
-            return predictor.get_permutation_importance(self.training, n_perm)
+            return predictor.get_permutation_importance(
+                self.training,
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
         else:
             self._update_predictor()
-            return self.predictor.get_permutation_importance(self.training, n_perm)
+            return self.predictor.get_permutation_importance(
+                self.training,
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
 
     def get_score(
         self,

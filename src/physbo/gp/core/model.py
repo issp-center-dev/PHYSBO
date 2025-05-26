@@ -13,6 +13,8 @@ from physbo.gp.core import learning
 from physbo.gp.core.prior import prior
 from physbo.misc import set_config
 
+from physbo.misc.permutation_importance import get_permutation_importance
+
 class model:
     def __init__(self, lik, mean, cov, inf="exact"):
         """
@@ -430,7 +432,7 @@ class model:
 
         self.set_params(params)
 
-    def get_permutation_importance(self, X, t, n_perm: int):
+    def get_permutation_importance(self, X, t, n_perm: int, comm=None, split_features_parallel=False):
         """
         Calculating permutation importance of model
 
@@ -443,6 +445,8 @@ class model:
             The negative energy of each search candidate (value of the objective function to be optimized).
         n_perm: int
             Number of permutations
+        comm: MPI.Comm
+            MPI communicator
 
         Returns
         =======
@@ -451,25 +455,14 @@ class model:
         numpy.ndarray
             importance_std
         """
-        n_features = X.shape[1]
-        importance_mean = np.zeros(n_features)
-        importance_std = np.zeros(n_features)
-
-        self.prepare(X, t)
-        fmean = self.get_post_fmean(X, X)
-        MSE_base = np.mean((fmean - t) ** 2)
-
-        for i in range(n_features):
-            X_perm = X.copy()
-            scores = np.zeros(n_perm)
-            for i_perm in range(n_perm):
-                X_perm[:, i] = np.random.permutation(X_perm[:, i])
-                fmean = self.get_post_fmean(X, X_perm)
-                scores[i_perm] = np.mean((fmean - t) ** 2) - MSE_base
-            importance_mean[i] = np.mean(scores)
-            importance_std[i] = np.std(scores)
-
-        return importance_mean, importance_std
+        return get_permutation_importance(
+            self,
+            X,
+            t,
+            n_perm,
+            comm=comm,
+            split_features_parallel=split_features_parallel,
+        )
 
 class sfs(model):
 
