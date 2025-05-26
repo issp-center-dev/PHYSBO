@@ -58,7 +58,7 @@ plt.barh(
 )
 plt.gca().invert_yaxis()
 plt.xlabel("Permutation Importance")
-plt.ylabel("Parameters")
+plt.ylabel("Features")
 plt.tight_layout()
 print("save permutation_importance.pdf")
 plt.savefig("permutation_importance.pdf")
