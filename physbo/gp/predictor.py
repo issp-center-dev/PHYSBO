@@ -22,7 +22,7 @@ class predictor(physbo.predictor.base_predictor):
         """
         super(predictor, self).__init__(config, model)
 
-    def fit(self, training, num_basis=None):
+    def fit(self, training, num_basis=None, comm=None):
         """
         Fitting model to training dataset
 
@@ -31,11 +31,15 @@ class predictor(physbo.predictor.base_predictor):
         training: physbo.variable
             dataset for training
         num_basis: int
+            Not used for gp.model
             the number of basis (default: self.config.predict.num_basis)
+        comm: MPI.Comm
+            Not used for gp.model
+            MPI communicator
         """
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
-        self.model.fit(training.X, training.t, self.config)
+        self.model.fit(training.X, training.t, self.config, comm=comm)
         self.delete_stats()
 
     def get_basis(self, *args, **kwds):

@@ -34,7 +34,7 @@ class predictor(physbo.predictor.base_predictor):
         super(predictor, self).__init__(config, model)
         self.blm = None
 
-    def fit(self, training, num_basis=None):
+    def fit(self, training, num_basis=None, comm=None):
         """
         fit model to training dataset
 
@@ -50,8 +50,8 @@ class predictor(physbo.predictor.base_predictor):
 
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
-        self.model.fit(training.X, training.t, self.config)
-        self.blm = self.model.export_blm(num_basis)
+        self.model.fit(training.X, training.t, self.config, comm=comm)
+        self.blm = self.model.export_blm(num_basis, comm=comm)
         self.delete_stats()
 
     def prepare(self, training):

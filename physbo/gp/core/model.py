@@ -112,7 +112,7 @@ class model:
             subt = t
         return subX, subt
 
-    def export_blm(self, num_basis):
+    def export_blm(self, num_basis, comm=None):
         """
         Exporting the blm(Baysean linear model) predictor
 
@@ -128,6 +128,8 @@ class model:
             raise ValueError("The kernel must be.")
 
         basis_params = self.prior.cov.rand_expans(num_basis)
+        if comm is not None:
+            basis_params = comm.bcast(basis_params, root=0)
         basis = blm.basis.fourier(basis_params)
         prior = blm.prior.gauss(num_basis)
         lik = blm.lik.gauss(
@@ -394,7 +396,7 @@ class model:
 
         return params
 
-    def fit(self, X, t, config):
+    def fit(self, X, t, config, comm=None):
         """
         Fitting function (update parameters)
 
@@ -418,6 +420,9 @@ class model:
         if method in ("bfgs", "batch"):
             bfgs = learning.batch(self, config)
             params = bfgs.run(X, t)
+
+        if comm is not None:
+            params = comm.bcast(params, root=0)
 
         self.set_params(params)
 
