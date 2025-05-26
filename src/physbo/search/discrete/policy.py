@@ -373,7 +373,7 @@ class policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0)
+            predictor.fit(self.training, 0, comm=self.mpicomm)
             predictor.prepare(self.training)
             return predictor.get_post_fmean(self.training, X)
         else:
@@ -402,7 +402,7 @@ class policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0)
+            predictor.fit(self.training, 0, comm=self.mpicomm)
             predictor.prepare(self.training)
             return predictor.get_post_fcov(self.training, X, diag)
         else:
@@ -499,7 +499,7 @@ class policy:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = gp_predictor(self.config)
-                predictor.fit(training, 0)
+                predictor.fit(training, 0, comm=self.mpicomm)
                 predictor.prepare(training)
             else:
                 self._update_predictor()
@@ -811,7 +811,7 @@ class policy:
             self.predictor = gp_predictor(self.config)
 
     def _learn_hyperparameter(self, num_rand_basis):
-        self.predictor.fit(self.training, num_rand_basis)
+        self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
         self.test.Z = self.predictor.get_basis(self.test.X)
         self.training.Z = self.predictor.get_basis(self.training.X)
         self.predictor.prepare(self.training)

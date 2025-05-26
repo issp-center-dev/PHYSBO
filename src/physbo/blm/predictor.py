@@ -34,7 +34,7 @@ class predictor(physbo.predictor.base_predictor):
         super(predictor, self).__init__(config, model)
         self.blm = None
 
-    def fit(self, training, num_basis=None):
+    def fit(self, training, num_basis=None, comm=None):
         """
         fit model to training dataset
 
@@ -44,14 +44,16 @@ class predictor(physbo.predictor.base_predictor):
             dataset for training
         num_basis: int
             the number of basis (default: self.config.predict.num_basis)
+        comm: MPI.Comm
+            MPI communicator
         """
         if num_basis is None:
             num_basis = self.config.predict.num_basis
 
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
-        self.model.fit(training.X, training.t, self.config)
-        self.blm = self.model.export_blm(num_basis)
+        self.model.fit(training.X, training.t, self.config, comm=comm)
+        self.blm = self.model.export_blm(num_basis, comm=comm)
         self.delete_stats()
 
     def prepare(self, training):

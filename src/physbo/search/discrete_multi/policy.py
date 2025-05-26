@@ -316,7 +316,7 @@ class policy(discrete.policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training_list[i], 0)
+                predictor.fit(self.training_list[i], 0, comm=self.mpicomm)
                 predictor.prepare(self.training_list[i])
                 predictor_list.append(predictor)
         else:
@@ -352,7 +352,7 @@ class policy(discrete.policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training_list[i], 0)
+                predictor.fit(self.training_list[i], 0, comm=self.mpicomm)
                 predictor.prepare(self.training_list[i])
                 predictor_list.append(predictor)
         else:
@@ -395,7 +395,7 @@ class policy(discrete.policy):
                 predictor_list = []
                 for i in range(self.num_objectives):
                     predictor = gp_predictor(self.config)
-                    predictor.fit(training_list[i], 0)
+                    predictor.fit(training_list[i], 0, comm=self.mpicomm)
                     predictor.prepare(training_list[i])
                     predictor_list.append(predictor)
             else:
@@ -606,7 +606,7 @@ class policy(discrete.policy):
             training = m["training"]
             test = m["test"]
 
-            predictor.fit(training, num_rand_basis)
+            predictor.fit(training, num_rand_basis, comm=self.mpicomm)
             test.Z = predictor.get_basis(test.X)
             training.Z = predictor.get_basis(training.X)
             predictor.prepare(training)
