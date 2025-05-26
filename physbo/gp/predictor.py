@@ -34,7 +34,6 @@ class predictor(physbo.predictor.base_predictor):
             Not used for gp.model
             the number of basis (default: self.config.predict.num_basis)
         comm: MPI.Comm
-            Not used for gp.model
             MPI communicator
         """
         if self.model.prior.cov.num_dim is None:

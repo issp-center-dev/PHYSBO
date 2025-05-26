@@ -44,6 +44,8 @@ class predictor(physbo.predictor.base_predictor):
             dataset for training
         num_basis: int
             the number of basis (default: self.config.predict.num_basis)
+        comm: MPI.Comm
+            MPI communicator
         """
         if num_basis is None:
             num_basis = self.config.predict.num_basis

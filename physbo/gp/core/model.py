@@ -120,6 +120,8 @@ class model:
         ----------
         num_basis: int
             Total number of basis
+        comm: MPI.Comm
+            MPI communicator
         Returns
         -------
         physbo.blm.core.model
@@ -409,6 +411,8 @@ class model:
             N dimensional array.
             The negative energy of each search candidate (value of the objective function to be optimized).
         config: physbo.misc.set_config object
+        comm: MPI.Comm
+            MPI communicator
 
         """
         method = config.learning.method
