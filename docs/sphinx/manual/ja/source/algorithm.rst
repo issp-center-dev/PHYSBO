@@ -198,15 +198,26 @@ EIやPIを利用すると、分散を評価する必要があるため :math:`O(
 
 .. math::
 
-   \text{MSE}_{\text{base}} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}) \|^2
+   \text{MSE}^{\text{base}} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}) \|^2
 
-:math:`a` 番目の説明変数の重要度を調べるために、入力データのうち :math:`a` 番目の変数のみランダムに並べ替えたデータ :math:`X^{\text{perm}}` を作成します。
-
+:math:`a` 番目の説明変数の重要度を調べるために、入力データのうち :math:`a` 番目の変数のみ、:math:`N` 要素の置換 :math:`P` で並べ替えたデータ :math:`X^{P}` を作成します。
 
 .. math::
 
-   X^{\text{perm}}_{i,a} = \mathbf{X}_{P(i),a}\\
-   X^{\text{perm}}_{i,b} = \mathbf{X}_{i,b} \ \ \ \text{for} \ b \neq a
+   X^{P}_{i,a} = \mathbf{X}_{P(i),a}\\
+   X^{P}_{i,b} = \mathbf{X}_{i,b} \ \ \ \text{for} \ b \neq a
 
-ここで :math:`P(i)` は :math:`N` 要素の置換 :math:`P` の :math:`i` 番目の要素です。
+:math:`\mathbf{X}^{P}` のテスト誤差は
 
+.. math::
+
+   \text{MSE}^{P}_{a} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}^{P}) \|^2
+
+となります。
+Permutation Importance (PI) は、置換 :math:`P` をランダムに :math:`N_\text{perm}` 個生成して、
+
+.. math::
+
+   \text{PI}_{a} = \frac{1}{N_\text{perm}} \sum_{P} \text{MSE}^{P}_{a} - \text{MSE}^{\text{base}}
+
+と計算されます。 :math:`\text{PI}_{a}` が大きければ大きいほど、説明変数 :math:`a` のランダム置換によってモデルの予測精度が悪化していることになり、つまり :math:`a` が重要であることを示します。
