@@ -204,8 +204,8 @@ EIやPIを利用すると、分散を評価する必要があるため :math:`O(
 
 .. math::
 
-   X^{P}_{i,a} = \mathbf{X}_{P(i),a}\\
-   X^{P}_{i,b} = \mathbf{X}_{i,b} \ \ \ \text{for} \ b \neq a
+   X^{P}_{i,a} &= X_{P(i),a}\\
+   X^{P}_{i,b} &= X_{i,b} \ \ \ \text{for} \ b \neq a
 
 :math:`\mathbf{X}^{P}` のテスト誤差は
 
