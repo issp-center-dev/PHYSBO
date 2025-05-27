@@ -1,7 +1,0 @@
-physbo.blm.core.model module
-============================
-
-.. automodule:: physbo.blm.core.model
-   :members:
-   :undoc-members:
-   :show-inheritance:

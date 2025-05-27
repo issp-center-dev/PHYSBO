@@ -1,7 +1,0 @@
-physbo.gp.mean.zero module
-==========================
-
-.. automodule:: physbo.gp.mean.zero
-   :members:
-   :undoc-members:
-   :show-inheritance:

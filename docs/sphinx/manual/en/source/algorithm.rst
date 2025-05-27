@@ -165,3 +165,41 @@ where  :math:`\mathbf{w}_0` is sampled from :math:`\mathcal{N} (0,A^{-1})` and :
    L^\top L \boldsymbol{\mu} = \frac{1}{\sigma^2} \Phi \mathbf{y}.
 
 By using these techniques, a computation time becomes almost linear in the number of training data.
+
+
+Importance of Explanatory Variables in Regression Models
+---------------------------------------------------------
+
+The importance of explanatory variables (features) in a regression model :math:`f(\mathbf{x})` can be evaluated by assessing how much the model's prediction accuracy deteriorates when each explanatory variable is randomly permuted in the test data.
+
+Let the number of explanatory variables (the dimension of the search space) be :math:`D`, and the number of test data samples be :math:`N`.
+In this case, the input of the test data is represented by a matrix :math:`\mathbf{X}` of size :math:`N \times D`.
+The output (objective function) is represented by an :math:`N`-dimensional vector :math:`\mathbf{y}`.
+The prediction accuracy of the model is evaluated using the mean squared error (MSE) between the model output and the test data output.
+
+First, compute the MSE for the original test data as a baseline for the model's prediction accuracy:
+
+.. math::
+
+   \text{MSE}^{\text{base}} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}) \|^2
+
+To evaluate the importance of the :math:`a`-th explanatory variable, create a new dataset :math:`\mathbf{X}^{P}` in which only the :math:`a`-th column of the input data is permuted using a random permutation :math:`P` of :math:`N` elements:
+
+.. math::
+
+   X^{P}_{i,a} &= X_{P(i),a}\\
+   X^{P}_{i,b} &= X_{i,b} \ \ \ \text{for} \ b \neq a
+
+The test error for :math:`\mathbf{X}^{P}` is then:
+
+.. math::
+
+   \text{MSE}^{P}_{a} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}^{P}) \|^2
+
+Permutation Importance (PI) is computed by generating :math:`N_\text{perm}` random permutations :math:`P` and averaging the MSE differences:
+
+.. math::
+
+   \text{PI}_{a} = \frac{1}{N_\text{perm}} \sum_{P} \text{MSE}^{P}_{a} - \text{MSE}^{\text{base}}
+
+The larger the value of :math:`\text{PI}_{a}`, the more the model's prediction accuracy deteriorates due to the random permutation of variable :math:`a`, indicating that :math:`a` is an important feature.

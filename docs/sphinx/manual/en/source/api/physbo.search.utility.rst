@@ -1,7 +1,0 @@
-physbo.search.utility module
-============================
-
-.. automodule:: physbo.search.utility
-   :members:
-   :undoc-members:
-   :show-inheritance:

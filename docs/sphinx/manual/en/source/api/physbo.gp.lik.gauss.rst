@@ -1,7 +1,0 @@
-physbo.gp.lik.gauss module
-==========================
-
-.. automodule:: physbo.gp.lik.gauss
-   :members:
-   :undoc-members:
-   :show-inheritance:

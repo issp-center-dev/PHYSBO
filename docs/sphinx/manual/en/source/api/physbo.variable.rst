@@ -1,7 +1,0 @@
-physbo.variable module
-======================
-
-.. automodule:: physbo.variable
-   :members:
-   :undoc-members:
-   :show-inheritance:
