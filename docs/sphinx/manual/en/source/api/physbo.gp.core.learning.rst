@@ -1,7 +1,0 @@
-physbo.gp.core.learning module
-==============================
-
-.. automodule:: physbo.gp.core.learning
-   :members:
-   :undoc-members:
-   :show-inheritance:
