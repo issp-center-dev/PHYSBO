@@ -15,7 +15,7 @@ from ._history import History
 from .. import utility
 from .. import score as search_score
 from ...gp import Predictor as gp_predictor
-from ...blm import predictor as blm_predictor
+from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable

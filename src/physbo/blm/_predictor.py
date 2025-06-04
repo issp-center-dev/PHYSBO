@@ -8,7 +8,7 @@
 import physbo.predictor
 
 
-class predictor(physbo.predictor.BasePredictor):
+class Predictor(physbo.predictor.BasePredictor):
     """Predictor using Baysean linear model
 
     Attributes
@@ -31,7 +31,7 @@ class predictor(physbo.predictor.BasePredictor):
         ========
         physbo.BasePredictor
         """
-        super(predictor, self).__init__(config, model)
+        super(Predictor, self).__init__(config, model)
         self.blm = None
 
     def fit(self, training, num_basis=None, comm=None):

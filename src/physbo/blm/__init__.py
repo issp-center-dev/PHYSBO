@@ -14,4 +14,4 @@ from . import lik
 from . import inf
 
 from .core import model
-from ._predictor import predictor
+from ._predictor import Predictor
