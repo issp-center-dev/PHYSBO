@@ -14,7 +14,7 @@ import time
 from ._history import history
 from .. import utility
 from .. import score as search_score
-from ...gp import predictor as gp_predictor
+from ...gp import Predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 from ...misc import SetConfig
 
@@ -770,7 +770,7 @@ class policy:
         ----------
         is_rand_expans: bool
             If true, physbo.blm.predictor is selected.
-            If false, physbo.gp.predictor is selected.
+            If false, physbo.gp.Predictor is selected.
         """
         if is_rand_expans:
             self.predictor = blm_predictor(self.config)
