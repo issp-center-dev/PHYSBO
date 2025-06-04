@@ -9,7 +9,7 @@ from . import cov
 from . import mean
 from . import lik
 
-from .core import prior
+from .core import Prior
 from .core import Model
 from .core import Sfs
 from .core import learning

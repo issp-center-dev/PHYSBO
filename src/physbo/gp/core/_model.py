@@ -10,7 +10,7 @@ import numpy as np
 from ... import blm
 from .. import inf
 from . import learning
-from ._prior import prior
+from ._prior import Prior
 from ...misc import SetConfig
 
 class Model:
@@ -25,7 +25,7 @@ class Model:
         inf
         """
         self.lik = lik
-        self.prior = prior(mean=mean, cov=cov)
+        self.prior = Prior(mean=mean, cov=cov)
         self.inf = inf
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)

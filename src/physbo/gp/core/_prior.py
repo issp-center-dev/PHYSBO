@@ -9,7 +9,7 @@ import numpy as np
 import scipy
 
 
-class prior:
+class Prior:
     """prior of gaussian process"""
 
     def __init__(self, mean, cov):
