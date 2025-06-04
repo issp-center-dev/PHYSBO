@@ -17,7 +17,7 @@ def eval_marlik(gp, X, t, params=None):
 
     Parameters
     ----------
-    gp: physbo.gp.core.model
+    gp: physbo.gp.core.Model
     X: numpy.ndarray
         N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
 
@@ -59,7 +59,7 @@ def get_grad_marlik(gp, X, t, params=None):
 
     Parameters
     ----------
-    gp: physbo.gp.core.model
+    gp: physbo.gp.core.Model
     X: numpy.ndarray
         N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
 
@@ -122,7 +122,7 @@ def prepare(gp, X, t, params=None):
 
     Parameters
     ----------
-    gp: physbo.gp.core.model
+    gp: physbo.gp.core.Model
     X: numpy.ndarray
         N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
 
@@ -162,7 +162,7 @@ def get_post_fmean(gp, X, Z, params=None):
 
     Parameters
     ----------
-    gp: physbo.gp.core.model
+    gp: physbo.gp.core.Model
     X: numpy.ndarray
         N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
     Z: numpy.ndarray
@@ -195,7 +195,7 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
 
     Parameters
     ----------
-    gp: physbo.gp.core.model
+    gp: physbo.gp.core.Model
     X: numpy.ndarray
         N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
     Z: numpy.ndarray

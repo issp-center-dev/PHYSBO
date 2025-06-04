@@ -13,7 +13,7 @@ from . import learning
 from ._prior import prior
 from ...misc import SetConfig
 
-class model:
+class Model:
     def __init__(self, lik, mean, cov, inf="exact"):
         """
 
@@ -430,7 +430,7 @@ class model:
 
         self.set_params(params)
 
-class sfs(model):
+class sfs(Model):
 
     def __init__(self, lik, mean, cov, inf="exact",config=None):
         super().__init__(lik, mean, cov, inf)

@@ -23,13 +23,13 @@ class BasePredictor(object):
         ----------
         config: SetConfig object (physbo.misc.SetConfig)
         model: model object
-            A default model is set as gp.core.model
+            A default model is set as gp.core.Model
         """
 
         self.config = config
         self.model = model
         if self.model is None:
-            self.model = gp.core.model(
+            self.model = gp.core.Model(
                 cov=gp.cov.Gauss(num_dim=None, ard=False),
                 mean=gp.mean.Const(),
                 lik=gp.lik.Gauss(),

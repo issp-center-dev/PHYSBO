@@ -18,7 +18,7 @@ class predictor(physbo.predictor.BasePredictor):
         ----------
         config: physbo.misc.SetConfig
         model: model object
-            A default model is set as gp.core.model
+            A default model is set as gp.core.Model
         """
         super(predictor, self).__init__(config, model)
 

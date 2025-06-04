@@ -25,7 +25,7 @@ class predictor(physbo.predictor.BasePredictor):
         ==========
         config: physbo.misc.SetConfig
             configuration
-        model: physbo.gp.core.model
+        model: physbo.gp.core.Model
 
         See also
         ========

@@ -10,7 +10,7 @@ from . import mean
 from . import lik
 
 from .core import prior
-from .core import model
+from .core import Model
 from .core import sfs
 from .core import learning
 from ._predictor import predictor

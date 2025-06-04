@@ -20,7 +20,7 @@ class Batch(object):
 
         Parameters
         ----------
-        gp : physbo.gp.core.model object
+        gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
         """
 
@@ -143,7 +143,7 @@ class online(object):
 
         Parameters
         ----------
-        gp : physbo.gp.core.model object
+        gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
         """
         self.gp = gp
@@ -323,7 +323,7 @@ class Adam(online):
 
         Parameters
         ----------
-        gp : physbo.gp.core.model object
+        gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
         """
         super(Adam, self).__init__(gp, config)
