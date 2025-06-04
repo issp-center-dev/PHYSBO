@@ -9,7 +9,7 @@ import numpy as np
 from .. import inf
 
 
-class model:
+class Model:
     """
     Baysean Linear Model
 
@@ -123,7 +123,7 @@ class model:
 
         Parameters
         ==========
-        blm: physbo.blm.core.model
+        blm: physbo.blm.core.Model
             model
         w_mu: numpy.ndarray
             mean of weight

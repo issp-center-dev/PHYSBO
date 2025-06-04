@@ -19,7 +19,7 @@ def prepare(blm, X, t, Psi=None):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
         model
     X: numpy.ndarray
         inputs
@@ -45,7 +45,7 @@ def update_stats(blm, x, t, psi=None):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
         model
     x: numpy.ndarray
         input
@@ -78,7 +78,7 @@ def sampling(blm, w_mu=None, N=1, alpha=1.0):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
         model
     w_mu: numpy.ndarray
         mean of weight
@@ -114,7 +114,7 @@ def get_post_params_mean(blm):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
 
     Returns
     =======
@@ -129,7 +129,7 @@ def get_post_fmean(blm, X, Psi=None, w=None):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
     X: numpy.ndarray
         inputs
     Psi: numpy.ndarray
@@ -157,7 +157,7 @@ def get_post_fcov(blm, X, Psi=None, diag=True):
 
     Parameters
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
     X: numpy.ndarray
         inputs
     Psi: numpy.ndarray

@@ -13,7 +13,7 @@ class Predictor(physbo.predictor.BasePredictor):
 
     Attributes
     ==========
-    blm: physbo.blm.core.model
+    blm: physbo.blm.core.Model
     config: physbo.misc.SetConfig
         configuration
     """

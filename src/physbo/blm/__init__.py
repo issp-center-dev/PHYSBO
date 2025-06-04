@@ -13,5 +13,5 @@ from . import prior
 from . import lik
 from . import inf
 
-from .core import model
+from .core import Model
 from ._predictor import Predictor

@@ -124,7 +124,8 @@ class Model:
             MPI communicator
         Returns
         -------
-        physbo.blm.core.model
+        physbo.blm.core.Model
+            Bayesian linear model
         """
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
@@ -138,7 +139,7 @@ class Model:
             blm.lik.linear(basis, bias=self.prior.get_mean(1)),
             blm.lik.cov(self.lik.params),
         )
-        blr = blm.model(lik, prior)
+        blr = blm.Model(lik, prior)
 
         return blr
 
