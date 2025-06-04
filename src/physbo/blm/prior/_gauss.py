@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class cov_const:
+class CovConst:
     """
     isotropic variance-covariance
 
@@ -126,7 +126,7 @@ class Gauss:
     ==========
     nbasis: int
         number of components
-    cov: cov_const
+    cov: CovConst
         covariance
     """
 
@@ -136,8 +136,8 @@ class Gauss:
         ==========
         nbasis: int
             number of components
-        cov: cov_const
-            (default: cov_const())
+        cov: CovConst
+            (default: CovConst())
         """
         self._init_cov(cov)
         self.nbasis = nbasis
@@ -207,9 +207,9 @@ class Gauss:
 
         Parameters
         ==========
-        cov: cov_const
-            default: ``cov_const()``
+        cov: CovConst
+            default: ``CovConst()``
         """
         self.cov = cov
         if cov is None:
-            self.cov = cov_const()
+            self.cov = CovConst()

@@ -16,12 +16,12 @@ class SetConfig:
 
         Parameters
         ----------
-        search_config: physbo.misc.search object
+        search_config: physbo.misc.Search object
         learning_config: physbo.misc.Learning object
 
         """
         if search_config is None:
-            search_config = search()
+            search_config = Search()
         self.search = search_config
 
         if learning_config is None:
@@ -54,7 +54,7 @@ class SetConfig:
         config = configparser.SafeConfigParser()
         config.read(file_name)
 
-        search_config = search()
+        search_config = Search()
         self.search = search_config
         self.search.load(config)
 
@@ -72,7 +72,7 @@ class SetConfig:
             self.learning.load(config)
 
 
-class search:
+class Search:
     def __init__(self):
         self.multi_probe_num_sampling = 20
         self.alpha = 1.0
@@ -192,9 +192,9 @@ class Batch(Learning):
         self.batch_size = int(temp_dict.get("batch_size", 5000))
 
 
-class online(Learning):
+class Online(Learning):
     def __init__(self):
-        super(online, self).__init__()
+        super(Online, self).__init__()
         self.max_epoch = 500
         self.max_epoch_init_params_search = 50
         self.batch_size = 64
@@ -208,7 +208,7 @@ class online(Learning):
         -------
 
         """
-        super(online, self).show()
+        super(Online, self).show()
         print("max_epoch: ", self.max_epoch)
         print("max_epoch_init_params_search: ", self.max_epoch_init_params_search)
         print("batch_size: ", self.batch_size)
@@ -227,7 +227,7 @@ class online(Learning):
         -------
 
         """
-        super(online, self).load(config)
+        super(Online, self).load(config)
         temp_dict = config._sections["online"]
         self.max_epoch = int(temp_dict.get("max_epoch", 1000))
         self.max_epoch_init_params_search = int(
@@ -237,7 +237,7 @@ class online(Learning):
         self.eval_size = int(temp_dict.get("eval_size", 5000))
 
 
-class Adam(online):
+class Adam(Online):
     def __init__(self):
         super(Adam, self).__init__()
         self.method = "adam"

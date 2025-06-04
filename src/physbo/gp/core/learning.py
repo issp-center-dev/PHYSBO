@@ -133,7 +133,7 @@ class Batch(object):
         return min_params
 
 
-class online(object):
+class Online(object):
     """
     base class for online learning
     """
@@ -315,7 +315,7 @@ class online(object):
         raise NotImplementedError
 
 
-class Adam(online):
+class Adam(Online):
     """default"""
 
     def __init__(self, gp, config):

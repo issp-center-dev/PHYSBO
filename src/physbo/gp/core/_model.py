@@ -136,7 +136,7 @@ class Model:
         basis = blm.basis.Fourier(basis_params)
         prior = blm.prior.Gauss(num_basis)
         lik = blm.lik.Gauss(
-            blm.lik.linear(basis, bias=self.prior.get_mean(1)),
+            blm.lik.Linear(basis, bias=self.prior.get_mean(1)),
             blm.lik.cov(self.lik.params),
         )
         blr = blm.Model(lik, prior)
