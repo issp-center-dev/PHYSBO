@@ -10,7 +10,7 @@ import numpy as np
 from physbo import gp
 
 
-class base_predictor(object):
+class BasePredictor(object):
     """
     Base predictor is defined in this class.
 

@@ -8,7 +8,7 @@
 import physbo.predictor
 
 
-class predictor(physbo.predictor.base_predictor):
+class predictor(physbo.predictor.BasePredictor):
     """predictor"""
 
     def __init__(self, config, model=None):
