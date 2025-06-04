@@ -6,3 +6,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._adam import Adam
+
+from ..misc import deprecated_warning
+
+
+def adam(*args,**kwargs):
+    deprecated_warning(old="physbo.opt.adam", new="physbo.opt.Adam")
+    return Adam(*args,**kwargs)

@@ -9,6 +9,13 @@
 import numpy as np
 import scipy.optimize
 
+from ...misc import deprecated_warning
+
+
+def batch(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.batch", new="physbo.gp.core.learning.Batch")
+    return Batch(*args,**kwargs)
+
 
 class Batch(object):
     """
@@ -131,6 +138,11 @@ class Batch(object):
 
         # print 'minimum marginal likelihood = ', min_marlik
         return min_params
+
+
+def online(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.online", new="physbo.gp.core.learning.Online")
+    return Online(*args,**kwargs)
 
 
 class Online(object):
@@ -313,6 +325,11 @@ class Online(object):
 
     def get_one_update(self, params, X, t):
         raise NotImplementedError
+
+
+def adam(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.adam", new="physbo.gp.core.learning.Adam")
+    return Adam(*args,**kwargs)
 
 
 class Adam(Online):

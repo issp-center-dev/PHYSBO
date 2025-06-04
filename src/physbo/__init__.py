@@ -14,4 +14,12 @@ from . import predictor
 from .predictor import BasePredictor
 from ._variable import Variable
 
+def base_predictor(*args,**kwargs):
+    misc.deprecated_warning(old="physbo.base_predictor", new="physbo.BasePredictor")
+    return BasePredictor(*args,**kwargs)
+
+def variable(*args,**kwargs):
+    misc.deprecated_warning(old="physbo.variable", new="physbo.Variable")
+    return Variable(*args,**kwargs)
+
 __version__ = "3.0-dev"

@@ -13,3 +13,30 @@ from ._src.traceAB import traceAB2_64 as traceAB2
 from ._src.traceAB import traceAB3_64 as traceAB3
 from ._src.cholupdate import cholupdate64 as cholupdate
 from ._src.logsumexp import logsumexp64
+
+
+__warned_names = set()
+
+def deprecated_warning(old: str, new: str):
+    """
+    Print a warning message when a deprecated name is used.
+
+    Parameters
+    ----------
+    old: str
+        The old name.
+    new: str
+        The new name.
+    """
+
+    if old not in __warned_names:
+        print("-" * 80)
+        print(f"WARNING: {old} is deprecated and will be removed in the future.")
+        print(f"         Use {new} instead.")
+        print("-" * 80)
+        __warned_names.add(old)
+
+
+def set_config(*args,**kwargs):
+    deprecated_warning(old="physbo.set_config", new="physbo.SetConfig")
+    return SetConfig(*args,**kwargs)

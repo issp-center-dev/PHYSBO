@@ -6,3 +6,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._gauss import Gauss
+
+from ...misc import deprecated_warning
+
+
+def gauss(*args,**kwargs):
+    deprecated_warning(old="physbo.blm.prior.gauss", new="physbo.blm.prior.Gauss")
+    return Gauss(*args,**kwargs)

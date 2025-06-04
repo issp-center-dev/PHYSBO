@@ -139,7 +139,7 @@ class Model:
             blm.lik.Linear(basis, bias=self.prior.get_mean(1)),
             blm.lik.cov(self.lik.params),
         )
-        blr = blm.Model(lik, prior)
+        blr = blm.core.Model(lik, prior)
 
         return blr
 
@@ -431,7 +431,7 @@ class Model:
 
         self.set_params(params)
 
-class Sfs(Model):
+class SFS(Model):
 
     def __init__(self, lik, mean, cov, inf="exact",config=None):
         super().__init__(lik, mean, cov, inf)
@@ -500,7 +500,7 @@ class Sfs(Model):
             post_fmu = inf.exact.get_post_fmean(self, self.xtrain, Z, params)
 
         return post_fmu
-    
+
     def get_params(self,deep=True):
 
         mean = self.prior.mean
@@ -508,3 +508,4 @@ class Sfs(Model):
         config = self.config
 
         return {"lik":self.lik,"mean":mean,"cov":cov,"config":config}
+

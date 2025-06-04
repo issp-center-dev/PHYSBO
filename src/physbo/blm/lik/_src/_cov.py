@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class cov:
+class Cov:
     """
     Covariance
 

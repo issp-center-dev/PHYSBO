@@ -8,4 +8,13 @@
 from ._policy import Policy
 from ._history import History
 
-# __all__ = ["Policy", "History"]
+from ...misc import deprecated_warning
+
+
+def policy(*args,**kwargs):
+    deprecated_warning(old="physbo.search.discrete_multi.policy", new="physbo.search.discrete_multi.Policy")
+    return Policy(*args,**kwargs)
+
+def history(*args,**kwargs):
+    deprecated_warning(old="physbo.search.discrete_multi.history", new="physbo.search.discrete_multi.History")
+    return History(*args,**kwargs)
