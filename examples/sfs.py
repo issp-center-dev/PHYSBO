@@ -45,7 +45,7 @@ def setup_gp_model(input_dim):
     config = SetConfig()
 
     # Create GP model
-    gp = physbo.gp.sfs(lik=lik, mean=mean, cov=cov, config=config)
+    gp = physbo.gp.Sfs(lik=lik, mean=mean, cov=cov, config=config)
 
     return gp
 

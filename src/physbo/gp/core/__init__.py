@@ -6,4 +6,4 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._prior import prior
-from ._model import Model, sfs
+from ._model import Model, Sfs

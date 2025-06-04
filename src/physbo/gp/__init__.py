@@ -11,6 +11,6 @@ from . import lik
 
 from .core import prior
 from .core import Model
-from .core import sfs
+from .core import Sfs
 from .core import learning
 from ._predictor import Predictor

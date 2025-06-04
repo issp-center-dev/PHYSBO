@@ -132,7 +132,7 @@ class Model:
         basis_params = self.prior.cov.rand_expans(num_basis)
         if comm is not None:
             basis_params = comm.bcast(basis_params, root=0)
-        basis = blm.basis.fourier(basis_params)
+        basis = blm.basis.Fourier(basis_params)
         prior = blm.prior.Gauss(num_basis)
         lik = blm.lik.Gauss(
             blm.lik.linear(basis, bias=self.prior.get_mean(1)),
@@ -430,7 +430,7 @@ class Model:
 
         self.set_params(params)
 
-class sfs(Model):
+class Sfs(Model):
 
     def __init__(self, lik, mean, cov, inf="exact",config=None):
         super().__init__(lik, mean, cov, inf)
