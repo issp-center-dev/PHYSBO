@@ -21,7 +21,7 @@ class batch(object):
         Parameters
         ----------
         gp : physbo.gp.core.model object
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
         """
 
         self.gp = gp
@@ -65,7 +65,7 @@ class batch(object):
         ----------
         params: numpy.ndarray
             Initial guess for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
@@ -143,8 +143,8 @@ class online(object):
 
         Parameters
         ----------
-        gp : model  (gp.core.model)
-        config: set_config  (misc.set_config)
+        gp : physbo.gp.core.model object
+        config: physbo.misc.SetConfig object
         """
         self.gp = gp
         self.config = config
@@ -197,7 +197,7 @@ class online(object):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         t: numpy.ndarray
@@ -255,7 +255,7 @@ class online(object):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         eval_X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         eval_t: numpy.ndarray
@@ -324,7 +324,7 @@ class adam(online):
         Parameters
         ----------
         gp : physbo.gp.core.model object
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
         """
         super(adam, self).__init__(gp, config)
 
@@ -347,7 +347,7 @@ class adam(online):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         t: numpy.ndarray

@@ -1,6 +1,6 @@
 import numpy as np
 import physbo
-from physbo.misc import set_config
+from physbo.misc import SetConfig
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 import matplotlib.pyplot as plt
 
@@ -42,7 +42,7 @@ def setup_gp_model(input_dim):
     lik = physbo.gp.lik.gauss()
 
     # Prepare configuration
-    config = set_config()
+    config = SetConfig()
 
     # Create GP model
     gp = physbo.gp.sfs(lik=lik, mean=mean, cov=cov, config=config)

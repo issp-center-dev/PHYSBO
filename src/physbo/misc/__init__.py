@@ -7,7 +7,7 @@
 
 from ._centering import centering
 from ._gauss_elim import gauss_elim
-from ._set_config import set_config
+from ._set_config import SetConfig
 from ._src.diagAB import diagAB_64 as diagAB
 from ._src.traceAB import traceAB2_64 as traceAB2
 from ._src.traceAB import traceAB3_64 as traceAB3

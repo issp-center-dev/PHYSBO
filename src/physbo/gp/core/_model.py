@@ -11,7 +11,7 @@ from ... import blm
 from .. import inf
 from . import learning
 from ._prior import prior
-from ...misc import set_config
+from ...misc import SetConfig
 
 class model:
     def __init__(self, lik, mean, cov, inf="exact"):
@@ -452,10 +452,10 @@ class sfs(model):
         t:  numpy.ndarray
             N dimensional array.
             The negative energy of each search candidate (value of the objective function to be optimized).
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         """
-        #config = set_config()
+        #config = SetConfig()
         method = self.config.learning.method
 
         if method == "adam":

@@ -21,7 +21,7 @@ class base_predictor(object):
 
         Parameters
         ----------
-        config: set_config object (physbo.misc.set_config)
+        config: SetConfig object (physbo.misc.SetConfig)
         model: model object
             A default model is set as gp.core.model
         """

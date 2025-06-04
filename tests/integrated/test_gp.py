@@ -60,7 +60,7 @@ def test_gp():
     lik = physbo.gp.lik.gauss()
 
     gp = physbo.gp.model(lik=lik, mean=mean, cov=cov)
-    config = physbo.misc.set_config()
+    config = physbo.misc.SetConfig()
 
     gp.fit(X_train, t_train, config)
     gp.print_params()

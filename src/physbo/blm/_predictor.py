@@ -14,7 +14,7 @@ class predictor(physbo.predictor.base_predictor):
     Attributes
     ==========
     blm: physbo.blm.core.model
-    config: physbo.misc.set_config
+    config: physbo.misc.SetConfig
         configuration
     """
 
@@ -23,7 +23,7 @@ class predictor(physbo.predictor.base_predictor):
 
         Parameters
         ==========
-        config: physbo.misc.set_config
+        config: physbo.misc.SetConfig
             configuration
         model: physbo.gp.core.model
 

@@ -16,7 +16,7 @@ from .. import utility
 from .. import score_multi as search_score
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
-from ...misc import set_config
+from ...misc import SetConfig
 from ..._variable import variable
 
 from typing import List, Optional
@@ -40,7 +40,7 @@ class policy(discrete.policy):
 
         self.actions = np.arange(0, test_X.shape[0])
         if config is None:
-            self.config = set_config()
+            self.config = SetConfig()
         else:
             self.config = config
 

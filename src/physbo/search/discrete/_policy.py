@@ -16,7 +16,7 @@ from .. import utility
 from .. import score as search_score
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
-from ...misc import set_config
+from ...misc import SetConfig
 
 from ..._variable import variable
 
@@ -29,7 +29,7 @@ class policy:
         ----------
         test_X: numpy.ndarray or physbo.variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
-        config: set_config object (physbo.misc.set_config)
+        config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
             The first elements is the array of actions and the second is the array of value of objective functions
@@ -43,7 +43,7 @@ class policy:
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = history()
         if config is None:
-            self.config = set_config()
+            self.config = SetConfig()
         else:
             self.config = config
 

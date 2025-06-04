@@ -9,7 +9,7 @@ import numpy as np
 import configparser
 
 
-class set_config:
+class SetConfig:
     def __init__(self, search_config=None, learning_config=None):
         """
         Setting configuration for search and learning.
@@ -83,7 +83,7 @@ class search:
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------
@@ -136,7 +136,7 @@ class learning(object):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
 
         Returns
@@ -177,7 +177,7 @@ class batch(learning):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------
@@ -220,7 +220,7 @@ class online(learning):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
 
         Returns
@@ -267,7 +267,7 @@ class adam(online):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------

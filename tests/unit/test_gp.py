@@ -96,7 +96,7 @@ def test_gp(predictor, X, t, mocker):
     model_set_params_spy = mocker.spy(physbo.gp.core.model, "set_params")
 
     gp = physbo.gp.model(lik=lik, mean=mean, cov=cov)
-    config = physbo.misc.set_config()
+    config = physbo.misc.SetConfig()
     gp.fit(X_train, t_train, config)
 
     adam_run_spy.assert_called()
