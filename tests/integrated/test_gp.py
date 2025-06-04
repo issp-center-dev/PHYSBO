@@ -56,7 +56,7 @@ def test_gp():
     t_test = t[id_test]
 
     cov = physbo.gp.cov.Gauss(X_train.shape[1], ard=False)
-    mean = physbo.gp.mean.const()
+    mean = physbo.gp.mean.Const()
     lik = physbo.gp.lik.Gauss()
 
     gp = physbo.gp.model(lik=lik, mean=mean, cov=cov)
@@ -75,7 +75,7 @@ def test_gp():
 
     # restart
     cov = physbo.gp.cov.Gauss(X_train.shape[1], ard=False)
-    mean = physbo.gp.mean.const()
+    mean = physbo.gp.mean.Const()
     lik = physbo.gp.lik.Gauss()
     gp2 = physbo.gp.model(lik=lik, mean=mean, cov=cov)
     gp_params = np.append(

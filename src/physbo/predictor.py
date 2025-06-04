@@ -31,7 +31,7 @@ class BasePredictor(object):
         if self.model is None:
             self.model = gp.core.model(
                 cov=gp.cov.Gauss(num_dim=None, ard=False),
-                mean=gp.mean.const(),
+                mean=gp.mean.Const(),
                 lik=gp.lik.Gauss(),
             )
 

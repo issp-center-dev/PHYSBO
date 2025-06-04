@@ -17,7 +17,7 @@ class prior:
 
         Parameters
         ----------
-        mean: physbo.gp.mean.const
+        mean: physbo.gp.mean.Const
             mean function
         cov: physbo.gp.cov.Gauss
             covariance function

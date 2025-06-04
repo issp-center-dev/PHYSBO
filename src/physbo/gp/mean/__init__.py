@@ -6,4 +6,4 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._zero import zero
-from ._const import const
+from ._const import Const

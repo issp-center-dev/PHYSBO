@@ -36,7 +36,7 @@ def setup_gp_model(input_dim):
     cov = physbo.gp.cov.Gauss(input_dim, ard=False)
 
     # Set mean function
-    mean = physbo.gp.mean.const()
+    mean = physbo.gp.mean.Const()
 
     # Set likelihood function
     lik = physbo.gp.lik.Gauss()
