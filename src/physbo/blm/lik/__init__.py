@@ -6,5 +6,5 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._src import cov
-from .linear import linear
-from .gauss import gauss
+from ._linear import linear
+from ._gauss import gauss

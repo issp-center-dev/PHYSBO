@@ -13,4 +13,4 @@ from .core import prior
 from .core import model
 from .core import sfs
 from .core import learning
-from .predictor import predictor
+from ._predictor import predictor

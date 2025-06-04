@@ -12,6 +12,6 @@ from . import misc
 from . import search
 from . import predictor
 from .predictor import base_predictor
-from .variable import variable
+from ._variable import variable
 
 __version__ = "3.0-dev"

@@ -10,14 +10,14 @@ import copy
 import pickle as pickle
 import time
 
-from .results import history
+from ._history import history
 from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 from ...misc import set_config
-from ...variable import variable
+from ..._variable import variable
 
 from typing import List, Optional
 

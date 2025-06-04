@@ -5,5 +5,5 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from .zero import zero
-from .const import const
+from ._zero import zero
+from ._const import const

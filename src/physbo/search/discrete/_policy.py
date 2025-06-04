@@ -11,14 +11,14 @@ import pickle as pickle
 import itertools
 import time
 
-from .results import history
+from ._history import history
 from .. import utility
 from .. import score as search_score
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 from ...misc import set_config
 
-from physbo.variable import variable
+from ..._variable import variable
 
 
 class policy:

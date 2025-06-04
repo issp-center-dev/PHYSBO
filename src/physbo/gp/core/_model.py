@@ -7,11 +7,11 @@
 
 import numpy as np
 
-from physbo import blm
-from physbo.gp import inf
-from physbo.gp.core import learning
-from physbo.gp.core.prior import prior
-from physbo.misc import set_config
+from ... import blm
+from .. import inf
+from . import learning
+from ._prior import prior
+from ...misc import set_config
 
 class model:
     def __init__(self, lik, mean, cov, inf="exact"):
