@@ -10,7 +10,7 @@ import copy
 import pickle as pickle
 import time
 
-from ._history import history
+from ._history import History
 from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
@@ -29,7 +29,7 @@ class Policy(discrete.Policy):
         self, test_X, num_objectives, comm=None, config=None, initial_data=None
     ):
         self.num_objectives = num_objectives
-        self.history = history(num_objectives=self.num_objectives)
+        self.history = History(num_objectives=self.num_objectives)
 
         self.training_list = [Variable() for _ in range(self.num_objectives)]
         self.predictor_list = [None for _ in range(self.num_objectives)]

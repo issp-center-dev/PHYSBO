@@ -11,7 +11,7 @@ import pickle as pickle
 import itertools
 import time
 
-from ._history import history
+from ._history import History
 from .. import utility
 from .. import score as search_score
 from ...gp import Predictor as gp_predictor
@@ -41,7 +41,7 @@ class Policy:
         self.new_data = None
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
-        self.history = history()
+        self.history = History()
         if config is None:
             self.config = SetConfig()
         else:

@@ -6,6 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._policy import Policy
-from ._history import history
+from ._history import History
 
-# __all__ = ["policy", "history"]
+# __all__ = ["Policy", "History"]
