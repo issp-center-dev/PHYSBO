@@ -418,7 +418,7 @@ class model:
         method = config.learning.method
 
         if method == "adam":
-            adam = learning.adam(self, config)
+            adam = learning.Adam(self, config)
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
@@ -459,7 +459,7 @@ class sfs(model):
         method = self.config.learning.method
 
         if method == "adam":
-            adam = learning.adam(self, self.config)
+            adam = learning.Adam(self, self.config)
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):

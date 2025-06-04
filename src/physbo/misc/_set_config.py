@@ -17,7 +17,7 @@ class SetConfig:
         Parameters
         ----------
         search_config: physbo.misc.search object
-        learning_config: physbo.misc.learning object
+        learning_config: physbo.misc.Learning object
 
         """
         if search_config is None:
@@ -25,7 +25,7 @@ class SetConfig:
         self.search = search_config
 
         if learning_config is None:
-            learning_config = adam()
+            learning_config = Adam()
         self.learning = learning_config
 
     def show(self):
@@ -62,7 +62,7 @@ class SetConfig:
         method = temp_dict.get("method", "adam")
 
         if method == "adam":
-            learning_config = adam()
+            learning_config = Adam()
             self.learning = learning_config
             self.learning.load(config)
 
@@ -109,7 +109,7 @@ class search:
         print("\n")
 
 
-class learning(object):
+class Learning(object):
     def __init__(self):
         self.is_disp = True
         self.num_disp = 10
@@ -150,7 +150,7 @@ class learning(object):
         self.num_init_params_search = int(temp_dict.get("num_init_params_search", 20))
 
 
-class batch(learning):
+class batch(Learning):
     def __init__(self):
         super(batch, self).__init__()
         self.method = "bfgs"
@@ -192,7 +192,7 @@ class batch(learning):
         self.batch_size = int(temp_dict.get("batch_size", 5000))
 
 
-class online(learning):
+class online(Learning):
     def __init__(self):
         super(online, self).__init__()
         self.max_epoch = 500
@@ -237,9 +237,9 @@ class online(learning):
         self.eval_size = int(temp_dict.get("eval_size", 5000))
 
 
-class adam(online):
+class Adam(online):
     def __init__(self):
-        super(adam, self).__init__()
+        super(Adam, self).__init__()
         self.method = "adam"
         self.alpha = 0.001
         self.beta = 0.9
@@ -254,7 +254,7 @@ class adam(online):
         -------
 
         """
-        super(adam, self).show()
+        super(Adam, self).show()
         print("alpha = ", self.alpha)
         print("beta = ", self.beta)
         print("gamma = ", self.gamma)
@@ -273,7 +273,7 @@ class adam(online):
         -------
 
         """
-        super(adam, self).load(config)
+        super(Adam, self).load(config)
         temp_dict = config._sections["adam"]
         self.alpha = np.float64(temp_dict.get("alpha", 0.001))
         self.beta = np.float64(temp_dict.get("beta", 0.9))

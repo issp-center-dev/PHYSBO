@@ -315,7 +315,7 @@ class online(object):
         raise NotImplementedError
 
 
-class adam(online):
+class Adam(online):
     """default"""
 
     def __init__(self, gp, config):
@@ -326,7 +326,7 @@ class adam(online):
         gp : physbo.gp.core.model object
         config: physbo.misc.SetConfig object
         """
-        super(adam, self).__init__(gp, config)
+        super(Adam, self).__init__(gp, config)
 
         self.alpha = self.config.learning.alpha
         self.beta = self.config.learning.beta
