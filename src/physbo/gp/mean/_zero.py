@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class zero:
+class Zero:
     """zero"""
 
     def __init__(self):
