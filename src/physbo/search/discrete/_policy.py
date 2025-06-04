@@ -18,7 +18,7 @@ from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 from ...misc import SetConfig
 
-from ..._variable import variable
+from ..._variable import Variable
 
 
 class policy:
@@ -27,7 +27,7 @@ class policy:
 
         Parameters
         ----------
-        test_X: numpy.ndarray or physbo.variable
+        test_X: numpy.ndarray or physbo.Variable
              The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
@@ -37,7 +37,7 @@ class policy:
             MPI Communicator
         """
         self.predictor = None
-        self.training = variable()
+        self.training = Variable()
         self.new_data = None
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
@@ -148,7 +148,7 @@ class policy:
             self.actions = self._delete_actions(local_index)
 
         if self.new_data is None:
-            self.new_data = variable(X=X, t=t, Z=Z)
+            self.new_data = Variable(X=X, t=t, Z=Z)
         else:
             self.new_data.add(X=X, t=t, Z=Z)
 
@@ -236,7 +236,7 @@ class policy:
 
         Parameters
         ----------
-        training: physbo.variable
+        training: physbo.Variable
             Training dataset.
         max_num_probes: int
             Maximum number of searching process by Bayesian optimization.
@@ -353,7 +353,7 @@ class policy:
 
         Parameters
         ----------
-        xs: physbo.variable or np.ndarray
+        xs: physbo.Variable or np.ndarray
             input parameters to calculate mean value
             shape is (num_points, num_parameters)
 
@@ -380,7 +380,7 @@ class policy:
 
         Parameters
         ----------
-        xs: physbo.variable or np.ndarray
+        xs: physbo.Variable or np.ndarray
             input parameters to calculate covariance
             shape is (num_points, num_parameters)
         diag: bool
@@ -424,12 +424,12 @@ class policy:
             These functions are defined in score.py.
         actions: array of int
             actions to calculate score
-        xs: physbo.variable or np.ndarray
+        xs: physbo.Variable or np.ndarray
             input parameters to calculate score
         predictor: predictor object
             predictor used to calculate score.
             If not given, self.predictor will be used.
-        training:physbo.variable
+        training:physbo.Variable
             Training dataset.
             If not given, self.training will be used.
         parallel: bool
@@ -530,7 +530,7 @@ class policy:
             new_test = new_test_local
             virtual_t = virtual_t_local
         else:
-            new_test = variable()
+            new_test = Variable()
             for nt in self.mpicomm.allgather(new_test_local):
                 new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
             virtual_t = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
@@ -714,9 +714,9 @@ class policy:
             N = self.history.total_num_search
             X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
-            self.training = variable(X=X, t=t)
+            self.training = Variable(X=X, t=t)
         else:
-            self.training = variable()
+            self.training = Variable()
             self.training.load(file_training)
 
         if file_predictor is not None:
@@ -791,23 +791,23 @@ class policy:
 
     def _make_variable_X(self, test_X):
         """
-        Make a new *variable* with X=test_X
+        Make a new *Variable* with X=test_X
 
         Parameters
         ----------
-        test_X: numpy.ndarray or physbo.variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+        test_X: numpy.ndarray or physbo.Variable
+                The set of candidates. Each row vector represents the feature vector of each search candidate.
         Returns
         -------
-        test_X: numpy.ndarray or physbo.variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+        test_X: numpy.ndarray or physbo.Variable
+                The set of candidates. Each row vector represents the feature vector of each search candidate.
         """
         if isinstance(test_X, np.ndarray):
-            test = variable(X=test_X)
-        elif isinstance(test_X, variable):
+            test = Variable(X=test_X)
+        elif isinstance(test_X, Variable):
             test = test_X
         else:
-            raise TypeError("The type of test_X must be ndarray or physbo.variable")
+            raise TypeError("The type of test_X must be ndarray or physbo.Variable")
         return test
 
     def _delete_actions(self, index, actions=None):

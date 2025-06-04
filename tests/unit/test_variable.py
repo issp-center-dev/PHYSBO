@@ -32,7 +32,7 @@ def Z():
 
 @pytest.fixture
 def variable(X, t, Z):
-    return physbo.variable(X=X, t=t, Z=Z)
+    return physbo.Variable(X=X, t=t, Z=Z)
 
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
@@ -94,7 +94,7 @@ def test_save_load(variable, tmpdir):
     tmpfile = tmpdir.join("tmpfile.npz")
     filename = str(tmpfile)
     variable.save(filename)
-    var2 = physbo.variable()
+    var2 = physbo.Variable()
     var2.load(filename)
     assert np.array_equal(variable.X, var2.X)
     assert np.array_equal(variable.t, var2.t)
@@ -102,7 +102,7 @@ def test_save_load(variable, tmpdir):
 
     variable.Z = None
     variable.save(filename)
-    var2 = physbo.variable()
+    var2 = physbo.Variable()
     var2.load(filename)
     assert np.array_equal(variable.X, var2.X)
     assert np.array_equal(variable.t, var2.t)

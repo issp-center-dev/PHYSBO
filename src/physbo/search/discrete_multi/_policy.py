@@ -17,13 +17,13 @@ from .. import score_multi as search_score
 from ...gp import predictor as gp_predictor
 from ...blm import predictor as blm_predictor
 from ...misc import SetConfig
-from ..._variable import variable
+from ..._variable import Variable
 
 from typing import List, Optional
 
 
 class policy(discrete.policy):
-    new_data_list: List[Optional[variable]]
+    new_data_list: List[Optional[Variable]]
 
     def __init__(
         self, test_X, num_objectives, comm=None, config=None, initial_data=None
@@ -31,7 +31,7 @@ class policy(discrete.policy):
         self.num_objectives = num_objectives
         self.history = history(num_objectives=self.num_objectives)
 
-        self.training_list = [variable() for _ in range(self.num_objectives)]
+        self.training_list = [Variable() for _ in range(self.num_objectives)]
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.test_list = [
             self._make_variable_X(test_X) for _ in range(self.num_objectives)
@@ -102,7 +102,7 @@ class policy(discrete.policy):
                 Z = predictor.get_basis(X) if predictor is not None else None
 
             if self.new_data_list[i] is None:
-                self.new_data_list[i] = variable(X, t[:, i], Z)
+                self.new_data_list[i] = Variable(X, t[:, i], Z)
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
@@ -299,7 +299,7 @@ class policy(discrete.policy):
 
         Parameters
         ----------
-        xs: physbo.variable or np.ndarray
+        xs: physbo.Variable or np.ndarray
             input parameters to calculate covariance
             shape is (num_points, num_parameters)
         diag: bool
@@ -335,7 +335,7 @@ class policy(discrete.policy):
 
         Parameters
         ----------
-        xs: physbo.variable or np.ndarray
+        xs: physbo.Variable or np.ndarray
             input parameters to calculate covariance
             shape is (num_points, num_parameters)
         diag: bool
@@ -405,10 +405,10 @@ class policy(discrete.policy):
         if xs is not None:
             if actions is not None:
                 raise RuntimeError("ERROR: both actions and xs are given")
-            if isinstance(xs, variable):
+            if isinstance(xs, Variable):
                 test = xs
             else:
-                test = variable(X=xs)
+                test = Variable(X=xs)
             if parallel and self.mpisize > 1:
                 actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
                 test = test.get_subset(actions[self.mpirank])
@@ -461,7 +461,7 @@ class policy(discrete.policy):
         f = np.zeros((K, len(self.actions)), dtype=float)
 
         # draw K samples of the values of objective function of chosen actions
-        new_test_list = [variable() for _ in range(self.num_objectives)]
+        new_test_list = [Variable() for _ in range(self.num_objectives)]
         virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
         for i in range(self.num_objectives):
             new_test_local = self.test_list[i].get_subset(chosen_actions)
@@ -519,7 +519,7 @@ class policy(discrete.policy):
             X = self.test_list[0].X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
             self.training_list = [
-                variable(X=X, t=t[:, i]) for i in range(self.num_objectives)
+                Variable(X=X, t=t[:, i]) for i in range(self.num_objectives)
             ]
         else:
             self.load_training_list(file_training_list)
@@ -556,7 +556,7 @@ class policy(discrete.policy):
         with open(file_name, "rb") as f:
             data_list = pickle.load(f)
 
-        self.training_list = [variable() for i in range(self.num_objectives)]
+        self.training_list = [Variable() for i in range(self.num_objectives)]
         for data, training in zip(data_list, self.training_list):
             training.X = data["X"]
             training.t = data["t"]
