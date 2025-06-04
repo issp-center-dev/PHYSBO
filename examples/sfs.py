@@ -33,13 +33,13 @@ def generate_data(n_samples=2000, n_features=5):
 def setup_gp_model(input_dim):
     """Setup GP model"""
     # Set kernel (covariance function)
-    cov = physbo.gp.cov.gauss(input_dim, ard=False)
+    cov = physbo.gp.cov.Gauss(input_dim, ard=False)
 
     # Set mean function
     mean = physbo.gp.mean.const()
 
     # Set likelihood function
-    lik = physbo.gp.lik.gauss()
+    lik = physbo.gp.lik.Gauss()
 
     # Prepare configuration
     config = SetConfig()

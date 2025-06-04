@@ -88,9 +88,9 @@ def test_gp(predictor, X, t, mocker):
     t_train = t[id_train]
     t_test = t[id_test]
 
-    cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
+    cov = physbo.gp.cov.Gauss(X_train.shape[1], ard=False)
     mean = physbo.gp.mean.const()
-    lik = physbo.gp.lik.gauss()
+    lik = physbo.gp.lik.Gauss()
 
     adam_run_spy = mocker.spy(physbo.gp.core.learning.Adam, "run")
     model_set_params_spy = mocker.spy(physbo.gp.core.model, "set_params")

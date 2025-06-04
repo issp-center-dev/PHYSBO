@@ -118,7 +118,7 @@ class cov_const:
         return sigma2, prec
 
 
-class gauss:
+class Gauss:
     """
     Gaussian prior
 

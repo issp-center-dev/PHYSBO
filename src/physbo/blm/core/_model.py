@@ -15,9 +15,9 @@ class model:
 
     Attributes
     ==========
-    prior: physbo.blm.prior.gauss
+    prior: physbo.blm.prior.Gauss
         prior distribution of weights
-    lik: physbo.blm.lik.gauss
+    lik: physbo.blm.lik.Gauss
         kernel
     nbasis: int
         number of features in random feature map
@@ -251,9 +251,9 @@ class model:
 
         Parameters
         ==========
-        prior: physbo.blm.prior.gauss
-            if None, prior.gauss(self.nbasis)
+        prior: physbo.blm.prior.Gauss
+            if None, prior.Gauss(self.nbasis)
         """
         if prior is None:
-            prior = prior.gauss(self.nbasis)
+            prior = prior.Gauss(self.nbasis)
         self.prior = prior

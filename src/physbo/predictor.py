@@ -30,9 +30,9 @@ class BasePredictor(object):
         self.model = model
         if self.model is None:
             self.model = gp.core.model(
-                cov=gp.cov.gauss(num_dim=None, ard=False),
+                cov=gp.cov.Gauss(num_dim=None, ard=False),
                 mean=gp.mean.const(),
-                lik=gp.lik.gauss(),
+                lik=gp.lik.Gauss(),
             )
 
     def fit(self, *args, **kwds):

@@ -17,10 +17,10 @@ class prior:
 
         Parameters
         ----------
-        mean: numpy.ndarray
-            mean values of prior
-        cov: physbo.gp.cov.gauss
-            covariance matrix of priors
+        mean: physbo.gp.mean.const
+            mean function
+        cov: physbo.gp.cov.Gauss
+            covariance function
         """
         self.mean = mean
         self.cov = cov

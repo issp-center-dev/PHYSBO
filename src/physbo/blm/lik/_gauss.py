@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class gauss:
+class Gauss:
     """
     Gaussian
 

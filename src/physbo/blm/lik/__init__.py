@@ -7,4 +7,4 @@
 
 from ._src import cov
 from ._linear import linear
-from ._gauss import gauss
+from ._gauss import Gauss

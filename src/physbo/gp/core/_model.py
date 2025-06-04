@@ -133,8 +133,8 @@ class model:
         if comm is not None:
             basis_params = comm.bcast(basis_params, root=0)
         basis = blm.basis.fourier(basis_params)
-        prior = blm.prior.gauss(num_basis)
-        lik = blm.lik.gauss(
+        prior = blm.prior.Gauss(num_basis)
+        lik = blm.lik.Gauss(
             blm.lik.linear(basis, bias=self.prior.get_mean(1)),
             blm.lik.cov(self.lik.params),
         )

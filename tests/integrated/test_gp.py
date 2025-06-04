@@ -55,9 +55,9 @@ def test_gp():
     t_train = t[id_train]
     t_test = t[id_test]
 
-    cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
+    cov = physbo.gp.cov.Gauss(X_train.shape[1], ard=False)
     mean = physbo.gp.mean.const()
-    lik = physbo.gp.lik.gauss()
+    lik = physbo.gp.lik.Gauss()
 
     gp = physbo.gp.model(lik=lik, mean=mean, cov=cov)
     config = physbo.misc.SetConfig()
@@ -74,9 +74,9 @@ def test_gp():
     assert res == pytest.approx(ref, rel=1e-3)
 
     # restart
-    cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
+    cov = physbo.gp.cov.Gauss(X_train.shape[1], ard=False)
     mean = physbo.gp.mean.const()
-    lik = physbo.gp.lik.gauss()
+    lik = physbo.gp.lik.Gauss()
     gp2 = physbo.gp.model(lik=lik, mean=mean, cov=cov)
     gp_params = np.append(
         np.append(gp.lik.params, gp.prior.mean.params), gp.prior.cov.params
