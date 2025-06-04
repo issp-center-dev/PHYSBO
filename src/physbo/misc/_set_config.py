@@ -67,7 +67,7 @@ class SetConfig:
             self.learning.load(config)
 
         if method in ("bfgs", "batch"):
-            learning_config = batch()
+            learning_config = Batch()
             self.learning = learning_config
             self.learning.load(config)
 
@@ -150,9 +150,9 @@ class Learning(object):
         self.num_init_params_search = int(temp_dict.get("num_init_params_search", 20))
 
 
-class batch(Learning):
+class Batch(Learning):
     def __init__(self):
-        super(batch, self).__init__()
+        super(Batch, self).__init__()
         self.method = "bfgs"
         self.max_iter = 200
         self.max_iter_init_params_search = 20
@@ -166,7 +166,7 @@ class batch(Learning):
         -------
 
         """
-        super(batch, self).show()
+        super(Batch, self).show()
         print("max_iter: ", self.max_iter)
         print("max_iter_init_params_search: ", self.max_iter_init_params_search)
         print("batch_size: ", self.batch_size)
@@ -183,7 +183,7 @@ class batch(Learning):
         -------
 
         """
-        super(batch, self).load(config)
+        super(Batch, self).load(config)
         temp_dict = config._sections["batch"]
         self.max_iter = int(temp_dict.get("max_iter", 200))
         self.max_iter_init_params_search = int(

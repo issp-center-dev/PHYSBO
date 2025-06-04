@@ -422,7 +422,7 @@ class model:
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
-            bfgs = learning.batch(self, config)
+            bfgs = learning.Batch(self, config)
             params = bfgs.run(X, t)
 
         if comm is not None:
@@ -463,7 +463,7 @@ class sfs(model):
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
-            bfgs = learning.batch(self, self.config)
+            bfgs = learning.Batch(self, self.config)
             params = bfgs.run(X, t)
 
         self.set_params(params)

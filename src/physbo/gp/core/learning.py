@@ -10,7 +10,7 @@ import numpy as np
 import scipy.optimize
 
 
-class batch(object):
+class Batch(object):
     """
     basis class for batch learning
     """
