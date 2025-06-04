@@ -22,7 +22,7 @@ from ..._variable import Variable
 from typing import List, Optional
 
 
-class policy(discrete.policy):
+class Policy(discrete.Policy):
     new_data_list: List[Optional[Variable]]
 
     def __init__(

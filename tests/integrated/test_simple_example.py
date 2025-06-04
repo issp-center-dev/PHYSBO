@@ -36,7 +36,7 @@ class simulator:
 
 def test_random_search():
     sim = simulator()
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     nsearch = 20
     res = policy.random_search(max_num_probes=nsearch, simulator=sim)
@@ -51,7 +51,7 @@ def test_bayes_search_EI():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EI")
@@ -67,7 +67,7 @@ def test_bayes_search_EI_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
@@ -85,7 +85,7 @@ def test_bayes_search_PI():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="PI")
@@ -101,7 +101,7 @@ def test_bayes_search_PI_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
@@ -119,7 +119,7 @@ def test_bayes_search_TS():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
@@ -135,7 +135,7 @@ def test_bayes_search_TS_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(

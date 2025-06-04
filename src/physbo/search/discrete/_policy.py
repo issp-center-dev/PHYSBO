@@ -21,7 +21,7 @@ from ...misc import SetConfig
 from ..._variable import Variable
 
 
-class policy:
+class Policy:
     def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
 

@@ -29,7 +29,7 @@ def simulator(actions: np.ndarray) -> np.ndarray:
     return -np.sum(test_X[actions, :] ** 2, axis=1)
 
 
-policy = physbo.search.discrete.policy(test_X)
+policy = physbo.search.discrete.Policy(test_X)
 policy.set_seed(12345)
 
 # Random search (10 times)

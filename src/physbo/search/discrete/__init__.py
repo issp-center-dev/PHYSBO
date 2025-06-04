@@ -5,7 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ._policy import policy
+from ._policy import Policy
 from ._history import history
 
 # __all__ = ["policy", "history"]

@@ -38,7 +38,7 @@ def test_interactive():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete.policy(test_X=sim.X)
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
 
     actions = policy.random_search(
