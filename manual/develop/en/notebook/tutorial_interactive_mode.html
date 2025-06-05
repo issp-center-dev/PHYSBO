@@ -139,7 +139,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">:</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
@@ -156,7 +156,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
 <span class="c1"># Set seed</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
@@ -175,7 +175,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">()</span>
 
 <span class="sd">&#39;&#39;&#39; 1st step (random sampling) &#39;&#39;&#39;</span>
 <span class="n">actions</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -209,8 +209,8 @@
 <p>You can suspend and restart the optimization process by saving the following predictor, training, and history to an external file.</p>
 <ul class="simple">
 <li><p>predictor: Prediction model of the objective function</p></li>
-<li><p>training: Data used to train the predictor (<code class="docutils literal notranslate"><span class="pre">physbo.variable</span></code> object)</p></li>
-<li><p>history: History of optimization runs (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.history</span></code> object)</p></li>
+<li><p>training: Data used to train the predictor (<code class="docutils literal notranslate"><span class="pre">physbo.Variable</span></code> object)</p></li>
+<li><p>history: History of optimization runs (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.History</span></code> object)</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -228,7 +228,7 @@
 <span class="k">del</span> <span class="n">policy</span>
 
 <span class="c1"># load policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="o">=</span><span class="s1">&#39;history.npz&#39;</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="s1">&#39;training.npz&#39;</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="s1">&#39;predictor.dump&#39;</span><span class="p">)</span>
 
 <span class="sd">&#39;&#39;&#39; 5-th step (bayesian optimization) &#39;&#39;&#39;</span>

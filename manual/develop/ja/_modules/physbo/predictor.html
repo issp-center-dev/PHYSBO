@@ -67,6 +67,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">モジュールコード</a></li>
+          <li class="breadcrumb-item"><a href="../physbo.html">physbo</a></li>
       <li class="breadcrumb-item active">physbo.predictor</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -89,9 +90,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">physbo</span><span class="w"> </span><span class="kn">import</span> <span class="n">gp</span>
 
 
-<div class="viewcode-block" id="base_predictor">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor">[ドキュメント]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">base_predictor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="BasePredictor">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor">[ドキュメント]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BasePredictor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base predictor is defined in this class.</span>
 
@@ -102,22 +103,22 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        config: set_config object (physbo.misc.set_config)</span>
+<span class="sd">        config: SetConfig object (physbo.misc.SetConfig)</span>
 <span class="sd">        model: model object</span>
-<span class="sd">            A default model is set as gp.core.model</span>
+<span class="sd">            A default model is set as gp.core.Model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
-                <span class="n">cov</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="n">num_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-                <span class="n">mean</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">const</span><span class="p">(),</span>
-                <span class="n">lik</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">gauss</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span>
+                <span class="n">cov</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span><span class="n">num_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+                <span class="n">mean</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">(),</span>
+                <span class="n">lik</span><span class="o">=</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(),</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="base_predictor.fit">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.fit">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.fit">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.fit">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -136,8 +137,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.prepare">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.prepare">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.prepare">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.prepare">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -156,8 +157,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.delete_stats">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.delete_stats">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.delete_stats">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.delete_stats">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -176,8 +177,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_basis">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_basis">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_basis">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_basis">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -196,8 +197,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_post_fmean">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_post_fmean">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_post_fmean">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_post_fmean">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -216,8 +217,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_post_fcov">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_post_fcov">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_post_fcov">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_post_fcov">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -236,8 +237,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_post_params">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_post_params">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_post_params">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_post_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -256,8 +257,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_post_samples">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_post_samples">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_post_samples">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_post_samples">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -276,8 +277,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_predict_samples">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_predict_samples">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_predict_samples">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_predict_samples">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -296,8 +297,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.get_post_params_samples">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.get_post_params_samples">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.get_post_params_samples">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_post_params_samples">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_post_params_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -316,8 +317,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.update">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.update">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.update">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.update">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -336,8 +337,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.save">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.save">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.save">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.save">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -357,8 +358,8 @@
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="base_predictor.load">
-<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.base_predictor.load">[ドキュメント]</a>
+<div class="viewcode-block" id="BasePredictor.load">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.load">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 

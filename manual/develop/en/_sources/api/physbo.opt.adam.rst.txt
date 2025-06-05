@@ -1,7 +1,0 @@
-physbo.opt.adam module
-======================
-
-.. automodule:: physbo.opt.adam
-   :members:
-   :undoc-members:
-   :show-inheritance:

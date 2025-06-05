@@ -156,7 +156,7 @@ is designed to find the maximum value of the objective function</strong>, it ret
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
         <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -179,14 +179,14 @@ is designed to find the maximum value of the objective function</strong>, it ret
 <h2>Performing optimization<a class="headerlink" href="#Performing-optimization" title="Link to this heading"></a></h2>
 <section id="Setting-policy">
 <h3>Setting policy<a class="headerlink" href="#Setting-policy" title="Link to this heading"></a></h3>
-<p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
+<p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">Policy</span></code>.</p>
 <p>Next, set <code class="docutils literal notranslate"><span class="pre">test_X</span></code> to the matrix of search candidates (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
 <span class="c1"># set seed</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -223,7 +223,7 @@ tutorial.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
 <span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -257,7 +257,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
                                                   <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -363,7 +363,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">history</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">History</span><span class="p">()</span>
 <span class="n">res</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>

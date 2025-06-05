@@ -1,7 +1,0 @@
-physbo.search.discrete.results module
-=====================================
-
-.. automodule:: physbo.search.discrete.results
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -178,7 +178,7 @@
    },
    "outputs": [],
    "source": [
-    "class simulator(object):\n",
+    "class Simulator(object):\n",
     "    def __init__(self, X):\n",
     "        self.t = vlmop2_minus(X)\n",
     "    \n",
@@ -197,7 +197,7 @@
    },
    "outputs": [],
    "source": [
-    "simu = simulator(test_X)"
+    "simu = Simulator(test_X)"
    ]
   },
   {
@@ -292,9 +292,9 @@
    "source": [
     "## 最適化の実行\n",
     "\n",
-    "### policy のセット\n",
+    "### Policy のセット\n",
     "\n",
-    "多目的最適化用の `physbo.search.discrete_multi.policy` を利用します。  \n",
+    "多目的最適化用の `physbo.search.discrete_multi.Policy` を利用します。  \n",
     "`num_objectives` に目的関数の数を指定してください。"
    ]
   },
@@ -309,7 +309,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)"
    ]
   },
@@ -340,7 +340,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "\n",
     "res_random = policy.random_search(max_num_probes=50, simulator=simu)"
@@ -369,7 +369,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "res_random = policy.random_search(max_num_probes=50, simulator=simu, disp_pareto_set=True)"
    ]
@@ -580,7 +580,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "\n",
     "policy.random_search(max_num_probes=10, simulator=simu)\n",
@@ -679,7 +679,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "\n",
     "policy.random_search(max_num_probes=10, simulator=simu)\n",
@@ -777,7 +777,7 @@
    },
    "outputs": [],
    "source": [
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "\n",
     "policy.random_search(max_num_probes=10, simulator=simu)\n",
@@ -875,9 +875,9 @@
    "outputs": [],
    "source": [
     "test_X_sparse = np.array(list(itertools.product(np.linspace(-2, 2, 21), repeat=2)))\n",
-    "simu_sparse = simulator(test_X_sparse)\n",
+    "simu_sparse = Simulator(test_X_sparse)\n",
     "\n",
-    "policy = physbo.search.discrete_multi.policy(test_X=test_X_sparse, num_objectives=2)\n",
+    "policy = physbo.search.discrete_multi.Policy(test_X=test_X_sparse, num_objectives=2)\n",
     "policy.set_seed(0)\n",
     "\n",
     "N = test_X_sparse.shape[0]\n",

@@ -57,7 +57,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#simulatorクラスの定義">simulatorクラスの定義</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#最適化の実行">最適化の実行</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#policy-のセット">policy のセット</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Policy-のセット">Policy のセット</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#ランダムサーチ">ランダムサーチ</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#ベイズ最適化">ベイズ最適化</a></li>
 </ul>
@@ -155,7 +155,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -176,16 +176,16 @@
 </section>
 <section id="最適化の実行">
 <h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Link to this heading"></a></h2>
-<section id="policy-のセット">
-<h3>policy のセット<a class="headerlink" href="#policy-のセット" title="Link to this heading"></a></h3>
-<p>まず、最適化の <code class="docutils literal notranslate"><span class="pre">policy</span></code> をセットします。</p>
+<section id="Policy-のセット">
+<h3>Policy のセット<a class="headerlink" href="#Policy-のセット" title="Link to this heading"></a></h3>
+<p>まず、最適化の <code class="docutils literal notranslate"><span class="pre">Policy</span></code> をセットします。</p>
 <p><code class="docutils literal notranslate"><span class="pre">test_X</span></code> に探索候補の行列 (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>) を指定します。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy のセット</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
 <span class="c1"># シード値のセット</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -220,7 +220,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
 <span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -254,7 +254,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
                                                   <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -360,7 +360,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">history</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">History</span><span class="p">()</span>
 <span class="n">res</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -456,7 +456,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># from mpi4py import MPI</span>
-<span class="c1"># policy = physbo.search.discrete.policy(X=test_X, comm=MPI.COMM_WORLD)</span>
+<span class="c1"># policy = physbo.search.discrete.Policy(X=test_X, comm=MPI.COMM_WORLD)</span>
 </pre></div>
 </div>
 </div>

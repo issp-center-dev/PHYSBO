@@ -66,6 +66,8 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../physbo.html">physbo</a></li>
+          <li class="breadcrumb-item"><a href="../../gp.html">physbo.gp</a></li>
       <li class="breadcrumb-item active">physbo.gp.core.learning</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -87,10 +89,20 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy.optimize</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated_warning</span>
+
 
 <div class="viewcode-block" id="batch">
 <a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.batch">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">batch</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">batch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">deprecated_warning</span><span class="p">(</span><span class="n">old</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.batch&quot;</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.Batch&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Batch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Batch">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Batch">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Batch</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    basis class for batch learning</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -100,15 +112,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        gp : physbo.gp.core.model object</span>
-<span class="sd">        config: physbo.misc.set_config object</span>
+<span class="sd">        gp : physbo.gp.core.Model object</span>
+<span class="sd">        config: physbo.misc.SetConfig object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">gp</span> <span class="o">=</span> <span class="n">gp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
 
-<div class="viewcode-block" id="batch.run">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.batch.run">[docs]</a>
+<div class="viewcode-block" id="Batch.run">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Batch.run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performing optimization using the L-BFGS-B algorithm</span>
@@ -141,8 +153,8 @@
         <span class="k">return</span> <span class="n">params</span></div>
 
 
-<div class="viewcode-block" id="batch.one_run">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.batch.one_run">[docs]</a>
+<div class="viewcode-block" id="Batch.one_run">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Batch.one_run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">one_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -150,7 +162,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Initial guess for optimization.</span>
-<span class="sd">            Array of real elements of size (n,), where ‘n’ is the number of independent variables.</span>
+<span class="sd">            Array of real elements of size (n,), where &#39;n&#39; is the number of independent variables.</span>
 
 <span class="sd">        X: numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
@@ -186,8 +198,8 @@
         <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span></div>
 
 
-<div class="viewcode-block" id="batch.init_params_search">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.batch.init_params_search">[docs]</a>
+<div class="viewcode-block" id="Batch.init_params_search">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Batch.init_params_search">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">init_params_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -225,7 +237,15 @@
 
 <div class="viewcode-block" id="online">
 <a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">online</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">online</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">deprecated_warning</span><span class="p">(</span><span class="n">old</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.online&quot;</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.Online&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Online</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Online">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Online</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    base class for online learning</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -235,15 +255,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        gp : model  (gp.core.model)</span>
-<span class="sd">        config: set_config  (misc.set_config)</span>
+<span class="sd">        gp : physbo.gp.core.Model object</span>
+<span class="sd">        config: physbo.misc.SetConfig object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gp</span> <span class="o">=</span> <span class="n">gp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_iter</span> <span class="o">=</span> <span class="mi">0</span>
 
-<div class="viewcode-block" id="online.run">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online.run">[docs]</a>
+<div class="viewcode-block" id="Online.run">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online.run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run initial search and hyper parameter running.</span>
@@ -285,8 +305,8 @@
         <span class="k">return</span> <span class="n">params</span></div>
 
 
-<div class="viewcode-block" id="online.one_run">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online.one_run">[docs]</a>
+<div class="viewcode-block" id="Online.one_run">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online.one_run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">one_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">max_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -294,7 +314,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters for optimization.</span>
-<span class="sd">            Array of real elements of size (n,), where ‘n’ is the number of independent variables.</span>
+<span class="sd">            Array of real elements of size (n,), where &#39;n&#39; is the number of independent variables.</span>
 <span class="sd">        X: numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
 <span class="sd">        t: numpy.ndarray</span>
@@ -345,8 +365,8 @@
         <span class="k">return</span> <span class="n">params</span></div>
 
 
-<div class="viewcode-block" id="online.disp_marlik">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online.disp_marlik">[docs]</a>
+<div class="viewcode-block" id="Online.disp_marlik">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online.disp_marlik">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">disp_marlik</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">eval_X</span><span class="p">,</span> <span class="n">eval_t</span><span class="p">,</span> <span class="n">num_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Displaying marginal likelihood</span>
@@ -355,7 +375,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters for optimization.</span>
-<span class="sd">            Array of real elements of size (n,), where ‘n’ is the number of independent variables.</span>
+<span class="sd">            Array of real elements of size (n,), where &#39;n&#39; is the number of independent variables.</span>
 <span class="sd">        eval_X: numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
 <span class="sd">        eval_t: numpy.ndarray</span>
@@ -375,8 +395,8 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;marginal likelihood&quot;</span><span class="p">,</span> <span class="n">marlik</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="online.init_params_search">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online.init_params_search">[docs]</a>
+<div class="viewcode-block" id="Online.init_params_search">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online.init_params_search">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">init_params_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initial parameter searchs</span>
@@ -415,8 +435,8 @@
         <span class="k">return</span> <span class="n">min_params</span></div>
 
 
-<div class="viewcode-block" id="online.get_one_update">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.online.get_one_update">[docs]</a>
+<div class="viewcode-block" id="Online.get_one_update">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Online.get_one_update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_one_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 </div>
@@ -425,7 +445,15 @@
 
 <div class="viewcode-block" id="adam">
 <a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.adam">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">adam</span><span class="p">(</span><span class="n">online</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">adam</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">deprecated_warning</span><span class="p">(</span><span class="n">old</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.adam&quot;</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="s2">&quot;physbo.gp.core.learning.Adam&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Adam</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Adam">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Adam">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Adam</span><span class="p">(</span><span class="n">Online</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;default&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gp</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
@@ -433,10 +461,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        gp : physbo.gp.core.model object</span>
-<span class="sd">        config: physbo.misc.set_config object</span>
+<span class="sd">        gp : physbo.gp.core.Model object</span>
+<span class="sd">        config: physbo.misc.SetConfig object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">adam</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Adam</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">beta</span>
@@ -445,16 +473,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
 
-<div class="viewcode-block" id="adam.reset">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.adam.reset">[docs]</a>
+<div class="viewcode-block" id="Adam.reset">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Adam.reset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_iter</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 
-<div class="viewcode-block" id="adam.get_one_update">
-<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.adam.get_one_update">[docs]</a>
+<div class="viewcode-block" id="Adam.get_one_update">
+<a class="viewcode-back" href="../../../../api/physbo.gp.core.learning.html#physbo.gp.core.learning.Adam.get_one_update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_one_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -462,7 +490,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters for optimization.</span>
-<span class="sd">            Array of real elements of size (n,), where ‘n’ is the number of independent variables.</span>
+<span class="sd">            Array of real elements of size (n,), where &#39;n&#39; is the number of independent variables.</span>
 <span class="sd">        X: numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</span>
 <span class="sd">        t: numpy.ndarray</span>
