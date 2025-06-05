@@ -8,13 +8,13 @@
 import physbo.predictor
 
 
-class predictor(physbo.predictor.base_predictor):
+class Predictor(physbo.predictor.BasePredictor):
     """Predictor using Baysean linear model
 
     Attributes
     ==========
-    blm: physbo.blm.core.model
-    config: physbo.misc.set_config
+    blm: physbo.blm.core.Model
+    config: physbo.misc.SetConfig
         configuration
     """
 
@@ -23,15 +23,15 @@ class predictor(physbo.predictor.base_predictor):
 
         Parameters
         ==========
-        config: physbo.misc.set_config
+        config: physbo.misc.SetConfig
             configuration
-        model: physbo.gp.core.model
+        model: physbo.gp.core.Model
 
         See also
         ========
-        physbo.base_predictor
+        physbo.BasePredictor
         """
-        super(predictor, self).__init__(config, model)
+        super(Predictor, self).__init__(config, model)
         self.blm = None
 
     def fit(self, training, num_basis=None, comm=None):

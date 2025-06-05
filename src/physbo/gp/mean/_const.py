@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class const:
+class Const(object):
     """constant"""
 
     def __init__(self, params=None, max_params=1e12, min_params=-1e12):

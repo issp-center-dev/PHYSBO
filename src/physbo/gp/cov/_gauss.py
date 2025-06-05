@@ -11,7 +11,7 @@ from scipy import spatial
 from ._src.enhance_gauss import grad_width64
 
 
-class gauss:
+class Gauss:
     """gaussian kernel"""
 
     def __init__(
@@ -199,7 +199,7 @@ class gauss:
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         Returns
         -------

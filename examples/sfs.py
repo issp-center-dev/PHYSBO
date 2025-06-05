@@ -1,6 +1,6 @@
 import numpy as np
 import physbo
-from physbo.misc import set_config
+from physbo.misc import SetConfig
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 import matplotlib.pyplot as plt
 
@@ -33,19 +33,19 @@ def generate_data(n_samples=2000, n_features=5):
 def setup_gp_model(input_dim):
     """Setup GP model"""
     # Set kernel (covariance function)
-    cov = physbo.gp.cov.gauss(input_dim, ard=False)
+    cov = physbo.gp.cov.Gauss(input_dim, ard=False)
 
     # Set mean function
-    mean = physbo.gp.mean.const()
+    mean = physbo.gp.mean.Const()
 
     # Set likelihood function
-    lik = physbo.gp.lik.gauss()
+    lik = physbo.gp.lik.Gauss()
 
     # Prepare configuration
-    config = set_config()
+    config = SetConfig()
 
     # Create GP model
-    gp = physbo.gp.sfs(lik=lik, mean=mean, cov=cov, config=config)
+    gp = physbo.gp.Sfs(lik=lik, mean=mean, cov=cov, config=config)
 
     return gp
 

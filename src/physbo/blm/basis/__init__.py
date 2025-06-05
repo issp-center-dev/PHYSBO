@@ -5,4 +5,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from .fourier import fourier
+from ._fourier import Fourier
+
+from ...misc import deprecated_warning
+
+
+def fourier(*args,**kwargs):
+    deprecated_warning(old="physbo.blm.basis.fourier", new="physbo.blm.basis.Fourier")
+    return Fourier(*args,**kwargs)

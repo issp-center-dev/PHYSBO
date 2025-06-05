@@ -7,13 +7,13 @@
 
 import numpy as np
 
-from physbo import blm
-from physbo.gp import inf
-from physbo.gp.core import learning
-from physbo.gp.core.prior import prior
-from physbo.misc import set_config
+from ... import blm
+from .. import inf
+from . import learning
+from ._prior import Prior
+from ...misc import SetConfig
 
-class model:
+class Model:
     def __init__(self, lik, mean, cov, inf="exact"):
         """
 
@@ -25,7 +25,7 @@ class model:
         inf
         """
         self.lik = lik
-        self.prior = prior(mean=mean, cov=cov)
+        self.prior = Prior(mean=mean, cov=cov)
         self.inf = inf
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)
@@ -124,7 +124,8 @@ class model:
             MPI communicator
         Returns
         -------
-        physbo.blm.core.model
+        physbo.blm.core.Model
+            Bayesian linear model
         """
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
@@ -132,13 +133,13 @@ class model:
         basis_params = self.prior.cov.rand_expans(num_basis)
         if comm is not None:
             basis_params = comm.bcast(basis_params, root=0)
-        basis = blm.basis.fourier(basis_params)
-        prior = blm.prior.gauss(num_basis)
-        lik = blm.lik.gauss(
-            blm.lik.linear(basis, bias=self.prior.get_mean(1)),
+        basis = blm.basis.Fourier(basis_params)
+        prior = blm.prior.Gauss(num_basis)
+        lik = blm.lik.Gauss(
+            blm.lik.Linear(basis, bias=self.prior.get_mean(1)),
             blm.lik.cov(self.lik.params),
         )
-        blr = blm.model(lik, prior)
+        blr = blm.core.Model(lik, prior)
 
         return blr
 
@@ -418,11 +419,11 @@ class model:
         method = config.learning.method
 
         if method == "adam":
-            adam = learning.adam(self, config)
+            adam = learning.Adam(self, config)
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
-            bfgs = learning.batch(self, config)
+            bfgs = learning.Batch(self, config)
             params = bfgs.run(X, t)
 
         if comm is not None:
@@ -430,7 +431,7 @@ class model:
 
         self.set_params(params)
 
-class sfs(model):
+class SFS(Model):
 
     def __init__(self, lik, mean, cov, inf="exact",config=None):
         super().__init__(lik, mean, cov, inf)
@@ -452,18 +453,18 @@ class sfs(model):
         t:  numpy.ndarray
             N dimensional array.
             The negative energy of each search candidate (value of the objective function to be optimized).
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         """
-        #config = set_config()
+        #config = SetConfig()
         method = self.config.learning.method
 
         if method == "adam":
-            adam = learning.adam(self, self.config)
+            adam = learning.Adam(self, self.config)
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
-            bfgs = learning.batch(self, self.config)
+            bfgs = learning.Batch(self, self.config)
             params = bfgs.run(X, t)
 
         self.set_params(params)
@@ -499,7 +500,7 @@ class sfs(model):
             post_fmu = inf.exact.get_post_fmean(self, self.xtrain, Z, params)
 
         return post_fmu
-    
+
     def get_params(self,deep=True):
 
         mean = self.prior.mean
@@ -507,3 +508,4 @@ class sfs(model):
         config = self.config
 
         return {"lik":self.lik,"mean":mean,"cov":cov,"config":config}
+

@@ -12,6 +12,19 @@ from . import basis
 from . import prior
 from . import lik
 from . import inf
+from . import core
 
-from .core import model
-from .predictor import predictor
+from .core import Model
+from ._predictor import Predictor
+
+from ..misc import deprecated_warning
+
+
+def model(*args,**kwargs):
+    deprecated_warning(old="physbo.blm.model", new="physbo.blm.Model")
+    return Model(*args,**kwargs)
+
+
+def predictor(*args,**kwargs):
+    deprecated_warning(old="physbo.blm.predictor", new="physbo.blm.Predictor")
+    return Predictor(*args,**kwargs)

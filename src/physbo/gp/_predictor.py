@@ -8,7 +8,7 @@
 import physbo.predictor
 
 
-class predictor(physbo.predictor.base_predictor):
+class Predictor(physbo.predictor.BasePredictor):
     """predictor"""
 
     def __init__(self, config, model=None):
@@ -16,11 +16,11 @@ class predictor(physbo.predictor.base_predictor):
 
         Parameters
         ----------
-        config: physbo.misc.set_config
-            configuration
-        model: physbo.gp.core.model
+        config: physbo.misc.SetConfig
+        model: model object
+            A default model is set as gp.core.Model
         """
-        super(predictor, self).__init__(config, model)
+        super(Predictor, self).__init__(config, model)
 
     def fit(self, training, num_basis=None, comm=None):
         """

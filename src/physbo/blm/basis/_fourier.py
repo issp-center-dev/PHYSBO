@@ -9,7 +9,7 @@
 import numpy as np
 
 
-class fourier:
+class Fourier:
     """
     random feature maps
     ``Psi(X; W,b) = cos[X * Wt + b] * alpha``
