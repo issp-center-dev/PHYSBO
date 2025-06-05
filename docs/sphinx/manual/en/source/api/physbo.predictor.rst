@@ -1,7 +1,0 @@
-physbo.predictor module
-=======================
-
-.. automodule:: physbo.predictor
-   :members:
-   :undoc-members:
-   :show-inheritance:

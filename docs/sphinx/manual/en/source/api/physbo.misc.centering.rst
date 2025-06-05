@@ -1,7 +1,0 @@
-physbo.misc.centering module
-============================
-
-.. automodule:: physbo.misc.centering
-   :members:
-   :undoc-members:
-   :show-inheritance:

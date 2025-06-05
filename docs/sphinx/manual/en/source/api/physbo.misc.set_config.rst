@@ -1,7 +1,0 @@
-physbo.misc.set\_config module
-==============================
-
-.. automodule:: physbo.misc.set_config
-   :members:
-   :undoc-members:
-   :show-inheritance:

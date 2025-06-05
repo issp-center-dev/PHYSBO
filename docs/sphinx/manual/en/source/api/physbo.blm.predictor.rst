@@ -1,7 +1,0 @@
-physbo.blm.predictor module
-===========================
-
-.. automodule:: physbo.blm.predictor
-   :members:
-   :undoc-members:
-   :show-inheritance:

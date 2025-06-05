@@ -1,7 +1,0 @@
-physbo.blm.inf.exact module
-===========================
-
-.. automodule:: physbo.blm.inf.exact
-   :members:
-   :undoc-members:
-   :show-inheritance:
