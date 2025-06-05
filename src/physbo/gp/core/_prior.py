@@ -9,7 +9,7 @@ import numpy as np
 import scipy
 
 
-class prior:
+class Prior:
     """prior of gaussian process"""
 
     def __init__(self, mean, cov):
@@ -17,10 +17,10 @@ class prior:
 
         Parameters
         ----------
-        mean: numpy.ndarray
-            mean values of prior
-        cov: physbo.gp.cov.gauss
-            covariance matrix of priors
+        mean: physbo.gp.mean.Const
+            mean function
+        cov: physbo.gp.cov.Gauss
+            covariance function
         """
         self.mean = mean
         self.cov = cov

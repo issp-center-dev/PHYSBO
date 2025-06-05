@@ -37,7 +37,7 @@ def test_multi_objective_EHVI():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI")
@@ -51,7 +51,7 @@ def test_multi_objective_HVPI():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="HVPI")
@@ -65,7 +65,7 @@ def test_multi_objective_TS():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
@@ -79,7 +79,7 @@ def test_multi_objective_EHVI_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
@@ -95,7 +95,7 @@ def test_multi_objective_HVPI_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
@@ -111,7 +111,7 @@ def test_multi_objective_TS_rand():
     sim = simulator()
     nrand = 10
     nsearch = 5
-    policy = physbo.search.discrete_multi.policy(test_X=sim.X, num_objectives=2)
+    policy = physbo.search.discrete_multi.Policy(test_X=sim.X, num_objectives=2)
     policy.set_seed(12345)
     res = policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(

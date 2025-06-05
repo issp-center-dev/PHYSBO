@@ -9,8 +9,15 @@
 import numpy as np
 import scipy.optimize
 
+from ...misc import deprecated_warning
 
-class batch(object):
+
+def batch(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.batch", new="physbo.gp.core.learning.Batch")
+    return Batch(*args,**kwargs)
+
+
+class Batch(object):
     """
     basis class for batch learning
     """
@@ -20,8 +27,8 @@ class batch(object):
 
         Parameters
         ----------
-        gp : physbo.gp.core.model object
-        config: physbo.misc.set_config object
+        gp : physbo.gp.core.Model object
+        config: physbo.misc.SetConfig object
         """
 
         self.gp = gp
@@ -65,7 +72,7 @@ class batch(object):
         ----------
         params: numpy.ndarray
             Initial guess for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
@@ -133,7 +140,12 @@ class batch(object):
         return min_params
 
 
-class online(object):
+def online(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.online", new="physbo.gp.core.learning.Online")
+    return Online(*args,**kwargs)
+
+
+class Online(object):
     """
     base class for online learning
     """
@@ -143,8 +155,8 @@ class online(object):
 
         Parameters
         ----------
-        gp : model  (gp.core.model)
-        config: set_config  (misc.set_config)
+        gp : physbo.gp.core.Model object
+        config: physbo.misc.SetConfig object
         """
         self.gp = gp
         self.config = config
@@ -197,7 +209,7 @@ class online(object):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         t: numpy.ndarray
@@ -255,7 +267,7 @@ class online(object):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         eval_X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         eval_t: numpy.ndarray
@@ -315,7 +327,12 @@ class online(object):
         raise NotImplementedError
 
 
-class adam(online):
+def adam(*args,**kwargs):
+    deprecated_warning(old="physbo.gp.core.learning.adam", new="physbo.gp.core.learning.Adam")
+    return Adam(*args,**kwargs)
+
+
+class Adam(Online):
     """default"""
 
     def __init__(self, gp, config):
@@ -323,10 +340,10 @@ class adam(online):
 
         Parameters
         ----------
-        gp : physbo.gp.core.model object
-        config: physbo.misc.set_config object
+        gp : physbo.gp.core.Model object
+        config: physbo.misc.SetConfig object
         """
-        super(adam, self).__init__(gp, config)
+        super(Adam, self).__init__(gp, config)
 
         self.alpha = self.config.learning.alpha
         self.beta = self.config.learning.beta
@@ -347,7 +364,7 @@ class adam(online):
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         X: numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
         t: numpy.ndarray

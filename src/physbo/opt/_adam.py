@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class adam:
+class Adam:
     """
     Optimizer of f(x) with the adam method
 

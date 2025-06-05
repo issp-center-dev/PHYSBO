@@ -40,7 +40,7 @@ class simulator(object):
 
 sim = simulator(test_X)
 
-policy = physbo.search.discrete_multi.policy(test_X, num_objectives=2)
+policy = physbo.search.discrete_multi.Policy(test_X, num_objectives=2)
 policy.set_seed(0)
 # Random search (10 times)
 policy.random_search(max_num_probes=10, simulator=sim)

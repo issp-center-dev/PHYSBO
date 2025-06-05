@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class gauss:
+class Gauss:
     """Gaussian likelihood function"""
 
     def __init__(self, std=1, max_params=1e6, min_params=1e-6):
@@ -40,7 +40,7 @@ class gauss:
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
         Returns
         -------
 
@@ -64,7 +64,7 @@ class gauss:
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         Returns
         -------
@@ -97,7 +97,7 @@ class gauss:
         num_data: int
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         Returns
         -------
@@ -117,7 +117,7 @@ class gauss:
         num_data: int
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         Returns
         -------
@@ -136,7 +136,7 @@ class gauss:
         ----------
         params: numpy.ndarray
             Parameters for optimization.
-            Array of real elements of size (n,), where ‘n’ is the number of independent variables.
+            Array of real elements of size (n,), where 'n' is the number of independent variables.
 
         Returns
         -------

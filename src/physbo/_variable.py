@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class variable(object):
+class Variable(object):
     def __init__(self, X=None, t=None, Z=None):
         """
 
@@ -41,7 +41,7 @@ class variable(object):
         temp_t = self.t[index] if self.t is not None else None
         temp_Z = self.Z[index, :] if self.Z is not None else None
 
-        return variable(X=temp_X, t=temp_t, Z=temp_Z)
+        return Variable(X=temp_X, t=temp_t, Z=temp_Z)
 
     def delete(self, num_row):
         """

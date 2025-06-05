@@ -10,15 +10,15 @@ from .. import inf
 from ...misc.permutation_importance import get_permutation_importance
 
 
-class model:
+class Model:
     """
     Baysean Linear Model
 
     Attributes
     ==========
-    prior: physbo.blm.prior.gauss
+    prior: physbo.blm.prior.Gauss
         prior distribution of weights
-    lik: physbo.blm.lik.gauss
+    lik: physbo.blm.lik.Gauss
         kernel
     nbasis: int
         number of features in random feature map
@@ -124,7 +124,7 @@ class model:
 
         Parameters
         ==========
-        blm: physbo.blm.core.model
+        blm: physbo.blm.core.Model
             model
         w_mu: numpy.ndarray
             mean of weight
@@ -284,9 +284,9 @@ class model:
 
         Parameters
         ==========
-        prior: physbo.blm.prior.gauss
-            if None, prior.gauss(self.nbasis)
+        prior: physbo.blm.prior.Gauss
+            if None, prior.Gauss(self.nbasis)
         """
         if prior is None:
-            prior = prior.gauss(self.nbasis)
+            prior = prior.Gauss(self.nbasis)
         self.prior = prior

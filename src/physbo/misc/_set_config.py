@@ -9,23 +9,23 @@ import numpy as np
 import configparser
 
 
-class set_config:
+class SetConfig:
     def __init__(self, search_config=None, learning_config=None):
         """
         Setting configuration for search and learning.
 
         Parameters
         ----------
-        search_config: physbo.misc.search object
-        learning_config: physbo.misc.learning object
+        search_config: physbo.misc.Search object
+        learning_config: physbo.misc.Learning object
 
         """
         if search_config is None:
-            search_config = search()
+            search_config = Search()
         self.search = search_config
 
         if learning_config is None:
-            learning_config = adam()
+            learning_config = Adam()
         self.learning = learning_config
 
     def show(self):
@@ -54,7 +54,7 @@ class set_config:
         config = configparser.SafeConfigParser()
         config.read(file_name)
 
-        search_config = search()
+        search_config = Search()
         self.search = search_config
         self.search.load(config)
 
@@ -62,17 +62,17 @@ class set_config:
         method = temp_dict.get("method", "adam")
 
         if method == "adam":
-            learning_config = adam()
+            learning_config = Adam()
             self.learning = learning_config
             self.learning.load(config)
 
         if method in ("bfgs", "batch"):
-            learning_config = batch()
+            learning_config = Batch()
             self.learning = learning_config
             self.learning.load(config)
 
 
-class search:
+class Search:
     def __init__(self):
         self.multi_probe_num_sampling = 20
         self.alpha = 1.0
@@ -83,7 +83,7 @@ class search:
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------
@@ -109,7 +109,7 @@ class search:
         print("\n")
 
 
-class learning(object):
+class Learning(object):
     def __init__(self):
         self.is_disp = True
         self.num_disp = 10
@@ -136,7 +136,7 @@ class learning(object):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
 
         Returns
@@ -150,9 +150,9 @@ class learning(object):
         self.num_init_params_search = int(temp_dict.get("num_init_params_search", 20))
 
 
-class batch(learning):
+class Batch(Learning):
     def __init__(self):
-        super(batch, self).__init__()
+        super(Batch, self).__init__()
         self.method = "bfgs"
         self.max_iter = 200
         self.max_iter_init_params_search = 20
@@ -166,7 +166,7 @@ class batch(learning):
         -------
 
         """
-        super(batch, self).show()
+        super(Batch, self).show()
         print("max_iter: ", self.max_iter)
         print("max_iter_init_params_search: ", self.max_iter_init_params_search)
         print("batch_size: ", self.batch_size)
@@ -177,13 +177,13 @@ class batch(learning):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------
 
         """
-        super(batch, self).load(config)
+        super(Batch, self).load(config)
         temp_dict = config._sections["batch"]
         self.max_iter = int(temp_dict.get("max_iter", 200))
         self.max_iter_init_params_search = int(
@@ -192,9 +192,9 @@ class batch(learning):
         self.batch_size = int(temp_dict.get("batch_size", 5000))
 
 
-class online(learning):
+class Online(Learning):
     def __init__(self):
-        super(online, self).__init__()
+        super(Online, self).__init__()
         self.max_epoch = 500
         self.max_epoch_init_params_search = 50
         self.batch_size = 64
@@ -208,7 +208,7 @@ class online(learning):
         -------
 
         """
-        super(online, self).show()
+        super(Online, self).show()
         print("max_epoch: ", self.max_epoch)
         print("max_epoch_init_params_search: ", self.max_epoch_init_params_search)
         print("batch_size: ", self.batch_size)
@@ -220,14 +220,14 @@ class online(learning):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
 
         Returns
         -------
 
         """
-        super(online, self).load(config)
+        super(Online, self).load(config)
         temp_dict = config._sections["online"]
         self.max_epoch = int(temp_dict.get("max_epoch", 1000))
         self.max_epoch_init_params_search = int(
@@ -237,9 +237,9 @@ class online(learning):
         self.eval_size = int(temp_dict.get("eval_size", 5000))
 
 
-class adam(online):
+class Adam(Online):
     def __init__(self):
-        super(adam, self).__init__()
+        super(Adam, self).__init__()
         self.method = "adam"
         self.alpha = 0.001
         self.beta = 0.9
@@ -254,7 +254,7 @@ class adam(online):
         -------
 
         """
-        super(adam, self).show()
+        super(Adam, self).show()
         print("alpha = ", self.alpha)
         print("beta = ", self.beta)
         print("gamma = ", self.gamma)
@@ -267,13 +267,13 @@ class adam(online):
 
         Parameters
         ----------
-        config: physbo.misc.set_config object
+        config: physbo.misc.SetConfig object
 
         Returns
         -------
 
         """
-        super(adam, self).load(config)
+        super(Adam, self).load(config)
         temp_dict = config._sections["adam"]
         self.alpha = np.float64(temp_dict.get("alpha", 0.001))
         self.beta = np.float64(temp_dict.get("beta", 0.9))

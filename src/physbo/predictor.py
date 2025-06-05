@@ -10,7 +10,7 @@ import numpy as np
 from physbo import gp
 
 
-class base_predictor(object):
+class BasePredictor(object):
     """
     Base predictor is defined in this class.
 
@@ -21,18 +21,18 @@ class base_predictor(object):
 
         Parameters
         ----------
-        config: set_config object (physbo.misc.set_config)
+        config: SetConfig object (physbo.misc.SetConfig)
         model: model object
-            A default model is set as gp.core.model
+            A default model is set as gp.core.Model
         """
 
         self.config = config
         self.model = model
         if self.model is None:
-            self.model = gp.core.model(
-                cov=gp.cov.gauss(num_dim=None, ard=False),
-                mean=gp.mean.const(),
-                lik=gp.lik.gauss(),
+            self.model = gp.core.Model(
+                cov=gp.cov.Gauss(num_dim=None, ard=False),
+                mean=gp.mean.Const(),
+                lik=gp.lik.Gauss(),
             )
 
     def fit(self, *args, **kwds):

@@ -14,7 +14,7 @@ from .. import pareto
 MAX_SEARCH = int(30000)
 
 
-class history(object):
+class History(object):
     def __init__(self, num_objectives):
         self.num_objectives = num_objectives
         self.pareto = pareto.Pareto(num_objectives=self.num_objectives)

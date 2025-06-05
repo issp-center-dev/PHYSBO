@@ -8,7 +8,7 @@
 import numpy as np
 
 
-class linear:
+class Linear:
     """
 
     Attributes

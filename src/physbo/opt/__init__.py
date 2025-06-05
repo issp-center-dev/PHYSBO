@@ -5,4 +5,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from .adam import adam
+from ._adam import Adam
+
+from ..misc import deprecated_warning
+
+
+def adam(*args,**kwargs):
+    deprecated_warning(old="physbo.opt.adam", new="physbo.opt.Adam")
+    return Adam(*args,**kwargs)

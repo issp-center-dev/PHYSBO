@@ -46,7 +46,7 @@ def policy():
             [5.0, 5.0, 5.0],
         ]
     )
-    return physbo.search.discrete.policy(test_X=X)
+    return physbo.search.discrete.Policy(test_X=X)
 
 
 def test_write(policy, X):
@@ -62,7 +62,7 @@ def test_write(policy, X):
 
 def test_randomsearch(policy, mocker):
     simulator = mocker.MagicMock(return_value=1.0)
-    write_spy = mocker.spy(physbo.search.discrete.policy, "write")
+    write_spy = mocker.spy(physbo.search.discrete.Policy, "write")
 
     N = 2
 
@@ -82,8 +82,8 @@ def test_randomsearch(policy, mocker):
 
 def test_bayes_search(policy, mocker):
     simulator = mocker.MagicMock(side_effect=lambda x: x)
-    write_spy = mocker.spy(physbo.search.discrete.policy, "write")
-    get_actions_spy = mocker.spy(physbo.search.discrete.policy, "_get_actions")
+    write_spy = mocker.spy(physbo.search.discrete.Policy, "write")
+    get_actions_spy = mocker.spy(physbo.search.discrete.Policy, "_get_actions")
 
     N = 2
 
@@ -111,7 +111,7 @@ def test_saveload(policy, X):
             file_predictor=os.path.join(tempdir, "predictor.dump"),
         )
 
-        policy2 = physbo.search.discrete.policy(test_X=X)
+        policy2 = physbo.search.discrete.Policy(test_X=X)
         policy2.load(
             file_history=os.path.join(tempdir, "history.npz"),
             file_training=os.path.join(tempdir, "training.npz"),
