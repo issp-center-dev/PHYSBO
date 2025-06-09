@@ -106,7 +106,7 @@ class Policy(discrete.Policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-        
+
         # remove action from candidates if exists
         if len(self.actions) > 0:
             local_index = np.searchsorted(self.actions, action)
@@ -435,6 +435,52 @@ class Policy(discrete.Policy):
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
+
+    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
+        """
+        Calculate permutation importance of models
+
+        Parameters
+        ----------
+        n_perm: int
+            The number of permutations
+        split_features_parallel: bool
+            If true, split features in parallel.
+
+        Returns
+        -------
+        importance_mean: numpy.ndarray
+            importance_mean (num_parameters, num_objectives)
+        importance_std: numpy.ndarray
+            importance_std (num_parameters, num_objectives)
+        """
+
+        if self.predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor_list = []
+            for i in range(self.num_objectives):
+                predictor = gp_predictor(self.config)
+                predictor.fit(self.training_list[i], 0)
+                predictor.prepare(self.training_list[i])
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+
+        importance_mean = [None for _ in range(self.num_objectives)]
+        importance_std = [None for _ in range(self.num_objectives)]
+
+        for i in range(self.num_objectives):
+            importance_mean[i], importance_std[i] = predictor_list[
+                i
+            ].get_permutation_importance(
+                self.training_list[i],
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
+
+        return np.array(importance_mean).T, np.array(importance_std).T
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
         """
