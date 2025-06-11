@@ -9,30 +9,31 @@ import numpy as np
 
 
 def show_search_results(history, N):
-    n = history.total_num_search
-    index = np.argmax(history.fx[0:n])
+    history.show_search_results(N)
+    # n = history.total_num_search
+    # index = np.argmax(history.fx[0:n])
 
-    if N == 1:
-        print(
-            "%04d-th step: f(x) = %f (action=%d)"
-            % (n, history.fx[n - 1], history.chosen_actions[n - 1])
-        )
-        print(
-            "   current best f(x) = %f (best action=%d) \n"
-            % (history.fx[index], history.chosen_actions[index])
-        )
-    else:
-        print(
-            "current best f(x) = %f (best action = %d) "
-            % (history.fx[index], history.chosen_actions[index])
-        )
+    # if N == 1:
+    #     print(
+    #         "%04d-th step: f(x) = %f (action=%d)"
+    #         % (n, history.fx[n - 1], history.chosen_actions[n - 1])
+    #     )
+    #     print(
+    #         "   current best f(x) = %f (best action=%d) \n"
+    #         % (history.fx[index], history.chosen_actions[index])
+    #     )
+    # else:
+    #     print(
+    #         "current best f(x) = %f (best action = %d) "
+    #         % (history.fx[index], history.chosen_actions[index])
+    #     )
 
-        print("list of simulation results")
-        st = history.total_num_search - N
-        en = history.total_num_search
-        for n in range(st, en):
-            print("f(x)=%f (action = %d)" % (history.fx[n], history.chosen_actions[n]))
-        print("\n")
+    #     print("list of simulation results")
+    #     st = history.total_num_search - N
+    #     en = history.total_num_search
+    #     for n in range(st, en):
+    #         print("f(x)=%f (action = %d)" % (history.fx[n], history.chosen_actions[n]))
+    #     print("\n")
 
 
 def show_search_results_mo(history, N, disp_pareto_set=False):
