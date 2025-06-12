@@ -40,6 +40,11 @@ class Policy:
             MPI Communicator
         """
 
+        try:
+            import odatse
+        except ImportError:
+            raise ImportError("ODAT-SE is not installed. Please install ODAT-SE to use the continuous search.")
+
         self.predictor = None
         self.training = Variable()
         self.new_data = None

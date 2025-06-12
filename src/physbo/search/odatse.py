@@ -7,8 +7,6 @@
 
 import copy
 import numpy as np
-import odatse
-import odatse.solver.function
 
 
 def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str = "exchange"):
@@ -132,6 +130,9 @@ def optimize(fn, min_X, max_X, alg_dict=None, mpicomm=None):
     numpy.ndarray
         The optimal point found by the optimizer
     """
+
+    import odatse
+    import odatse.solver.function
 
     dim = len(min_X)
     L_X = max_X - min_X
