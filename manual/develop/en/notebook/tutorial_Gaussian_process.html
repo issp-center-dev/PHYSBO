@@ -35,8 +35,8 @@
 
           
           
-          <a href="../index.html" class="icon icon-home">
-            PHYSBO
+          <a href="../index.html">
+            
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -115,9 +115,11 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
@@ -230,17 +232,17 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 17312.31220145003
-50 -th epoch marginal likelihood 6291.292745798703
-100 -th epoch marginal likelihood 3269.1167759139516
-150 -th epoch marginal likelihood 1568.3930580794922
-200 -th epoch marginal likelihood 664.2847129159145
-250 -th epoch marginal likelihood -249.28468708456558
-300 -th epoch marginal likelihood -869.7604930929888
-350 -th epoch marginal likelihood -1316.6809532065581
-400 -th epoch marginal likelihood -1546.1623851368954
-450 -th epoch marginal likelihood -1660.7298135295766
-500 -th epoch marginal likelihood -1719.5056128528097
+0 -th epoch marginal likelihood 17084.201485122107
+50 -th epoch marginal likelihood 4993.497154178499
+100 -th epoch marginal likelihood 2567.1861355632855
+150 -th epoch marginal likelihood 922.2860779181701
+200 -th epoch marginal likelihood -67.88103254796442
+250 -th epoch marginal likelihood -780.7034378303829
+300 -th epoch marginal likelihood -1240.6604332165407
+350 -th epoch marginal likelihood -1422.7429768529548
+400 -th epoch marginal likelihood -1522.888170654836
+450 -th epoch marginal likelihood -1581.415454892586
+500 -th epoch marginal likelihood -1631.1537271689654
 Done
 
 </pre></div></div>
@@ -261,9 +263,9 @@ Done
 <div class="highlight"><pre>
 
 
-likelihood parameter =   [-2.81666924]
-mean parameter in GP prior:  [-1.05939674]
-covariance parameter in GP prior:  [-0.91578975 -2.45544347]
+likelihood parameter =   [-2.8690407]
+mean parameter in GP prior:  [-1.06112975]
+covariance parameter in GP prior:  [-1.11768488 -2.39796713]
 
 
 </pre></div></div>
@@ -294,8 +296,8 @@ covariance parameter in GP prior:  [-0.91578975 -2.45544347]
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
-       -0.97015759, -1.11076236])
+array([-1.00665556, -1.08533365, -1.02534387, ..., -1.06197988,
+       -1.06526772, -1.05655287], shape=(1798,))
 </pre></div></div>
 </div>
 <p>Results of covariance</p>
@@ -313,8 +315,8 @@ array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
-       0.00073499])
+array([0.00079596, 0.00056145, 0.00081618, ..., 0.00084074, 0.00075712,
+       0.00071634], shape=(1798,))
 </pre></div></div>
 </div>
 <p>Output mean square error of prediction</p>
@@ -332,9 +334,49 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.008107085662147708
+np.float64(0.0037001774310062045)
 </pre></div></div>
 </div>
+<p>A simple metric to investigate how important each feature is in the obtained regression model is permutation importance (PI). In PHYSBO, this can be calculated using the get_permutation_importance function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">pi_mean</span><span class="p">,</span>
+    <span class="n">xerr</span><span class="o">=</span><span class="n">pi_std</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="c1"># print(&quot;save permutation_importance.pdf&quot;)</span>
+<span class="c1"># plt.savefig(&quot;permutation_importance.pdf&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_Gaussian_process_26_0.png" src="../_images/notebook_tutorial_Gaussian_process_26_0.png" />
+</div>
+</div>
+<p>In this graph, the bar chart represents the mean value of the permutation importance (PI), while the line segments indicate the standard deviation. From this, we can interpret that features 1 and 2 appear to be more important compared to feature 0.</p>
+<p>Not only gp.model, but policy also has the get_permutation_importance function. The usage is policy.get_permutation_importance(n_perm). In the case of policy, PI is calculated based on the stored training data, so unlike model, there is no need to pass the data again.</p>
 </section>
 <section id="Prediction-by-trained-models">
 <h2>Prediction by trained models<a class="headerlink" href="#Prediction-by-trained-models" title="Link to this heading"></a></h2>
@@ -342,7 +384,7 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 <p>By storing gp_params and training data (X_train, t_train), prediction by the trained model is possible.</p>
 <p>Prepare the learned parameters (must be done immediately after learning)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Prepare the learned parameters as a 1D array</span>
@@ -353,17 +395,17 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
+array([-2.8690407 , -1.06112975, -1.11768488, -2.39796713])
 </pre></div></div>
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Definition of covariance (Gaussian)</span>
@@ -382,7 +424,7 @@ array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Input learned parameters into the Gaussian process.</span>
@@ -398,7 +440,7 @@ array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
 </div>
 <p>Results of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -406,18 +448,18 @@ array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
-       -0.97015759, -1.11076236])
+array([-1.00665556, -1.08533365, -1.02534387, ..., -1.06197988,
+       -1.06526772, -1.05655287], shape=(1798,))
 </pre></div></div>
 </div>
 <p>Results of covariance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -425,18 +467,18 @@ array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
-       0.00073499])
+array([0.00079596, 0.00056145, 0.00081618, ..., 0.00084074, 0.00075712,
+       0.00071634], shape=(1798,))
 </pre></div></div>
 </div>
 <p>Output mean square error of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -444,16 +486,41 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.008107085662147708
+np.float64(0.0037001774310062045)
 </pre></div></div>
 </div>
-<p>Note: In the example above, we used the same pre-registered X to make predictions. If you want to make predictions for parameters X_new that is not included in X using the trained model, you first obtain the mean (X_{mean}) and standard deviation (X_{std}) of the data X and then normalize X_{new} by (X_{new} - X_{mean}) / X_{std}. Also, the data format for X is ndarray format. Therefore, if X_{new} is a single data, it must be transformed to ndarray format. For example, if X_{new} is a
-real number, you should replace X_new as X_new = np.array(X_new).reshape(1)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Note</span><span class="p">:</span> <span class="n">In</span> <span class="n">the</span> <span class="n">example</span> <span class="n">above</span><span class="p">,</span> <span class="n">we</span> <span class="n">used</span> <span class="n">the</span> <span class="n">same</span> <span class="n">pre</span><span class="o">-</span><span class="n">registered</span> <span class="n">X</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span><span class="o">.</span>
+<span class="n">If</span> <span class="n">you</span> <span class="n">want</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span> <span class="k">for</span> <span class="n">parameters</span> <span class="n">X_new</span> <span class="n">that</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">included</span> <span class="ow">in</span> <span class="n">X</span> <span class="n">using</span> <span class="n">the</span> <span class="n">trained</span> <span class="n">model</span><span class="p">,</span>
+<span class="n">you</span> <span class="n">first</span> <span class="n">obtain</span> <span class="n">the</span> <span class="n">mean</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="ow">and</span> <span class="n">standard</span> <span class="n">deviation</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">})</span> <span class="n">of</span> <span class="n">the</span> <span class="n">data</span> <span class="n">X</span> <span class="ow">and</span>
+<span class="n">then</span> <span class="n">normalize</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="n">by</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="o">-</span> <span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="o">/</span> <span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">}</span><span class="o">.</span>
+<span class="n">Also</span><span class="p">,</span> <span class="n">the</span> <span class="n">data</span> <span class="nb">format</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">is</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
+<span class="n">Therefore</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">single</span> <span class="n">data</span><span class="p">,</span> <span class="n">it</span> <span class="n">must</span> <span class="n">be</span> <span class="n">transformed</span> <span class="n">to</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
+<span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">real</span> <span class="n">number</span><span class="p">,</span> <span class="n">you</span> <span class="n">should</span> <span class="n">replace</span> <span class="n">X_new</span> <span class="k">as</span>
+<span class="n">X_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_new</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-cyan-fg">  Cell </span><span class="ansi-green-fg">In[21], line 1</span>
+<span class="ansi-red-fg">    Note: In the example above, we used the same pre-registered X to make predictions.</span>
+             ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> invalid syntax
+
+</pre></div></div>
+</div>
 </section>
 </section>
 

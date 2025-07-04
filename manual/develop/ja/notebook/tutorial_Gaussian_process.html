@@ -110,9 +110,12 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
@@ -225,17 +228,17 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 16051.69452976001
-50 -th epoch marginal likelihood 4551.39626443153
-100 -th epoch marginal likelihood 2141.377872729846
-150 -th epoch marginal likelihood 595.8361411907399
-200 -th epoch marginal likelihood -373.23922309413774
-250 -th epoch marginal likelihood -929.2472009209496
-300 -th epoch marginal likelihood -1273.8727959019732
-350 -th epoch marginal likelihood -1413.2553901394206
-400 -th epoch marginal likelihood -1477.3889625983586
-450 -th epoch marginal likelihood -1525.339082571432
-500 -th epoch marginal likelihood -1539.787541261617
+0 -th epoch marginal likelihood 13760.853923583709
+50 -th epoch marginal likelihood 6031.859927457567
+100 -th epoch marginal likelihood 3418.8688786331622
+150 -th epoch marginal likelihood 1713.752090407802
+200 -th epoch marginal likelihood 329.20339957667966
+250 -th epoch marginal likelihood -482.55368524374444
+300 -th epoch marginal likelihood -982.9079141420298
+350 -th epoch marginal likelihood -1140.7031705370855
+400 -th epoch marginal likelihood -1367.476428948909
+450 -th epoch marginal likelihood -1508.1346001789386
+500 -th epoch marginal likelihood -1566.2691297825002
 Done
 
 </pre></div></div>
@@ -256,9 +259,9 @@ Done
 <div class="highlight"><pre>
 
 
-likelihood parameter =   [-2.57036368]
-mean parameter in GP prior:  [-1.0654197]
-covariance parameter in GP prior:  [-0.59460765 -2.4232173 ]
+likelihood parameter =   [-3.23999709]
+mean parameter in GP prior:  [-1.0613511]
+covariance parameter in GP prior:  [-1.38290386 -2.25189235]
 
 
 </pre></div></div>
@@ -289,8 +292,8 @@ covariance parameter in GP prior:  [-0.59460765 -2.4232173 ]
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.01865696, -0.98356729, -0.97797072, ..., -0.99978278,
-       -0.98145533, -0.9956255 ])
+array([-1.03065227, -1.0563664 , -1.04071129, ..., -0.97478745,
+       -0.98638275, -1.09557148], shape=(1798,))
 </pre></div></div>
 </div>
 <p>分散の結果</p>
@@ -308,8 +311,8 @@ array([-1.01865696, -0.98356729, -0.97797072, ..., -0.99978278,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
-       0.00053435])
+array([0.00047079, 0.00072114, 0.00054597, ..., 0.00067217, 0.00105654,
+       0.00133083], shape=(1798,))
 </pre></div></div>
 </div>
 <p>予測値の平均二乗誤差の出力</p>
@@ -327,9 +330,55 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.004179032574484333
+np.float64(0.007645971280859177)
 </pre></div></div>
 </div>
+<p>得られた回帰モデルについて、どの特徴量がどのくらい重要なのかを調べるための簡単な指標として permutation importance (PI)があります。 PHYSBOでは <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数で計算できます。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">pi_mean</span><span class="p">,</span>
+    <span class="n">xerr</span><span class="o">=</span><span class="n">pi_std</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+save permutation_importance.pdf
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_Gaussian_process_26_1.png" src="../_images/notebook_tutorial_Gaussian_process_26_1.png" />
+</div>
+</div>
+<p>このグラフにおいて、棒グラフはPIの平均値を、線分は標準偏差を示しており、0番の特徴量と比べて1,2番の特徴量のほうが重要そうだ、ということが読み取れます。</p>
+<p><code class="docutils literal notranslate"><span class="pre">gp.model</span></code> だけではなく, <code class="docutils literal notranslate"><span class="pre">policy</span></code> も <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数を持っています。 使い方は <code class="docutils literal notranslate"><span class="pre">policy.get_permutation_importance(n_perm)</span></code> です。 <code class="docutils literal notranslate"><span class="pre">policy</span></code> では保存してある学習済みデータに対してPIを計算するため、 <code class="docutils literal notranslate"><span class="pre">model</span></code> とは違い、改めて渡す必要はありません。</p>
 </section>
 <section id="訓練済みモデルによる予測">
 <h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="Link to this heading"></a></h2>
@@ -337,7 +386,7 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 <p>gp_paramsおよび学習データ(X_train, t_train)を記憶しておくことで、訓練済みモデルによる予測が可能となります。</p>
 <p>学習されたパラメタを準備(学習の直後に行う必要あり)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習したパラメタを１次元配列として準備</span>
@@ -348,17 +397,17 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-2.57036368, -1.0654197 , -0.59460765, -2.4232173 ])
+array([-3.23999709, -1.0613511 , -1.38290386, -2.25189235])
 </pre></div></div>
 </div>
 <p>学習に利用したモデルと同様のモデルをgpとして準備</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#共分散の定義 (ガウシアン)</span>
@@ -377,7 +426,7 @@ array([-2.57036368, -1.0654197 , -0.59460765, -2.4232173 ])
 </div>
 <p>学習済みのパラメタをモデルに入力し予測を実行</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習済みのパラメタをガウス過程に入力</span>
@@ -393,7 +442,7 @@ array([-2.57036368, -1.0654197 , -0.59460765, -2.4232173 ])
 </div>
 <p>予測の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -401,18 +450,18 @@ array([-2.57036368, -1.0654197 , -0.59460765, -2.4232173 ])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.01865696, -0.98356729, -0.97797072, ..., -0.99978278,
-       -0.98145533, -0.9956255 ])
+array([-1.03065227, -1.0563664 , -1.04071129, ..., -0.97478745,
+       -0.98638275, -1.09557148], shape=(1798,))
 </pre></div></div>
 </div>
 <p>分散の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -420,18 +469,18 @@ array([-1.01865696, -0.98356729, -0.97797072, ..., -0.99978278,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
-       0.00053435])
+array([0.00047079, 0.00072114, 0.00054597, ..., 0.00067217, 0.00105654,
+       0.00133083], shape=(1798,))
 </pre></div></div>
 </div>
 <p>予測値の平均二乗誤差の出力</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -439,12 +488,12 @@ array([0.00046688, 0.0010622 , 0.0006136 , ..., 0.00043492, 0.0005969 ,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.004179032574484333
+np.float64(0.007645971280859177)
 </pre></div></div>
 </div>
 <p>(注) 上の例では事前に登録されているXと同じものを利用して予測を行いました。 学習済みのモデルを利用してXに含まれていないパラメータ X_new に対して予測をしたい場合には、 学習モデルで使用したデータXの平均(X_{mean})と標準偏差(X_{std})を求めていただいたうえで、 X_{new} = (X_{new} - X_{mean}) / X_{std} の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、X_{new}が一つのデータの場合には事前に変換する必要があります。

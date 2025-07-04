@@ -317,6 +317,35 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
+<div class="viewcode-block" id="BasePredictor.get_permutation_importance">
+<a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_permutation_importance">[ドキュメント]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_permutations</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate permutation importance of the predictor.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            input X</span>
+<span class="sd">        num_permutations: int</span>
+<span class="sd">            number of permutations</span>
+<span class="sd">        comm: MPI.Comm</span>
+<span class="sd">            MPI communicator</span>
+<span class="sd">        split_features_parallel: bool</span>
+<span class="sd">            If true, split features in parallel.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            importance_mean</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            importance_std</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">num_permutations</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="BasePredictor.update">
 <a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.update">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
