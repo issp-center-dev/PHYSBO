@@ -9,15 +9,15 @@ import copy
 import numpy as np
 
 
-def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str = "exchange"):
+def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str = "mapper"):
     """
     Return the default algorithm parameter settings for the given algorithm name.
 
     Parameters
     ----------
-    algorithm_name : str, optional (default: "exchange")
+    algorithm_name : str, optional (default: "mapper")
         The name of the algorithm to use.
-        "exchange": Exchange Monte Carlo (default)
+        "exchange": Exchange Monte Carlo
         "pamc": Population Annealing Monte Carlo
         "minsearch": Nelder-Mead method
         "mapper": Grid search

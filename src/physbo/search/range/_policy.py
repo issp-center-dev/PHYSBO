@@ -8,9 +8,7 @@
 import numpy as np
 import copy
 import pickle as pickle
-import itertools
 import time
-import sys
 
 from ._history import History
 from .. import utility
@@ -323,7 +321,7 @@ class Policy:
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha, alg_dict=alg_dict)
+            action = self._get_actions(score, N, K, alpha, num_rand_basis=num_rand_basis, alg_dict=alg_dict)
             time_get_action = time.time() - time_get_action
 
             N_indeed = len(action)
@@ -524,7 +522,7 @@ class Policy:
         X = optimize(fn, self.min_X, self.max_X, alg_dict=alg_dict, mpicomm=self.mpicomm)
         return X
 
-    def _get_actions(self, mode, N, K, alpha, alg_dict=None):
+    def _get_actions(self, mode, N, K, alpha, num_rand_basis=0, alg_dict=None):
         """
         Getting next candidates
 
@@ -551,7 +549,7 @@ class Policy:
         X = np.zeros((N, self.dim))
 
         predictor = copy.deepcopy(self.predictor)
-        predictor.fit(self.training, 0, comm=self.mpicomm)
+        predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
         predictor.config.is_disp = False
         X[0, :] = self._argmax_score(mode, predictor, self.training, Variable(), alg_dict=alg_dict)
 
@@ -635,7 +633,7 @@ class Policy:
 
         if file_training is None:
             N = self.history.total_num_search
-            X = self.test.X[self.history.chosen_actions[0:N], :]
+            X = self.history.action_X[0:N, :]
             t = self.history.fx[0:N]
             self.training = Variable(X=X, t=t)
         else:
@@ -645,15 +643,6 @@ class Policy:
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
-
-        N = self.history.total_num_search
-
-        visited = self.history.chosen_actions[:N]
-        local_index = np.searchsorted(self.actions, visited)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == visited
-        ]
-        self.actions = self._delete_actions(local_index)
 
     def export_predictor(self):
         """

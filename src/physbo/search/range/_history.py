@@ -177,11 +177,12 @@ class History:
             total_num_search=N,
             fx=self.fx[0:N],
             action_X=self.action_X[0:N,:],
-            best_fx=self.best_fx[0:M],
-            best_X=self.best_X[0:M,:],
-            best_fx_all=self.best_fx_all[0:N],
-            best_X_all=self.best_X_all[0:N,:],
+            best_index=self.best_index[0:N],
             terminal_num_run=self.terminal_num_run[0:M],
+            time_total=self.time_total_[0:N],
+            time_update_predictor=self.time_update_predictor_[0:N],
+            time_get_action=self.time_get_action_[0:N],
+            time_run_simulator=self.time_run_simulator_[0:N],
         )
 
     def load(self, filename):
@@ -204,10 +205,7 @@ class History:
         self.fx[0:N] = data["fx"]
         self.action_X[0:N,:] = data["action_X"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
-        self.best_fx[0:M] = data["best_fx"]
-        self.best_X[0:M,:] = data["best_X"]
-        self.best_fx_all[0:N] = data["best_fx_all"]
-        self.best_X_all[0:N,:] = data["best_X_all"]
+        self.best_index[0:N] = data["best_index"]
         self.time_total_[0:N] = data["time_total"]
         self.time_update_predictor_[0:N] = data["time_update_predictor"]
         self.time_get_action_[0:N] = data["time_get_action"]

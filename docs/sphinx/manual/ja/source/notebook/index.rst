@@ -13,5 +13,5 @@
    tutorial_once_mode
    tutorial_multi_probe
    tutorial_multi_objective
-   tutorial_continuous
+   tutorial_range
    

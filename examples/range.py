@@ -17,9 +17,9 @@ alg_name = "exchange"
 def simulator(x):
     return -np.sum(x**2, axis=1)
 
-policy = physbo.search.continuous.Policy(min_X=min_X, max_X=max_X, comm=MPI.COMM_WORLD)
+policy = physbo.search.range.Policy(min_X=min_X, max_X=max_X, comm=MPI.COMM_WORLD)
 policy.set_seed(12345)
 policy.random_search(max_num_probes=10, simulator=simulator)
-policy.bayes_search(max_num_probes=10, num_search_each_probe=1, simulator=simulator, score="EI", alg_name=alg_name)
+policy.bayes_search(max_num_probes=10, num_search_each_probe=1, simulator=simulator, score="EI", alg_name=alg_name, num_rand_basis=100)
 
 print(policy.history.export_sequence_best_fx())
