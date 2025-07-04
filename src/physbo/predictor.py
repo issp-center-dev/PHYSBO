@@ -205,6 +205,32 @@ class BasePredictor(object):
         """
         raise NotImplementedError
 
+    def get_permutation_importance(self, training, num_permutations=10, comm=None, split_features_parallel=False):
+        """
+        Calculate permutation importance of the predictor.
+
+        Parameters
+        ----------
+        training: physbo.variable
+            training dataset. If already trained, the model does not use this.
+        test: physbo.variable
+            input X
+        num_permutations: int
+            number of permutations
+        comm: MPI.Comm
+            MPI communicator
+        split_features_parallel: bool
+            If true, split features in parallel.
+
+        Returns
+        -------
+        numpy.ndarray
+            importance_mean
+        numpy.ndarray
+            importance_std
+        """
+        return self.model.get_permutation_importance(training.X, training.t, num_permutations, comm=comm, split_features_parallel=split_features_parallel)
+
     def update(self, *args, **kwds):
         """
 

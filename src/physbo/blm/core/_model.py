@@ -7,6 +7,7 @@
 
 import numpy as np
 from .. import inf
+from ...misc.permutation_importance import get_permutation_importance
 
 
 class Model:
@@ -230,6 +231,38 @@ class Model:
         else:
             pass
         return fcov
+
+    def get_permutation_importance(self, X, t, n_perm: int, comm=None, split_features_parallel=False):
+        """
+        Calculating permutation importance of model
+
+        Parameters
+        ==========
+        X: numpy.ndarray
+            inputs
+        t: numpy.ndarray
+            target (label)
+        n_perm: int
+            number of permutations
+        comm: MPI.Comm
+            MPI communicator
+
+        Returns
+        =======
+        numpy.ndarray
+            importance_mean
+        numpy.ndarray
+            importance_std
+        """
+
+        return get_permutation_importance(
+            self,
+            X,
+            t,
+            n_perm,
+            comm=comm,
+            split_features_parallel=split_features_parallel,
+        )
 
     def _set_options(self, options):
         """

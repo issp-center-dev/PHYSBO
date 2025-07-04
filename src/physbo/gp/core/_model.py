@@ -13,6 +13,8 @@ from . import learning
 from ._prior import Prior
 from ...misc import SetConfig
 
+from physbo.misc.permutation_importance import get_permutation_importance
+
 class Model:
     def __init__(self, lik, mean, cov, inf="exact"):
         """
@@ -430,6 +432,38 @@ class Model:
             params = comm.bcast(params, root=0)
 
         self.set_params(params)
+
+    def get_permutation_importance(self, X, t, n_perm: int, comm=None, split_features_parallel=False):
+        """
+        Calculating permutation importance of model
+
+        Parameters
+        ----------
+        X: numpy.ndarray
+            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+        t:  numpy.ndarray
+            N dimensional array.
+            The negative energy of each search candidate (value of the objective function to be optimized).
+        n_perm: int
+            Number of permutations
+        comm: MPI.Comm
+            MPI communicator
+
+        Returns
+        =======
+        numpy.ndarray
+            importance_mean
+        numpy.ndarray
+            importance_std
+        """
+        return get_permutation_importance(
+            self,
+            X,
+            t,
+            n_perm,
+            comm=comm,
+            split_features_parallel=split_features_parallel,
+        )
 
 class SFS(Model):
 
