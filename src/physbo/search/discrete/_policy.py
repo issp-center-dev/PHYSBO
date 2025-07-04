@@ -122,6 +122,12 @@ class Policy:
         Returns
         -------
 
+        Note
+        ----
+        In this function, (X, t, Z) is added to the training data set (self.training), but not yet to predictor (self.predictor).
+        self.newdata means such data.
+        To add (X, t, Z) to the predictor, call self._update_predictor() after self.write().
+
         """
         if X is None:
             X = self.test.X[action, :]
@@ -402,6 +408,45 @@ class Policy:
         else:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
+
+    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
+        """
+        Calculating permutation importance of model
+
+        Parameters
+        ==========
+        n_perm: int
+            number of permutations
+        split_features_parallel: bool
+            If true, split features in parallel.
+
+        Returns
+        =======
+        importance_mean: numpy.ndarray
+            importance_mean
+        importance_std: numpy.ndarray
+            importance_std
+        """
+
+        if self.predictor is None:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor = gp_predictor(self.config)
+            predictor.fit(self.training, 0)
+            predictor.prepare(self.training)
+            return predictor.get_permutation_importance(
+                self.training,
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
+        else:
+            self._update_predictor()
+            return self.predictor.get_permutation_importance(
+                self.training,
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+            )
 
     def get_score(
         self,
@@ -785,6 +830,10 @@ class Policy:
         self.new_data = None
 
     def _update_predictor(self):
+        """
+        Updating predictor by using new_data, which means a subset of the trained data (self.training) that is not yet added to the predictor.
+        """
+
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data)
             self.new_data = None
