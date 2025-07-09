@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright (C) 2025- The University of Tokyo
+# Copyright (C) 2020- The University of Tokyo
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,9 +12,9 @@ from ...misc import deprecated_warning
 
 
 def policy(*args,**kwargs):
-    deprecated_warning(old="physbo.search.range.policy", new="physbo.search.range.Policy")
+    deprecated_warning(old="physbo.search.range_multi.policy", new="physbo.search.range_multi.Policy")
     return Policy(*args,**kwargs)
 
 def history(*args,**kwargs):
-    deprecated_warning(old="physbo.search.range.history", new="physbo.search.range.History")
+    deprecated_warning(old="physbo.search.range_multi.history", new="physbo.search.range_multi.History")
     return History(*args,**kwargs)

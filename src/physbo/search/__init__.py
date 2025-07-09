@@ -10,4 +10,5 @@ from . import discrete
 from . import range
 from . import score_multi
 from . import discrete_multi
+from . import range_multi
 from . import odatse

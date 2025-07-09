@@ -229,7 +229,7 @@ class Policy:
         score="TS",
         interval=0,
         num_rand_basis=0,
-        alg_name="exchange",
+        alg_name="mapper",
         alg_dict=None,
     ):
         """
@@ -324,12 +324,6 @@ class Policy:
             action = self._get_actions(score, N, K, alpha, num_rand_basis=num_rand_basis, alg_dict=alg_dict)
             time_get_action = time.time() - time_get_action
 
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                break
-
             if simulator is None:
                 self.config.learning.is_disp = old_disp
                 return action
@@ -342,14 +336,14 @@ class Policy:
             self.write(
                 action,
                 t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=[time_update_predictor] * N_indeed,
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
+                time_total=[time_total] * N,
+                time_update_predictor=[time_update_predictor] * N,
+                time_get_action=[time_get_action] * N,
+                time_run_simulator=[time_run_simulator] * N,
             )
 
             if is_disp:
-                self.history.show_search_results(N_indeed)
+                self.history.show_search_results(N)
         self._update_predictor()
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
@@ -500,7 +494,7 @@ class Policy:
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings: list[Variable], alg_dict=None):
+    def _argmax_score(self, mode, predictor, training, extra_trainings, alg_dict=None):
         K = len(extra_trainings)
         if K == 0:
             predictor.prepare(training)

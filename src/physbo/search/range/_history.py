@@ -57,7 +57,7 @@ class History:
         time_run_simulator=None,
     ):
         """
-        Overwrite fx and chosen_actions by t and action.
+        Overwrite fx and action_X by t and action_X.
 
         Parameters
         ----------
