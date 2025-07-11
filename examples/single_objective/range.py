@@ -6,13 +6,21 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import physbo
-
 from mpi4py import MPI
+
+import physbo
+from physbo.search.optimize.odatse import Optimizer, default_alg_dict
+
+nsamples = 10000
 
 min_X = np.array([-2, -2])
 max_X = np.array([2, 2])
+
 alg_name = "exchange"
+alg_dict = default_alg_dict(min_X, max_X, alg_name)
+optimizer = Optimizer(alg_dict)
+
+# optimizer = Optimizer(nsamples)
 
 def simulator(x):
     return -np.sum(x**2, axis=1)
@@ -20,6 +28,8 @@ def simulator(x):
 policy = physbo.search.range.Policy(min_X=min_X, max_X=max_X, comm=MPI.COMM_WORLD)
 policy.set_seed(12345)
 policy.random_search(max_num_probes=10, simulator=simulator)
-policy.bayes_search(max_num_probes=10, num_search_each_probe=1, simulator=simulator, score="EI", alg_name=alg_name, num_rand_basis=100)
+# policy.bayes_search(max_num_probes=10, num_search_each_probe=1, simulator=simulator, score="EI", optimizer=optimizer, num_rand_basis=0)
+policy.bayes_search(max_num_probes=10, num_search_each_probe=1, simulator=simulator, score="EI", num_rand_basis=0)
 
-print(policy.history.export_sequence_best_fx())
+if MPI.COMM_WORLD.Get_rank() == 0:
+    print(policy.history.export_sequence_best_fx())

@@ -52,8 +52,16 @@ policy.bayes_search(max_num_probes=40, simulator=sim, score=score, interval=0)
 print("Pareto fronts:")
 res = policy.history
 front, front_index = res.export_pareto_front()
-for fr, ifr in zip(front, front_index):
-    print("  action: ", ifr)
-    print("  X: ", test_X[ifr, :])
-    print("  f: ", fr)
-    print()
+with open("pareto_front_discrete.txt", "w") as f:
+    for fr, ifr in zip(front, front_index):
+        action = res.chosen_actions[ifr]
+        X = test_X[action, :]
+        print("  action: ", action)
+        print("  X: ", X)
+        print("  f: ", fr)
+        print()
+        for y in fr:
+            f.write(f"{y} ")
+        for x in X:
+            f.write(f"{x} ")
+        f.write("\n")
