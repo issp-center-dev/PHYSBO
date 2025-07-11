@@ -542,8 +542,8 @@ class Policy:
 
         X = np.zeros((N, self.dim))
 
+        self._update_predictor()
         predictor = copy.deepcopy(self.predictor)
-        predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
         predictor.config.is_disp = False
         X[0, :] = self._argmax_score(mode, predictor, self.training, Variable(), alg_dict=alg_dict)
 

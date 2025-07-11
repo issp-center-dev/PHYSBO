@@ -313,11 +313,10 @@ class Policy(range_single.Policy):
 
     def _get_actions(self, mode, N, K, alpha, num_rand_basis=0, alg_dict=None):
         X = np.zeros((N, self.dim))
-
+        self._update_predictor()
         predictors = [copy.deepcopy(predictor) for predictor in self.predictor_list]
 
         for predictor, training in zip(predictors, self.training_list):
-            predictor.fit(training, num_rand_basis, comm=self.mpicomm)
             predictor.config.is_disp = False
             predictor.prepare(training)
         X[0, :] = self._argmax_score(mode, predictors, self.training_list, Variable(), alg_dict=alg_dict)
