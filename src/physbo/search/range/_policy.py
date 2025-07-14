@@ -13,11 +13,10 @@ import time
 from ._history import History
 from .. import utility
 from .. import score as search_score
+from ..optimize.random import Optimizer as RandomOptimizer
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
-from ..odatse import optimize, default_alg_dict
-
 from ..._variable import Variable
 
 class Policy:
@@ -37,11 +36,6 @@ class Policy:
         comm: MPI.Comm, optional
             MPI Communicator
         """
-
-        try:
-            import odatse
-        except ImportError:
-            raise ImportError("ODAT-SE is not installed. Please install ODAT-SE to use the continuous search.")
 
         self.predictor = None
         self.training = Variable()
@@ -229,8 +223,7 @@ class Policy:
         score="TS",
         interval=0,
         num_rand_basis=0,
-        alg_name="mapper",
-        alg_dict=None,
+        optimizer=None,
     ):
         """
         Performing Bayesian optimization.
@@ -260,17 +253,9 @@ class Policy:
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
         num_rand_basis: int
             The number of basis function. If you choose 0, ordinary Gaussian process run.
-        alg_name: str, optional (default: "exchange")
-            The name of the algorithm for optimizing the acquisition function.
-            "exchange": Exchange Monte Carlo (default)
-            "pamc": Population Annealing Monte Carlo
-            "minsearch": Nelder-Mead method
-            "mapper": Grid search
-            "bayes": Bayesian optimization
-        alg_dict: dict, optional
-            Dictionary of algorithm parameters for odatse.
-            If None, the default algorithm parameter settings are used
-            (see physbo.search.odatse.default_alg_dict()).
+        optimizer: Optimizer object
+            Optimizer object for optimizing the acquisition function.
+            If None, the default optimizer is used.
 
         Returns
         -------
@@ -300,10 +285,10 @@ class Policy:
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
 
-        N = int(num_search_each_probe)
+        if optimizer is None:
+            optimizer = RandomOptimizer(min_X=self.min_X, max_X=self.max_X, nsamples=1000)
 
-        if alg_dict is None:
-            alg_dict = default_alg_dict(self.min_X, self.max_X, alg_name)
+        N = int(num_search_each_probe)
 
         for n in range(max_num_probes):
             time_total = time.time()
@@ -321,7 +306,7 @@ class Policy:
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha, num_rand_basis=num_rand_basis, alg_dict=alg_dict)
+            action = self._get_actions(score, N, K, alpha, optimizer, num_rand_basis=num_rand_basis)
             time_get_action = time.time() - time_get_action
 
             if simulator is None:
@@ -494,12 +479,12 @@ class Policy:
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings, alg_dict=None):
+    def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
         K = len(extra_trainings)
         if K == 0:
             predictor.prepare(training)
             def fn(x):
-                return -self.get_score(mode, xs=x.reshape(1,-1), predictor=predictor, parallel=False)[0]
+                return self.get_score(mode, xs=x.reshape(1,-1), predictor=predictor, parallel=False)[0]
         else: # marginal score
             trains = [copy.deepcopy(training) for _ in range(K)]
             predictors = [copy.deepcopy(predictor) for _ in range(K)]
@@ -511,12 +496,12 @@ class Policy:
                 f = np.zeros(K)
                 for k in range(K):
                     f[k] = self.get_score(mode, xs=x.reshape(1,-1), predictor=predictors[k], training=trains[k], parallel=False)[0]
-                return -np.mean(f)
+                return np.mean(f)
 
-        X = optimize(fn, self.min_X, self.max_X, alg_dict=alg_dict, mpicomm=self.mpicomm)
+        X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
-    def _get_actions(self, mode, N, K, alpha, num_rand_basis=0, alg_dict=None):
+    def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         """
         Getting next candidates
 
@@ -545,7 +530,7 @@ class Policy:
         self._update_predictor()
         predictor = copy.deepcopy(self.predictor)
         predictor.config.is_disp = False
-        X[0, :] = self._argmax_score(mode, predictor, self.training, Variable(), alg_dict=alg_dict)
+        X[0, :] = self._argmax_score(mode, predictor, self.training, Variable(), optimizer=optimizer)
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
@@ -555,7 +540,7 @@ class Policy:
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
                 extra_trainings[k].t = t[k, :]
-            X[n, :] = self._argmax_score(mode, predictor, self.training, extra_trainings, alg_dict=alg_dict)
+            X[n, :] = self._argmax_score(mode, predictor, self.training, extra_trainings, optimizer=optimizer)
 
         return X
 
