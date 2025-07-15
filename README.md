@@ -8,16 +8,16 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 ## Documentation
 
 - Stable (master branch)
-    - [English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/index.html)
-    - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
+  - [English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/index.html)
+  - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/index.html)
 - Latest (develop branch)
-    - [English](https://issp-center-dev.github.io/PHYSBO/manual/develop/en/index.html)
-    - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/index.html)
+  - [English](https://issp-center-dev.github.io/PHYSBO/manual/develop/en/index.html)
+  - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/index.html)
 
 ## Dependencies
 
 - Python >= 3.6
-    - No longer tested with Python 3.6
+  - No longer tested with Python 3.6
 - NumPy < 2.0.0
 - SciPy
 
@@ -38,7 +38,7 @@ python3 -m pip install physbo
 
     1. Download or clone the github repository
 
-        ```
+        ```bash
         git clone https://github.com/issp-center-dev/PHYSBO
         ```
 
@@ -61,13 +61,13 @@ python3 -m pip uninstall physbo
 
 ## Usage
 
-For an introductory tutorial please consult the documentation. ([English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/notebook/tutorial_basic.html) / [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/install.html#id2))  
+For an introductory tutorial please consult the documentation. ([English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/notebook/tutorial_basic.html) / [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/install.html#id2))
 
 ['examples/simple.py'](./examples/simple.py) is a simple example.
 
 ## Data repository
 
-A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery](http://isspns-container.issp.u-tokyo.ac.jp/repo/12).
+A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery](https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery).
 
 ## License
 
@@ -79,7 +79,7 @@ We hope that you cite the following reference when you publish the results using
 
 Bibtex
 
-```
+```bibtex
 @misc{@article{MOTOYAMA2022108405,
 title = {Bayesian optimization package: PHYSBO},
 journal = {Computer Physics Communications},
