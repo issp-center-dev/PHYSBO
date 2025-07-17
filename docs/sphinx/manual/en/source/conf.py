@@ -64,6 +64,11 @@ def setup(app):
 pygments_style = "sphinx"
 nbsphinx_execute = "never"
 
+nbsphinx_prolog = r"""
+This jupyter notebook file is available at `ISSP Data Repository <https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial>`_.
+"""
+
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

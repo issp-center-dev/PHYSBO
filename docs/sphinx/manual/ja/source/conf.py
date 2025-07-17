@@ -80,6 +80,11 @@ pygments_style = "sphinx"
 
 nbsphinx_execute = "never"
 
+nbsphinx_prolog = r"""
+この jupyter notebook ファイルは `ISSP Data Repository <https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial>`_ から入手できます。
+"""
+
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
