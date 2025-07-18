@@ -1,0 +1,68 @@
+name: deploy_tutorials
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - '!gh-pages'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v4.x
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+        fetch-depth: 0
+
+    - name: Deploy Configuration
+      run: |
+          mkdir ~/.ssh
+          ssh-keyscan -t ed25519 isspns-gitlab.issp.u-tokyo.ac.jp >> ~/.ssh/known_hosts
+          echo "${{ secrets.DATAREPO_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 400 ~/.ssh/id_ed25519
+
+    - name: Checkout data repository
+      env:
+        GIT_USER: "PHYSBO Developers"
+        GIT_EMAIL: "physbo-dev@issp.u-tokyo.ac.jp"
+        TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        git clone git@isspns-gitlab.issp.u-tokyo.ac.jp:physbo-dev/physbo-gallery.git
+        cd physbo-gallery
+        git checkout ${{ env.TARGET_NAME }}
+        git config --local user.name "${GIT_USER}"
+        git config --local user.email "${GIT_EMAIL}"
+        cd ..
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install pandoc
+        python3 -m pip install jupytext
+
+    - name: Push
+      run: |
+          cd ${GITHUB_WORKSPACE}
+          rm -rf "physbo-gallery/data/tutorial/"
+          mkdir -p "physbo-gallery/data/tutorial/"
+          python3 main/docs/sphinx/manual/copy_tutorials.py "main/docs/sphinx/manual/en/source/notebook" "physbo-gallery/data/tutorial/"
+          cd physbo-gallery
+          git add data/tutorial/
+          if git commit -m "Update tutorials"
+          then
+            git push origin HEAD
+          else
+            echo "Nothing to deploy"
+          fi
