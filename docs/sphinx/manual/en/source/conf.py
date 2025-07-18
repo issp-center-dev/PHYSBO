@@ -66,7 +66,6 @@ pygments_style = "sphinx"
 nbsphinx_execute = "never"
 
 supported_branches = ["master", "develop"]
-
 if find_spec("git"):
     import git
     repo = git.Repo(search_parent_directories=True)
@@ -76,7 +75,6 @@ if find_spec("git"):
         branch = "develop"
 else:
     branch = "master"
-
 tutorial_url = f"https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/{branch}/data/tutorial"
 
 nbsphinx_prolog = r"""
