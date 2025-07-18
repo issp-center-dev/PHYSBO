@@ -44,7 +44,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -57,7 +57,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}
           rm -rf "physbo-gallery/data/tutorial/"
           mkdir -p "physbo-gallery/data/tutorial/"
-          python3 docs/sphinx/manual/copy_tutorials.py "docs/sphinx/manual/en/source/notebook" "physbo-gallery/data/tutorial/"
+          python3 ${GITHUB_WORKSPACE}/docs/sphinx/manual/copy_tutorials.py "docs/sphinx/manual/en/source/notebook" "physbo-gallery/data/tutorial/"
           cd physbo-gallery
           git add data/tutorial/
           if git commit -m "Update tutorials"
