@@ -96,7 +96,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Gaussian-process">
+  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/develop/data/tutorial">ISSP Data Repository</a> (develop branch).</p>
+<section id="Gaussian-process">
 <h1>Gaussian process<a class="headerlink" href="#Gaussian-process" title="Link to this heading"></a></h1>
 <p>PHYSBO performs Bayesian optimization while running Gaussian process regression.</p>
 <p>Therefore, it is possible to run Gaussian process regression given training data, and to predict test data using the trained model.</p>
@@ -110,9 +111,9 @@
 </ol>
 </li>
 </ul>
-<p>Save the dataset file <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> into the subdirectory <code class="docutils literal notranslate"><span class="pre">data</span></code>, and load dataset from this file as the following:</p>
+<p>Save the dataset file <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> and load dataset from this file as the following:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -122,7 +123,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
@@ -494,33 +495,8 @@ array([0.00079596, 0.00056145, 0.00081618, ..., 0.00084074, 0.00075712,
 np.float64(0.0037001774310062045)
 </pre></div></div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Note</span><span class="p">:</span> <span class="n">In</span> <span class="n">the</span> <span class="n">example</span> <span class="n">above</span><span class="p">,</span> <span class="n">we</span> <span class="n">used</span> <span class="n">the</span> <span class="n">same</span> <span class="n">pre</span><span class="o">-</span><span class="n">registered</span> <span class="n">X</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span><span class="o">.</span>
-<span class="n">If</span> <span class="n">you</span> <span class="n">want</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span> <span class="k">for</span> <span class="n">parameters</span> <span class="n">X_new</span> <span class="n">that</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">included</span> <span class="ow">in</span> <span class="n">X</span> <span class="n">using</span> <span class="n">the</span> <span class="n">trained</span> <span class="n">model</span><span class="p">,</span>
-<span class="n">you</span> <span class="n">first</span> <span class="n">obtain</span> <span class="n">the</span> <span class="n">mean</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="ow">and</span> <span class="n">standard</span> <span class="n">deviation</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">})</span> <span class="n">of</span> <span class="n">the</span> <span class="n">data</span> <span class="n">X</span> <span class="ow">and</span>
-<span class="n">then</span> <span class="n">normalize</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="n">by</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="o">-</span> <span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="o">/</span> <span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">}</span><span class="o">.</span>
-<span class="n">Also</span><span class="p">,</span> <span class="n">the</span> <span class="n">data</span> <span class="nb">format</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">is</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
-<span class="n">Therefore</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">single</span> <span class="n">data</span><span class="p">,</span> <span class="n">it</span> <span class="n">must</span> <span class="n">be</span> <span class="n">transformed</span> <span class="n">to</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
-<span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">real</span> <span class="n">number</span><span class="p">,</span> <span class="n">you</span> <span class="n">should</span> <span class="n">replace</span> <span class="n">X_new</span> <span class="k">as</span>
-<span class="n">X_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_new</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-cyan-fg">  Cell </span><span class="ansi-green-fg">In[21], line 1</span>
-<span class="ansi-red-fg">    Note: In the example above, we used the same pre-registered X to make predictions.</span>
-             ^
-<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> invalid syntax
-
-</pre></div></div>
-</div>
+<p>Note: In the example above, we used the same pre-registered X to make predictions. If you want to make predictions for parameters X_new that is not included in X using the trained model, you first obtain the mean (X_{mean}) and standard deviation (X_{std}) of the data X and then normalize X_{new} by (X_{new} - X_{mean}) / X_{std}. Also, the data format for X is ndarray format. Therefore, if X_{new} is a single data, it must be transformed to ndarray format. For example, if X_{new} is a
+real number, you should replace X_new as X_new = np.array(X_new).reshape(1)</p>
 </section>
 </section>
 
@@ -596,6 +572,69 @@ np.float64(0.0037001774310062045)
       
 
       <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/en/notebook/tutorial_Gaussian_process.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/en/notebook/tutorial_Gaussian_process.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/en/notebook/tutorial_Gaussian_process.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/en/notebook/tutorial_Gaussian_process.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/en/notebook/tutorial_Gaussian_process.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/en/notebook/tutorial_Gaussian_process.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/en/notebook/tutorial_Gaussian_process.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/en/notebook/tutorial_Gaussian_process.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/en/notebook/tutorial_Gaussian_process.html">v1.0.0</a>
+        
+        </dd>
       
 
     </dl>
