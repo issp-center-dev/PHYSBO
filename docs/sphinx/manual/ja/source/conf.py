@@ -16,6 +16,7 @@
 
 import sys
 import os
+from importlib.util import find_spec
 
 sys.path.insert(0, os.path.abspath("../../../../../physbo"))
 
@@ -80,10 +81,21 @@ pygments_style = "sphinx"
 
 nbsphinx_execute = "never"
 
-nbsphinx_prolog = r"""
-この jupyter notebook ファイルは `ISSP Data Repository <https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial>`_ から入手できます。
-"""
+supported_branches = ["master", "develop"]
+if find_spec("git"):
+    import git
+    repo = git.Repo(search_parent_directories=True)
+    branch = repo.active_branch.name
+    if branch not in supported_branches:
+        # feature branch is not uploaded to the gallery
+        branch = "develop"
+else:
+    branch = "master"
+tutorial_url = f"https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/{branch}/data/tutorial"
 
+nbsphinx_prolog = r"""
+この jupyter notebook ファイルは `ISSP Data Repository <{tutorial_url}>`_ ({branch} branch) から入手できます。
+""".format(tutorial_url=tutorial_url, branch=branch)
 
 # -- Options for HTML output -------------------------------------------------
 

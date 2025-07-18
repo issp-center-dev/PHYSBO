@@ -22,6 +22,7 @@
 
 import sys
 import os
+from importlib.util import find_spec
 
 sys.path.insert(0, os.path.abspath("../../../../../physbo"))
 
@@ -64,9 +65,23 @@ def setup(app):
 pygments_style = "sphinx"
 nbsphinx_execute = "never"
 
+supported_branches = ["master", "develop"]
+
+if find_spec("git"):
+    import git
+    repo = git.Repo(search_parent_directories=True)
+    branch = repo.active_branch.name
+    if branch not in supported_branches:
+        # feature branch is not uploaded to the gallery
+        branch = "develop"
+else:
+    branch = "master"
+
+tutorial_url = f"https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/{branch}/data/tutorial"
+
 nbsphinx_prolog = r"""
-This jupyter notebook file is available at `ISSP Data Repository <https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial>`_.
-"""
+This jupyter notebook file is available at `ISSP Data Repository <{tutorial_url}>`_ ({branch} branch).
+""".format(tutorial_url=tutorial_url, branch=branch)
 
 
 # -- General configuration ------------------------------------------------
