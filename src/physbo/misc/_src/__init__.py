@@ -9,7 +9,7 @@ import os
 from .. import use_cython
 
 if use_cython():
-    from .cythononized import ( cholupdate64 as cholupdate,
+    from .cythonized import ( cholupdate64 as cholupdate,
                                diagAB_64 as diagAB,
                                logsumexp64 as logsumexp64,
                                traceAB2_64 as traceAB2,
