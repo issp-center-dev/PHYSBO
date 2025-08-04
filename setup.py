@@ -32,8 +32,6 @@ debug_write(f"{cython_installed=}")
 debug_write(f"{physbo_disable_cython=}")
 debug_write(f"{USE_CYTHON=}")
 
-working_dir = os.path.dirname(os.path.abspath(__file__))
-
 if USE_CYTHON:
     from Cython.Build import cythonize
 
@@ -46,13 +44,13 @@ if USE_CYTHON:
         [
             Extension(
                 name="physbo.misc._src.cythonized",
-                sources=[os.path.join(working_dir, "src/physbo/misc/_src/cythonized.pyx")],
+                sources=["src/physbo/misc/_src/cythonized.pyx"],
                 include_dirs=[numpy.get_include()],
                 extra_compile_args=compile_flags,
             ),
             Extension(
                 name="physbo.gp.cov._src.enhance_gauss",
-                sources=[os.path.join(working_dir, "src/physbo/gp/cov/_src/enhance_gauss.pyx")],
+                sources=["src/physbo/gp/cov/_src/enhance_gauss.pyx"],
                 include_dirs=[numpy.get_include()],
                 extra_compile_args=compile_flags,
             ),
