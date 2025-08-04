@@ -43,17 +43,23 @@ if USE_CYTHON:
     ext_mods = cythonize(
         [
             Extension(
-                name="physbo.misc._src.cythonized",
-                sources=["src/physbo/misc/_src/cythonized.pyx"],
-                include_dirs=[numpy.get_include()],
-                extra_compile_args=compile_flags,
-            ),
-            Extension(
                 name="physbo.gp.cov._src.enhance_gauss",
                 sources=["src/physbo/gp/cov/_src/enhance_gauss.pyx"],
                 include_dirs=[numpy.get_include()],
                 extra_compile_args=compile_flags,
             ),
+            Extension(
+                name="physbo.misc._src.cythonized",
+                sources=["src/physbo/misc/_src/cythonized.pyx"],
+                include_dirs=[numpy.get_include()],
+                extra_compile_args=compile_flags,
+            ),
+            # Extension(
+            #     name="physbo.gp.cov._src.enhance_gauss",
+            #     sources=["src/physbo/gp/cov/_src/enhance_gauss.pyx"],
+            #     include_dirs=[numpy.get_include()],
+            #     extra_compile_args=compile_flags,
+            # ),
         ]
     )
 else:
