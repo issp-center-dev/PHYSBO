@@ -43,8 +43,8 @@ if USE_CYTHON:
     ext_mods = cythonize(
         [
             Extension(
-                name="physbo.misc._src._cython",
-                sources=["src/physbo/misc/_src/_cython.pyx"],
+                name="physbo.misc._src.cython_",
+                sources=["src/physbo/misc/_src/cython_.pyx"],
                 include_dirs=[numpy.get_include()],
                 extra_compile_args=compile_flags,
             ),
