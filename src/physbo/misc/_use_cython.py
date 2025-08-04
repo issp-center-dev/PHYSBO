@@ -5,13 +5,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ....misc import use_cython
+import os
 
-if use_cython():
-    print("using cython")
-    from .enhance_gauss import grad_width64, grad_width32
-else:
-    print("using pure")
-    from .pure import grad_width64, grad_width32
+from .._build_info import USING_CYTHON
 
-__all__ = ["grad_width64", "grad_width32"]
+
+def use_cython():
+    use_cython = os.environ.get("PHYSBO_USE_CYTHON", "auto")
+    if use_cython == "0":
+        return False
+    elif use_cython == "1":
+        return True
+    else: # use_cython == "auto"
+        return USING_CYTHON
