@@ -33,6 +33,8 @@ def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str =
         The default algorithm parameter settings for the given algorithm name.
     """
 
+    min_X = np.array(min_X)
+    max_X = np.array(max_X)
     dim = len(min_X)
     L_X = np.array(max_X) - np.array(min_X)
     d_X = L_X / 100
