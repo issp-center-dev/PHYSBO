@@ -314,7 +314,7 @@ class Policy(range_single.Policy):
         for predictor, training in zip(predictors, self.training_list):
             predictor.config.is_disp = False
             predictor.prepare(training)
-        X[0, :] = self._argmax_score(mode, predictors, self.training_list, Variable(), optimizer=optimizer)
+        X[0, :] = self._argmax_score(mode, predictors, self.training_list, [], optimizer=optimizer)
 
         for n in range(1, N):
             extra_trainings_list_of_K = []

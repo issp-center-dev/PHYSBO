@@ -530,7 +530,7 @@ class Policy:
         self._update_predictor()
         predictor = copy.deepcopy(self.predictor)
         predictor.config.is_disp = False
-        X[0, :] = self._argmax_score(mode, predictor, self.training, Variable(), optimizer=optimizer)
+        X[0, :] = self._argmax_score(mode, predictor, self.training, [], optimizer=optimizer)
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])

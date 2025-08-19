@@ -49,7 +49,7 @@ class Optimizer:
                 result_fx = fx
                 result_x = x
         if mpisize > 1:
-            result_fx_all = np.zeros(self.nsamples)
+            result_fx_all = np.zeros(mpisize)
             mpicomm.Allgather(np.array([result_fx]), result_fx_all)
             best_rank = np.argmax(result_fx_all)
             mpicomm.Bcast(result_x, root=best_rank)
