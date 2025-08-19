@@ -15,14 +15,15 @@ MAX_SEARCH = int(30000)
 
 
 class History(object):
-    def __init__(self, num_objectives):
+    def __init__(self, num_objectives, dim):
+        self.dim = dim
         self.num_objectives = num_objectives
         self.pareto = pareto.Pareto(num_objectives=self.num_objectives)
 
         self.num_runs = int(0)
         self.total_num_search = int(0)
         self.fx = np.zeros((MAX_SEARCH, self.num_objectives), dtype=float)
-        self.chosen_actions = np.zeros(MAX_SEARCH, dtype=int)
+        self.action_X = np.zeros((MAX_SEARCH, self.dim), dtype=float)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
         self._time_total = np.zeros(MAX_SEARCH, dtype=float)
@@ -49,14 +50,37 @@ class History(object):
     def write(
         self,
         t,
-        action,
+        action_X,
         time_total=None,
         time_update_predictor=None,
         time_get_action=None,
         time_run_simulator=None,
     ):
+        """
+        Overwrite fx and action_X by t and action_X.
+
+        Parameters
+        ----------
+        t: numpy.ndarray
+            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+        action_X: numpy.ndarray
+            N x d dimensional array. The input of each search candidate.
+        time_total: numpy.ndarray
+            N dimenstional array. The total elapsed time in each step.
+            If None (default), filled by 0.0.
+        time_update_predictor: numpy.ndarray
+            N dimenstional array. The elapsed time for updating predictor (e.g., learning hyperparemters) in each step.
+            If None (default), filled by 0.0.
+        time_get_action: numpy.ndarray
+            N dimenstional array. The elapsed time for getting next action in each step.
+            If None (default), filled by 0.0.
+        time_run_simulator: numpy.ndarray
+            N dimenstional array. The elapsed time for running the simulator in each step.
+            If None (default), filled by 0.0.
+        Returns
+        -------
+        """
         t = np.array(t)
-        action = np.array(action)
 
         if t.ndim == 1:
             N = 1
@@ -71,8 +95,8 @@ class History(object):
         en = st + N
 
         self.terminal_num_run[self.num_runs] = en
-        self.fx[st:en] = t
-        self.chosen_actions[st:en] = action
+        self.fx[st:en, :] = t
+        self.action_X[st:en, :] = action_X
         self.num_runs += 1
         self.total_num_search += N
 
@@ -105,8 +129,8 @@ class History(object):
         obj = {
             "num_runs": M,
             "total_num_search": N,
-            "fx": self.fx[0:N],
-            "chosen_actions": self.chosen_actions[0:N],
+            "fx": self.fx[0:N, :],
+            "action_X": self.action_X[0:N, :],
             "terminal_num_run": self.terminal_num_run[0:M],
             "pareto": self.pareto,
         }
@@ -122,8 +146,8 @@ class History(object):
         N = int(data["total_num_search"])
         self.num_runs = M
         self.total_num_search = N
-        self.fx[0:N] = data["fx"]
-        self.chosen_actions[0:N] = data["chosen_actions"]
+        self.fx[0:N, :] = data["fx"]
+        self.action_X[0:N, :] = data["action_X"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
         self.pareto = data["pareto"]
 
@@ -148,8 +172,8 @@ class History(object):
 
         if N == 1:
             print(
-                "%04d-th step: f(x) = %s (action = %d)"
-                % (n, str(self.fx[n - 1]), self.chosen_actions[n - 1])
+                "%04d-th step: f(x) = %s (X = %s)"
+                % (n, str(self.fx[n - 1]), str(self.action_X[n - 1]))
             )
 
             msg_pareto_set_updated(indent=True)
@@ -162,7 +186,7 @@ class History(object):
             en = self.total_num_search
             for n in range(st, en):
                 print(
-                    "f(x) = %s (action = %d)"
-                    % (str(self.fx[n]), self.chosen_actions[n])
+                    "f(x) = %s (X = %s)"
+                    % (str(self.fx[n]), str(self.action_X[n]))
                 )
             print("\n")
