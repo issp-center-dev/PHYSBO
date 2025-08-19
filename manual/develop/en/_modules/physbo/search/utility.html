@@ -90,74 +90,14 @@
 <div class="viewcode-block" id="show_search_results">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-    <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">])</span>
-
-    <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;</span><span class="si">%04d</span><span class="s2">-th step: f(x) = </span><span class="si">%f</span><span class="s2"> (action=</span><span class="si">%d</span><span class="s2">)&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
-        <span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;   current best f(x) = </span><span class="si">%f</span><span class="s2"> (best action=</span><span class="si">%d</span><span class="s2">) </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-        <span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;current best f(x) = </span><span class="si">%f</span><span class="s2"> (best action = </span><span class="si">%d</span><span class="s2">) &quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-        <span class="p">)</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;list of simulation results&quot;</span><span class="p">)</span>
-        <span class="n">st</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">-</span> <span class="n">N</span>
-        <span class="n">en</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;f(x)=</span><span class="si">%f</span><span class="s2"> (action = </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span><span class="p">]))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">N</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="show_search_results_mo">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results_mo">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results_mo</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-    <span class="n">pset</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">export_front</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">msg_pareto_set_updated</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;   &quot;</span> <span class="k">if</span> <span class="n">indent</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">history</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">front_updated</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;Pareto set updated.&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">disp_pareto_set</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span>
-                    <span class="n">prefix</span>
-                    <span class="o">+</span> <span class="s2">&quot;current Pareto set = </span><span class="si">%s</span><span class="s2"> (steps = </span><span class="si">%s</span><span class="s2">) </span><span class="se">\n</span><span class="s2">&quot;</span>
-                    <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pset</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span>
-                    <span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;the number of Pareto frontiers = </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
-                <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;</span><span class="si">%04d</span><span class="s2">-th step: f(x) = </span><span class="si">%s</span><span class="s2"> (action = </span><span class="si">%d</span><span class="s2">)&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
-        <span class="p">)</span>
-
-        <span class="n">msg_pareto_set_updated</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg_pareto_set_updated</span><span class="p">()</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;list of simulation results&quot;</span><span class="p">)</span>
-        <span class="n">st</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">-</span> <span class="n">N</span>
-        <span class="n">en</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;f(x) = </span><span class="si">%s</span><span class="s2"> (action = </span><span class="si">%d</span><span class="s2">)&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">]),</span> <span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-            <span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">)</span></div>
 
 
 

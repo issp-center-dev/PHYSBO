@@ -105,6 +105,21 @@
 <span class="sig-prename descclassname"><span class="pre">physbo.search.score_multi.</span></span><span class="sig-name descname"><span class="pre">EHVI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fstd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pareto</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/score_multi.html#EHVI"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.score_multi.EHVI" title="Link to this definition"></a></dt>
 <dd><p>Calculate Expected Hyper-Volume Improvement (EHVI).</p>
 <p>Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) -- mean of the predictive distribution</p></li>
+<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) -- standard deviation of the predictive distribution</p></li>
+<li><p><strong>pareto</strong> (<em>Pareto object</em>) -- Pareto object</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>score</strong> -- score of the candidate</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -112,12 +127,48 @@
 <span class="sig-prename descclassname"><span class="pre">physbo.search.score_multi.</span></span><span class="sig-name descname"><span class="pre">HVPI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fstd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pareto</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/score_multi.html#HVPI"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.score_multi.HVPI" title="Link to this definition"></a></dt>
 <dd><p>Calculate Hypervolume-based Probability of Improvement (HVPI).</p>
 <p>Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) -- mean of the predictive distribution</p></li>
+<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) -- standard deviation of the predictive distribution</p></li>
+<li><p><strong>pareto</strong> (<em>Pareto object</em>) -- Pareto object</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>score</strong> -- score of the candidate</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.score_multi.TS">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.score_multi.</span></span><span class="sig-name descname"><span class="pre">TS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictor_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduced_candidate_num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/score_multi.html#TS"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.score_multi.TS" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Thompson Sampling for multi-objective optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictor_list</strong> (<em>list</em><em> of </em><em>Predictor</em>) -- List of predictors for each objective.</p></li>
+<li><p><strong>training_list</strong> (<em>list</em><em> of </em><em>Variable</em>) -- List of training data for each objective.</p></li>
+<li><p><strong>test</strong> (<em>Variable</em>) -- Test points.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em><em>, </em><em>optional</em>) -- Scaling parameter for sampling from posterior distribution.
+Default is 1.</p></li>
+<li><p><strong>reduced_candidate_num</strong> (<em>int</em><em>, </em><em>optional</em>) -- Number of candidates to randomly select for Pareto front calculation.
+If None or less than number of test points, all points are used.
+Default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>score_res</strong> -- Score array with 1 at the chosen index and 0 elsewhere.</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.score_multi.score">

@@ -128,6 +128,20 @@
 <span class="sd">    Calculate Hypervolume-based Probability of Improvement (HVPI).</span>
 
 <span class="sd">    Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmean: numpy.ndarray</span>
+<span class="sd">        mean of the predictive distribution</span>
+<span class="sd">    fstd: numpy.ndarray</span>
+<span class="sd">        standard deviation of the predictive distribution</span>
+<span class="sd">    pareto: Pareto object</span>
+<span class="sd">        Pareto object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score: numpy.ndarray</span>
+<span class="sd">        score of the candidate</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">N</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -181,6 +195,20 @@
 <span class="sd">    Calculate Expected Hyper-Volume Improvement (EHVI).</span>
 
 <span class="sd">    Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmean: numpy.ndarray</span>
+<span class="sd">        mean of the predictive distribution</span>
+<span class="sd">    fstd: numpy.ndarray</span>
+<span class="sd">        standard deviation of the predictive distribution</span>
+<span class="sd">    pareto: Pareto object</span>
+<span class="sd">        Pareto object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score: numpy.ndarray</span>
+<span class="sd">        score of the candidate</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">N</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -248,6 +276,30 @@
 <div class="viewcode-block" id="TS">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.TS">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Thompson Sampling for multi-objective optimization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictor_list : list of Predictor</span>
+<span class="sd">        List of predictors for each objective.</span>
+<span class="sd">    training_list : list of Variable</span>
+<span class="sd">        List of training data for each objective.</span>
+<span class="sd">    test : Variable</span>
+<span class="sd">        Test points.</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        Scaling parameter for sampling from posterior distribution.</span>
+<span class="sd">        Default is 1.</span>
+<span class="sd">    reduced_candidate_num : int, optional</span>
+<span class="sd">        Number of candidates to randomly select for Pareto front calculation.</span>
+<span class="sd">        If None or less than number of test points, all points are used.</span>
+<span class="sd">        Default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score_res: numpy.ndarray</span>
+<span class="sd">        Score array with 1 at the chosen index and 0 elsewhere.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">score</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
