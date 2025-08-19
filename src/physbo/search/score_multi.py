@@ -43,6 +43,20 @@ def HVPI(fmean, fstd, pareto):
     Calculate Hypervolume-based Probability of Improvement (HVPI).
 
     Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization
+
+    Parameters
+    ----------
+    fmean: numpy.ndarray
+        mean of the predictive distribution
+    fstd: numpy.ndarray
+        standard deviation of the predictive distribution
+    pareto: Pareto object
+        Pareto object
+
+    Returns
+    -------
+    score: numpy.ndarray
+        score of the candidate
     """
 
     N = fmean.shape[0]
@@ -93,6 +107,20 @@ def EHVI(fmean, fstd, pareto):
     Calculate Expected Hyper-Volume Improvement (EHVI).
 
     Reference: (Couckuyt et al., 2014) Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization
+
+    Parameters
+    ----------
+    fmean: numpy.ndarray
+        mean of the predictive distribution
+    fstd: numpy.ndarray
+        standard deviation of the predictive distribution
+    pareto: Pareto object
+        Pareto object
+
+    Returns
+    -------
+    score: numpy.ndarray
+        score of the candidate
     """
 
     N = fmean.shape[0]
@@ -157,6 +185,30 @@ def EHVI(fmean, fstd, pareto):
 
 
 def TS(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None):
+    """Thompson Sampling for multi-objective optimization.
+
+    Parameters
+    ----------
+    predictor_list : list of Predictor
+        List of predictors for each objective.
+    training_list : list of Variable
+        List of training data for each objective.
+    test : Variable
+        Test points.
+    alpha : float, optional
+        Scaling parameter for sampling from posterior distribution.
+        Default is 1.
+    reduced_candidate_num : int, optional
+        Number of candidates to randomly select for Pareto front calculation.
+        If None or less than number of test points, all points are used.
+        Default is None.
+
+    Returns
+    -------
+    score_res: numpy.ndarray
+        Score array with 1 at the chosen index and 0 elsewhere.
+    """
+
     score = [
         predictor.get_post_samples(training, test, alpha=alpha)
         for predictor, training in zip(predictor_list, training_list)

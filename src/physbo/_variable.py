@@ -25,6 +25,12 @@ class Variable(object):
         self.Z = Z
         self.t = t
 
+    def __len__(self):
+        if self.X is not None:
+            return self.X.shape[0]
+        else:
+            return 0
+
     def get_subset(self, index):
         """
         Getting subset of variables.
