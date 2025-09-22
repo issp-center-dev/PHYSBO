@@ -5,11 +5,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
 from .. import use_cython
 
 if use_cython():
-    from .cythonized import ( cholupdate64 as cholupdate,
+    from physbo_core_cython.misc._src import ( cholupdate64 as cholupdate,
                                diagAB_64 as diagAB,
                                logsumexp64 as logsumexp64,
                                traceAB2_64 as traceAB2,

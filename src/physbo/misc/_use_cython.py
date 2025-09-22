@@ -6,15 +6,25 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
+from importlib.util import find_spec
 
-from .._build_info import USING_CYTHON
+if find_spec("physbo_core_cython"):
+    CYTHON_AVAILABLE = True
+else:
+    CYTHON_AVAILABLE = False
 
+PHYSBO_USE_CYTHON = os.environ.get("PHYSBO_USE_CYTHON", "auto")
+if PHYSBO_USE_CYTHON == "0":
+    USING_CYTHON = False
+elif PHYSBO_USE_CYTHON == "1":
+    if not CYTHON_AVAILABLE:
+        raise ImportError("PHYSBO_USE_CYTHON is set to 1, but physbo_core_cython is not installed")
+    USING_CYTHON = True
+else: # PHYSBO_USE_CYTHON == "auto"
+    USING_CYTHON = CYTHON_AVAILABLE
+
+if USING_CYTHON:
+    print("Cythonized version of physbo is used")
 
 def use_cython():
-    use_cython = os.environ.get("PHYSBO_USE_CYTHON", "auto")
-    if use_cython == "0":
-        return False
-    elif use_cython == "1":
-        return True
-    else: # use_cython == "auto"
-        return USING_CYTHON
+    return USING_CYTHON

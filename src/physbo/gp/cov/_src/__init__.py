@@ -8,10 +8,8 @@
 from ....misc import use_cython
 
 if use_cython():
-    print("using cython")
-    from .enhance_gauss import grad_width64, grad_width32
+    from physbo_core_cython.gp.cov._src.enhance_gauss import grad_width64, grad_width32
 else:
-    print("using pure")
     from .pure import grad_width64, grad_width32
 
 __all__ = ["grad_width64", "grad_width32"]
