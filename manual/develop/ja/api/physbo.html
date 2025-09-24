@@ -51,8 +51,20 @@
 <li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">チュートリアル</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#physbo.base_predictor"><code class="docutils literal notranslate"><span class="pre">base_predictor()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#physbo.variable"><code class="docutils literal notranslate"><span class="pre">variable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physbo.Variable"><code class="docutils literal notranslate"><span class="pre">Variable</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.add"><code class="docutils literal notranslate"><span class="pre">Variable.add()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.add_X"><code class="docutils literal notranslate"><span class="pre">Variable.add_X()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.add_Z"><code class="docutils literal notranslate"><span class="pre">Variable.add_Z()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.add_t"><code class="docutils literal notranslate"><span class="pre">Variable.add_t()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.delete"><code class="docutils literal notranslate"><span class="pre">Variable.delete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.delete_X"><code class="docutils literal notranslate"><span class="pre">Variable.delete_X()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.delete_Z"><code class="docutils literal notranslate"><span class="pre">Variable.delete_Z()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.delete_t"><code class="docutils literal notranslate"><span class="pre">Variable.delete_t()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.get_subset"><code class="docutils literal notranslate"><span class="pre">Variable.get_subset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.load"><code class="docutils literal notranslate"><span class="pre">Variable.load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physbo.Variable.save"><code class="docutils literal notranslate"><span class="pre">Variable.save()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="physbo.blm.html">physbo.blm package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.html">physbo.gp package</a></li>
@@ -97,23 +109,191 @@
              
   <section id="module-physbo">
 <span id="physbo-package"></span><h1>physbo package<a class="headerlink" href="#module-physbo" title="Link to this heading"></a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="physbo.base_predictor">
-<span class="sig-prename descclassname"><span class="pre">physbo.</span></span><span class="sig-name descname"><span class="pre">base_predictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo.html#base_predictor"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.base_predictor" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="physbo.Variable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">physbo.</span></span><span class="sig-name descname"><span class="pre">Variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable" title="Link to this definition"></a></dt>
+<dd><p>ベースクラス: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Variable class</p>
+<p>Variable class represents a set of pairs of input (X) and output (t).</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>Z</strong> (<em>numpy array</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add" title="Link to this definition"></a></dt>
+<dd><p>Adding variables of X, t, Z.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>Z</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="physbo.variable">
-<span class="sig-prename descclassname"><span class="pre">physbo.</span></span><span class="sig-name descname"><span class="pre">variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo.html#variable"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.variable" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.add_X">
+<span class="sig-name descname"><span class="pre">add_X</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_X"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_X" title="Link to this definition"></a></dt>
+<dd><p>Adding variable X. If self.X is None, self.X is set as X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.add_Z">
+<span class="sig-name descname"><span class="pre">add_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_Z"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_Z" title="Link to this definition"></a></dt>
+<dd><p>Adding variable Z. If self.Z is None, self.Z is set as Z.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Z</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.add_t">
+<span class="sig-name descname"><span class="pre">add_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_t"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_t" title="Link to this definition"></a></dt>
+<dd><p>Adding variable t. If self.t is None, self.t is set as t.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete" title="Link to this definition"></a></dt>
+<dd><p>Deleting variables of X, t, Z whose indexes are specified by num_row.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.delete_X">
+<span class="sig-name descname"><span class="pre">delete_X</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_X"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_X" title="Link to this definition"></a></dt>
+<dd><p>Deleting variables of X whose indexes are specified by num_row.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.delete_Z">
+<span class="sig-name descname"><span class="pre">delete_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_Z"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_Z" title="Link to this definition"></a></dt>
+<dd><p>Deleting variables of Z whose indexes are specified by num_row.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.delete_t">
+<span class="sig-name descname"><span class="pre">delete_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_t"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_t" title="Link to this definition"></a></dt>
+<dd><p>Deleting variables of t whose indexes are specified by num_row.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.get_subset">
+<span class="sig-name descname"><span class="pre">get_subset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.get_subset"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.get_subset" title="Link to this definition"></a></dt>
+<dd><p>Getting subset of variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>int</em><em> or </em><em>array</em><em> of </em><em>int</em>) -- Index of selected action.</p>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>variable</strong></p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>physbo.variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.load"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.load" title="Link to this definition"></a></dt>
+<dd><p>Loading variables X, t, Z from the file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<em>str</em>) -- A file name for loading variables X, t, Z using numpy.load.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.Variable.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.save"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.save" title="Link to this definition"></a></dt>
+<dd><p>Saving variables X, t, Z to the file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<em>str</em>) -- A file name for saving variables X, t, Z using numpy.savez_compressed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
 
 <section id="subpackages">
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="physbo.blm.html">physbo.blm package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="physbo.blm.html#physbo.blm.model"><code class="docutils literal notranslate"><span class="pre">model()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="physbo.blm.html#physbo.blm.predictor"><code class="docutils literal notranslate"><span class="pre">predictor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.prior"><code class="docutils literal notranslate"><span class="pre">Model.prior</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.lik"><code class="docutils literal notranslate"><span class="pre">Model.lik</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.nbasis"><code class="docutils literal notranslate"><span class="pre">Model.nbasis</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.stats"><code class="docutils literal notranslate"><span class="pre">Model.stats</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.method"><code class="docutils literal notranslate"><span class="pre">Model.method</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.get_permutation_importance"><code class="docutils literal notranslate"><span class="pre">Model.get_permutation_importance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.get_post_fcov"><code class="docutils literal notranslate"><span class="pre">Model.get_post_fcov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.get_post_fmean"><code class="docutils literal notranslate"><span class="pre">Model.get_post_fmean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.get_post_params_mean"><code class="docutils literal notranslate"><span class="pre">Model.get_post_params_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.post_sampling"><code class="docutils literal notranslate"><span class="pre">Model.post_sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.predict_sampling"><code class="docutils literal notranslate"><span class="pre">Model.predict_sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.prepare"><code class="docutils literal notranslate"><span class="pre">Model.prepare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.sampling"><code class="docutils literal notranslate"><span class="pre">Model.sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Model.update_stats"><code class="docutils literal notranslate"><span class="pre">Model.update_stats()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor"><code class="docutils literal notranslate"><span class="pre">Predictor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.blm"><code class="docutils literal notranslate"><span class="pre">Predictor.blm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.config"><code class="docutils literal notranslate"><span class="pre">Predictor.config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.delete_stats"><code class="docutils literal notranslate"><span class="pre">Predictor.delete_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.fit"><code class="docutils literal notranslate"><span class="pre">Predictor.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_basis"><code class="docutils literal notranslate"><span class="pre">Predictor.get_basis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_post_fcov"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_fcov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_post_fmean"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_fmean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_post_params"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_post_samples"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.get_predict_samples"><code class="docutils literal notranslate"><span class="pre">Predictor.get_predict_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.prepare"><code class="docutils literal notranslate"><span class="pre">Predictor.prepare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.blm.html#physbo.blm.Predictor.update"><code class="docutils literal notranslate"><span class="pre">Predictor.update()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="physbo.blm.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="physbo.blm.basis.html">physbo.blm.basis package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="physbo.blm.basis.html#physbo.blm.basis.Fourier"><code class="docutils literal notranslate"><span class="pre">Fourier</span></code></a></li>
@@ -128,9 +308,9 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.blm.lik.html">physbo.blm.lik package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.cov"><code class="docutils literal notranslate"><span class="pre">cov()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.gauss"><code class="docutils literal notranslate"><span class="pre">gauss()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.linear"><code class="docutils literal notranslate"><span class="pre">linear()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.Cov"><code class="docutils literal notranslate"><span class="pre">Cov</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.Gauss"><code class="docutils literal notranslate"><span class="pre">Gauss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.blm.lik.html#physbo.blm.lik.Linear"><code class="docutils literal notranslate"><span class="pre">Linear</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.blm.prior.html">physbo.blm.prior package</a><ul>
@@ -142,17 +322,70 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physbo.gp.html">physbo.gp package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.model"><code class="docutils literal notranslate"><span class="pre">model()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.predictor"><code class="docutils literal notranslate"><span class="pre">predictor()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.prior"><code class="docutils literal notranslate"><span class="pre">prior()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.sfs"><code class="docutils literal notranslate"><span class="pre">sfs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.cat_params"><code class="docutils literal notranslate"><span class="pre">Model.cat_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.decomp_params"><code class="docutils literal notranslate"><span class="pre">Model.decomp_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.eval_marlik"><code class="docutils literal notranslate"><span class="pre">Model.eval_marlik()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.export_blm"><code class="docutils literal notranslate"><span class="pre">Model.export_blm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.fit"><code class="docutils literal notranslate"><span class="pre">Model.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_cand_params"><code class="docutils literal notranslate"><span class="pre">Model.get_cand_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_grad_marlik"><code class="docutils literal notranslate"><span class="pre">Model.get_grad_marlik()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_params_bound"><code class="docutils literal notranslate"><span class="pre">Model.get_params_bound()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_permutation_importance"><code class="docutils literal notranslate"><span class="pre">Model.get_permutation_importance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_post_fcov"><code class="docutils literal notranslate"><span class="pre">Model.get_post_fcov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.get_post_fmean"><code class="docutils literal notranslate"><span class="pre">Model.get_post_fmean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.post_sampling"><code class="docutils literal notranslate"><span class="pre">Model.post_sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.predict_sampling"><code class="docutils literal notranslate"><span class="pre">Model.predict_sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.prepare"><code class="docutils literal notranslate"><span class="pre">Model.prepare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.print_params"><code class="docutils literal notranslate"><span class="pre">Model.print_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.set_params"><code class="docutils literal notranslate"><span class="pre">Model.set_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model.sub_sampling"><code class="docutils literal notranslate"><span class="pre">Model.sub_sampling()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor"><code class="docutils literal notranslate"><span class="pre">Predictor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.delete_stats"><code class="docutils literal notranslate"><span class="pre">Predictor.delete_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.fit"><code class="docutils literal notranslate"><span class="pre">Predictor.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_basis"><code class="docutils literal notranslate"><span class="pre">Predictor.get_basis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_post_fcov"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_fcov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_post_fmean"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_fmean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_post_params"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_post_samples"><code class="docutils literal notranslate"><span class="pre">Predictor.get_post_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.get_predict_samples"><code class="docutils literal notranslate"><span class="pre">Predictor.get_predict_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.prepare"><code class="docutils literal notranslate"><span class="pre">Predictor.prepare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor.update"><code class="docutils literal notranslate"><span class="pre">Predictor.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior"><code class="docutils literal notranslate"><span class="pre">Prior</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.cat_params"><code class="docutils literal notranslate"><span class="pre">Prior.cat_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.decomp_params"><code class="docutils literal notranslate"><span class="pre">Prior.decomp_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.get_cov"><code class="docutils literal notranslate"><span class="pre">Prior.get_cov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.get_grad_cov"><code class="docutils literal notranslate"><span class="pre">Prior.get_grad_cov()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.get_grad_mean"><code class="docutils literal notranslate"><span class="pre">Prior.get_grad_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.get_mean"><code class="docutils literal notranslate"><span class="pre">Prior.get_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.sampling"><code class="docutils literal notranslate"><span class="pre">Prior.sampling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.set_cov_params"><code class="docutils literal notranslate"><span class="pre">Prior.set_cov_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.set_mean_params"><code class="docutils literal notranslate"><span class="pre">Prior.set_mean_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior.set_params"><code class="docutils literal notranslate"><span class="pre">Prior.set_params()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS"><code class="docutils literal notranslate"><span class="pre">SFS</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS.fit"><code class="docutils literal notranslate"><span class="pre">SFS.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS.get_params"><code class="docutils literal notranslate"><span class="pre">SFS.get_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS.get_post_fmean"><code class="docutils literal notranslate"><span class="pre">SFS.get_post_fmean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS.predict"><code class="docutils literal notranslate"><span class="pre">SFS.predict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS.prepare"><code class="docutils literal notranslate"><span class="pre">SFS.prepare()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="physbo.gp.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.core.html">physbo.gp.core package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.core.html#physbo.gp.core.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.core.html#physbo.gp.core.Prior"><code class="docutils literal notranslate"><span class="pre">Prior</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.core.html#physbo.gp.core.SFS"><code class="docutils literal notranslate"><span class="pre">SFS</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="physbo.gp.core.html#submodules">Submodules</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.cov.html">physbo.gp.cov package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.cov.html#physbo.gp.cov.gauss"><code class="docutils literal notranslate"><span class="pre">gauss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.cov.html#physbo.gp.cov.Gauss"><code class="docutils literal notranslate"><span class="pre">Gauss</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.inf.html">physbo.gp.inf package</a><ul>
@@ -160,12 +393,12 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.lik.html">physbo.gp.lik package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.lik.html#physbo.gp.lik.gauss"><code class="docutils literal notranslate"><span class="pre">gauss()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.lik.html#physbo.gp.lik.Gauss"><code class="docutils literal notranslate"><span class="pre">Gauss</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.gp.mean.html">physbo.gp.mean package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.mean.html#physbo.gp.mean.const"><code class="docutils literal notranslate"><span class="pre">const()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.mean.html#physbo.gp.mean.zero"><code class="docutils literal notranslate"><span class="pre">zero()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.mean.html#physbo.gp.mean.Const"><code class="docutils literal notranslate"><span class="pre">Const</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.mean.html#physbo.gp.mean.Zero"><code class="docutils literal notranslate"><span class="pre">Zero</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -185,19 +418,35 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physbo.opt.html">physbo.opt package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="physbo.opt.html#physbo.opt.adam"><code class="docutils literal notranslate"><span class="pre">adam()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam"><code class="docutils literal notranslate"><span class="pre">Adam</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.params"><code class="docutils literal notranslate"><span class="pre">Adam.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.nparams"><code class="docutils literal notranslate"><span class="pre">Adam.nparams</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.grad"><code class="docutils literal notranslate"><span class="pre">Adam.grad</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.m"><code class="docutils literal notranslate"><span class="pre">Adam.m</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.v"><code class="docutils literal notranslate"><span class="pre">Adam.v</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.epoch"><code class="docutils literal notranslate"><span class="pre">Adam.epoch</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.max_epoch"><code class="docutils literal notranslate"><span class="pre">Adam.max_epoch</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.alpha"><code class="docutils literal notranslate"><span class="pre">Adam.alpha</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.beta"><code class="docutils literal notranslate"><span class="pre">Adam.beta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.gamma"><code class="docutils literal notranslate"><span class="pre">Adam.gamma</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.epsilon"><code class="docutils literal notranslate"><span class="pre">Adam.epsilon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.run"><code class="docutils literal notranslate"><span class="pre">Adam.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.set_params"><code class="docutils literal notranslate"><span class="pre">Adam.set_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="physbo.opt.html#physbo.opt.Adam.update"><code class="docutils literal notranslate"><span class="pre">Adam.update()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physbo.search.html">physbo.search package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="physbo.search.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="physbo.search.discrete.html">physbo.search.discrete package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.history"><code class="docutils literal notranslate"><span class="pre">history()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.policy"><code class="docutils literal notranslate"><span class="pre">policy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.Policy"><code class="docutils literal notranslate"><span class="pre">Policy</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.search.discrete_multi.html">physbo.search.discrete_multi package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete_multi.html#physbo.search.discrete_multi.history"><code class="docutils literal notranslate"><span class="pre">history()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete_multi.html#physbo.search.discrete_multi.policy"><code class="docutils literal notranslate"><span class="pre">policy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete_multi.html#physbo.search.discrete_multi.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.discrete_multi.html#physbo.search.discrete_multi.Policy"><code class="docutils literal notranslate"><span class="pre">Policy</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.search.optimize.html">physbo.search.optimize package</a><ul>
@@ -205,13 +454,13 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.search.range.html">physbo.search.range package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.range.html#physbo.search.range.history"><code class="docutils literal notranslate"><span class="pre">history()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.range.html#physbo.search.range.policy"><code class="docutils literal notranslate"><span class="pre">policy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.range.html#physbo.search.range.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.range.html#physbo.search.range.Policy"><code class="docutils literal notranslate"><span class="pre">Policy</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="physbo.search.range_multi.html">physbo.search.range_multi package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.range_multi.html#physbo.search.range_multi.history"><code class="docutils literal notranslate"><span class="pre">history()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.search.range_multi.html#physbo.search.range_multi.policy"><code class="docutils literal notranslate"><span class="pre">policy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.range_multi.html#physbo.search.range_multi.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.search.range_multi.html#physbo.search.range_multi.Policy"><code class="docutils literal notranslate"><span class="pre">Policy</span></code></a></li>
 </ul>
 </li>
 </ul>

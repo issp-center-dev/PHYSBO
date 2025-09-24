@@ -50,15 +50,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="physbo.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="physbo.html#physbo.base_predictor"><code class="docutils literal notranslate"><span class="pre">base_predictor()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="physbo.html#physbo.variable"><code class="docutils literal notranslate"><span class="pre">variable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="physbo.html#physbo.Variable"><code class="docutils literal notranslate"><span class="pre">Variable</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="physbo.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="physbo.blm.html">physbo.blm package</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="physbo.gp.html">physbo.gp package</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.model"><code class="docutils literal notranslate"><span class="pre">model()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.predictor"><code class="docutils literal notranslate"><span class="pre">predictor()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.prior"><code class="docutils literal notranslate"><span class="pre">prior()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.sfs"><code class="docutils literal notranslate"><span class="pre">sfs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.Predictor"><code class="docutils literal notranslate"><span class="pre">Predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.Prior"><code class="docutils literal notranslate"><span class="pre">Prior</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="physbo.gp.html#physbo.gp.SFS"><code class="docutils literal notranslate"><span class="pre">SFS</span></code></a></li>
 <li class="toctree-l4 current"><a class="reference internal" href="physbo.gp.html#subpackages">Subpackages</a></li>
 </ul>
 </li>
@@ -102,6 +101,601 @@
              
   <section id="module-physbo.gp.core">
 <span id="physbo-gp-core-package"></span><h1>physbo.gp.core package<a class="headerlink" href="#module-physbo.gp.core" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="physbo.gp.core.Model">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lik</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exact'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lik</strong></p></li>
+<li><p><strong>mean</strong></p></li>
+<li><p><strong>cov</strong></p></li>
+<li><p><strong>inf</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.cat_params">
+<span class="sig-name descname"><span class="pre">cat_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lik_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.cat_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.cat_params" title="Link to this definition"></a></dt>
+<dd><p>Concatinate the likelihood and prior parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lik_params</strong> (<em>numpy.ndarray</em>) – Parameters for likelihood</p></li>
+<li><p><strong>prior_params</strong> (<em>numpy.ndarray</em>) – Parameters for prior</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>params</strong> – parameters about likelihood and prior</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.decomp_params">
+<span class="sig-name descname"><span class="pre">decomp_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.decomp_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.decomp_params" title="Link to this definition"></a></dt>
+<dd><p>decomposing the parameters to those of likelifood and priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – parameters</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>lik_params</strong> (<em>numpy.ndarray</em>)</p></li>
+<li><p><strong>prior_params</strong> (<em>numpy.ndarray</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.eval_marlik">
+<span class="sig-name descname"><span class="pre">eval_marlik</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.eval_marlik"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.eval_marlik" title="Link to this definition"></a></dt>
+<dd><p>Evaluating marginal likelihood.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Total number of subset data (if not specified, all dataset is used)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>marlik</strong> (<em>float</em>)</p></li>
+<li><p><em>Marginal likelihood.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.export_blm">
+<span class="sig-name descname"><span class="pre">export_blm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_basis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.export_blm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.export_blm" title="Link to this definition"></a></dt>
+<dd><p>Exporting the blm(Baysean linear model) predictor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_basis</strong> (<em>int</em>) – Total number of basis</p></li>
+<li><p><strong>comm</strong> (<em>MPI.Comm</em>) – MPI communicator</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Bayesian linear model</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="physbo.blm.core.html#physbo.blm.core.Model" title="physbo.blm.core.Model">physbo.blm.core.Model</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.fit" title="Link to this definition"></a></dt>
+<dd><p>Fitting function (update parameters)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>config</strong> (<em>physbo.misc.set_config object</em>)</p></li>
+<li><p><strong>comm</strong> (<em>MPI.Comm</em>) – MPI communicator</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_cand_params">
+<span class="sig-name descname"><span class="pre">get_cand_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_cand_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_cand_params" title="Link to this definition"></a></dt>
+<dd><p>Getting candidate for parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>params</strong> – Parameters</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_grad_marlik">
+<span class="sig-name descname"><span class="pre">get_grad_marlik</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_grad_marlik"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_grad_marlik" title="Link to this definition"></a></dt>
+<dd><p>Evaluating gradiant of marginal likelihood.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Total number of subset data (if not specified, all dataset is used)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>grad_marlik</strong> – Gradiant of marginal likelihood.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_params_bound">
+<span class="sig-name descname"><span class="pre">get_params_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_params_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_params_bound" title="Link to this definition"></a></dt>
+<dd><p>Getting boundary of the parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bound</strong> – An array with the tuple (min_params, max_params).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_permutation_importance">
+<span class="sig-name descname"><span class="pre">get_permutation_importance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_perm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_features_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_permutation_importance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_permutation_importance" title="Link to this definition"></a></dt>
+<dd><p>Calculating permutation importance of model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>n_perm</strong> (<em>int</em>) – Number of permutations</p></li>
+<li><p><strong>comm</strong> (<em>MPI.Comm</em>) – MPI communicator</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>numpy.ndarray</em> – importance_mean</p></li>
+<li><p><em>numpy.ndarray</em> – importance_std</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_post_fcov">
+<span class="sig-name descname"><span class="pre">get_post_fcov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_post_fcov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_post_fcov" title="Link to this definition"></a></dt>
+<dd><p>Calculating posterior covariance matrix of model (function)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+<li><p><strong>diag</strong> (<em>bool</em>) – If true, only variances (diagonal elements) are returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+where num_points is the number of points in X.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.get_post_fmean">
+<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.get_post_fmean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.get_post_fmean" title="Link to this definition"></a></dt>
+<dd><p>Calculating posterior mean of model (function)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fmean" title="physbo.gp.inf.exact.get_post_fmean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.gp.inf.exact.get_post_fmean</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.post_sampling">
+<span class="sig-name descname"><span class="pre">post_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.post_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.post_sampling" title="Link to this definition"></a></dt>
+<dd><p>draws samples of mean value of model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – number of samples
+(default: 1)</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.predict_sampling">
+<span class="sig-name descname"><span class="pre">predict_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.predict_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.predict_sampling" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – training datasets</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – input for sampling objective values</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – number of samples
+(default: 1)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.prepare" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.print_params">
+<span class="sig-name descname"><span class="pre">print_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.print_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.print_params" title="Link to this definition"></a></dt>
+<dd><p>Printing parameters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.set_params">
+<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.set_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.set_params" title="Link to this definition"></a></dt>
+<dd><p>Setting parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Model.sub_sampling">
+<span class="sig-name descname"><span class="pre">sub_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#Model.sub_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Model.sub_sampling" title="Link to this definition"></a></dt>
+<dd><p>Make subset for sampling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Total number of data in subset</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>subX</strong> (<em>numpy.ndarray</em>)</p></li>
+<li><p><strong>subt</strong> (<em>numpy.ndarray</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.</span></span><span class="sig-name descname"><span class="pre">Prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>prior of gaussian process</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean</strong> (<a class="reference internal" href="physbo.gp.mean.html#physbo.gp.mean.Const" title="physbo.gp.mean.Const"><em>physbo.gp.mean.Const</em></a>) – mean function</p></li>
+<li><p><strong>cov</strong> (<a class="reference internal" href="physbo.gp.cov.html#physbo.gp.cov.Gauss" title="physbo.gp.cov.Gauss"><em>physbo.gp.cov.Gauss</em></a>) – covariance function</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.cat_params">
+<span class="sig-name descname"><span class="pre">cat_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.cat_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.cat_params" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean_params</strong> (<em>numpy.ndarray</em>) – Mean values of parameters</p></li>
+<li><p><strong>cov_params</strong> (<em>numpy.ndarray</em>) – Covariance matrix of parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.decomp_params">
+<span class="sig-name descname"><span class="pre">decomp_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.decomp_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.decomp_params" title="Link to this definition"></a></dt>
+<dd><p>decomposing the parameters to those of mean values and covariance matrix for priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – parameters</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>mean_params</strong> (<em>numpy.ndarray</em>)</p></li>
+<li><p><strong>cov_params</strong> (<em>numpy.ndarray</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.get_cov">
+<span class="sig-name descname"><span class="pre">get_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.get_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.get_cov" title="Link to this definition"></a></dt>
+<dd><p>Calculating the variance-covariance matrix of priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of Z denotes the d-dimensional feature vector of tests.</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+<li><p><strong>diag</strong> (<em>bool</em>) – If true, only variances (diagonal elements) are returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,
+where num_points is the number of points in X.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.get_grad_cov">
+<span class="sig-name descname"><span class="pre">get_grad_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.get_grad_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.get_grad_cov" title="Link to this definition"></a></dt>
+<dd><p>Calculating the covariance matrix priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.get_grad_mean">
+<span class="sig-name descname"><span class="pre">get_grad_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.get_grad_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.get_grad_mean" title="Link to this definition"></a></dt>
+<dd><p>Calculating the gradiant of mean values of priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_data</strong> (<em>int</em>) – Total number of data</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.get_mean">
+<span class="sig-name descname"><span class="pre">get_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.get_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.get_mean" title="Link to this definition"></a></dt>
+<dd><p>Calculating the mean value of priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_data</strong> (<em>int</em>) – Total number of data</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.sampling">
+<span class="sig-name descname"><span class="pre">sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.sampling" title="Link to this definition"></a></dt>
+<dd><p>Sampling from GP prior</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>N</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.set_cov_params">
+<span class="sig-name descname"><span class="pre">set_cov_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.set_cov_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.set_cov_params" title="Link to this definition"></a></dt>
+<dd><p>Setting parameters for covariance matrix of priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.set_mean_params">
+<span class="sig-name descname"><span class="pre">set_mean_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.set_mean_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.set_mean_params" title="Link to this definition"></a></dt>
+<dd><p>Setting parameters for mean values of priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.Prior.set_params">
+<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_prior.html#Prior.set_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.Prior.set_params" title="Link to this definition"></a></dt>
+<dd><p>Setting parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.</span></span><span class="sig-name descname"><span class="pre">SFS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lik</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exact'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#physbo.gp.core.Model" title="physbo.gp.core._model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lik</strong></p></li>
+<li><p><strong>mean</strong></p></li>
+<li><p><strong>cov</strong></p></li>
+<li><p><strong>inf</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS.fit" title="Link to this definition"></a></dt>
+<dd><p>Fitting function (update parameters)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>config</strong> (<em>physbo.misc.SetConfig object</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS.get_params">
+<span class="sig-name descname"><span class="pre">get_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS.get_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS.get_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS.get_post_fmean">
+<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS.get_post_fmean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS.get_post_fmean" title="Link to this definition"></a></dt>
+<dd><p>Calculating posterior mean of model (function)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fmean" title="physbo.gp.inf.exact.get_post_fmean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.gp.inf.exact.get_post_fmean</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS.predict" title="Link to this definition"></a></dt>
+<dd><p>Calculating posterior mean of model (function)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – inputs</p></li>
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em>) – feature maps</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fmean" title="physbo.gp.inf.exact.get_post_fmean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">physbo.gp.inf.exact.get_post_fmean</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.gp.core.SFS.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/_model.html#SFS.prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.SFS.prepare" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array.
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>params</strong> (<em>numpy.ndarray</em>) – Parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
