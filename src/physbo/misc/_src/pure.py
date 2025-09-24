@@ -21,8 +21,8 @@ def hypot(x, y):
     """Pure Python version of hypot function"""
     x = abs(x)
     y = abs(y)
-    t = x if x < y else y
-    x = x if x > y else y
+    t = min(x, y)
+    x = max(x, y)
     if x == 0:
         return 0
     t = t / x
