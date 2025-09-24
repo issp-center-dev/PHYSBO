@@ -5,24 +5,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from . import gp as gp
-from . import opt as opt
-from . import blm as blm
-from . import misc as misc
-from . import search as search
-from . import predictor as predictor
-from .predictor import BasePredictor as BasePredictor
-from ._variable import Variable as Variable
+from . import gp
+from . import opt
+from . import blm
+from . import misc
+from . import search
+from . import predictor
+from ._variable import Variable
 
 
 def base_predictor(*args, **kwargs):
-    misc.deprecated_warning(old="physbo.base_predictor", new="physbo.BasePredictor")
-    return BasePredictor(*args, **kwargs)
+    ":meta private:"
+    misc.deprecated_warning(old="physbo.base_predictor", new="physbo.predictor.BasePredictor")
+    return predictor.BasePredictor(*args, **kwargs)
 
 
 def variable(*args, **kwargs):
+    ":meta private:"
     misc.deprecated_warning(old="physbo.variable", new="physbo.Variable")
     return Variable(*args, **kwargs)
 
 
 __version__ = "3.0-dev"
+
+# __all__ is used to specify the public API of the package
+# and is used by sphinx to generate the API documentation
+__all__ = ["gp", "opt", "blm", "misc", "search", "predictor", "Variable"]

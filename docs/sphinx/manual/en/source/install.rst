@@ -50,26 +50,45 @@ Uninstall
 Basic structures
 --------------------------
 
-PHYSBO has the following structure (shown up to the second level).
+PHYSBO package includes the following modules. ::
 
-..
- |--physbo
- |    |--blm
- |    |--gp
- |    |--misc
- |    |--opt
- |    |--search
- |    |--predictor.py
- |    |--variable.py
+  physbo
+  ├── blm
+  │   ├── basis
+  │   ├── core
+  │   ├── inf
+  │   ├── lik
+  │   └── prior
+  ├── gp
+  │   ├── core
+  │   ├── cov
+  │   ├── inf
+  │   ├── lik
+  │   └── mean
+  ├── misc
+  ├── opt
+  ├── predictor
+  └── search
+      ├── discrete
+      ├── discrete_multi
+      ├── optimize
+      ├── range
+      └── range_multi
 
 Each module is created with the following structure.
 
 - ``blm`` :Module for Baysean linear model
-- ``gp`` :Module for Gaussian Process
-- ``opt`` :Module for optimazation
-- ``search`` :Module for searching for optimal solutions
-- ``predictor.py`` :Abstract class for predictors
-- ``variable.py`` :Class defined for variable associations used in physbo
+- ``gp`` :Module for Gaussian Process regression model
+- ``opt`` :Module for optimazation of hyperparameters of Gaussian Process
+- ``search`` :Module for Bayesian optimization
+
+    - ``discrete`` : Single-objective optimization for discrete search space
+    - ``discrete_multi`` : Multi-objective optimization for discrete search space
+    - ``range`` : Single-objective optimization for continuous search space
+    - ``range_multi`` : Multi-objective optimization for continuous search space
+    - ``optimize`` : Optimization of acquisition function
+
+- ``predictor`` :Abstract class for predictors
 - ``misc`` : Others (e.g., modules for normalizing the search space)
 
 For more information about each module, please refer to the API reference.

@@ -23,6 +23,7 @@ from typing import List, Optional
 
 
 class Policy(discrete.Policy):
+    """Multi objective Bayesian optimization with discrete search space"""
     new_data_list: List[Optional[Variable]]
 
     def __init__(

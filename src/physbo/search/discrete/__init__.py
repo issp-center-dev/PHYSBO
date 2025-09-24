@@ -5,13 +5,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ._policy import Policy as Policy
-from ._history import History as History
+from ._policy import Policy
+from ._history import History
 
 from ...misc import deprecated_warning
 
 
 def policy(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(
         old="physbo.search.discrete.policy", new="physbo.search.discrete.Policy"
     )
@@ -19,7 +20,10 @@ def policy(*args, **kwargs):
 
 
 def history(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(
         old="physbo.search.discrete.history", new="physbo.search.discrete.History"
     )
     return History(*args, **kwargs)
+
+__all__ = ["Policy", "History"]

@@ -5,11 +5,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ._gauss import Gauss as Gauss
+from ._gauss import Gauss
 
 from ...misc import deprecated_warning
 
 
 def gauss(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(old="physbo.gp.cov.gauss", new="physbo.gp.cov.Gauss")
     return Gauss(*args, **kwargs)
+
+__all__ = ["Gauss"]

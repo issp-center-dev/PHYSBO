@@ -11,6 +11,7 @@ from ...misc import deprecated_warning
 
 
 def fourier(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(old="physbo.blm.basis.fourier", new="physbo.blm.basis.Fourier")
     return Fourier(*args, **kwargs)
 

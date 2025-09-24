@@ -9,6 +9,11 @@ import numpy as np
 
 
 class Variable(object):
+    """ Variable class
+
+    Variable class represents a set of pairs of input (X) and output (t).
+
+    """
     def __init__(self, X=None, t=None, Z=None):
         """
 
@@ -18,7 +23,7 @@ class Variable(object):
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         t:  numpy array
             N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
-        Z:
+        Z: numpy array
 
         """
         self.X = X

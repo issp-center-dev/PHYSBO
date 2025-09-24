@@ -55,26 +55,46 @@ PHYSBOの実行環境および必要なパッケージは以下の通りです�
 PHYSBOの基本構造
 --------------------------
 
-PHYSBOは以下のような構成になっています(第2階層まで表示)。
+PHYSBOのパッケージ構成は以下のようになっています。 ::
 
-..
- |--physbo
- |    |--blm
- |    |--gp
- |    |--misc
- |    |--opt
- |    |--search
- |    |--predictor.py
- |    |--variable.py
+  physbo
+  ├── blm
+  │   ├── basis
+  │   ├── core
+  │   ├── inf
+  │   ├── lik
+  │   └── prior
+  ├── gp
+  │   ├── core
+  │   ├── cov
+  │   ├── inf
+  │   ├── lik
+  │   └── mean
+  ├── misc
+  ├── opt
+  ├── predictor
+  └── search
+      ├── discrete
+      ├── discrete_multi
+      ├── optimize
+      ├── range
+      └── range_multi
+
 
 各モジュールは以下のような構成で作成されています。
 
-- ``blm`` :Baysean linear modelに関するモジュール
-- ``gp`` :Gaussian Processに関するモジュール
-- ``opt`` :最適化に関するモジュール
-- ``search`` :最適解を探索するためのモジュール
-- ``predictor.py`` :predictorの抽象クラス
-- ``variable.py`` :physboで用いる変数関連について定義されたクラス
+- ``blm`` : ベイズ線形回帰モデル
+- ``gp`` : ガウス過程回帰モデル
+- ``opt`` : ガウス過程のハイパーパラメータ最適化
+- ``search`` : ベイズ最適化
+
+    - ``discrete`` : 離散的な探索空間に対する単目的最適化
+    - ``discrete_multi`` : 離散的な探索空間に対する多目的最適化
+    - ``range`` : 連続的な探索空間に対する単目的最適化
+    - ``range_multi`` : 連続的な探索空間に対する多目的最適化
+    - ``optimize`` : 獲得関数の最適化
+
+- ``predictor`` :predictorの抽象クラス
 - ``misc`` : その他(探索空間を正規化するためのモジュールなど)
 
 各モジュールの詳細についてはAPIリファレンスを参考にしてください。

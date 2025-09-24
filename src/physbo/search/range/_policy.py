@@ -21,6 +21,7 @@ from ..._variable import Variable
 
 
 class Policy:
+    """Single objective Bayesian optimization with continuous search space"""
     def __init__(
         self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
     ):

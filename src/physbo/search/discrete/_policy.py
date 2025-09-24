@@ -22,6 +22,7 @@ from ..._variable import Variable
 
 
 class Policy:
+    """Single objective Bayesian optimization with discrete search space"""
     def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
 

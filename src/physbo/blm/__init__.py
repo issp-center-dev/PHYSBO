@@ -7,24 +7,28 @@
 
 """Bayesian Linear Model"""
 
-from . import basis as basis
-from . import prior as prior
-from . import lik as lik
-from . import inf as inf
-from . import core as core
+from . import basis
+from . import prior
+from . import lik
+from . import inf
+from . import core
 
-from .core import Model as Model
-from ._predictor import Predictor as Predictor
+from .core import Model
+from ._predictor import Predictor
 
 from ..misc import deprecated_warning
 
 
 def model(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(old="physbo.blm.model", new="physbo.blm.Model")
     return Model(*args, **kwargs)
 
 
 def predictor(*args, **kwargs):
+    ":meta private:"
     deprecated_warning(old="physbo.blm.predictor", new="physbo.blm.Predictor")
     return Predictor(*args, **kwargs)
 
+
+__all__ = ["basis", "prior", "lik", "inf", "core", "Model", "Predictor"]

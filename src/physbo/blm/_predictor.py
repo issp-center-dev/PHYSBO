@@ -29,7 +29,7 @@ class Predictor(physbo.predictor.BasePredictor):
 
         See also
         ========
-        physbo.BasePredictor
+        physbo.predictor.BasePredictor
         """
         super(Predictor, self).__init__(config, model)
         self.blm = None

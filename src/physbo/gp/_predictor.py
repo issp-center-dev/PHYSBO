@@ -9,7 +9,7 @@ import physbo.predictor
 
 
 class Predictor(physbo.predictor.BasePredictor):
-    """predictor"""
+    """Predictor using Gaussian process"""
 
     def __init__(self, config, model=None):
         """
@@ -19,6 +19,10 @@ class Predictor(physbo.predictor.BasePredictor):
         config: physbo.misc.SetConfig
         model: model object
             A default model is set as gp.core.Model
+
+        See also
+        ========
+        physbo.predictor.BasePredictor
         """
         super(Predictor, self).__init__(config, model)
 

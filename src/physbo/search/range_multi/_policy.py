@@ -24,6 +24,7 @@ from typing import List, Optional
 
 
 class Policy(range_single.Policy):
+    """Multi objective Bayesian optimization with continuous search space"""
     new_data_list: List[Optional[Variable]]
 
     def __init__(
