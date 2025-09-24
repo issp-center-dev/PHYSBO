@@ -14,8 +14,9 @@ class Gauss:
 
     Attributes
     ==========
-    linear
-    cov: blm.lik.cov
+    linear: physbo.blm.lik.Linear
+        linear kernel
+    cov: physbo.blm.lik.Cov
         covariance
     stats
     """
@@ -81,7 +82,7 @@ class Gauss:
 
         See also
         ========
-        blm.basis.fourier.get_basis
+        physbo.blm.basis.fourier.get_basis
         """
         return self.linear.basis.get_basis(X)
 
@@ -102,7 +103,7 @@ class Gauss:
 
         See also
         ========
-        blm.basis.fourier.get_mean
+        physbo.blm.basis.fourier.get_mean
         """
         return self.linear.get_mean(X, Psi, params, bias)
 
