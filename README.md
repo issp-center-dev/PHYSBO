@@ -17,8 +17,11 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 ## Dependencies
 
 - Python >= 3.9
-- NumPy < 2.0.0
+- NumPy
 - SciPy
+
+If you need further speed-up, you can install ``physbo-core-cython`` additionally.
+This package rewrites some functions of PHYSBO using Cython, and thus requires a C compiler.
 
 ## Install
 
@@ -29,11 +32,6 @@ python3 -m pip install physbo
 ```
 
 - From source (for developers)
-    1. Update pip (>= 19.0)
-
-        ```bash
-        python3 -m pip install -U pip
-        ```
 
     1. Download or clone the github repository
 
@@ -49,6 +47,12 @@ python3 -m pip install physbo
 
         python3 -m pip install ./PHYSBO
         ```
+
+- To install ``physbo-core-cython`` ::
+
+  ```bash
+  python3 -m pip install physbo-core-cython
+  ```
 
 ## Uninstall
 
