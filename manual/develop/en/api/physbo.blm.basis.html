@@ -100,10 +100,97 @@
              
   <section id="module-physbo.blm.basis">
 <span id="physbo-blm-basis-package"></span><h1>physbo.blm.basis package<a class="headerlink" href="#module-physbo.blm.basis" title="Link to this heading"></a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="physbo.blm.basis.fourier">
-<span class="sig-prename descclassname"><span class="pre">physbo.blm.basis.</span></span><span class="sig-name descname"><span class="pre">fourier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis.html#fourier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.basis.fourier" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">physbo.blm.basis.</span></span><span class="sig-name descname"><span class="pre">Fourier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/_fourier.html#Fourier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.basis.Fourier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>random feature maps
+<code class="docutils literal notranslate"><span class="pre">Psi(X;</span> <span class="pre">W,b)</span> <span class="pre">=</span> <span class="pre">cos[X</span> <span class="pre">*</span> <span class="pre">Wt</span> <span class="pre">+</span> <span class="pre">b]</span> <span class="pre">*</span> <span class="pre">alpha</span></code>
+where</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>X: input, N-by-d matrix</p></li>
+<li><p>W: weight, l-by-d matrix</p></li>
+<li><p>Wt: transpose of W</p></li>
+<li><p>b: bias, 1-by-l matrix</p></li>
+<li><p>alpha: coefficient</p></li>
+</ul>
+</div></blockquote>
+<p>and</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>N: number of data</p></li>
+<li><p>d: dimension of input</p></li>
+<li><p>l: number of basis</p></li>
+</ul>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier.params">
+<span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#physbo.blm.basis.Fourier.params" title="Link to this definition"></a></dt>
+<dd><p>W, b, alpha</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier.nbasis">
+<span class="sig-name descname"><span class="pre">nbasis</span></span><a class="headerlink" href="#physbo.blm.basis.Fourier.nbasis" title="Link to this definition"></a></dt>
+<dd><p>number of basis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">References</p>
+<p>A. Rahimi and B. Recht, “Random features for large-scale kernel machines,”
+in “Advances in neural information processing systems,” 2007, pp. 1177-1184.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier.get_basis">
+<span class="sig-name descname"><span class="pre">get_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/_fourier.html#Fourier.get_basis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.basis.Fourier.get_basis" title="Link to this definition"></a></dt>
+<dd><p>compute the value of basis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – input</p></li>
+<li><p><strong>params</strong> (<em>Tuple</em>) – W, b, alpha
+(default: self.params)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>Psi(X; W,b)</strong> – N-by-l matrix</p>
+<p><code class="docutils literal notranslate"><span class="pre">cos[X</span> <span class="pre">*</span> <span class="pre">Wt</span> <span class="pre">+</span> <span class="pre">b]</span> <span class="pre">*</span> <span class="pre">alpha</span></code></p>
+<p>where <code class="docutils literal notranslate"><span class="pre">Wt</span></code> is the transpose of <code class="docutils literal notranslate"><span class="pre">W</span></code>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier.set_params">
+<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/_fourier.html#Fourier.set_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.basis.Fourier.set_params" title="Link to this definition"></a></dt>
+<dd><p>update basis parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>tuple</em>) – W, b, alpha</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physbo.blm.basis.Fourier.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/basis/_fourier.html#Fourier.show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.basis.Fourier.show" title="Link to this definition"></a></dt>
+<dd><p>print parameters</p>
+</dd></dl>
+
+</dd></dl>
 
 </section>
 

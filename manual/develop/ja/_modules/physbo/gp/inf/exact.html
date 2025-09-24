@@ -89,7 +89,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">misc</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
 
 <div class="viewcode-block" id="eval_marlik">
@@ -226,7 +225,7 @@
 <span class="sd">    stats: tupple</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ndata</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># ndims = X.shape[1]</span>
 
     <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
@@ -267,8 +266,6 @@
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">ndata</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">ntest</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
@@ -310,7 +307,7 @@
     <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
     <span class="n">U</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># alpha = gp.stats[1]</span>
 
     <span class="n">G</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">prior_params</span><span class="p">)</span>
 
