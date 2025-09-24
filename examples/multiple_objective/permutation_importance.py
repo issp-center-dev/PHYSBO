@@ -18,7 +18,7 @@ print("num_rand_basis = ", num_rand_basis)
 # Make a set of candidates, test_X
 D = 3  # The number of params (the dimension of parameter space)
 Nx = 11  # The number of candidates
-N = Nx ** D
+N = Nx**D
 
 # score = "HVPI"
 score = "EHVI"
@@ -47,7 +47,13 @@ policy.random_search(max_num_probes=30, simulator=simulator)
 
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=20, simulator=simulator, score=score, interval=0, num_rand_basis=num_rand_basis)
+policy.bayes_search(
+    max_num_probes=20,
+    simulator=simulator,
+    score=score,
+    interval=0,
+    num_rand_basis=num_rand_basis,
+)
 
 importance_mean, importance_std = policy.get_permutation_importance(n_perm=20)
 

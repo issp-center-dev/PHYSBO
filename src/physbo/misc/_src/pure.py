@@ -17,6 +17,7 @@ DTYPE = np.float64
 # Functions from cholupdate.pyx
 # ==============================================================================
 
+
 def hypot(x, y):
     """Pure Python version of hypot function"""
     x = abs(x)
@@ -27,6 +28,7 @@ def hypot(x, y):
         return 0
     t = t / x
     return x * math.sqrt(1 + t * t)
+
 
 def cholupdate64(L, x):
     """Pure Python version of Cholesky update"""
@@ -43,12 +45,14 @@ def cholupdate64(L, x):
             L[k, i] = (L[k, i] + s * x2[i]) / c
             x2[i] = c * x2[i] - s * L[k, i]
 
+
 # ==============================================================================
 # Functions from diagAB.pyx
 # ==============================================================================
 
+
 def diagAB_64(A, B):
-    """ Return diagonal part of AB
+    """Return diagonal part of AB
 
     Parameters
     ==========
@@ -73,12 +77,14 @@ def diagAB_64(A, B):
 
     return diagAB
 
+
 # ==============================================================================
 # Functions from logsumexp.pyx
 # ==============================================================================
 
+
 def logsumexp64(x):
-    """ Calculate log(sum(exp(x)))
+    """Calculate log(sum(exp(x)))
 
     Parameters
     ==========
@@ -94,12 +100,14 @@ def logsumexp64(x):
 
     return math.log(tmp) + xmax
 
+
 # ==============================================================================
 # Functions from traceAB.pyx
 # ==============================================================================
 
+
 def traceAB3_64(A, B):
-    """ Calculates vector of trace of AB[i], where i is the first axis of 3-rank tensor B
+    """Calculates vector of trace of AB[i], where i is the first axis of 3-rank tensor B
 
     Parameters
     ==========
@@ -124,8 +132,9 @@ def traceAB3_64(A, B):
                 traceAB[d] += A[i, j] * B[d, j, i]
     return traceAB
 
+
 def traceAB2_64(A, B):
-    """ Calculates trace of AB
+    """Calculates trace of AB
 
     Parameters
     ==========

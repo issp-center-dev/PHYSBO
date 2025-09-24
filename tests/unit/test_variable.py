@@ -43,7 +43,6 @@ def test_get_subset(variable, X, t, Z, index):
     assert np.array_equal(var2.Z, Z[index, :])
 
 
-
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_X(variable, X, index):
     variable.delete_X(index)
@@ -67,9 +66,9 @@ def test_delete_Z(variable, Z, index):
 
 def test_add(variable, X, t, Z, mocker):
     variable.add(X, t, Z)
-    assert np.array_equal(variable.X, np.vstack((X,X)))
-    assert np.array_equal(variable.t, np.hstack((t,t)))
-    assert np.array_equal(variable.Z, np.vstack((Z,Z)))
+    assert np.array_equal(variable.X, np.vstack((X, X)))
+    assert np.array_equal(variable.t, np.hstack((t, t)))
+    assert np.array_equal(variable.Z, np.vstack((Z, Z)))
 
 
 def test_add_X(variable, X):

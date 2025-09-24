@@ -5,8 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-""" Bayesian Linear Model
-"""
+"""Bayesian Linear Model"""
 
 from . import basis
 from . import prior
@@ -20,11 +19,11 @@ from ._predictor import Predictor
 from ..misc import deprecated_warning
 
 
-def model(*args,**kwargs):
+def model(*args, **kwargs):
     deprecated_warning(old="physbo.blm.model", new="physbo.blm.Model")
-    return Model(*args,**kwargs)
+    return Model(*args, **kwargs)
 
 
-def predictor(*args,**kwargs):
+def predictor(*args, **kwargs):
     deprecated_warning(old="physbo.blm.predictor", new="physbo.blm.Predictor")
-    return Predictor(*args,**kwargs)
+    return Predictor(*args, **kwargs)

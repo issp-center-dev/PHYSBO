@@ -205,7 +205,9 @@ class BasePredictor(object):
         """
         raise NotImplementedError
 
-    def get_permutation_importance(self, training, num_permutations=10, comm=None, split_features_parallel=False):
+    def get_permutation_importance(
+        self, training, num_permutations=10, comm=None, split_features_parallel=False
+    ):
         """
         Calculate permutation importance of the predictor.
 
@@ -229,7 +231,13 @@ class BasePredictor(object):
         numpy.ndarray
             importance_std
         """
-        return self.model.get_permutation_importance(training.X, training.t, num_permutations, comm=comm, split_features_parallel=split_features_parallel)
+        return self.model.get_permutation_importance(
+            training.X,
+            training.t,
+            num_permutations,
+            comm=comm,
+            split_features_parallel=split_features_parallel,
+        )
 
     def update(self, *args, **kwds):
         """

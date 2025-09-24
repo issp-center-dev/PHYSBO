@@ -11,14 +11,17 @@ from ._linear import Linear
 
 from ...misc import deprecated_warning
 
-def cov(*args,**kwargs):
+
+def cov(*args, **kwargs):
     deprecated_warning(old="physbo.blm.lik.cov", new="physbo.blm.lik.Cov")
-    return Cov(*args,**kwargs)
+    return Cov(*args, **kwargs)
 
-def gauss(*args,**kwargs):
+
+def gauss(*args, **kwargs):
     deprecated_warning(old="physbo.blm.lik.gauss", new="physbo.blm.lik.Gauss")
-    return Gauss(*args,**kwargs)
+    return Gauss(*args, **kwargs)
 
-def linear(*args,**kwargs):
+
+def linear(*args, **kwargs):
     deprecated_warning(old="physbo.blm.lik.linear", new="physbo.blm.lik.Linear")
-    return Linear(*args,**kwargs)
+    return Linear(*args, **kwargs)

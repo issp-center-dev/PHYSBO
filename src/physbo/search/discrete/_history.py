@@ -191,7 +191,6 @@ class History:
         self.chosen_actions[0:N] = data["chosen_actions"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
 
-
     def show_search_results(self, N):
         n = self.total_num_search
         index = np.argmax(self.fx[0:n])

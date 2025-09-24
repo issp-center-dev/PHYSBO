@@ -143,7 +143,8 @@ class History(object):
                     )
                 else:
                     print(
-                        prefix + "the number of Pareto frontiers = %s \n" % str(len(step))
+                        prefix
+                        + "the number of Pareto frontiers = %s \n" % str(len(step))
                     )
 
         if N == 1:

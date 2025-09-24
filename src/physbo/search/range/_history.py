@@ -89,14 +89,14 @@ class History:
         self.fx[st:en] = t
         self.action_X[st:en, :] = action_X
 
-        if st==0:
+        if st == 0:
             self.best_index[0] = 0
         else:
             for n in range(st, en):
-                if self.fx[n] > self.fx[self.best_index[n-1]]:
+                if self.fx[n] > self.fx[self.best_index[n - 1]]:
                     self.best_index[n] = n
                 else:
-                    self.best_index[n] = self.best_index[n-1]
+                    self.best_index[n] = self.best_index[n - 1]
 
         self.num_runs += 1
         self.total_num_search += N
@@ -133,9 +133,9 @@ class History:
         best_X = np.zeros((self.num_runs, self.dim), dtype=float)
 
         for r in range(self.num_runs):
-            n = self.terminal_num_run[r]-1
+            n = self.terminal_num_run[r] - 1
             best_fx[r] = self.fx[self.best_index[n]]
-            best_X[r,:] = self.action_X[self.best_index[n],:]
+            best_X[r, :] = self.action_X[self.best_index[n], :]
 
         return best_fx, best_X
 
@@ -154,7 +154,7 @@ class History:
         best_X = np.zeros((self.total_num_search, self.dim), dtype=float)
         for n in range(self.total_num_search):
             best_fx[n] = self.fx[self.best_index[n]]
-            best_X[n,:] = self.action_X[self.best_index[n],:]
+            best_X[n, :] = self.action_X[self.best_index[n], :]
         return best_fx, best_X
 
     def save(self, filename):
@@ -176,7 +176,7 @@ class History:
             num_runs=M,
             total_num_search=N,
             fx=self.fx[0:N],
-            action_X=self.action_X[0:N,:],
+            action_X=self.action_X[0:N, :],
             best_index=self.best_index[0:N],
             terminal_num_run=self.terminal_num_run[0:M],
             time_total=self.time_total_[0:N],
@@ -203,7 +203,7 @@ class History:
         self.num_runs = M
         self.total_num_search = N
         self.fx[0:N] = data["fx"]
-        self.action_X[0:N,:] = data["action_X"]
+        self.action_X[0:N, :] = data["action_X"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
         self.best_index[0:N] = data["best_index"]
         self.time_total_[0:N] = data["time_total"]
@@ -211,16 +211,21 @@ class History:
         self.time_get_action_[0:N] = data["time_get_action"]
         self.time_run_simulator_[0:N] = data["time_run_simulator"]
 
-
     def show_search_results(self, N):
         n = self.total_num_search
         index = np.argmax(self.fx[0:n])
 
         if N == 1:
-            print(f"{n:04d}-th step: f(x) = {self.fx[n - 1]:.6f} (action={self.action_X[n - 1, :]})")
-            print(f"   current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]}) \n")
+            print(
+                f"{n:04d}-th step: f(x) = {self.fx[n - 1]:.6f} (action={self.action_X[n - 1, :]})"
+            )
+            print(
+                f"   current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]}) \n"
+            )
         else:
-            print(f"current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]})")
+            print(
+                f"current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]})"
+            )
 
             print("list of simulation results")
             st = self.total_num_search - N

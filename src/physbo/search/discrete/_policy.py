@@ -457,7 +457,7 @@ class Policy:
         predictor=None,
         training=None,
         parallel=True,
-        alpha=1
+        alpha=1,
     ):
         """
         Calcualte score (acquisition function)

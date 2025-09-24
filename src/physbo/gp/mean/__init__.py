@@ -12,10 +12,11 @@ from ._const import Const
 from ...misc import deprecated_warning
 
 
-def zero(*args,**kwargs):
+def zero(*args, **kwargs):
     deprecated_warning(old="physbo.gp.mean.zero", new="physbo.gp.mean.Zero")
-    return Zero(*args,**kwargs)
+    return Zero(*args, **kwargs)
 
-def const(*args,**kwargs):
+
+def const(*args, **kwargs):
     deprecated_warning(old="physbo.gp.mean.const", new="physbo.gp.mean.Const")
-    return Const(*args,**kwargs)
+    return Const(*args, **kwargs)

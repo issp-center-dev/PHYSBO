@@ -18,13 +18,16 @@ if PHYSBO_USE_CYTHON == "0":
     USING_CYTHON = False
 elif PHYSBO_USE_CYTHON == "1":
     if not CYTHON_AVAILABLE:
-        raise ImportError("PHYSBO_USE_CYTHON is set to 1, but physbo_core_cython is not installed")
+        raise ImportError(
+            "PHYSBO_USE_CYTHON is set to 1, but physbo_core_cython is not installed"
+        )
     USING_CYTHON = True
-else: # PHYSBO_USE_CYTHON == "auto"
+else:  # PHYSBO_USE_CYTHON == "auto"
     USING_CYTHON = CYTHON_AVAILABLE
 
 if USING_CYTHON:
     print("Cythonized version of physbo is used")
+
 
 def use_cython():
     return USING_CYTHON

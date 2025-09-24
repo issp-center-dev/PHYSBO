@@ -10,6 +10,6 @@ from ._gauss import Gauss
 from ...misc import deprecated_warning
 
 
-def gauss(*args,**kwargs):
+def gauss(*args, **kwargs):
     deprecated_warning(old="physbo.gp.cov.gauss", new="physbo.gp.cov.Gauss")
-    return Gauss(*args,**kwargs)
+    return Gauss(*args, **kwargs)

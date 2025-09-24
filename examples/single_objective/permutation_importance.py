@@ -27,6 +27,7 @@ weights = np.linspace(1.0, 0.0, D)
 weights = weights**2
 weights = weights.reshape(1, D)
 
+
 def simulator(actions: np.ndarray) -> np.ndarray:
     """Objective function
 
@@ -45,7 +46,9 @@ policy.random_search(max_num_probes=20, simulator=simulator)
 
 # Bayesian search (30 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=30, simulator=simulator, score="EI", num_rand_basis=num_rand_basis)
+policy.bayes_search(
+    max_num_probes=30, simulator=simulator, score="EI", num_rand_basis=num_rand_basis
+)
 
 importance_mean, importance_std = policy.get_permutation_importance(n_perm=30)
 

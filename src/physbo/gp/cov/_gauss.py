@@ -75,7 +75,7 @@ class Gauss:
         print(" Parameters of Gaussian kernel \n ")
         print(" width  = ", +self.width)
         print(" scale  = ", +self.scale)
-        print(" scale2 = ", +self.scale**2)
+        print(" scale2 = ", +(self.scale**2))
         print(" \n")
 
     def prepare(self, params=None):

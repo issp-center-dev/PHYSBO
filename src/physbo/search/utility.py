@@ -19,7 +19,7 @@ def show_search_results_mo(history, N, disp_pareto_set=False):
 def show_start_message_multi_search(N, score=None):
     if score is None:
         score = "random"
-    print(f"{N+1:04}-th multiple probe search ({score})")
+    print(f"{N + 1:04}-th multiple probe search ({score})")
 
 
 def show_interactive_mode(simulator, history):

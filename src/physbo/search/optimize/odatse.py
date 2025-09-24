@@ -13,7 +13,9 @@ import odatse
 import odatse.solver.function
 
 
-def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str = "mapper"):
+def default_alg_dict(
+    min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str = "mapper"
+):
     """
     Return the default algorithm parameter settings for the given algorithm name.
 
@@ -75,7 +77,7 @@ def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str =
                 "nreplica_per_proc": 100,
                 "resampling_interval": 2,
                 "fix_num_replicas": True,
-            }
+            },
         }
     elif algorithm_name == "minsearch":
         return {
@@ -86,7 +88,7 @@ def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str =
                 "max_list": max_X,
                 "unit_list": d_X,
             },
-            "minimize": {"maxiter": 100}
+            "minimize": {"maxiter": 100},
         }
     elif algorithm_name == "mapper":
         return {
@@ -107,7 +109,12 @@ def default_alg_dict(min_X: np.ndarray, max_X: np.ndarray, algorithm_name: str =
                 "max_list": max_X,
                 "num_list": 21 * np.ones(dim, dtype=int),
             },
-            "bayes": {"random_max_num_probes": 10, "bayes_max_num_probes": 40, "score": "EI", "num_rand_basis": 0}
+            "bayes": {
+                "random_max_num_probes": 10,
+                "bayes_max_num_probes": 40,
+                "score": "EI",
+                "num_rand_basis": 0,
+            },
         }
     else:
         raise ValueError(f"Unknown algorithm: {algorithm_name}")
@@ -156,7 +163,9 @@ class Optimizer:
 
         info = odatse.Info(info_dict)
         solver = odatse.solver.function.Solver(info)
-        solver.set_function(lambda x: -fn(x)) # ODATSE minimizes the function, so we need to negate the objective function
+        solver.set_function(
+            lambda x: -fn(x)
+        )  # ODATSE minimizes the function, so we need to negate the objective function
         runner = odatse.Runner(solver, info)
         alg_module = odatse.algorithm.choose_algorithm(self.alg_dict["name"])
 
@@ -170,7 +179,7 @@ class Optimizer:
 
         if self.alg_dict.get("name") == "mapper":
             with open("odatse_output/ColorMap.txt") as f:
-                X = np.zeros((1,dim))
+                X = np.zeros((1, dim))
                 fx = np.inf
                 for line in f:
                     words = line.split()

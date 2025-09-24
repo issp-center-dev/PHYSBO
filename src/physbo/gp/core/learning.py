@@ -12,9 +12,11 @@ import scipy.optimize
 from ...misc import deprecated_warning
 
 
-def batch(*args,**kwargs):
-    deprecated_warning(old="physbo.gp.core.learning.batch", new="physbo.gp.core.learning.Batch")
-    return Batch(*args,**kwargs)
+def batch(*args, **kwargs):
+    deprecated_warning(
+        old="physbo.gp.core.learning.batch", new="physbo.gp.core.learning.Batch"
+    )
+    return Batch(*args, **kwargs)
 
 
 class Batch(object):
@@ -140,9 +142,11 @@ class Batch(object):
         return min_params
 
 
-def online(*args,**kwargs):
-    deprecated_warning(old="physbo.gp.core.learning.online", new="physbo.gp.core.learning.Online")
-    return Online(*args,**kwargs)
+def online(*args, **kwargs):
+    deprecated_warning(
+        old="physbo.gp.core.learning.online", new="physbo.gp.core.learning.Online"
+    )
+    return Online(*args, **kwargs)
 
 
 class Online(object):
@@ -327,9 +331,11 @@ class Online(object):
         raise NotImplementedError
 
 
-def adam(*args,**kwargs):
-    deprecated_warning(old="physbo.gp.core.learning.adam", new="physbo.gp.core.learning.Adam")
-    return Adam(*args,**kwargs)
+def adam(*args, **kwargs):
+    deprecated_warning(
+        old="physbo.gp.core.learning.adam", new="physbo.gp.core.learning.Adam"
+    )
+    return Adam(*args, **kwargs)
 
 
 class Adam(Online):

@@ -19,8 +19,11 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 
+
 class Policy:
-    def __init__(self, *,  min_X=None, max_X=None, config=None, initial_data=None, comm=None):
+    def __init__(
+        self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
+    ):
         """
 
         Parameters
@@ -46,8 +49,12 @@ class Policy:
         self.min_X = np.array(min_X)
         self.max_X = np.array(max_X)
         self.dim = self.min_X.shape[0]
-        assert self.dim == self.max_X.shape[0], "The dimension of min_X and max_X must be the same"
-        assert np.all(self.min_X < self.max_X), "min_X must be less than max_X for each dimension"
+        assert self.dim == self.max_X.shape[0], (
+            "The dimension of min_X and max_X must be the same"
+        )
+        assert np.all(self.min_X < self.max_X), (
+            "min_X must be less than max_X for each dimension"
+        )
         self.L_X = self.max_X - self.min_X
         self.history = History(dim=self.dim)
         if config is None:
@@ -60,8 +67,12 @@ class Policy:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
                 raise RuntimeError(msg)
             init_X, fs = initial_data
-            assert init_X.shape[0] == len(fs), "The number of initial data must be the same"
-            assert init_X.shape[1] == self.dim, "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+            assert init_X.shape[0] == len(fs), (
+                "The number of initial data must be the same"
+            )
+            assert init_X.shape[1] == self.dim, (
+                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+            )
             ## TODO: add initial data to the history
             ## The following code is for discrete search
             ## self.write(actions, fs)
@@ -286,7 +297,9 @@ class Policy:
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(min_X=self.min_X, max_X=self.max_X, nsamples=1000)
+            optimizer = RandomOptimizer(
+                min_X=self.min_X, max_X=self.max_X, nsamples=1000
+            )
 
         N = int(num_search_each_probe)
 
@@ -306,7 +319,9 @@ class Policy:
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha, optimizer, num_rand_basis=num_rand_basis)
+            action = self._get_actions(
+                score, N, K, alpha, optimizer, num_rand_basis=num_rand_basis
+            )
             time_get_action = time.time() - time_get_action
 
             if simulator is None:
@@ -398,14 +413,7 @@ class Policy:
             return self.predictor.get_post_fcov(self.training, X, diag)
 
     def get_score(
-        self,
-        mode,
-        *,
-        xs=None,
-        predictor=None,
-        training=None,
-        parallel=True,
-        alpha=1
+        self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
     ):
         """
         Calcualte score (acquisition function)
@@ -483,19 +491,29 @@ class Policy:
         K = len(extra_trainings)
         if K == 0:
             predictor.prepare(training)
+
             def fn(x):
-                return self.get_score(mode, xs=x.reshape(1,-1), predictor=predictor, parallel=False)[0]
-        else: # marginal score
+                return self.get_score(
+                    mode, xs=x.reshape(1, -1), predictor=predictor, parallel=False
+                )[0]
+        else:  # marginal score
             trains = [copy.deepcopy(training) for _ in range(K)]
             predictors = [copy.deepcopy(predictor) for _ in range(K)]
             for k in range(K):
                 extra_train = extra_trainings[k]
                 trains[k].add(X=extra_train.X, t=extra_train.t)
                 predictors[k].update(trains[k], extra_train)
+
             def fn(x):
                 f = np.zeros(K)
                 for k in range(K):
-                    f[k] = self.get_score(mode, xs=x.reshape(1,-1), predictor=predictors[k], training=trains[k], parallel=False)[0]
+                    f[k] = self.get_score(
+                        mode,
+                        xs=x.reshape(1, -1),
+                        predictor=predictors[k],
+                        training=trains[k],
+                        parallel=False,
+                    )[0]
                 return np.mean(f)
 
         X = optimizer(fn, mpicomm=self.mpicomm)
@@ -530,17 +548,19 @@ class Policy:
         self._update_predictor()
         predictor = copy.deepcopy(self.predictor)
         predictor.config.is_disp = False
-        X[0, :] = self._argmax_score(mode, predictor, self.training, [], optimizer=optimizer)
+        X[0, :] = self._argmax_score(
+            mode, predictor, self.training, [], optimizer=optimizer
+        )
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(
-                self.training, extra_training, K
-            )
+            t = self.predictor.get_predict_samples(self.training, extra_training, K)
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
                 extra_trainings[k].t = t[k, :]
-            X[n, :] = self._argmax_score(mode, predictor, self.training, extra_trainings, optimizer=optimizer)
+            X[n, :] = self._argmax_score(
+                mode, predictor, self.training, extra_trainings, optimizer=optimizer
+            )
 
         return X
 
@@ -557,7 +577,9 @@ class Policy:
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = np.random.rand(N, self.dim) * self.L_X.reshape(1, -1) + self.min_X.reshape(1, -1)
+        action = np.random.rand(N, self.dim) * self.L_X.reshape(
+            1, -1
+        ) + self.min_X.reshape(1, -1)
         if self.mpisize > 1:
             self.mpicomm.Bcast(action, root=0)
         return action

@@ -5,18 +5,23 @@ import os
 
 physbo = pytest.importorskip("physbo")
 
+
 @pytest.fixture
 def min_X():
     return np.array([0.0, 0.0])
+
 
 @pytest.fixture
 def max_X():
     return np.array([1.0, 1.0])
 
+
 @pytest.fixture
 def policy(min_X, max_X):
     from physbo.search.range import Policy
+
     return Policy(min_X=min_X, max_X=max_X)
+
 
 def test_write(policy):
     # Generate two points arbitrarily
@@ -27,6 +32,7 @@ def test_write(policy):
     np.testing.assert_array_equal(policy.history.fx[:2], t)
     np.testing.assert_array_equal(policy.history.action_X[:2], X)
     assert policy.history.total_num_search == 2
+
 
 def test_random_search(policy, mocker):
     simulator = mocker.MagicMock(return_value=np.array([1.0, 2.0]))
@@ -40,6 +46,7 @@ def test_random_search(policy, mocker):
     assert policy.history.total_num_search >= N
     assert write_spy.called
     assert simulator.called
+
 
 def test_bayes_search(policy, mocker):
     # First, add initial data
@@ -60,6 +67,7 @@ def test_bayes_search(policy, mocker):
     assert get_actions_spy.called
     assert simulator.called
 
+
 def test_get_score(policy, mocker):
     # First, add initial data
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
@@ -79,6 +87,7 @@ def test_get_score(policy, mocker):
     with pytest.raises(Exception):
         policy.get_score("XX", xs=X)
 
+
 def test_saveload(policy, min_X, max_X):
     # Initial data
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
@@ -92,10 +101,12 @@ def test_saveload(policy, min_X, max_X):
         policy.save(file_history, file_training, file_predictor)
         # Load with a new Policy
         from physbo.search.range import Policy
+
         policy2 = Policy(min_X=min_X, max_X=max_X)
         policy2.load(file_history, file_training, file_predictor)
         np.testing.assert_array_equal(policy.history.fx[:2], policy2.history.fx[:2])
         assert policy.history.total_num_search == policy2.history.total_num_search
+
 
 def test_set_seed(policy):
     policy.set_seed(123)

@@ -27,9 +27,15 @@ class Policy(range_single.Policy):
     new_data_list: List[Optional[Variable]]
 
     def __init__(
-        self, num_objectives, *, min_X=None, max_X=None, comm=None, config=None, initial_data=None
+        self,
+        num_objectives,
+        *,
+        min_X=None,
+        max_X=None,
+        comm=None,
+        config=None,
+        initial_data=None,
     ):
-
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
@@ -56,8 +62,12 @@ class Policy(range_single.Policy):
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
                 raise RuntimeError(msg)
             init_X, fs = initial_data
-            assert init_X.shape[0] == len(fs), "The number of initial data must be the same"
-            assert init_X.shape[1] == self.dim, "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+            assert init_X.shape[0] == len(fs), (
+                "The number of initial data must be the same"
+            )
+            assert init_X.shape[1] == self.dim, (
+                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+            )
 
             ## TODO: add initial data to the history
             ## The following code is for discrete search
@@ -94,7 +104,9 @@ class Policy(range_single.Policy):
         t = np.array(t)
 
         assert X.shape[0] == len(t), "The number of X and t must be the same"
-        assert X.shape[1] == self.dim, "The dimension of X must be the same as the dimension of min_X and max_X"
+        assert X.shape[1] == self.dim, (
+            "The dimension of X must be the same as the dimension of min_X and max_X"
+        )
 
         for i in range(self.num_objectives):
             predictor = self.predictor_list[i]
@@ -105,7 +117,6 @@ class Policy(range_single.Policy):
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
             self.training_list[i].add(X=X, t=t[:, i], Z=Z)
-
 
     def _model(self, i):
         training = self.training_list[i]
@@ -215,7 +226,9 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(min_X=self.min_X, max_X=self.max_X, nsamples=1000)
+            optimizer = RandomOptimizer(
+                min_X=self.min_X, max_X=self.max_X, nsamples=1000
+            )
 
         N = int(num_search_each_probe)
 
@@ -288,9 +301,16 @@ class Policy(range_single.Policy):
         if K == 0:
             for predictor, training in zip(predictors, trainings):
                 predictor.prepare(training)
+
             def fn(x):
-                return self.get_score(mode, xs=x.reshape(1,-1), predictor_list=predictors, training_list=trainings, parallel=False)[0]
-        else: # marginal score
+                return self.get_score(
+                    mode,
+                    xs=x.reshape(1, -1),
+                    predictor_list=predictors,
+                    training_list=trainings,
+                    parallel=False,
+                )[0]
+        else:  # marginal score
             trains = [copy.deepcopy(training) for _ in range(K)]
             predictors = [copy.deepcopy(predictors) for _ in range(K)]
             for k in range(K):
@@ -298,11 +318,19 @@ class Policy(range_single.Policy):
                 for i in range(self.num_objectives):
                     trains[k][i].add(X=extra_train[i].X, t=extra_train[i].t)
                     predictors[k][i].update(trains[k][i], extra_train[i])
+
             def fn(x):
                 f = np.zeros(K)
                 for k in range(K):
-                    f[k] = self.get_score(mode, xs=x.reshape(1,-1), predictor_list=predictors, training_list=trains, parallel=False)[0]
+                    f[k] = self.get_score(
+                        mode,
+                        xs=x.reshape(1, -1),
+                        predictor_list=predictors,
+                        training_list=trains,
+                        parallel=False,
+                    )[0]
                 return np.mean(f)
+
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
@@ -314,20 +342,32 @@ class Policy(range_single.Policy):
         for predictor, training in zip(predictors, self.training_list):
             predictor.config.is_disp = False
             predictor.prepare(training)
-        X[0, :] = self._argmax_score(mode, predictors, self.training_list, [], optimizer=optimizer)
+        X[0, :] = self._argmax_score(
+            mode, predictors, self.training_list, [], optimizer=optimizer
+        )
 
         for n in range(1, N):
             extra_trainings_list_of_K = []
-            ts = [predictor.get_predict_samples(
-                self.training_list[i], X[0:n, :], K
-            ) for i in range(self.num_objectives)]
+            ts = [
+                predictor.get_predict_samples(self.training_list[i], X[0:n, :], K)
+                for i in range(self.num_objectives)
+            ]
 
             for k in range(K):
-                et_list = [copy.deepcopy(Variable(X=X[0:n, :])) for _ in range(self.num_objectives)]
+                et_list = [
+                    copy.deepcopy(Variable(X=X[0:n, :]))
+                    for _ in range(self.num_objectives)
+                ]
                 for i in range(self.num_objectives):
                     et_list[i].t = ts[i][k, :]
                 extra_trainings_list_of_K.append(et_list)
-            X[n, :] = self._argmax_score(mode, predictors, self.training_list, extra_trainings_list_of_K, optimizer=optimizer)
+            X[n, :] = self._argmax_score(
+                mode,
+                predictors,
+                self.training_list,
+                extra_trainings_list_of_K,
+                optimizer=optimizer,
+            )
         return X
 
     def get_post_fmean(self, xs):
@@ -535,7 +575,6 @@ class Policy(range_single.Policy):
             self.load_predictor_list(file_predictor_list)
 
         N = self.history.total_num_search
-
 
     def save_predictor_list(self, file_name):
         with open(file_name, "wb") as f:

@@ -19,6 +19,7 @@ max_X = [2, 2]
 score = "EHVI"
 # score = "TS"
 
+
 def vlmop2_minus(x):
     n = x.shape[1]
     y1 = 1 - np.exp(-1 * np.sum((x - 1 / np.sqrt(n)) ** 2, axis=1))
@@ -35,7 +36,13 @@ policy.random_search(max_num_probes=10, simulator=vlmop2_minus)
 
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=40, simulator=vlmop2_minus, score=score, interval=0, optimizer=optimizer)
+policy.bayes_search(
+    max_num_probes=40,
+    simulator=vlmop2_minus,
+    score=score,
+    interval=0,
+    optimizer=optimizer,
+)
 
 print("Pareto fronts:")
 res = policy.history

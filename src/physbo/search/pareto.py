@@ -8,6 +8,7 @@
 import numpy as np
 import time
 
+
 class Rectangles(object):
     def __init__(self, n_dim, dtype):
         """
@@ -156,7 +157,9 @@ class Pareto(object):
         self.cells.add(lb_idx, ub_idx)
 
     def __included_in_non_dom_region(self, p):
-        return np.all(np.any(self.front <= p, axis=1)) # revised on 2025/03/25, vectorized with np.any
+        return np.all(
+            np.any(self.front <= p, axis=1)
+        )  # revised on 2025/03/25, vectorized with np.any
 
     def __divide_using_binary_search(self):
         front = np.r_[

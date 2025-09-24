@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import physbo
 
 
-D = 3 # The number of params (the dimension of parameter space)
-N = 10000 # The number of candidates
-nrss = [0, 10, 100, 300] # The number of random features
+D = 3  # The number of params (the dimension of parameter space)
+N = 10000  # The number of candidates
+nrss = [0, 10, 100, 300]  # The number of random features
 
 # Make a set of candidates, test_X
 test_X = np.random.randn(N, D)  # Generated from Gaussian
@@ -38,7 +38,12 @@ def run(num_rand_basis):
 
     # Bayesian search (40 times)
     #   score function (acquition function): expectation of improvement (EI)
-    policy.bayes_search(max_num_probes=190, simulator=simulator, score="EI", num_rand_basis=num_rand_basis)
+    policy.bayes_search(
+        max_num_probes=190,
+        simulator=simulator,
+        score="EI",
+        num_rand_basis=num_rand_basis,
+    )
 
     # Print the best result
     # best_actions[i] and best_fx[i] stores the best action and value up to the i-th search (random + bayes)
@@ -49,6 +54,7 @@ def run(num_rand_basis):
     result["time_get_action"] = policy.history.time_get_action
 
     return result
+
 
 results = []
 

@@ -11,10 +11,15 @@ from ._history import History
 from ...misc import deprecated_warning
 
 
-def policy(*args,**kwargs):
-    deprecated_warning(old="physbo.search.range_multi.policy", new="physbo.search.range_multi.Policy")
-    return Policy(*args,**kwargs)
+def policy(*args, **kwargs):
+    deprecated_warning(
+        old="physbo.search.range_multi.policy", new="physbo.search.range_multi.Policy"
+    )
+    return Policy(*args, **kwargs)
 
-def history(*args,**kwargs):
-    deprecated_warning(old="physbo.search.range_multi.history", new="physbo.search.range_multi.History")
-    return History(*args,**kwargs)
+
+def history(*args, **kwargs):
+    deprecated_warning(
+        old="physbo.search.range_multi.history", new="physbo.search.range_multi.History"
+    )
+    return History(*args, **kwargs)

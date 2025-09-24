@@ -10,6 +10,6 @@ from ._adam import Adam
 from ..misc import deprecated_warning
 
 
-def adam(*args,**kwargs):
+def adam(*args, **kwargs):
     deprecated_warning(old="physbo.opt.adam", new="physbo.opt.Adam")
-    return Adam(*args,**kwargs)
+    return Adam(*args, **kwargs)

@@ -16,7 +16,7 @@ import physbo.gp
 seed = 12345
 np.random.seed(seed)
 
-N_all = 10 # The number of candidates
+N_all = 10  # The number of candidates
 
 X_train = np.random.rand(N_all)
 t_train = np.sin(X_train * np.pi)
@@ -28,7 +28,7 @@ t_test = np.sin(X_test * np.pi)
 X_test = X_test.reshape(-1, 1)
 
 lik = physbo.gp.lik.gauss()
-cov = physbo.gp.cov.gauss(X_train.shape[1], ard = False)
+cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
 mean = physbo.gp.mean.const()
 
 gp = physbo.gp.model(lik=lik, cov=cov, mean=mean)

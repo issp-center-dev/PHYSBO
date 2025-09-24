@@ -167,7 +167,8 @@ class History(object):
                     )
                 else:
                     print(
-                        prefix + "the number of Pareto frontiers = %s \n" % str(len(step))
+                        prefix
+                        + "the number of Pareto frontiers = %s \n" % str(len(step))
                     )
 
         if N == 1:
@@ -185,8 +186,5 @@ class History(object):
             st = self.total_num_search - N
             en = self.total_num_search
             for n in range(st, en):
-                print(
-                    "f(x) = %s (X = %s)"
-                    % (str(self.fx[n]), str(self.action_X[n]))
-                )
+                print("f(x) = %s (X = %s)" % (str(self.fx[n]), str(self.action_X[n])))
             print("\n")

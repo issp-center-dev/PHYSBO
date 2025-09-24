@@ -145,9 +145,7 @@ def test_get_score(policy, mocker, X):
     numpy.testing.assert_allclose(res, ref, rtol=1e-4)
 
     res = policy.get_score("TS", xs=X)
-    ref = np.array(
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    )
+    ref = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     numpy.testing.assert_allclose(res, ref, rtol=1e-4)
 
     with pytest.raises(NotImplementedError):
@@ -162,6 +160,7 @@ def test_get_post_fmean(policy, mocker, X):
     res = policy.get_post_fmean(X)
     ref = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     numpy.testing.assert_allclose(res, ref)
+
 
 def test_get_post_fcov(policy, mocker, X):
     simulator = mocker.MagicMock(return_value=1.0)

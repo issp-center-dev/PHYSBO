@@ -15,6 +15,7 @@ from ...misc import SetConfig
 
 from physbo.misc.permutation_importance import get_permutation_importance
 
+
 class Model:
     def __init__(self, lik, mean, cov, inf="exact"):
         """
@@ -317,7 +318,7 @@ class Model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha ** 2, N)
+        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """
@@ -390,9 +391,9 @@ class Model:
         temp = self.lik.num_params
 
         if self.prior.mean.num_params != 0:
-            params[
-                temp : temp + self.prior.mean.num_params
-            ] = self.prior.mean.get_cand_params(t)
+            params[temp : temp + self.prior.mean.num_params] = (
+                self.prior.mean.get_cand_params(t)
+            )
 
         temp += self.prior.mean.num_params
 
@@ -433,7 +434,9 @@ class Model:
 
         self.set_params(params)
 
-    def get_permutation_importance(self, X, t, n_perm: int, comm=None, split_features_parallel=False):
+    def get_permutation_importance(
+        self, X, t, n_perm: int, comm=None, split_features_parallel=False
+    ):
         """
         Calculating permutation importance of model
 
@@ -465,9 +468,9 @@ class Model:
             split_features_parallel=split_features_parallel,
         )
 
-class SFS(Model):
 
-    def __init__(self, lik, mean, cov, inf="exact",config=None):
+class SFS(Model):
+    def __init__(self, lik, mean, cov, inf="exact", config=None):
         super().__init__(lik, mean, cov, inf)
 
         self.config = config
@@ -490,7 +493,7 @@ class SFS(Model):
         config: physbo.misc.SetConfig object
 
         """
-        #config = SetConfig()
+        # config = SetConfig()
         method = self.config.learning.method
 
         if method == "adam":
@@ -506,7 +509,7 @@ class SFS(Model):
         self.prepare(X, t, params=None)
 
         self.xtrain = X
-    
+
     def get_post_fmean(self, X, Z, params=None):
         return super().get_post_fmean(X, Z, params)
 
@@ -535,11 +538,9 @@ class SFS(Model):
 
         return post_fmu
 
-    def get_params(self,deep=True):
-
+    def get_params(self, deep=True):
         mean = self.prior.mean
         cov = self.prior.cov
         config = self.config
 
-        return {"lik":self.lik,"mean":mean,"cov":cov,"config":config}
-
+        return {"lik": self.lik, "mean": mean, "cov": cov, "config": config}

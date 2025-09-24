@@ -21,6 +21,7 @@ from ._src import cholupdate, diagAB, logsumexp64, traceAB2, traceAB3
 
 __warned_names = set()
 
+
 def deprecated_warning(old: str, new: str):
     """
     Print a warning message when a deprecated name is used.
@@ -41,6 +42,6 @@ def deprecated_warning(old: str, new: str):
         __warned_names.add(old)
 
 
-def set_config(*args,**kwargs):
+def set_config(*args, **kwargs):
     deprecated_warning(old="physbo.set_config", new="physbo.SetConfig")
-    return SetConfig(*args,**kwargs)
+    return SetConfig(*args, **kwargs)

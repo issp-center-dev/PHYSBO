@@ -12,16 +12,20 @@ import pytest
 
 physbo = pytest.importorskip("physbo")
 
+
 def f(x):
     return -np.sum((x - 0.5) ** 2, axis=-1)
+
 
 class Simulator:
     def __init__(self):
         pass
+
     def __call__(self, X):
         # X: (N, 2) or (2,) ndarray
         X = np.atleast_2d(X)
         return f(X)
+
 
 def test_random_search():
     min_X = np.array([0.0, 0.0])
@@ -36,6 +40,7 @@ def test_random_search():
     print(best_X[-1])
     assert best_fx[-1] == pytest.approx(0.0, abs=0.01)
     assert np.allclose(best_X[-1], [0.5, 0.5], atol=0.1)
+
 
 def test_bayes_search():
     min_X = np.array([0.0, 0.0])
@@ -53,6 +58,7 @@ def test_bayes_search():
     assert best_fx[-1] == pytest.approx(0.0, abs=0.01)
     assert np.allclose(best_X[-1], [0.5, 0.5], atol=0.1)
     policy.get_score("EI", xs=np.array([[0.5, 0.5]]))
+
 
 def test_bayes_search_rand():
     min_X = np.array([0.0, 0.0])

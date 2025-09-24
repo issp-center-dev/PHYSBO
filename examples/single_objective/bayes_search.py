@@ -32,7 +32,9 @@ policy.random_search(max_num_probes=10, simulator=simulator)
 
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=40, simulator=simulator, score="EI", num_rand_basis=100)
+policy.bayes_search(
+    max_num_probes=40, simulator=simulator, score="EI", num_rand_basis=100
+)
 
 # Print the best result
 # best_actions[i] and best_fx[i] stores the best action and value up to the i-th search (random + bayes)

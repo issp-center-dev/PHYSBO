@@ -10,6 +10,7 @@ import numpy as np
 DTYPE64 = np.float64
 DTYPE32 = np.float32
 
+
 def grad_width64(X, width, G):
     """
     Gradiant along width direction (64bit).
@@ -38,6 +39,7 @@ def grad_width64(X, width, G):
                 gradG[d, i, j] = gradG[d, i, j] ** 2 * G[i, j]
                 gradG[d, j, i] = gradG[d, i, j]
     return gradG
+
 
 def grad_width32(X, width, G):
     """

@@ -232,7 +232,9 @@ class Model:
             pass
         return fcov
 
-    def get_permutation_importance(self, X, t, n_perm: int, comm=None, split_features_parallel=False):
+    def get_permutation_importance(
+        self, X, t, n_perm: int, comm=None, split_features_parallel=False
+    ):
         """
         Calculating permutation importance of model
 
