@@ -119,7 +119,6 @@ def traceAB3_64(A, B):
     traceAB = np.zeros(D, dtype=DTYPE)
 
     for d in range(D):
-        traceAB[d] = 0
         for i in range(N):
             for j in range(M):
                 traceAB[d] += A[i, j] * B[d, j, i]
