@@ -6,7 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import pickle as pickle
-import numpy as np
 from physbo import gp
 
 

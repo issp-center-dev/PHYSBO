@@ -7,7 +7,6 @@
 
 import numpy as np
 import copy
-import pickle
 
 from .. import utility
 

@@ -5,18 +5,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ._centering import centering
-from ._gauss_elim import gauss_elim
-from ._set_config import SetConfig
-from ._use_cython import use_cython
+from ._centering import centering as centering
+from ._gauss_elim import gauss_elim as gauss_elim
+from ._set_config import SetConfig as SetConfig
+from ._use_cython import use_cython as use_cython
 
-from ._src import cholupdate, diagAB, logsumexp64, traceAB2, traceAB3
-
-# from ._src.diagAB import diagAB_64 as diagAB
-# from ._src.traceAB import traceAB2_64 as traceAB2
-# from ._src.traceAB import traceAB3_64 as traceAB3
-# from ._src.cholupdate import cholupdate64 as cholupdate
-# from ._src.logsumexp import logsumexp64
+from ._src import cholupdate as cholupdate
+from ._src import diagAB as diagAB
+from ._src import logsumexp64 as logsumexp64
+from ._src import traceAB2 as traceAB2
+from ._src import traceAB3 as traceAB3
 
 
 __warned_names = set()

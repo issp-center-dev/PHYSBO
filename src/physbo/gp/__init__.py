@@ -5,14 +5,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from . import cov
-from . import mean
-from . import lik
-from . import core
+from . import cov as cov
+from . import mean as mean
+from . import lik as lik
+from . import core as core
 
-from .core import Prior, Model, SFS
-from .core import learning
-from ._predictor import Predictor
+from .core import Prior as Prior
+from .core import Model as Model
+from .core import SFS as SFS
+from .core import learning as learning
+from ._predictor import Predictor as Predictor
 
 from ..misc import deprecated_warning
 

@@ -5,7 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from ._gauss import Gauss
+from ._gauss import Gauss as Gauss
 
 from ...misc import deprecated_warning
 

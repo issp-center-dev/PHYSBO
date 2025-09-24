@@ -307,7 +307,7 @@ class Online(object):
             The parameter which gives the minimum likelihood.
         """
         num_init_params_search = self.config.learning.num_init_params_search
-        is_disp = self.config.learning.is_disp
+        # is_disp = self.config.learning.is_disp
         max_epoch = self.config.learning.max_epoch_init_params_search
         eval_size = self.config.learning.eval_size
         eval_X, eval_t = self.gp.sub_sampling(X, t, eval_size)

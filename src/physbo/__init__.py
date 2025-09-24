@@ -5,14 +5,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from . import gp
-from . import opt
-from . import blm
-from . import misc
-from . import search
-from . import predictor
-from .predictor import BasePredictor
-from ._variable import Variable
+from . import gp as gp
+from . import opt as opt
+from . import blm as blm
+from . import misc as misc
+from . import search as search
+from . import predictor as predictor
+from .predictor import BasePredictor as BasePredictor
+from ._variable import Variable as Variable
 
 
 def base_predictor(*args, **kwargs):

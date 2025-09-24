@@ -11,7 +11,6 @@ from ... import blm
 from .. import inf
 from . import learning
 from ._prior import Prior
-from ...misc import SetConfig
 
 from physbo.misc.permutation_importance import get_permutation_importance
 

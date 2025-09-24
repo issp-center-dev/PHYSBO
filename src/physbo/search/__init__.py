@@ -5,10 +5,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from . import score
-from . import discrete
-from . import range
-from . import score_multi
-from . import discrete_multi
-from . import range_multi
-# from . import odatse
+from . import score as score
+from . import discrete as discrete
+from . import range as range
+from . import score_multi as score_multi
+from . import discrete_multi as discrete_multi
+from . import range_multi as range_multi

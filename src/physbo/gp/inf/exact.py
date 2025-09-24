@@ -8,7 +8,6 @@
 import numpy as np
 import scipy
 from ... import misc
-from copy import deepcopy
 
 
 def eval_marlik(gp, X, t, params=None):
@@ -137,7 +136,7 @@ def prepare(gp, X, t, params=None):
     stats: tupple
     """
     ndata = X.shape[0]
-    ndims = X.shape[1]
+    # ndims = X.shape[1]
 
     if params is None:
         params = np.copy(gp.params)
@@ -175,8 +174,6 @@ def get_post_fmean(gp, X, Z, params=None):
     numpy.ndarray
     """
 
-    ndata = X.shape[0]
-    ndims = X.shape[1]
     ntest = Z.shape[0]
 
     lik_params, prior_params = gp.decomp_params(params)
@@ -215,7 +212,7 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
     lik_params, prior_params = gp.decomp_params(params)
 
     U = gp.stats[0]
-    alpha = gp.stats[1]
+    # alpha = gp.stats[1]
 
     G = gp.prior.get_cov(X=X, Z=Z, params=prior_params)
 

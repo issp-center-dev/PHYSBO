@@ -6,3 +6,5 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._model import Model
+
+__all__ = ["Model"]
