@@ -73,7 +73,7 @@ A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery
 ## License
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.
-PHYSBO v2 is distributed under Mozilla Public License version 2.0 (MPL v2).
+PHYSBO is distributed under Mozilla Public License version 2.0 (MPL v2).
 We hope that you cite the following reference when you publish the results using PHYSBO:
 
 [“Bayesian optimization package: PHYSBO”, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, Computer Physics Communications Volume 278, September 2022, 108405.](https://doi.org/10.1016/j.cpc.2022.108405)

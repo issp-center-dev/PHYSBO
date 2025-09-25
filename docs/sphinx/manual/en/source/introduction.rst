@@ -52,7 +52,7 @@ Main Developers
 License
 ----------------------
 
-PHYSBO v2 is distributed under `the Mozilla Public License version 2.0 (MPL v2) <https://www.mozilla.org/en-US/MPL/2.0/>`_.
+PHYSBO is distributed under `the Mozilla Public License version 2.0 (MPL v2) <https://www.mozilla.org/en-US/MPL/2.0/>`_.
 
 Copyright (c) <2020-> The University of Tokyo. All rights reserved.
 
