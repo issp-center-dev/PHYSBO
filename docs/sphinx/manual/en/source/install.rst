@@ -127,7 +127,10 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
     ii). Run the simulator with the selected parameters.
 
-  The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the "Exploring multiple candidates at once" section of the tutorial. Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside. In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYSBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO. For more details, please refer to the "Running Interactively" section of the tutorial.  
+  The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the `"Search multiple candidates at once" <notebook/tutorial_multi_probe.html>`_ section of the tutorial.
+  Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside.
+  In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYSBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO.
+  For more details, please refer to the `"Running PHYSBO Interactively" <notebook/tutorial_interactive_mode.html>`_ section of the tutorial.
 
 4. Check numerical results
 
@@ -138,4 +141,8 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
   - ``fbest, best_action= res.export_all_sequence_best_fx()``: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed.
   - ``res.total_num_search``: Total number steps where the simulator has executed.
 
-  The search results can be saved to an external file using the ``save`` method, and the output results can be loaded using the ``load`` method. See the tutorial for details on how to use it.
+  The ``policy`` after Bayesian optimization can be saved to external files using the ``save`` method, and the ``policy`` can be loaded from them by using the ``load`` method.
+  See the `"Running PHYSBO Interactively" <notebook/tutorial_interactive_mode.html>`_ section of the tutorial for details on how to use it.
+
+  PHYSBO also implements various optimization methods such as multi-objective optimization and optimization in continuous search spaces.
+  For more details, please refer to the `"Multi-objective optimization" <notebook/tutorial_multi_objective.html>`_ and `"Optimization in Continuous Space" <notebook/tutorial_range.html>`_ sections of the tutorial.

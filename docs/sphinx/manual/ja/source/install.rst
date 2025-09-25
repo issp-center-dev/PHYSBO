@@ -49,7 +49,7 @@ PHYSBOの実行環境および必要なパッケージは以下の通りです�
 
 #. 以下のコマンドを実行します。 ::
 
-  $ python3 -m pip uninstall physbo
+    $ python3 -m pip uninstall physbo
 
 
 PHYSBOの基本構造
@@ -97,7 +97,7 @@ PHYSBOのパッケージ構成は以下のようになっています。 ::
 - ``predictor`` :predictorの抽象クラス
 - ``misc`` : その他(探索空間を正規化するためのモジュールなど)
 
-各モジュールの詳細についてはAPIリファレンスを参考にしてください。
+各モジュールの詳細については `APIリファレンス <api/physbo.html>`_ を参考にしてください。
 
 計算の流れ
 --------------------------
@@ -111,7 +111,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 
 2. simulator の定義
 
-  上で定義した探索候補に対して、各探索候補の目的関数値（材料特性値など最適化したい値）を与えるsimulatorを定義します。PHYSBOでは、最適化の方向は「目的関数の最大化」になります。そのため、目的関数を最小化したい場合、simulatorから返す値にマイナスをかけることで実行できます。
+  上で定義した探索候補に対して、各探索候補の目的関数値（材料特性値など最適化したい値）を与えるsimulatorを定義します。PHYSBOでは、最適化の方向は「目的関数の最大化」になります。目的関数を最小化したい場合には、simulatorから返す値にマイナスをかけてください。
 
 3. 最適化の実行
 
@@ -126,7 +126,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
   - EI (Expected Improvement): ガウス過程による予測値と現状での最大値との差の期待値が最大となる点を候補として選択します。
   - PI (Probability of Improvement): 現状での最大値を超える確率が最大となる点を候補として選択します。
 
-  ガウス過程に関する詳細については :ref:`chap_algorithm` に記載してあります。その他、各手法の詳細については、`こちらの文献 <https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf>`_  およびその参考文献を参照して下さい。
+  ガウス過程に関する詳細については :ref:`chap_algorithm` に記載してあります。その他、各手法の詳細については、 `こちらの文献 <https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf>`_  およびその参考文献を参照して下さい。
 
   これらのメソッドに先ほど定義した simulator と探索ステップ数を指定すると、探索ステップ数だけ以下のループが回ります。
 
@@ -134,16 +134,18 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 
     ii). 選択されたパラメータで simulator を実行
 
-  i)で返されるパラメータはデフォルトでは1つですが、1ステップで複数のパラメータを返すことも可能です。詳しくはチュートリアルの「複数候補を一度に探索する」の項目を参照してください。また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの「インタラクティブに実行する」の項目を参照してください。
-
+  i)で返されるパラメータはデフォルトでは1つですが、1ステップで複数のパラメータを返すことも可能です。詳しくはチュートリアルの `「複数候補を一度に探索する」 <notebook/tutorial_multi_probe.html>`_ の項目を参照してください。また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの `「インタラクティブに実行する」 <notebook/tutorial_interactive_mode.html>`_ の項目を参照してください。
 
 4. 結果の確認
 
-  探索結果 res は history クラスのオブジェクト (physbo.search.discrete.results.history) として返されます。以下より探索結果を参照します。
+  探索結果 res は history クラスのオブジェクト (``physbo.search.discrete.results.History``) として返されます。以下より探索結果を参照します。
 
-  - res.fx : simulator (目的関数) の評価値の履歴。
-  - res.chosen_actions: simulator を評価したときのaction ID(パラメータ)の履歴。
-  - fbest, best_action= res.export_all_sequence_best_fx(): simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
-  - res.total_num_search: simulator のトータル評価数。
+  - ``res.fx`` : simulator (目的関数) の評価値の履歴。
+  - ``res.chosen_actions``: simulator を評価したときのaction ID(パラメータ)の履歴。
+  - ``fbest, best_action = res.export_all_sequence_best_fx()``: simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
+  - ``res.total_num_search``: simulator のトータル評価数。
 
-  また、探索結果は save メソッドにより外部ファイルに保存でき、load メソッドを用いて出力した結果をロードすることができます。使用方法の詳細はチュートリアルをご覧ください。
+  また、ベイズ最適化後の ``policy`` は ``save`` メソッドにより外部ファイルに保存でき、 ``load`` メソッドを用いてファイルからロード・再開することができます。使用方法の詳細はチュートリアルの `「インタラクティブに実行する」<notebook/tutorial_interactive_mode.html>`_ をご覧ください。
+
+  PHYSBOではほかにも、多目的最適化や連続的な探索空間に対する最適化など、様々な最適化手法が実装されています。詳しくはチュートリアルの `「多目的最適化」 <notebook/tutorial_multi_objective.html>`_ および `「連続空間での最適化」 <notebook/tutorial_range.html>`_ の項目を参照してください。
+
