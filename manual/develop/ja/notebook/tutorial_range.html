@@ -10,6 +10,7 @@
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -109,7 +110,7 @@
 <section id="基本的な使い方">
 <h2>基本的な使い方<a class="headerlink" href="#基本的な使い方" title="Link to this heading"></a></h2>
 <p>まずは必要なモジュールをインポートします。</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
@@ -118,6 +119,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
 </div>
 <p>最適化したい関数 <code class="docutils literal notranslate"><span class="pre">simulator</span></code> について、離散版では候補点の番号 <code class="docutils literal notranslate"><span class="pre">action</span></code> を入力として受け取りましたが、連続版では座標 <code class="docutils literal notranslate"><span class="pre">x</span></code> を直接入力として受け取ります。 <code class="docutils literal notranslate"><span class="pre">x</span></code> は <span class="math notranslate nohighlight">\(N\times D\)</span> の配列で、<span class="math notranslate nohighlight">\(N\)</span> は計算するデータの数、<span class="math notranslate nohighlight">\(D\)</span> は特徴量の次元数です。</p>
 <div class="nbinput nblast docutils container">
@@ -202,7 +211,7 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;physbo.search.range._history.History at 0x14f5d5160&gt;
+&lt;physbo.search.range._history.History at 0x12afa6250&gt;
 </pre></div></div>
 </div>
 <p>次に、 <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> でベイズ最適化を実行します。</p>
@@ -285,7 +294,7 @@ Done
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x14f6ca1f0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x12b0735b0&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -407,7 +416,7 @@ Done
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x14f7b37c0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x12b167a60&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -432,7 +441,9 @@ Done
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo.search.optimize.odatse</span>
-<span class="n">odatse_alg_dict</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">default_alg_dict</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">algorithm_name</span><span class="o">=</span><span class="s2">&quot;exchange&quot;</span><span class="p">)</span>
+<span class="n">odatse_alg_dict</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">default_alg_dict</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+                                                                 <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+                                                                 <span class="n">algorithm_name</span><span class="o">=</span><span class="s2">&quot;exchange&quot;</span><span class="p">)</span>
 
 <span class="c1"># show the default parameters for the exchange algorithm</span>
 <span class="n">odatse_alg_dict</span>
@@ -459,8 +470,8 @@ Done
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">odatse_alg_dict</span></code> を <code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.odatse.Optimizer</span></code> に渡してオプティマイザ <code class="docutils literal notranslate"><span class="pre">odatse_optimizer</span></code> を作成します。 これを <code class="docutils literal notranslate"><span class="pre">random_optimizer</span></code> と同様に <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> 関数の <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> キーワードに渡すことで、ODAT-SEを用いた最適化を行えます。</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">odatse_optimizer</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">(</span><span class="n">alg_dict</span><span class="o">=</span><span class="n">odatse_alg_dict</span><span class="p">)</span>
@@ -469,303 +480,12 @@ Done
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">odatse_optimizer</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                          <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+                          <span class="n">optimizer</span><span class="o">=</span><span class="n">odatse_optimizer</span><span class="p">,</span>
+                          <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
 <br/><br/></pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
-   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
-
-0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
-   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
-
-0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
-   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
-
-0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-Start the initial hyper parameter searching ...
-Done
-
-Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 14.586042968393606
-50 -th epoch marginal likelihood 14.234874815492592
-100 -th epoch marginal likelihood 14.063504009485214
-150 -th epoch marginal likelihood 13.916750623078872
-200 -th epoch marginal likelihood 13.772691286779512
-250 -th epoch marginal likelihood 13.633003306706115
-300 -th epoch marginal likelihood 13.49920085405347
-350 -th epoch marginal likelihood 13.371932369305052
-400 -th epoch marginal likelihood 13.251396114620242
-450 -th epoch marginal likelihood 13.13755169992651
-500 -th epoch marginal likelihood 13.03022856247339
-Done
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 592
-  walker = 7
-  fx = -0.08724730012318593
-  x1 = -0.6632394188413889
-  x2 = 1.2992687470140627
-0011-th step: f(x) = -2.127986 (action=[-0.66323942  1.29926875])
-   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 3
-  walker = 2
-  fx = -0.15122627226282923
-  x1 = 0.21383031999250043
-  x2 = 0.3254993696726256
-0012-th step: f(x) = -0.151673 (action=[0.21383032 0.32549937])
-   current best f(x) = -0.151673 (best action=[0.21383032 0.32549937])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 792
-  walker = 4
-  fx = -0.04504304725819021
-  x1 = 0.2884566379550171
-  x2 = 0.24852525678914614
-0013-th step: f(x) = -0.144972 (action=[0.28845664 0.24852526])
-   current best f(x) = -0.144972 (best action=[0.28845664 0.24852526])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 9
-  walker = 2
-  fx = -0.023924604982579183
-  x1 = 0.24246152789117092
-  x2 = 0.31119117438511995
-0014-th step: f(x) = -0.155628 (action=[0.24246153 0.31119117])
-   current best f(x) = -0.144972 (best action=[0.28845664 0.24852526])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 9
-  walker = 2
-  fx = -0.020446511277702747
-  x1 = 0.24246152789117092
-  x2 = 0.31119117438511995
-0015-th step: f(x) = -0.155628 (action=[0.24246153 0.31119117])
-   current best f(x) = -0.144972 (best action=[0.28845664 0.24852526])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 552
-  walker = 2
-  fx = -0.07481182997481708
-  x1 = 0.13244261916217678
-  x2 = 0.06615306139761863
-0016-th step: f(x) = -0.021917 (action=[0.13244262 0.06615306])
-   current best f(x) = -0.021917 (best action=[0.13244262 0.06615306])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 369
-  walker = 7
-  fx = -0.027473682816708426
-  x1 = 0.08963724279512779
-  x2 = -0.049908998251837665
-0017-th step: f(x) = -0.010526 (action=[ 0.08963724 -0.049909  ])
-   current best f(x) = -0.010526 (best action=[ 0.08963724 -0.049909  ])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 870
-  walker = 3
-  fx = -0.02596109190319288
-  x1 = 0.1454408813792785
-  x2 = 0.04315152452874757
-0018-th step: f(x) = -0.023015 (action=[0.14544088 0.04315152])
-   current best f(x) = -0.010526 (best action=[ 0.08963724 -0.049909  ])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 808
-  walker = 1
-  fx = -0.009096193960228389
-  x1 = -0.12770487699170638
-  x2 = -0.01838854551819161
-0019-th step: f(x) = -0.016647 (action=[-0.12770488 -0.01838855])
-   current best f(x) = -0.010526 (best action=[ 0.08963724 -0.049909  ])
-
-name            : exchange
-seed            : 12345
-param.min_list  : [-2. -2.]
-param.max_list  : [2. 2.]
-param.step_list : [0.04 0.04]
-exchange.numsteps: 1000
-exchange.numsteps_exchange: 10
-exchange.Tmin   : 0.1
-exchange.Tmax   : 10.0
-exchange.Tlogspace: True
-exchange.nreplica_per_proc: 10
-complete main process : rank 00000000/00000001
-end of run
-start separateT 0
-Best Result:
-  rank = 0
-  step = 909
-  walker = 2
-  fx = -0.022643697695934134
-  x1 = 0.08090134843314573
-  x2 = 0.024943485082990796
-0020-th step: f(x) = -0.007167 (action=[0.08090135 0.02494349])
-   current best f(x) = -0.007167 (best action=[0.08090135 0.02494349])
-
-</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -783,7 +503,7 @@ Best Result:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x16e169df0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x13a953130&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
