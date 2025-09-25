@@ -20,8 +20,12 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - NumPy
 - SciPy
 
-If you need further speed-up, you can install ``physbo-core-cython`` additionally.
-This package rewrites some functions of PHYSBO using Cython, and thus requires a C compiler.
+### About Cython
+
+From v3.0.0, PHYSBO no longer uses Cython in order to simplify installation process particularly on Windows.
+This means that the performance of PHYSBO is slightly degraded from older versions.
+If you need more performance, you can install ``physbo-core-cython`` additionally.
+This package offers Cythonized version of some functions of PHYSBO.
 
 ## Install
 
