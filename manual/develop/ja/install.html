@@ -60,7 +60,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="notebook/index.html">チュートリアル</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithm.html">アルゴリズム</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/physbo.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">謝辞</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">お問い合わせ</a></li>
 </ul>
@@ -143,12 +145,13 @@ $ pip3 install --user ./
 </section>
 <section id="id5">
 <h3>アンインストール<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
-<ol class="arabic simple">
-<li><p>以下のコマンドを実行します。</p></li>
+<ol class="arabic">
+<li><p>以下のコマンドを実行します。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 -m pip uninstall physbo
+</pre></div>
+</div>
+</li>
 </ol>
-<blockquote>
-<div><p>$ python3 -m pip uninstall physbo</p>
-</div></blockquote>
 </section>
 </section>
 <section id="physbo">
@@ -197,7 +200,7 @@ $ pip3 install --user ./
 <li><p><code class="docutils literal notranslate"><span class="pre">predictor</span></code> :predictorの抽象クラス</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">misc</span></code> : その他(探索空間を正規化するためのモジュールなど)</p></li>
 </ul>
-<p>各モジュールの詳細についてはAPIリファレンスを参考にしてください。</p>
+<p>各モジュールの詳細については <a class="reference external" href="api/physbo.html">APIリファレンス</a> を参考にしてください。</p>
 </section>
 <section id="id6">
 <h2>計算の流れ<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
@@ -213,7 +216,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 <li><p>simulator の定義</p></li>
 </ol>
 <blockquote>
-<div><p>上で定義した探索候補に対して、各探索候補の目的関数値（材料特性値など最適化したい値）を与えるsimulatorを定義します。PHYSBOでは、最適化の方向は「目的関数の最大化」になります。そのため、目的関数を最小化したい場合、simulatorから返す値にマイナスをかけることで実行できます。</p>
+<div><p>上で定義した探索候補に対して、各探索候補の目的関数値（材料特性値など最適化したい値）を与えるsimulatorを定義します。PHYSBOでは、最適化の方向は「目的関数の最大化」になります。目的関数を最小化したい場合には、simulatorから返す値にマイナスをかけてください。</p>
 </div></blockquote>
 <ol class="arabic simple" start="3">
 <li><p>最適化の実行</p></li>
@@ -230,26 +233,27 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 <li><p>EI (Expected Improvement): ガウス過程による予測値と現状での最大値との差の期待値が最大となる点を候補として選択します。</p></li>
 <li><p>PI (Probability of Improvement): 現状での最大値を超える確率が最大となる点を候補として選択します。</p></li>
 </ul>
-<p>ガウス過程に関する詳細については <a class="reference internal" href="algorithm.html#chap-algorithm"><span class="std std-ref">アルゴリズム</span></a> に記載してあります。その他、各手法の詳細については、<a class="reference external" href="https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf">こちらの文献</a>  およびその参考文献を参照して下さい。</p>
+<p>ガウス過程に関する詳細については <a class="reference internal" href="algorithm.html#chap-algorithm"><span class="std std-ref">アルゴリズム</span></a> に記載してあります。その他、各手法の詳細については、 <a class="reference external" href="https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf">こちらの文献</a>  およびその参考文献を参照して下さい。</p>
 <p>これらのメソッドに先ほど定義した simulator と探索ステップ数を指定すると、探索ステップ数だけ以下のループが回ります。</p>
 <blockquote>
 <div><p>i). パラメータ候補の中から次に実行するパラメータを選択</p>
 <p>ii). 選択されたパラメータで simulator を実行</p>
 </div></blockquote>
-<p>i)で返されるパラメータはデフォルトでは1つですが、1ステップで複数のパラメータを返すことも可能です。詳しくはチュートリアルの「複数候補を一度に探索する」の項目を参照してください。また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの「インタラクティブに実行する」の項目を参照してください。</p>
+<p>i)で返されるパラメータはデフォルトでは1つですが、1ステップで複数のパラメータを返すことも可能です。詳しくはチュートリアルの <a class="reference external" href="notebook/tutorial_multi_probe.html">「複数候補を一度に探索する」</a> の項目を参照してください。また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの <a class="reference external" href="notebook/tutorial_interactive_mode.html">「インタラクティブに実行する」</a> の項目を参照してください。</p>
 </div></blockquote>
 <ol class="arabic simple" start="4">
 <li><p>結果の確認</p></li>
 </ol>
 <blockquote>
-<div><p>探索結果 res は history クラスのオブジェクト (physbo.search.discrete.results.history) として返されます。以下より探索結果を参照します。</p>
+<div><p>探索結果 res は history クラスのオブジェクト (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.History</span></code>) として返されます。以下より探索結果を参照します。</p>
 <ul class="simple">
-<li><p>res.fx : simulator (目的関数) の評価値の履歴。</p></li>
-<li><p>res.chosen_actions: simulator を評価したときのaction ID(パラメータ)の履歴。</p></li>
-<li><p>fbest, best_action= res.export_all_sequence_best_fx(): simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。</p></li>
-<li><p>res.total_num_search: simulator のトータル評価数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">res.fx</span></code> : simulator (目的関数) の評価値の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">res.chosen_actions</span></code>: simulator を評価したときのaction ID(パラメータ)の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fbest,</span> <span class="pre">best_action</span> <span class="pre">=</span> <span class="pre">res.export_all_sequence_best_fx()</span></code>: simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">res.total_num_search</span></code>: simulator のトータル評価数。</p></li>
 </ul>
-<p>また、探索結果は save メソッドにより外部ファイルに保存でき、load メソッドを用いて出力した結果をロードすることができます。使用方法の詳細はチュートリアルをご覧ください。</p>
+<p>また、ベイズ最適化後の <code class="docutils literal notranslate"><span class="pre">policy</span></code> は <code class="docutils literal notranslate"><span class="pre">save</span></code> メソッドにより外部ファイルに保存でき、 <code class="docutils literal notranslate"><span class="pre">load</span></code> メソッドを用いてファイルからロード・再開することができます。使用方法の詳細はチュートリアルの <a href="#id12"><span class="problematic" id="id13">`「インタラクティブに実行する」&lt;notebook/tutorial_interactive_mode.html&gt;`_</span></a> をご覧ください。</p>
+<p>PHYSBOではほかにも、多目的最適化や連続的な探索空間に対する最適化など、様々な最適化手法が実装されています。詳しくはチュートリアルの <a class="reference external" href="notebook/tutorial_multi_objective.html">「多目的最適化」</a> および <a class="reference external" href="notebook/tutorial_range.html">「連続空間での最適化」</a> の項目を参照してください。</p>
 </div></blockquote>
 </section>
 </section>

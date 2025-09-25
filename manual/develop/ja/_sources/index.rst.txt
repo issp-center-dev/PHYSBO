@@ -14,6 +14,10 @@ Welcome to PHYSBO's documentation!
    install
    notebook/index
    algorithm
-   API Reference<api/physbo>
+
+.. toctree::
+   :maxdepth: 1
+
+   API Reference<api>
    acknowledgement
    contact
