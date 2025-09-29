@@ -1,0 +1,667 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimization in Continuous Space &mdash; PHYSBO 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Algorithm" href="../algorithm.html" />
+    <link rel="prev" title="Multi-objective optimization" href="tutorial_multi_objective.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">Basic usage of PHYSBO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">Gaussian process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">Running PHYSBO interactively</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Optimization in Continuous Space</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Basic-Usage">Basic Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Acquisition-Function-Optimization-Algorithm">Acquisition Function Optimization Algorithm</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Optimization in Continuous Space</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_range.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/v3.0.0/data/tutorial">ISSP Data Repository</a> (v3.0.0 branch).</p>
+<section id="Optimization-in-Continuous-Space">
+<h1>Optimization in Continuous Space<a class="headerlink" href="#Optimization-in-Continuous-Space" title="Link to this heading"></a></h1>
+<p>In the tutorials so far, we have been discretizing the feature space to perform Bayesian optimization. PHYSBO can also optimize while keeping quantities continuous.</p>
+<p>As an algorithm for maximizing the acquisition function in continuous space, random search is implemented. Additionally, you can use <a class="reference external" href="https://github.com/issp-center-dev/ODAT-SE">ODAT-SE</a> as an optimization library. This can be installed using <code class="docutils literal notranslate"><span class="pre">pip</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>odatse
+</pre></div>
+</div>
+<section id="Basic-Usage">
+<h2>Basic Usage<a class="headerlink" href="#Basic-Usage" title="Link to this heading"></a></h2>
+<p>First, import the necessary modules.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
+</div>
+<p>The function <code class="docutils literal notranslate"><span class="pre">simulator</span></code> to be optimized, unlike the discrete version which received candidate point numbers <code class="docutils literal notranslate"><span class="pre">action</span></code> as input, in the continuous version directly receives coordinates <code class="docutils literal notranslate"><span class="pre">x</span></code> as input. <code class="docutils literal notranslate"><span class="pre">x</span></code> is an array of size <span class="math notranslate nohighlight">\(N\times D\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the number of data points to compute and <span class="math notranslate nohighlight">\(D\)</span> is the dimensionality of the features.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">simulator</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The lower and upper bounds of the feature space are specified by <code class="docutils literal notranslate"><span class="pre">min_X</span></code> and <code class="docutils literal notranslate"><span class="pre">max_X</span></code> respectively.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_X</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">]</span>
+<span class="n">max_X</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>The continuous space version of the <code class="docutils literal notranslate"><span class="pre">Policy</span></code> class is <code class="docutils literal notranslate"><span class="pre">physbo.search.range.Policy</span></code>. The constructor takes <code class="docutils literal notranslate"><span class="pre">min_X</span></code> and <code class="docutils literal notranslate"><span class="pre">max_X</span></code> as parameters. Also, similar to the discrete space version, you can enable parallel execution by passing <code class="docutils literal notranslate"><span class="pre">mpi4py.MPI.Comm</span></code> as <code class="docutils literal notranslate"><span class="pre">comm</span></code>. You can also set the random seed using the <code class="docutils literal notranslate"><span class="pre">set_seed</span></code> method.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">seed</span> <span class="o">=</span> <span class="mi">31415</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">range</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Once the <code class="docutils literal notranslate"><span class="pre">Policy</span></code> class is created, you can execute optimization following the same flow as the discrete space version. First, to create initial training data for learning the surrogate model, execute <code class="docutils literal notranslate"><span class="pre">random_search</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;physbo.search.range._history.History at 0x103cf6400&gt;
+</pre></div></div>
+</div>
+<p>Next, execute Bayesian optimization with <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.586042968393606
+50 -th epoch marginal likelihood 14.234874815492592
+100 -th epoch marginal likelihood 14.063504009485214
+150 -th epoch marginal likelihood 13.916750623078872
+200 -th epoch marginal likelihood 13.772691286779512
+250 -th epoch marginal likelihood 13.633003306706115
+300 -th epoch marginal likelihood 13.49920085405347
+350 -th epoch marginal likelihood 13.371932369305052
+400 -th epoch marginal likelihood 13.251396114620242
+450 -th epoch marginal likelihood 13.13755169992651
+500 -th epoch marginal likelihood 13.03022856247339
+Done
+
+0011-th step: f(x) = -5.026362 (action=[-1.03592362  1.98827161])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0012-th step: f(x) = -0.028634 (action=[0.1327553  0.10492853])
+   current best f(x) = -0.028634 (best action=[0.1327553  0.10492853])
+
+0013-th step: f(x) = -0.013414 (action=[0.07031902 0.09202588])
+   current best f(x) = -0.013414 (best action=[0.07031902 0.09202588])
+
+0014-th step: f(x) = -0.057856 (action=[0.23418776 0.05488579])
+   current best f(x) = -0.013414 (best action=[0.07031902 0.09202588])
+
+0015-th step: f(x) = -0.012249 (action=[ 0.110677   -0.00028234])
+   current best f(x) = -0.012249 (best action=[ 0.110677   -0.00028234])
+
+0016-th step: f(x) = -0.015602 (action=[0.12295699 0.02198239])
+   current best f(x) = -0.012249 (best action=[ 0.110677   -0.00028234])
+
+0017-th step: f(x) = -0.026756 (action=[0.11124983 0.11991566])
+   current best f(x) = -0.012249 (best action=[ 0.110677   -0.00028234])
+
+0018-th step: f(x) = -0.025519 (action=[0.13646757 0.08304057])
+   current best f(x) = -0.012249 (best action=[ 0.110677   -0.00028234])
+
+0019-th step: f(x) = -0.005797 (action=[0.07576489 0.00754463])
+   current best f(x) = -0.005797 (best action=[0.07576489 0.00754463])
+
+0020-th step: f(x) = -0.032290 (action=[0.09645697 0.15161167])
+   current best f(x) = -0.005797 (best action=[0.07576489 0.00754463])
+
+</pre></div></div>
+</div>
+<p>The return value <code class="docutils literal notranslate"><span class="pre">res</span></code> of the <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> function contains the process of Bayesian optimization. Using the <code class="docutils literal notranslate"><span class="pre">export_sequence_best_fx</span></code> method, you can obtain the optimization results at each step.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x1350051f0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_range_14_1.png" src="../_images/notebook_tutorial_range_14_1.png" />
+</div>
+</div>
+</section>
+<section id="Acquisition-Function-Optimization-Algorithm">
+<h2>Acquisition Function Optimization Algorithm<a class="headerlink" href="#Acquisition-Function-Optimization-Algorithm" title="Link to this heading"></a></h2>
+<p>For acquisition function optimization, random search is performed by default. This means that <code class="docutils literal notranslate"><span class="pre">nsamples</span> <span class="pre">=</span> <span class="pre">1000</span></code> candidate points are randomly selected, and the point with the largest acquisition function among them is chosen. To change the value of <code class="docutils literal notranslate"><span class="pre">nsamples</span></code>, use <code class="docutils literal notranslate"><span class="pre">physbo.search.optimizer.random.Optimizer</span></code>. For example, if you want to set <code class="docutils literal notranslate"><span class="pre">nsamples</span> <span class="pre">=</span> <span class="pre">100</span></code>, create <code class="docutils literal notranslate"><span class="pre">random_optimizer</span></code> as follows and pass it to the <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> keyword of the <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">random_optimizer</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">nsamples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">range</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">random_optimizer</span><span class="p">)</span>
+
+<span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.586042968393606
+50 -th epoch marginal likelihood 14.234874815492592
+100 -th epoch marginal likelihood 14.063504009485214
+150 -th epoch marginal likelihood 13.916750623078872
+200 -th epoch marginal likelihood 13.772691286779512
+250 -th epoch marginal likelihood 13.633003306706115
+300 -th epoch marginal likelihood 13.49920085405347
+350 -th epoch marginal likelihood 13.371932369305052
+400 -th epoch marginal likelihood 13.251396114620242
+450 -th epoch marginal likelihood 13.13755169992651
+500 -th epoch marginal likelihood 13.03022856247339
+Done
+
+0011-th step: f(x) = -3.969688 (action=[-0.55371092  1.91392061])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0012-th step: f(x) = -0.048301 (action=[ 0.09981879 -0.19579904])
+   current best f(x) = -0.048301 (best action=[ 0.09981879 -0.19579904])
+
+0013-th step: f(x) = -0.026065 (action=[0.00582793 0.16134044])
+   current best f(x) = -0.026065 (best action=[0.00582793 0.16134044])
+
+0014-th step: f(x) = -0.029637 (action=[-0.03315978  0.16893146])
+   current best f(x) = -0.026065 (best action=[0.00582793 0.16134044])
+
+0015-th step: f(x) = -6.287502 (action=[ 1.84812961 -1.69467382])
+   current best f(x) = -0.026065 (best action=[0.00582793 0.16134044])
+
+0016-th step: f(x) = -0.007927 (action=[ 0.06895685 -0.05632176])
+   current best f(x) = -0.007927 (best action=[ 0.06895685 -0.05632176])
+
+0017-th step: f(x) = -0.011240 (action=[0.10157691 0.03036993])
+   current best f(x) = -0.007927 (best action=[ 0.06895685 -0.05632176])
+
+0018-th step: f(x) = -0.060419 (action=[ 0.1940892  -0.15082425])
+   current best f(x) = -0.007927 (best action=[ 0.06895685 -0.05632176])
+
+0019-th step: f(x) = -0.016852 (action=[-0.12738362  0.02501082])
+   current best f(x) = -0.007927 (best action=[ 0.06895685 -0.05632176])
+
+0020-th step: f(x) = -0.093609 (action=[0.12668816 0.27849452])
+   current best f(x) = -0.007927 (best action=[ 0.06895685 -0.05632176])
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x1350f0610&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_range_16_2.png" src="../_images/notebook_tutorial_range_16_2.png" />
+</div>
+</div>
+<p>Using optimizers other than <code class="docutils literal notranslate"><span class="pre">physbo.search.optimizer.random.Optimizer</span></code>, you can utilize maximization algorithms other than random search. PHYSBO provides an optimizer using ODAT-SE: <code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.odatse.Optimizer</span></code>. This library can solve optimization problems using five algorithms:</p>
+<ul class="simple">
+<li><p>“exchange”: Replica exchange Monte Carlo method</p></li>
+<li><p>“pamc”: Population annealing Monte Carlo method</p></li>
+<li><p>“minsearch”: Nelder-Mead method</p></li>
+<li><p>“mapper”: Grid search</p></li>
+<li><p>“bayes”: Bayesian optimization</p></li>
+</ul>
+<p>The algorithms and hyperparameters of ODAT-SE are specified using a dictionary equivalent to the <code class="docutils literal notranslate"><span class="pre">[algorithm]</span></code> section of the <a class="reference external" href="https://issp-center-dev.github.io/ODAT-SE/manual/main/en/input.html#algorithm">ODAT-SE input file</a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.odatse.default_alg_dict</span></code> function creates a template for this dictionary, so modify the parameters as needed.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo.search.optimize.odatse</span>
+<span class="n">odatse_alg_dict</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">default_alg_dict</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">algorithm_name</span><span class="o">=</span><span class="s2">&quot;exchange&quot;</span><span class="p">)</span>
+
+<span class="c1"># show the default parameters for the exchange algorithm</span>
+<span class="n">odatse_alg_dict</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;name&#39;: &#39;exchange&#39;,
+ &#39;seed&#39;: 12345,
+ &#39;param&#39;: {&#39;min_list&#39;: array([-2., -2.]),
+  &#39;max_list&#39;: array([2., 2.]),
+  &#39;step_list&#39;: array([0.04, 0.04])},
+ &#39;exchange&#39;: {&#39;numsteps&#39;: 1000,
+  &#39;numsteps_exchange&#39;: 10,
+  &#39;Tmin&#39;: 0.1,
+  &#39;Tmax&#39;: 10.0,
+  &#39;Tlogspace&#39;: True,
+  &#39;nreplica_per_proc&#39;: 10}}
+</pre></div></div>
+</div>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">odatse_alg_dict</span></code> to <code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.odatse.Optimizer</span></code> to create the optimizer <code class="docutils literal notranslate"><span class="pre">odatse_optimizer</span></code>. By passing this to the <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> keyword of the <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> function, similar to <code class="docutils literal notranslate"><span class="pre">random_optimizer</span></code>, you can perform optimization using ODAT-SE.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">odatse_optimizer</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">(</span><span class="n">alg_dict</span><span class="o">=</span><span class="n">odatse_alg_dict</span><span class="p">)</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">range</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">odatse_optimizer</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x136bf8f10&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_range_21_1.png" src="../_images/notebook_tutorial_range_21_1.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_multi_objective.html" class="btn btn-neutral float-left" title="Multi-objective optimization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../algorithm.html" class="btn btn-neutral float-right" title="Algorithm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v3.0.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v3.0.0/en/notebook/tutorial_range.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../v3.0.0/ja/notebook/tutorial_range.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/en/notebook/tutorial_range.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/en/notebook/tutorial_range.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        <strong>
+        <a href="../../../v3.0.0/en/notebook/tutorial_range.html">v3.0.0</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/en/notebook/tutorial_range.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/en/notebook/tutorial_range.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/en/notebook/tutorial_range.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/en/notebook/tutorial_range.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/en/notebook/tutorial_range.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/en/notebook/tutorial_range.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/en/notebook/tutorial_range.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/en/notebook/tutorial_range.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/en/notebook/tutorial_range.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

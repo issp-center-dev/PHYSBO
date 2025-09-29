@@ -1,0 +1,1860 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>連続空間での最適化 &mdash; PHYSBO 3.0-dev ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=1bf24029"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="アルゴリズム" href="../algorithm.html" />
+    <link rel="prev" title="多目的最適化" href="tutorial_multi_objective.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">連続空間での最適化</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#基本的な使い方">基本的な使い方</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#獲得関数の最適化">獲得関数の最適化</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">連続空間での最適化</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_continuous.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="連続空間での最適化">
+<h1>連続空間での最適化<a class="headerlink" href="#連続空間での最適化" title="Link to this heading"></a></h1>
+<p>ここまでのチュートリアルでは、特徴量空間を離散化してベイズ最適化を実行してきました。 PHYSBOは連続量のまま最適化することもできます。</p>
+<p>PHYSBOは連続空間で獲得関数を最大化するためのライブラリとして、<a class="reference external" href="https://github.com/issp-center-dev/ODAT-SE">ODAT-SE</a>を使用します。 <code class="docutils literal notranslate"><span class="pre">pip</span></code> を用いてインストール可能です。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>odatse
+</pre></div>
+</div>
+<section id="基本的な使い方">
+<h2>基本的な使い方<a class="headerlink" href="#基本的な使い方" title="Link to this heading"></a></h2>
+<p>まずは必要なモジュールをインポートします。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<p>最適化したい関数 <code class="docutils literal notranslate"><span class="pre">simulator</span></code> について、離散版では候補点の番号 <code class="docutils literal notranslate"><span class="pre">action</span></code> を入力として受け取りましたが、連続版では座標 <code class="docutils literal notranslate"><span class="pre">x</span></code> を直接入力として受け取ります。 <code class="docutils literal notranslate"><span class="pre">x</span></code> は <span class="math notranslate nohighlight">\(N\times D\)</span> の配列で、<span class="math notranslate nohighlight">\(N\)</span> は計算するデータの数、<span class="math notranslate nohighlight">\(D\)</span> は特徴量の次元数です。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">simulator</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>特徴量空間の下限と上限をそれぞれ <code class="docutils literal notranslate"><span class="pre">min_X</span></code> と <code class="docutils literal notranslate"><span class="pre">max_X</span></code> で指定します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_X</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">]</span>
+<span class="n">max_X</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>連続空間版の <code class="docutils literal notranslate"><span class="pre">Policy</span></code> クラスは <code class="docutils literal notranslate"><span class="pre">physbo.search.continuous.Policy</span></code> です。 コンストラクタには <code class="docutils literal notranslate"><span class="pre">min_X</span></code> と <code class="docutils literal notranslate"><span class="pre">max_X</span></code> を指定します。 また、離散空間版と同様に <code class="docutils literal notranslate"><span class="pre">mpi4py.MPI.Comm</span></code> を <code class="docutils literal notranslate"><span class="pre">comm</span></code> として渡すことで並列実行が可能です。 <code class="docutils literal notranslate"><span class="pre">set_seed</span></code> メソッドを用いて乱数のシードを設定することもできます。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">seed</span> <span class="o">=</span> <span class="mi">31415</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">continuous</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>一度 <code class="docutils literal notranslate"><span class="pre">Policy</span></code> クラスを作成してからは、離散空間版と同様の流れで最適化を実行できます。 まずは、サロゲートモデルを学習するための初期訓練データを作成するために、 <code class="docutils literal notranslate"><span class="pre">random_search</span></code> を実行します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;physbo.search.continuous._history.History at 0x11b9584f0&gt;
+</pre></div></div>
+</div>
+<p>次に、 <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> でベイズ最適化を実行します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.586042968393606
+50 -th epoch marginal likelihood 14.234874815492592
+100 -th epoch marginal likelihood 14.063504009485214
+150 -th epoch marginal likelihood 13.916750623078872
+200 -th epoch marginal likelihood 13.772691286779512
+250 -th epoch marginal likelihood 13.633003306706115
+300 -th epoch marginal likelihood 13.49920085405347
+350 -th epoch marginal likelihood 13.371932369305052
+400 -th epoch marginal likelihood 13.251396114620242
+450 -th epoch marginal likelihood 13.13755169992651
+500 -th epoch marginal likelihood 13.03022856247339
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.481946296808848
+50 -th epoch marginal likelihood 14.226839207527519
+100 -th epoch marginal likelihood 14.032412353874676
+150 -th epoch marginal likelihood 13.86424527985262
+200 -th epoch marginal likelihood 13.707767345417555
+250 -th epoch marginal likelihood 13.560859285979948
+300 -th epoch marginal likelihood 13.423172952477884
+350 -th epoch marginal likelihood 13.294294241692487
+400 -th epoch marginal likelihood 13.173725760283126
+450 -th epoch marginal likelihood 13.06095155951367
+500 -th epoch marginal likelihood 12.955467862989995
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 984
+  walker = 8
+  fx = -0.11894291094598983
+  x1 = -0.4151831130745408
+  x2 = 1.9257325587360195
+0011-th step: f(x) = -3.880823 (action=[-0.41518311  1.92573256])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 16.961455314347177
+50 -th epoch marginal likelihood 16.670216416998137
+100 -th epoch marginal likelihood 16.451120712508533
+150 -th epoch marginal likelihood 16.284799610645617
+200 -th epoch marginal likelihood 16.148744765498556
+250 -th epoch marginal likelihood 16.027944504743523
+300 -th epoch marginal likelihood 15.914910064900159
+350 -th epoch marginal likelihood 15.806768704703764
+400 -th epoch marginal likelihood 15.702589801192598
+450 -th epoch marginal likelihood 15.602040100475257
+500 -th epoch marginal likelihood 15.50491788350784
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 5
+  walker = 2
+  fx = -0.19179963541056833
+  x1 = 0.25553413624498345
+  x2 = 0.2763320758305696
+0012-th step: f(x) = -0.141657 (action=[0.25553414 0.27633208])
+   current best f(x) = -0.141657 (best action=[0.25553414 0.27633208])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 16.970356684918805
+50 -th epoch marginal likelihood 16.666269101229936
+100 -th epoch marginal likelihood 16.394814938405247
+150 -th epoch marginal likelihood 16.139946890626625
+200 -th epoch marginal likelihood 15.900507424902502
+250 -th epoch marginal likelihood 15.674768250637037
+300 -th epoch marginal likelihood 15.461018234906444
+350 -th epoch marginal likelihood 15.25773239996182
+400 -th epoch marginal likelihood 15.063592635443829
+450 -th epoch marginal likelihood 14.877469656755041
+500 -th epoch marginal likelihood 14.69839660169408
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 441
+  walker = 4
+  fx = -0.08335501715858715
+  x1 = 0.11919307450328885
+  x2 = 0.053799367069110204
+0013-th step: f(x) = -0.017101 (action=[0.11919307 0.05379937])
+   current best f(x) = -0.017101 (best action=[0.11919307 0.05379937])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.149801643963336
+50 -th epoch marginal likelihood 16.745659909095608
+100 -th epoch marginal likelihood 16.36397068036046
+150 -th epoch marginal likelihood 16.002326651297203
+200 -th epoch marginal likelihood 15.65899299668558
+250 -th epoch marginal likelihood 15.332571693280872
+300 -th epoch marginal likelihood 15.021616827320361
+350 -th epoch marginal likelihood 14.72463775196119
+400 -th epoch marginal likelihood 14.440188050074415
+450 -th epoch marginal likelihood 14.16692839956467
+500 -th epoch marginal likelihood 13.903651326454572
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 884
+  walker = 5
+  fx = -0.027245028383239805
+  x1 = 0.122130159025056
+  x2 = 0.05715570956217964
+0014-th step: f(x) = -0.018183 (action=[0.12213016 0.05715571])
+   current best f(x) = -0.017101 (best action=[0.11919307 0.05379937])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.421276585399156
+50 -th epoch marginal likelihood 16.877047846906528
+100 -th epoch marginal likelihood 16.437399752150906
+150 -th epoch marginal likelihood 16.01780634178573
+200 -th epoch marginal likelihood 15.620560997895572
+250 -th epoch marginal likelihood 15.243715892792276
+300 -th epoch marginal likelihood 14.88482738511249
+350 -th epoch marginal likelihood 14.541637005600439
+400 -th epoch marginal likelihood 14.212196547183115
+450 -th epoch marginal likelihood 13.894856509747994
+500 -th epoch marginal likelihood 13.588223635069886
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 374
+  walker = 7
+  fx = -0.023742227265787518
+  x1 = 0.10988197849436909
+  x2 = 0.05302178696102104
+0015-th step: f(x) = -0.014885 (action=[0.10988198 0.05302179])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 18.050221891257863
+50 -th epoch marginal likelihood 17.371609664498145
+100 -th epoch marginal likelihood 16.77958437199023
+150 -th epoch marginal likelihood 16.22748371317472
+200 -th epoch marginal likelihood 15.711224496056996
+250 -th epoch marginal likelihood 15.225416138314825
+300 -th epoch marginal likelihood 14.765397812798449
+350 -th epoch marginal likelihood 14.327366648918188
+400 -th epoch marginal likelihood 13.90824692664251
+450 -th epoch marginal likelihood 13.50554050148884
+500 -th epoch marginal likelihood 13.117200957518257
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 592
+  walker = 2
+  fx = -0.0007279001719315485
+  x1 = 0.4069709010339658
+  x2 = 0.14032359014827034
+0016-th step: f(x) = -0.185316 (action=[0.4069709  0.14032359])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.553674372173063
+50 -th epoch marginal likelihood 16.827139237407145
+100 -th epoch marginal likelihood 16.16102754967235
+150 -th epoch marginal likelihood 15.545048142848133
+200 -th epoch marginal likelihood 14.969503492189947
+250 -th epoch marginal likelihood 14.427113429670925
+300 -th epoch marginal likelihood 13.91233538268549
+350 -th epoch marginal likelihood 13.420875050672684
+400 -th epoch marginal likelihood 12.949351111933993
+450 -th epoch marginal likelihood 12.49506104727213
+500 -th epoch marginal likelihood 12.055814655847938
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 537
+  walker = 2
+  fx = -0.01958225514893436
+  x1 = 0.116454332371728
+  x2 = 0.07573701794004581
+0017-th step: f(x) = -0.019298 (action=[0.11645433 0.07573702])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 16.964761100886605
+50 -th epoch marginal likelihood 16.17551815445062
+100 -th epoch marginal likelihood 15.448778686432119
+150 -th epoch marginal likelihood 14.77391215761144
+200 -th epoch marginal likelihood 14.140876182940248
+250 -th epoch marginal likelihood 13.542121960636575
+300 -th epoch marginal likelihood 12.971898589018084
+350 -th epoch marginal likelihood 12.425749681948469
+400 -th epoch marginal likelihood 11.900167284485349
+450 -th epoch marginal likelihood 11.392349499619286
+500 -th epoch marginal likelihood 10.90002778112856
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 511
+  walker = 2
+  fx = -0.017711103678329676
+  x1 = 0.11501144952230986
+  x2 = 0.04429278663938161
+0018-th step: f(x) = -0.015189 (action=[0.11501145 0.04429279])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 16.692843048946198
+50 -th epoch marginal likelihood 15.80952998179867
+100 -th epoch marginal likelihood 14.99667989357156
+150 -th epoch marginal likelihood 14.241473605717786
+200 -th epoch marginal likelihood 13.532609293644697
+250 -th epoch marginal likelihood 12.861631564702348
+300 -th epoch marginal likelihood 12.222113768886944
+350 -th epoch marginal likelihood 11.609085052739893
+400 -th epoch marginal likelihood 11.018639521111451
+450 -th epoch marginal likelihood 10.447663342089866
+500 -th epoch marginal likelihood 9.893640560842892
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 314
+  walker = 3
+  fx = -0.0159223855378581
+  x1 = 0.12761942443318053
+  x2 = 0.0596841133896456
+0019-th step: f(x) = -0.019849 (action=[0.12761942 0.05968411])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 16.4227636136251
+50 -th epoch marginal likelihood 15.44201780210121
+100 -th epoch marginal likelihood 14.539629851204865
+150 -th epoch marginal likelihood 13.701133783021326
+200 -th epoch marginal likelihood 12.913908740646436
+250 -th epoch marginal likelihood 12.1685225532902
+300 -th epoch marginal likelihood 11.457812078528894
+350 -th epoch marginal likelihood 10.776242328508838
+400 -th epoch marginal likelihood 10.119469459831693
+450 -th epoch marginal likelihood 9.484035537854462
+500 -th epoch marginal likelihood 8.867151251704547
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.1
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 539
+  walker = 3
+  fx = -0.014726048201140124
+  x1 = 0.12552806491954588
+  x2 = 0.04792127535368223
+0020-th step: f(x) = -0.018054 (action=[0.12552806 0.04792128])
+   current best f(x) = -0.014885 (best action=[0.10988198 0.05302179])
+
+</pre></div></div>
+</div>
+<p>各ステップにおけるODAT-SEの最適化過程が標準出力に出されています。ODAT-SEはPHYSBOとは逆に最小化を行うライブラリなので、獲得関数に-1をかけて最小化問題としている点に注意してください。</p>
+<p><code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> 関数の返り値 <code class="docutils literal notranslate"><span class="pre">res</span></code> にはベイズ最適化の過程が保存されています。 <code class="docutils literal notranslate"><span class="pre">export_sequence_best_fx</span></code> メソッドを用いることで、各ステップでの最適化結果を取得できます。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x177d37cd0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_continuous_14_1.png" src="../_images/notebook_tutorial_continuous_14_1.png" />
+</div>
+</div>
+</section>
+<section id="獲得関数の最適化">
+<h2>獲得関数の最適化<a class="headerlink" href="#獲得関数の最適化" title="Link to this heading"></a></h2>
+<p>獲得関数の最適化にはODAT-SEを使用します。デフォルトではレプリカ交換モンテカルロ法を用いて最適化を行います。最適化手法は <code class="docutils literal notranslate"><span class="pre">alg_name</span></code> キーワードで指定でき、</p>
+<ul class="simple">
+<li><p>「exchange」: レプリカ交換モンテカルロ法</p></li>
+<li><p>「pamc」: ポピュレーションアニーリングモンテカルロ法</p></li>
+<li><p>「minsearch」: Nelder-Mead法</p></li>
+<li><p>「mapper」: グリッドサーチ</p></li>
+<li><p>「bayes」: ベイズ最適化</p></li>
+</ul>
+<p>が選べます。例えばポピュレーションアニーリングモンテカルロ法を用いた最適化を行う場合は、</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">continuous</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">alg_name</span><span class="o">=</span><span class="s2">&quot;pamc&quot;</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">)</span>
+
+<span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.586042968393606
+50 -th epoch marginal likelihood 14.234874815492592
+100 -th epoch marginal likelihood 14.063504009485214
+150 -th epoch marginal likelihood 13.916750623078872
+200 -th epoch marginal likelihood 13.772691286779512
+250 -th epoch marginal likelihood 13.633003306706115
+300 -th epoch marginal likelihood 13.49920085405347
+350 -th epoch marginal likelihood 13.371932369305052
+400 -th epoch marginal likelihood 13.251396114620242
+450 -th epoch marginal likelihood 13.13755169992651
+500 -th epoch marginal likelihood 13.03022856247339
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.481946296808848
+50 -th epoch marginal likelihood 14.226839207527519
+100 -th epoch marginal likelihood 14.032412353874676
+150 -th epoch marginal likelihood 13.86424527985262
+200 -th epoch marginal likelihood 13.707767345417555
+250 -th epoch marginal likelihood 13.560859285979948
+300 -th epoch marginal likelihood 13.423172952477884
+350 -th epoch marginal likelihood 13.294294241692487
+400 -th epoch marginal likelihood 13.173725760283126
+450 -th epoch marginal likelihood 13.06095155951367
+500 -th epoch marginal likelihood 12.955467862989995
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.01055782778148795 0.0021128077933711496 100 0.0 0.98
+0.15848931924611132 -0.011403403716358396 0.002173599883496178 100 0.0006182767707769328 0.995
+0.25118864315095796 -0.013118129313442362 0.00258770755822487 100 0.0016773489332792893 0.985
+0.3981071705534971 -0.0134821315939877 0.0025812323399056723 100 0.0036118221690842056 0.984
+0.630957344480193 -0.0139551963033675 0.0026734775977265775 100 0.006768724954518472 0.991
+1.0 -0.01396021270879566 0.0026895113025102477 100 0.011967389617485755 0.986
+1.5848931924611132 -0.011604123695125423 0.002473130987657205 100 0.020252197814915874 0.985
+2.5118864315095797 -0.012291781796260448 0.00248550323947134 100 0.03127559710467427 0.976
+3.9810717055349727 -0.00996273871013953 0.002345240122984007 100 0.049964467334606515 0.964
+6.3095734448019325 -0.011692427917075365 0.0031048318812179746 100 0.07473162578146986 0.965
+10.0 -0.014088473429027415 0.0029816490560211515 100 0.12384080533200448 0.973
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 51
+  walker = 65
+  fx = -0.1605240232714243
+  x1 = -0.975728384173687
+  x2 = 1.9817138584026925
+0011-th step: f(x) = -4.879236 (action=[-0.97572838  1.98171386])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.452867963690863
+50 -th epoch marginal likelihood 17.178143622032223
+100 -th epoch marginal likelihood 16.973722826047585
+150 -th epoch marginal likelihood 16.81258189918987
+200 -th epoch marginal likelihood 16.671152614403173
+250 -th epoch marginal likelihood 16.53935267693074
+300 -th epoch marginal likelihood 16.414391650927872
+350 -th epoch marginal likelihood 16.295446046330724
+400 -th epoch marginal likelihood 16.182006530744967
+450 -th epoch marginal likelihood 16.073594078507877
+500 -th epoch marginal likelihood 15.969742653190782
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.010796576766429533 0.003368135708380833 100 0.0 0.988
+0.15848931924611132 -0.00874963825556363 0.00265597692442008 100 0.000633410387372333 0.98
+0.25118864315095796 -0.009037662721711137 0.003324395348632885 100 0.0014474566415017527 0.978
+0.3981071705534971 -0.010220167672394753 0.004017133867895648 100 0.0027871518971586216 0.977
+0.630957344480193 -0.007534918799458223 0.0034281038023282217 100 0.005209528367154387 0.98
+1.0 -0.00977895008887042 0.004269724962327388 100 0.00807141915410333 0.971
+1.5848931924611132 -0.0066959364685148515 0.0033884369136936805 100 0.014088584615215456 0.964
+2.5118864315095797 -0.006856679549993139 0.0037662021745341395 100 0.02081907287487584 0.967
+3.9810717055349727 -0.007427020432706044 0.00354258227924662 100 0.03223254676734931 0.963
+6.3095734448019325 -0.007193749197087818 0.004481642994270617 100 0.053477550952940475 0.97
+10.0 -0.00975636223718257 0.003934414794227331 100 0.0901068398430567 0.965
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 60
+  walker = 92
+  fx = -0.27226915537001267
+  x1 = 0.1338018142268308
+  x2 = 0.053040107050947694
+0012-th step: f(x) = -0.020716 (action=[0.13380181 0.05304011])
+   current best f(x) = -0.020716 (best action=[0.13380181 0.05304011])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.643163120957453
+50 -th epoch marginal likelihood 17.326353637429463
+100 -th epoch marginal likelihood 17.033861927939054
+150 -th epoch marginal likelihood 16.762690167623745
+200 -th epoch marginal likelihood 16.50997871529674
+250 -th epoch marginal likelihood 16.27320591104404
+300 -th epoch marginal likelihood 16.050175631864754
+350 -th epoch marginal likelihood 15.839007227582663
+400 -th epoch marginal likelihood 15.638103509605498
+450 -th epoch marginal likelihood 15.446109707005597
+500 -th epoch marginal likelihood 15.261873710824336
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.00033171797174726125 0.0001419376661051725 100 0.0 0.969
+0.15848931924611132 -0.00036379372075399236 0.00016172579777626425 100 1.940537043306986e-05 0.971
+0.25118864315095796 -0.00027141400552434594 9.292404454579973e-05 100 5.3139825342639095e-05 0.977
+0.3981071705534971 -0.00040914293425756143 0.00016579619918900894 100 9.302479933469464e-05 0.976
+0.630957344480193 -0.0005335429556315371 0.00022047278477403722 100 0.0001883673129408228 0.977
+1.0 -0.0004841221649210803 0.00019418431972703792 100 0.00038559570397105774 0.983
+1.5848931924611132 -0.0008691420977691572 0.0002820726335101427 100 0.0006693831123869644 0.979
+2.5118864315095797 -0.00050263680373272 0.0001284841313342589 100 0.0014784708532688791 0.977
+3.9810717055349727 -0.000448882030075419 0.00015204566216644235 100 0.0022186671953644877 0.988
+6.3095734448019325 -0.0005866846708133464 0.00020389749138792815 100 0.0032701388572523083 0.986
+10.0 -0.0004541906848081617 0.00011404293474109547 100 0.0054628291202250805 0.991
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 97
+  walker = 1
+  fx = -0.03320736752245984
+  x1 = 0.08087950063484264
+  x2 = -0.0020803695391977475
+0013-th step: f(x) = -0.006546 (action=[ 0.0808795  -0.00208037])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.791411486749702
+50 -th epoch marginal likelihood 17.37560072253822
+100 -th epoch marginal likelihood 16.986083338103793
+150 -th epoch marginal likelihood 16.619575639042395
+200 -th epoch marginal likelihood 16.273572023148215
+250 -th epoch marginal likelihood 15.94600710496671
+300 -th epoch marginal likelihood 15.634879511923323
+350 -th epoch marginal likelihood 15.338272755742496
+400 -th epoch marginal likelihood 15.054429102494609
+450 -th epoch marginal likelihood 14.781785588539584
+500 -th epoch marginal likelihood 14.518975214216397
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.000508968648428712 0.00026825640985242053 100 0.0 0.976
+0.15848931924611132 -0.0004883868447705386 0.00019577607553309426 100 2.978141994300896e-05 0.981
+0.25118864315095796 -0.0005345091334112845 0.00020769204207406978 100 7.507065629190268e-05 0.986
+0.3981071705534971 -0.0007586035445978356 0.00028375577871163614 100 0.00015364606014147062 0.99
+0.630957344480193 -0.0004109506159422349 0.00017389395791229115 100 0.000330501458401423 0.99
+1.0 -0.0004519310213303221 0.00019758226000150532 100 0.0004823638318356805 0.987
+1.5848931924611132 -0.00040976714532341835 0.0001823488946743689 100 0.0007473493219370226 0.984
+2.5118864315095797 -0.00045959756191175233 0.00020457098665541156 100 0.001128620326325539 0.972
+3.9810717055349727 -0.0005169957871322822 0.0001717240167752409 100 0.0018082602071483472 0.964
+6.3095734448019325 -0.0005581314773912827 0.0002041414826209223 100 0.00302004925105217 0.984
+10.0 -0.00043343357978353064 0.00016385092863701039 100 0.005107453738595831 0.981
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 5
+  walker = 17
+  fx = -0.025671814543715345
+  x1 = 0.124194155974688
+  x2 = 0.05614858539314508
+0014-th step: f(x) = -0.018577 (action=[0.12419416 0.05614859])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 18.36011285842315
+50 -th epoch marginal likelihood 17.516761833181313
+100 -th epoch marginal likelihood 17.039756017394538
+150 -th epoch marginal likelihood 16.67644101102566
+200 -th epoch marginal likelihood 16.33430845705769
+250 -th epoch marginal likelihood 15.998910102671008
+300 -th epoch marginal likelihood 15.670730417137413
+350 -th epoch marginal likelihood 15.35072248587103
+400 -th epoch marginal likelihood 15.039083812487872
+450 -th epoch marginal likelihood 14.73558066270664
+500 -th epoch marginal likelihood 14.43978212215574
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.0006225677373641603 0.0002727134033838623 100 0.0 0.979
+0.15848931924611132 -0.0006587508257980546 0.00027802067981486713 100 3.6426161347832223e-05 0.979
+0.25118864315095796 -0.000390589841116222 0.0001682224023776163 100 9.752439667095364e-05 0.987
+0.3981071705534971 -0.00038269105535021497 0.00016938765715769456 100 0.00015493953078806786 0.983
+0.630957344480193 -0.00024093904093361665 0.0001295855501104483 100 0.0002441252080274882 0.984
+1.0 -8.96540566497489e-05 3.7200285616757035e-05 100 0.00033315532619347514 0.978
+1.5848931924611132 -7.307633061326511e-05 5.032453424751221e-05 100 0.0003856160571497272 0.994
+2.5118864315095797 -0.00015419264732742 9.896943621928143e-05 100 0.00045346520025897825 0.996
+3.9810717055349727 -9.775975701452506e-05 3.992491138462372e-05 100 0.000681044395497317 0.991
+6.3095734448019325 -6.549262089848053e-05 2.9975502192680165e-05 100 0.0009091066032528262 0.988
+10.0 -0.00017059452650172724 9.588175813433016e-05 100 0.0011513987207624058 0.988
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 25
+  walker = 15
+  fx = -0.02369828285399065
+  x1 = 0.12125637934386965
+  x2 = 0.059804664732270134
+0015-th step: f(x) = -0.018280 (action=[0.12125638 0.05980466])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 18.62677968945009
+50 -th epoch marginal likelihood 17.940730387851772
+100 -th epoch marginal likelihood 17.345964686028026
+150 -th epoch marginal likelihood 16.792974278688558
+200 -th epoch marginal likelihood 16.277047090445137
+250 -th epoch marginal likelihood 15.79226849372331
+300 -th epoch marginal likelihood 15.333597476501136
+350 -th epoch marginal likelihood 14.89696360992181
+400 -th epoch marginal likelihood 14.479105453902543
+450 -th epoch marginal likelihood 14.077397464173826
+500 -th epoch marginal likelihood 13.689707229625517
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.00039645096655490514 0.00017600703790959172 100 0.0 0.98
+0.15848931924611132 -0.0002976509975833007 0.00017619301778380963 100 2.3193393930510627e-05 0.993
+0.25118864315095796 -0.00048819044286726315 0.00021380527332482148 100 5.0798494966976175e-05 0.974
+0.3981071705534971 -0.00042314955216424255 0.00018668910526565373 100 0.00012257158475218475 0.986
+0.630957344480193 -0.0005355923930766421 0.00022725109905804135 100 0.0002211942054379159 0.99
+1.0 -0.0004907853135768872 0.00019848314895445966 100 0.00041919928259910935 0.987
+1.5848931924611132 -0.0005767300606274867 0.00021243863879889593 100 0.0007069124935097418 0.99
+2.5118864315095797 -0.0005449031689073389 0.00021772378370161092 100 0.001243463481058618 0.98
+3.9810717055349727 -0.000569054392651383 0.0002468252278226965 100 0.002049005082415048 0.987
+6.3095734448019325 -0.0004957132428117933 0.00023437492973508526 100 0.0033905821786744754 0.982
+10.0 -0.0007379203352803343 0.00031117596153503455 100 0.00525588636260191 0.976
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 105
+  walker = 74
+  fx = -0.020739305573638234
+  x1 = 1.9718187881889446
+  x2 = -1.951014878297294
+0016-th step: f(x) = -7.694528 (action=[ 1.97181879 -1.95101488])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 23.175249631999016
+50 -th epoch marginal likelihood 22.433299708738545
+100 -th epoch marginal likelihood 21.747546730015294
+150 -th epoch marginal likelihood 21.103175427200306
+200 -th epoch marginal likelihood 20.48985282977558
+250 -th epoch marginal likelihood 19.90208137566158
+300 -th epoch marginal likelihood 19.337070417795303
+350 -th epoch marginal likelihood 18.793127750949104
+400 -th epoch marginal likelihood 18.26872523153385
+450 -th epoch marginal likelihood 17.762184710043158
+500 -th epoch marginal likelihood 17.271723322532665
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.0001712717869957088 0.00013657795879499073 100 0.0 0.99
+0.15848931924611132 -0.00012131589970204755 6.596941409289394e-05 100 1.002072980950397e-05 0.99
+0.25118864315095796 -0.00045598508979750874 0.00023671680588008222 100 2.126846223688841e-05 0.993
+0.3981071705534971 -0.00040950431775925444 0.0002032058903603075 100 8.832103448611445e-05 0.987
+0.630957344480193 -0.0006962503228409439 0.0002656461924304896 100 0.00018378352290985588 0.99
+1.0 -0.000330195648705775 0.00015466246270683616 100 0.000441206031584992 0.984
+1.5848931924611132 -0.00019225140474259106 7.799520408403988e-05 100 0.0006347339971283695 0.993
+2.5118864315095797 -0.00040144512966175383 0.0002665009867476942 100 0.0008132087845579742 0.992
+3.9810717055349727 -0.00047739019654022274 0.00022115586350372187 100 0.0014106434521948673 0.985
+6.3095734448019325 -0.0005936368557306199 0.0003093052287512713 100 0.0025354946829597566 0.986
+10.0 -0.000440194482134372 0.0002606695858991576 100 0.004790123608893137 0.976
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 33
+  walker = 9
+  fx = -0.02598909408486447
+  x1 = 0.18283450700161524
+  x2 = -0.013685587365293106
+0017-th step: f(x) = -0.033616 (action=[ 0.18283451 -0.01368559])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 24.258535174024516
+50 -th epoch marginal likelihood 22.894678238110366
+100 -th epoch marginal likelihood 21.997041975426942
+150 -th epoch marginal likelihood 21.312867659589017
+200 -th epoch marginal likelihood 20.705218129781116
+250 -th epoch marginal likelihood 20.125570943826034
+300 -th epoch marginal likelihood 19.561657840016938
+350 -th epoch marginal likelihood 19.011536001316504
+400 -th epoch marginal likelihood 18.474963531494396
+450 -th epoch marginal likelihood 17.9515009981632
+500 -th epoch marginal likelihood 17.44040351288399
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -0.00013402134080464125 7.926194049564489e-05 100 0.0 0.979
+0.15848931924611132 -0.0002660525022707555 0.0001371236457997267 100 7.839880973489895e-06 0.988
+0.25118864315095796 -8.470050356028033e-05 4.240322811113136e-05 100 3.251071234499355e-05 0.972
+0.3981071705534971 -0.00025917119184471274 0.0001587784569199291 100 4.49567069905392e-05 0.975
+0.630957344480193 -0.0002452971081930537 0.00015101712139398588 100 0.00010537237181097072 0.973
+1.0 -0.00014590039223294146 7.669655999817915e-05 100 0.0001960514180271099 0.983
+1.5848931924611132 -0.00015545557869465002 0.00011925351738284416 100 0.00028148469831717235 0.975
+2.5118864315095797 -0.00019128223520326407 0.00011071524960833769 100 0.0004261979829773353 0.979
+3.9810717055349727 -7.115238453736495e-06 6.209554117389933e-06 100 0.0007085166759754945 0.995
+6.3095734448019325 -0.0001263120547248739 0.0001262423794932933 100 0.0007250948744165766 0.987
+10.0 -9.604952340319488e-05 9.590251294060398e-05 100 0.0012021270898221058 0.985
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 51
+  walker = 57
+  fx = -0.021142488222629163
+  x1 = 0.16168058052611972
+  x2 = 0.05585556165209045
+0018-th step: f(x) = -0.029260 (action=[0.16168058 0.05585556])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 23.29800295623376
+50 -th epoch marginal likelihood 22.338349459322437
+100 -th epoch marginal likelihood 21.46130438836065
+150 -th epoch marginal likelihood 20.652118429543776
+200 -th epoch marginal likelihood 19.89700891076918
+250 -th epoch marginal likelihood 19.185664771539358
+300 -th epoch marginal likelihood 18.510262965209552
+350 -th epoch marginal likelihood 17.86476386858203
+400 -th epoch marginal likelihood 17.244430378418997
+450 -th epoch marginal likelihood 16.64549335138514
+500 -th epoch marginal likelihood 16.064914511372685
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -3.5456554112287854e-05 2.9539346893829894e-05 100 0.0 0.989
+0.15848931924611132 -0.00019372484168914475 0.00015726178984762533 100 2.0739774819824328e-06 0.989
+0.25118864315095796 -0.00023239837367330235 0.00013298171174319157 100 2.004266013898569e-05 0.981
+0.3981071705534971 -0.00014963161918871842 8.712549972316727e-05 100 5.420519033624301e-05 0.978
+0.630957344480193 -0.00014169444360784093 0.00011313591349714542 100 8.906702892659129e-05 0.977
+1.0 -0.00024080346421350915 0.00020380393679733414 100 0.00014144472087942414 0.985
+1.5848931924611132 -0.00016690170660810938 0.0001441473694323482 100 0.00028298726611617186 0.986
+2.5118864315095797 -7.598891911594734e-05 7.452886364946319e-05 100 0.000438591653092923 0.98
+3.9810717055349727 -6.885388758394579e-08 2.6445953725783806e-08 100 0.0005508065437410942 0.976
+6.3095734448019325 -3.9107854679727087e-07 3.216613159257057e-07 100 0.0005509668703256938 0.986
+10.0 -0.0001359110896816361 0.0001359009710842766 100 0.0005524101866915503 0.989
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 59
+  walker = 2
+  fx = -0.020223688700056808
+  x1 = 0.18200467575538182
+  x2 = 0.025251378082963495
+0019-th step: f(x) = -0.033763 (action=[0.18200468 0.02525138])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 22.95965098409455
+50 -th epoch marginal likelihood 21.93429720645851
+100 -th epoch marginal likelihood 20.993664692556212
+150 -th epoch marginal likelihood 20.123025504571952
+200 -th epoch marginal likelihood 19.308186227895455
+250 -th epoch marginal likelihood 18.538484031008313
+300 -th epoch marginal likelihood 17.80582797779889
+350 -th epoch marginal likelihood 17.103974760438557
+400 -th epoch marginal likelihood 16.42803023041196
+450 -th epoch marginal likelihood 15.774102235073439
+500 -th epoch marginal likelihood 15.139054744457017
+Done
+
+name            : pamc
+seed            : 12345
+param.min_list  : [-2. -2.]
+param.max_list  : [2. 2.]
+param.step_list : [0.04 0.04]
+pamc.numsteps_annealing: 10
+pamc.Tnum       : 11
+pamc.Tmax       : 10.0
+pamc.Tmin       : 0.1
+pamc.Tlogspace  : True
+pamc.nreplica_per_proc: 100
+pamc.resampling_interval: 2
+pamc.fix_num_replicas: True
+β mean[f] Err[f] nreplica log(Z/Z0) acceptance_ratio
+0.1 -2.9261245672815902e-05 2.449047950108108e-05 100 0.0 0.989
+0.15848931924611132 -0.00016969157895992126 0.0001395714151071593 100 1.7115719113401694e-06 0.989
+0.25118864315095796 -0.0002617316083833761 0.00017403764974087285 100 1.7450153480264465e-05 0.992
+0.3981071705534971 -0.0002406043567807284 0.00014116107844923737 100 5.593576085005564e-05 0.984
+0.630957344480193 -1.1340642959785114e-05 7.983559454378743e-06 100 0.00011201316820461251 0.972
+1.0 -1.101143184860861e-06 7.526775911825456e-07 100 0.000116198778914015 0.972
+1.5848931924611132 -4.027551749338987e-07 3.66218358695476e-07 100 0.00011684283917821974 0.983
+2.5118864315095797 -1.022244043975964e-06 7.011142964087472e-07 100 0.00011721619620693916 0.977
+3.9810717055349727 -1.0059893891955254e-06 6.875517661470413e-07 100 0.00011871811441535668 0.975
+6.3095734448019325 -1.831790524687096e-06 1.1869458620861377e-06 100 0.00012106068933577089 0.977
+10.0 -5.782171669682057e-07 2.4012664547499673e-07 100 0.00012782172587088748 0.986
+complete main process : rank 00000000/00000001
+end of run
+Best Result:
+  rank = 0
+  step = 18
+  walker = 2
+  fx = -0.018037435160940012
+  x1 = 0.16649330992258946
+  x2 = 0.031840899272556865
+0020-th step: f(x) = -0.028734 (action=[0.16649331 0.0318409 ])
+   current best f(x) = -0.006546 (best action=[ 0.0808795  -0.00208037])
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x177b14ee0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_continuous_16_2.png" src="../_images/notebook_tutorial_continuous_16_2.png" />
+</div>
+</div>
+<p>たとえばレプリカ交換モンテカルロ法で使われる温度など、各手法のハイパーパラメータはデフォルトのものが使用されます。これらを変更する場合には、 <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> 関数に辞書型の変数 <code class="docutils literal notranslate"><span class="pre">alg_dict</span></code> を渡します。これは<a class="reference external" href="https://issp-center-dev.github.io/ODAT-SE/manual/main/ja/input.html">ODAT-SEの入力ファイル</a>における、 <code class="docutils literal notranslate"><span class="pre">[algorithm]</span></code> セクションとして用いられます。</p>
+<p><code class="docutils literal notranslate"><span class="pre">physbo.search.odatse.default_alg_dict</span></code> 関数を用いて、それぞれの最適化手法に対するPHYSBOでのデフォルトパラメータを取得できます。これを修正するのが最も簡単です。 例えばレプリカ交換モンテカルロ法で、最低温度 <code class="docutils literal notranslate"><span class="pre">Tmin</span></code> をデフォルト値の半分にしたい場合は、</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">alg_dict</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">odatse</span><span class="o">.</span><span class="n">default_alg_dict</span><span class="p">(</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="p">,</span> <span class="s2">&quot;exchange&quot;</span><span class="p">)</span>
+<span class="n">alg_dict</span><span class="p">[</span><span class="s2">&quot;exchange&quot;</span><span class="p">][</span><span class="s2">&quot;Tmin&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.5</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">continuous</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="n">alg_dict</span><span class="o">=</span><span class="n">alg_dict</span><span class="p">)</span>
+
+<span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -0.831185 (action=[0.58327442 0.70069668])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0002-th step: f(x) = -5.914186 (action=[1.88281594 1.53921746])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0003-th step: f(x) = -4.352756 (action=[1.63626337 1.29437187])
+   current best f(x) = -0.831185 (best action=[0.58327442 0.70069668])
+
+0004-th step: f(x) = -0.237057 (action=[-0.05316112  0.48397432])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0005-th step: f(x) = -0.488353 (action=[ 0.57404985 -0.39852174])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0006-th step: f(x) = -2.441356 (action=[1.50087645 0.43442582])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0007-th step: f(x) = -3.440784 (action=[-1.57320004 -0.98276443])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0008-th step: f(x) = -3.452632 (action=[-1.85812001  0.00465691])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0009-th step: f(x) = -0.764532 (action=[ 0.46977882 -0.73745485])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+0010-th step: f(x) = -1.850471 (action=[-0.63939092 -1.20068727])
+   current best f(x) = -0.237057 (best action=[-0.05316112  0.48397432])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.586042968393606
+50 -th epoch marginal likelihood 14.234874815492592
+100 -th epoch marginal likelihood 14.063504009485214
+150 -th epoch marginal likelihood 13.916750623078872
+200 -th epoch marginal likelihood 13.772691286779512
+250 -th epoch marginal likelihood 13.633003306706115
+300 -th epoch marginal likelihood 13.49920085405347
+350 -th epoch marginal likelihood 13.371932369305052
+400 -th epoch marginal likelihood 13.251396114620242
+450 -th epoch marginal likelihood 13.13755169992651
+500 -th epoch marginal likelihood 13.03022856247339
+Done
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.481946296808848
+50 -th epoch marginal likelihood 14.226839207527519
+100 -th epoch marginal likelihood 14.032412353874676
+150 -th epoch marginal likelihood 13.86424527985262
+200 -th epoch marginal likelihood 13.707767345417555
+250 -th epoch marginal likelihood 13.560859285979948
+300 -th epoch marginal likelihood 13.423172952477884
+350 -th epoch marginal likelihood 13.294294241692487
+400 -th epoch marginal likelihood 13.173725760283126
+450 -th epoch marginal likelihood 13.06095155951367
+500 -th epoch marginal likelihood 12.955467862989995
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 22
+  walker = 2
+  fx = -0.07741691469966322
+  x1 = 0.21784165515755358
+  x2 = 0.1526056655147732
+0011-th step: f(x) = -0.070743 (action=[0.21784166 0.15260567])
+   current best f(x) = -0.070743 (best action=[0.21784166 0.15260567])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.593998557930993
+50 -th epoch marginal likelihood 14.321629251498216
+100 -th epoch marginal likelihood 14.075377903618115
+150 -th epoch marginal likelihood 13.852488750744177
+200 -th epoch marginal likelihood 13.64959190574438
+250 -th epoch marginal likelihood 13.463937388484673
+300 -th epoch marginal likelihood 13.293275433615872
+350 -th epoch marginal likelihood 13.135741557077175
+400 -th epoch marginal likelihood 12.989771779696323
+450 -th epoch marginal likelihood 12.854040139511053
+500 -th epoch marginal likelihood 12.727411977724056
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 900
+  walker = 5
+  fx = -0.03446032184067731
+  x1 = 0.2545558046725402
+  x2 = 0.08725402668913274
+0012-th step: f(x) = -0.072412 (action=[0.2545558  0.08725403])
+   current best f(x) = -0.070743 (best action=[0.21784166 0.15260567])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.938411330976987
+50 -th epoch marginal likelihood 14.56505713699071
+100 -th epoch marginal likelihood 14.22717710789388
+150 -th epoch marginal likelihood 13.919939925899179
+200 -th epoch marginal likelihood 13.638390899835095
+250 -th epoch marginal likelihood 13.37863666416252
+300 -th epoch marginal likelihood 13.137559789700385
+350 -th epoch marginal likelihood 12.912617433866131
+400 -th epoch marginal likelihood 12.701703963497767
+450 -th epoch marginal likelihood 12.503053614035338
+500 -th epoch marginal likelihood 12.315169524404574
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 186
+  walker = 2
+  fx = -0.03610865365842707
+  x1 = 0.11565099357732825
+  x2 = 0.08005132495934013
+0013-th step: f(x) = -0.019783 (action=[0.11565099 0.08005132])
+   current best f(x) = -0.019783 (best action=[0.11565099 0.08005132])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 15.491797180394261
+50 -th epoch marginal likelihood 14.99652497414182
+100 -th epoch marginal likelihood 14.547970823169509
+150 -th epoch marginal likelihood 14.138940448714589
+200 -th epoch marginal likelihood 13.762496034848514
+250 -th epoch marginal likelihood 13.41330186070891
+300 -th epoch marginal likelihood 13.087174702637128
+350 -th epoch marginal likelihood 12.78076714524739
+400 -th epoch marginal likelihood 12.491353981588482
+450 -th epoch marginal likelihood 12.216683839414392
+500 -th epoch marginal likelihood 11.954873446334695
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 598
+  walker = 4
+  fx = -0.01976958577519252
+  x1 = 0.17675982097033194
+  x2 = 0.0107478514334252
+0014-th step: f(x) = -0.031360 (action=[0.17675982 0.01074785])
+   current best f(x) = -0.019783 (best action=[0.11565099 0.08005132])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.993920143176487
+50 -th epoch marginal likelihood 14.441573242734284
+100 -th epoch marginal likelihood 13.937310799560821
+150 -th epoch marginal likelihood 13.473490314296205
+200 -th epoch marginal likelihood 13.04287930187041
+250 -th epoch marginal likelihood 12.639929016325029
+300 -th epoch marginal likelihood 12.260310012882043
+350 -th epoch marginal likelihood 11.900578005895657
+400 -th epoch marginal likelihood 11.557945770439558
+450 -th epoch marginal likelihood 11.230123916557373
+500 -th epoch marginal likelihood 10.91520741130878
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 976
+  walker = 3
+  fx = -0.021196467842689002
+  x1 = 0.0937478820106738
+  x2 = 0.10708504785475187
+0015-th step: f(x) = -0.020256 (action=[0.09374788 0.10708505])
+   current best f(x) = -0.019783 (best action=[0.11565099 0.08005132])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.450003535455316
+50 -th epoch marginal likelihood 13.837064763122974
+100 -th epoch marginal likelihood 13.27396725293987
+150 -th epoch marginal likelihood 12.752665927400454
+200 -th epoch marginal likelihood 12.265630108230223
+250 -th epoch marginal likelihood 11.807086467613704
+300 -th epoch marginal likelihood 11.372537343395445
+350 -th epoch marginal likelihood 10.958412532411106
+400 -th epoch marginal likelihood 10.561830398056408
+450 -th epoch marginal likelihood 10.180430492967766
+500 -th epoch marginal likelihood 9.812254003237753
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 587
+  walker = 7
+  fx = -0.019013987818778125
+  x1 = 0.09336415600736184
+  x2 = 0.09373661359374935
+0016-th step: f(x) = -0.017503 (action=[0.09336416 0.09373661])
+   current best f(x) = -0.017503 (best action=[0.09336416 0.09373661])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 14.14204310620058
+50 -th epoch marginal likelihood 13.446155075105558
+100 -th epoch marginal likelihood 12.805143257560763
+150 -th epoch marginal likelihood 12.21000588735868
+200 -th epoch marginal likelihood 11.652360260938373
+250 -th epoch marginal likelihood 11.125792174288744
+300 -th epoch marginal likelihood 10.625318291269927
+350 -th epoch marginal likelihood 10.146996547582916
+400 -th epoch marginal likelihood 9.687657907204695
+450 -th epoch marginal likelihood 9.244717875168384
+500 -th epoch marginal likelihood 8.816041574919886
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 942
+  walker = 4
+  fx = -0.017096027137879607
+  x1 = 0.1068283903687392
+  x2 = 0.06875953272686286
+0017-th step: f(x) = -0.016140 (action=[0.10682839 0.06875953])
+   current best f(x) = -0.016140 (best action=[0.10682839 0.06875953])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 13.834931058173474
+50 -th epoch marginal likelihood 13.052560507609543
+100 -th epoch marginal likelihood 12.330235486238836
+150 -th epoch marginal likelihood 11.658334107926775
+200 -th epoch marginal likelihood 11.02754972231479
+250 -th epoch marginal likelihood 10.430759651400315
+300 -th epoch marginal likelihood 9.862438917555181
+350 -th epoch marginal likelihood 9.31822836814601
+400 -th epoch marginal likelihood 8.794635228874991
+450 -th epoch marginal likelihood 8.288821770311365
+500 -th epoch marginal likelihood 7.7984535778267965
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 689
+  walker = 7
+  fx = -0.01704435799455413
+  x1 = -1.4367736499177521
+  x2 = 1.9943557686235573
+0018-th step: f(x) = -6.041773 (action=[-1.43677365  1.99435577])
+   current best f(x) = -0.016140 (best action=[0.10682839 0.06875953])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 18.109200094045665
+50 -th epoch marginal likelihood 17.202488715695445
+100 -th epoch marginal likelihood 16.375059871449885
+150 -th epoch marginal likelihood 15.610983073898478
+200 -th epoch marginal likelihood 14.896967338118102
+250 -th epoch marginal likelihood 14.22318826785177
+300 -th epoch marginal likelihood 13.582262952241523
+350 -th epoch marginal likelihood 12.96854727248159
+400 -th epoch marginal likelihood 12.377659002647446
+450 -th epoch marginal likelihood 11.806146382363982
+500 -th epoch marginal likelihood 11.251253652791982
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 526
+  walker = 2
+  fx = -0.018009075444372143
+  x1 = 0.08680249299321553
+  x2 = 0.05732583482519682
+0019-th step: f(x) = -0.010821 (action=[0.08680249 0.05732583])
+   current best f(x) = -0.010821 (best action=[0.08680249 0.05732583])
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17.912524122065985
+50 -th epoch marginal likelihood 16.90861264447262
+100 -th epoch marginal likelihood 15.991939941771925
+150 -th epoch marginal likelihood 15.144954873349228
+200 -th epoch marginal likelihood 14.353040496166773
+250 -th epoch marginal likelihood 13.605377115027968
+300 -th epoch marginal likelihood 12.893825321803613
+350 -th epoch marginal likelihood 12.212159204769932
+400 -th epoch marginal likelihood 11.55554436334477
+450 -th epoch marginal likelihood 10.920174084478031
+500 -th epoch marginal likelihood 10.303011314312128
+Done
+
+name            : exchange
+seed            : 12345
+param.min_list  : [-2.0, -2.0]
+param.max_list  : [2.0, 2.0]
+param.step_list : [0.04 0.04]
+exchange.numsteps: 1000
+exchange.numsteps_exchange: 10
+exchange.Tmin   : 0.05
+exchange.Tmax   : 10.0
+exchange.Tlogspace: True
+exchange.nreplica_per_proc: 10
+complete main process : rank 00000000/00000001
+end of run
+start separateT 0
+Best Result:
+  rank = 0
+  step = 82
+  walker = 2
+  fx = -0.013899271634022934
+  x1 = 0.128393565045084
+  x2 = 0.12732872077551988
+0020-th step: f(x) = -0.032698 (action=[0.12839357 0.12732872])
+   current best f(x) = -0.010821 (best action=[0.08680249 0.05732583])
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x300b95f40&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_continuous_18_2.png" src="../_images/notebook_tutorial_continuous_18_2.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_multi_objective.html" class="btn btn-neutral float-left" title="多目的最適化" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../algorithm.html" class="btn btn-neutral float-right" title="アルゴリズム" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

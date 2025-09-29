@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physbo.search.optimize.odatse &mdash; PHYSBO 3.0-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=82e8fb87"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/physbo.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../physbo.html">physbo</a></li>
+      <li class="breadcrumb-item active">physbo.search.optimize.odatse</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for physbo.search.optimize.odatse</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2025- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">odatse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">odatse.solver.function</span>
+
+
+<div class="viewcode-block" id="default_alg_dict">
+<a class="viewcode-back" href="../../../../api/physbo.search.optimize.odatse.html#physbo.search.optimize.odatse.default_alg_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_alg_dict</span><span class="p">(</span><span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">algorithm_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mapper&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the default algorithm parameter settings for the given algorithm name.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    algorithm_name : str, optional (default: &quot;mapper&quot;)</span>
+<span class="sd">        The name of the algorithm to use.</span>
+<span class="sd">        &quot;exchange&quot;: Exchange Monte Carlo</span>
+<span class="sd">        &quot;pamc&quot;: Population Annealing Monte Carlo</span>
+<span class="sd">        &quot;minsearch&quot;: Nelder-Mead method</span>
+<span class="sd">        &quot;mapper&quot;: Grid search</span>
+<span class="sd">        &quot;bayes&quot;: Bayesian optimization</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The default algorithm parameter settings for the given algorithm name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
+    <span class="n">L_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
+    <span class="n">d_X</span> <span class="o">=</span> <span class="n">L_X</span> <span class="o">/</span> <span class="mi">100</span>
+
+    <span class="k">if</span> <span class="n">algorithm_name</span> <span class="o">==</span> <span class="s2">&quot;exchange&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;exchange&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;min_list&quot;</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
+                <span class="s2">&quot;max_list&quot;</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
+                <span class="s2">&quot;step_list&quot;</span><span class="p">:</span> <span class="n">d_X</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;exchange&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;numsteps&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                <span class="s2">&quot;numsteps_exchange&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                <span class="s2">&quot;Tmin&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                <span class="s2">&quot;Tmax&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+                <span class="s2">&quot;Tlogspace&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;nreplica_per_proc&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">algorithm_name</span> <span class="o">==</span> <span class="s2">&quot;pamc&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;pamc&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;min_list&quot;</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
+                <span class="s2">&quot;max_list&quot;</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
+                <span class="s2">&quot;step_list&quot;</span><span class="p">:</span> <span class="n">d_X</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;pamc&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;numsteps_annealing&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                <span class="s2">&quot;Tnum&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                <span class="s2">&quot;Tmax&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+                <span class="s2">&quot;Tmin&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                <span class="s2">&quot;Tlogspace&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;nreplica_per_proc&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                <span class="s2">&quot;resampling_interval&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;fix_num_replicas&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">algorithm_name</span> <span class="o">==</span> <span class="s2">&quot;minsearch&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;minsearch&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;min_list&quot;</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
+                <span class="s2">&quot;max_list&quot;</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
+                <span class="s2">&quot;unit_list&quot;</span><span class="p">:</span> <span class="n">d_X</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;minimize&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">algorithm_name</span> <span class="o">==</span> <span class="s2">&quot;mapper&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mapper&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;min_list&quot;</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
+                <span class="s2">&quot;max_list&quot;</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
+                <span class="s2">&quot;num_list&quot;</span><span class="p">:</span> <span class="mi">11</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">algorithm_name</span> <span class="o">==</span> <span class="s2">&quot;bayes&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;bayes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;min_list&quot;</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
+                <span class="s2">&quot;max_list&quot;</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
+                <span class="s2">&quot;num_list&quot;</span><span class="p">:</span> <span class="mi">21</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;bayes&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;random_max_num_probes&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;bayes_max_num_probes&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="s2">&quot;num_rand_basis&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown algorithm: </span><span class="si">{</span><span class="n">algorithm_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Optimizer">
+<a class="viewcode-back" href="../../../../api/physbo.search.optimize.odatse.html#physbo.search.optimize.odatse.Optimizer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Optimizer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alg_dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        alg_dict : dict</span>
+<span class="sd">            Dictionary specifying the optimization algorithm and its parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">alg_dict</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optimize a function using ODATSE (Open-source Data Assimilation and Topological Structure Exploration)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fn : callable</span>
+<span class="sd">            The objective function to minimize. Should take a numpy array of shape (dim,) and return a float.</span>
+<span class="sd">        min_X : numpy.ndarray</span>
+<span class="sd">            Lower bounds for each dimension</span>
+<span class="sd">        max_X : numpy.ndarray</span>
+<span class="sd">            Upper bounds for each dimension</span>
+<span class="sd">        mpicomm : MPI.Comm, optional</span>
+<span class="sd">            MPI communicator for parallel optimization. If None, runs in serial.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The optimal point found by the optimizer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="p">[</span><span class="s2">&quot;param&quot;</span><span class="p">][</span><span class="s2">&quot;min_list&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="n">base_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;dimension&quot;</span><span class="p">:</span> <span class="n">dim</span><span class="p">,</span>
+            <span class="s2">&quot;root_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;output_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;odatse_output&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">info_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="n">base_dict</span><span class="p">,</span> <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="p">,</span> <span class="s2">&quot;solver&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">Info</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
+        <span class="n">solver</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">Solver</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+        <span class="n">solver</span><span class="o">.</span><span class="n">set_function</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="c1"># ODATSE minimizes the function, so we need to negate the objective function</span>
+        <span class="n">runner</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">Runner</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+        <span class="n">alg_module</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">choose_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># try development version of odatse</span>
+            <span class="n">alg</span> <span class="o">=</span> <span class="n">alg_module</span><span class="o">.</span><span class="n">Algorithm</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="n">mpicomm</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">alg</span> <span class="o">=</span> <span class="n">alg_module</span><span class="o">.</span><span class="n">Algorithm</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">runner</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">alg</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;mapper&quot;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;odatse_output/ColorMap.txt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="n">dim</span><span class="p">))</span>
+                <span class="n">fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">words</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">:</span>
+                        <span class="n">fx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">words</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
