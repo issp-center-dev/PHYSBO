@@ -14,6 +14,8 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from typing import Union
+
 import sys
 import os
 from importlib.util import find_spec
@@ -84,16 +86,25 @@ pygments_style = "sphinx"
 
 nbsphinx_execute = "never"
 
-supported_branches = ["master", "develop"]
-if find_spec("git"):
-    import git
-    repo = git.Repo(search_parent_directories=True)
-    branch = repo.active_branch.name
-    if branch not in supported_branches:
-        # feature branch is not uploaded to the gallery
-        branch = "develop"
+
+current_version = os.environ.get("TARGET_NAME", "")
+if current_version:
+    branch = current_version
 else:
-    branch = "master"
+    supported_branches = ["master", "develop"]
+    if find_spec("git"):
+        import git
+        repo = git.Repo(search_parent_directories=True)
+        try:
+            branch = repo.active_branch.name
+        except TypeError:
+            branch = "develop"
+        if branch not in supported_branches:
+            # feature branch is not uploaded to the gallery
+            branch = "develop"
+    else:
+        branch = "master"
+
 tutorial_url = f"https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/{branch}/data/tutorial"
 
 nbsphinx_prolog = r"""
@@ -128,7 +139,7 @@ latex_logo = "../../_static/logo.png"
 
 # -- configuring _template/version.html -------------------------------------
 
-html_context = {}
+html_context: dict[str, Union[str, list[str]]] = {}
 
 html_context["ENABLE_VERSIONING"] = os.environ.get("CI", "false")
 
@@ -152,10 +163,10 @@ try:
     tags.sort(reverse=True)
     for tag in tags:
         if tag not in exclude_tags:
-            html_context["tags"].append(tag)
-except:
+            html_context["tags"].append(tag) # type: ignore
+except Exception:
     pass
 
 if current_version not in html_context["branches"]:
     if current_version not in html_context["tags"]:
-        html_context["branches"].append(current_version)
+        html_context["branches"].append(current_version) # type: ignore

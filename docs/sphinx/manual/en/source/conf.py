@@ -65,16 +65,23 @@ def setup(app):
 pygments_style = "sphinx"
 nbsphinx_execute = "never"
 
-supported_branches = ["master", "develop"]
-if find_spec("git"):
-    import git
-    repo = git.Repo(search_parent_directories=True)
-    branch = repo.active_branch.name
-    if branch not in supported_branches:
-        # feature branch is not uploaded to the gallery
-        branch = "develop"
+current_version = os.environ.get("TARGET_NAME", "")
+if current_version:
+    branch = current_version
 else:
-    branch = "master"
+    supported_branches = ["master", "develop"]
+    if find_spec("git"):
+        import git
+        repo = git.Repo(search_parent_directories=True)
+        try:
+            branch = repo.active_branch.name
+        except TypeError:
+            branch = "develop"
+        if branch not in supported_branches:
+            # feature branch is not uploaded to the gallery
+            branch = "develop"
+    else:
+        branch = "master"
 tutorial_url = f"https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/{branch}/data/tutorial"
 
 nbsphinx_prolog = r"""
