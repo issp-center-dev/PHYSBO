@@ -6,15 +6,16 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian process &mdash; PHYSBO 2.2.0 documentation</title>
+  <title>Gaussian process &mdash; PHYSBO 3.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=b21de401"></script>
+      <script src="../_static/documentation_options.js?v=acc74ff5"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -35,8 +36,8 @@
 
           
           
-          <a href="../index.html" class="icon icon-home">
-            PHYSBO
+          <a href="../index.html">
+            
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -63,10 +64,13 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">Optimization in Continuous Space</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
 </ul>
@@ -96,7 +100,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial">ISSP Data Repository</a>.</p>
+  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial">ISSP Data Repository</a> (master branch).</p>
 <section id="Gaussian-process">
 <h1>Gaussian process<a class="headerlink" href="#Gaussian-process" title="Link to this heading"></a></h1>
 <p>PHYSBO performs Bayesian optimization while running Gaussian process regression.</p>
@@ -111,17 +115,19 @@
 </ol>
 </li>
 </ul>
-<p>Save the dataset file <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> into the subdirectory <code class="docutils literal notranslate"><span class="pre">data</span></code>, and load dataset from this file as the following:</p>
-<div class="nbinput nblast docutils container">
+<p>Save the dataset file <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> and load dataset from this file as the following:</p>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;data/s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
@@ -130,6 +136,14 @@
 <span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
 <br/></pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
 </div>
 </section>
 <section id="Defining-training-data">
@@ -181,7 +195,7 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -190,7 +204,7 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">const</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -199,7 +213,7 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">gauss</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -208,8 +222,8 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
-<span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">set_config</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">SetConfig</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -231,17 +245,17 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 17312.31220145003
-50 -th epoch marginal likelihood 6291.292745798703
-100 -th epoch marginal likelihood 3269.1167759139516
-150 -th epoch marginal likelihood 1568.3930580794922
-200 -th epoch marginal likelihood 664.2847129159145
-250 -th epoch marginal likelihood -249.28468708456558
-300 -th epoch marginal likelihood -869.7604930929888
-350 -th epoch marginal likelihood -1316.6809532065581
-400 -th epoch marginal likelihood -1546.1623851368954
-450 -th epoch marginal likelihood -1660.7298135295766
-500 -th epoch marginal likelihood -1719.5056128528097
+0 -th epoch marginal likelihood 14215.691923517237
+50 -th epoch marginal likelihood 3693.9141289009012
+100 -th epoch marginal likelihood 1669.6612412198328
+150 -th epoch marginal likelihood 616.2890017670807
+200 -th epoch marginal likelihood -390.0794868410685
+250 -th epoch marginal likelihood -1079.3135563326973
+300 -th epoch marginal likelihood -1605.0063300177012
+350 -th epoch marginal likelihood -1845.6167857237276
+400 -th epoch marginal likelihood -1999.6781455787882
+450 -th epoch marginal likelihood -2058.0614082304874
+500 -th epoch marginal likelihood -2119.872337999709
 Done
 
 </pre></div></div>
@@ -262,9 +276,9 @@ Done
 <div class="highlight"><pre>
 
 
-likelihood parameter =   [-2.81666924]
-mean parameter in GP prior:  [-1.05939674]
-covariance parameter in GP prior:  [-0.91578975 -2.45544347]
+likelihood parameter =   [-3.03559485]
+mean parameter in GP prior:  [-1.05829024]
+covariance parameter in GP prior:  [-0.87638318 -2.59947926]
 
 
 </pre></div></div>
@@ -295,8 +309,8 @@ covariance parameter in GP prior:  [-0.91578975 -2.45544347]
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
-       -0.97015759, -1.11076236])
+array([-1.00577644, -1.09101548, -0.98765945, ..., -1.10355396,
+       -1.00772337, -1.16177325])
 </pre></div></div>
 </div>
 <p>Results of covariance</p>
@@ -314,8 +328,8 @@ array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
-       0.00073499])
+array([0.00038442, 0.00043068, 0.00049836, ..., 0.00034837, 0.00037362,
+       0.00064077])
 </pre></div></div>
 </div>
 <p>Output mean square error of prediction</p>
@@ -333,9 +347,49 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.008107085662147708
+0.003795862874772909
 </pre></div></div>
 </div>
+<p>A simple metric to investigate how important each feature is in the obtained regression model is permutation importance (PI). In PHYSBO, this can be calculated using the get_permutation_importance function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">pi_mean</span><span class="p">,</span>
+    <span class="n">xerr</span><span class="o">=</span><span class="n">pi_std</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="c1"># print(&quot;save permutation_importance.pdf&quot;)</span>
+<span class="c1"># plt.savefig(&quot;permutation_importance.pdf&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_Gaussian_process_26_0.png" src="../_images/notebook_tutorial_Gaussian_process_26_0.png" />
+</div>
+</div>
+<p>In this graph, the bar chart represents the mean value of the permutation importance (PI), while the line segments indicate the standard deviation. From this, we can interpret that features 1 and 2 appear to be more important compared to feature 0.</p>
+<p>Not only gp.model, but policy also has the get_permutation_importance function. The usage is policy.get_permutation_importance(n_perm). In the case of policy, PI is calculated based on the stored training data, so unlike model, there is no need to pass the data again.</p>
 </section>
 <section id="Prediction-by-trained-models">
 <h2>Prediction by trained models<a class="headerlink" href="#Prediction-by-trained-models" title="Link to this heading"></a></h2>
@@ -343,7 +397,7 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 <p>By storing gp_params and training data (X_train, t_train), prediction by the trained model is possible.</p>
 <p>Prepare the learned parameters (must be done immediately after learning)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Prepare the learned parameters as a 1D array</span>
@@ -354,36 +408,36 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
+array([-3.03559485, -1.05829024, -0.87638318, -2.59947926])
 </pre></div></div>
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Definition of covariance (Gaussian)</span>
-<span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
 
 <span class="c1">#Definition of mean value</span>
-<span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">const</span><span class="p">()</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
 
 <span class="c1">#Definition of likelihood function (Gaussian)</span>
-<span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">gauss</span><span class="p">()</span>
+<span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
 
 <span class="c1">#Generation of a Gaussian Process Model</span>
-<span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
 <br/></pre></div>
 </div>
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Input learned parameters into the Gaussian process.</span>
@@ -399,7 +453,7 @@ array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
 </div>
 <p>Results of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -407,18 +461,18 @@ array([-2.81666924, -1.05939674, -0.91578975, -2.45544347])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
-       -0.97015759, -1.11076236])
+array([-1.00577644, -1.09101548, -0.98765945, ..., -1.10355396,
+       -1.00772337, -1.16177325])
 </pre></div></div>
 </div>
 <p>Results of covariance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -426,18 +480,18 @@ array([-1.00420815, -1.10923758, -0.97840623, ..., -1.00323733,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
-       0.00073499])
+array([0.00038442, 0.00043068, 0.00049836, ..., 0.00034837, 0.00037362,
+       0.00064077])
 </pre></div></div>
 </div>
 <p>Output mean square error of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -445,29 +499,16 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.008107085662147708
+0.003795862874772909
 </pre></div></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Note</span><span class="p">:</span> <span class="n">In</span> <span class="n">the</span> <span class="n">example</span> <span class="n">above</span><span class="p">,</span> <span class="n">we</span> <span class="n">used</span> <span class="n">the</span> <span class="n">same</span> <span class="n">pre</span><span class="o">-</span><span class="n">registered</span> <span class="n">X</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span><span class="o">.</span>
-<span class="n">If</span> <span class="n">you</span> <span class="n">want</span> <span class="n">to</span> <span class="n">make</span> <span class="n">predictions</span> <span class="k">for</span> <span class="n">parameters</span> <span class="n">X_new</span> <span class="n">that</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">included</span> <span class="ow">in</span> <span class="n">X</span> <span class="n">using</span> <span class="n">the</span> <span class="n">trained</span> <span class="n">model</span><span class="p">,</span>
-<span class="n">you</span> <span class="n">first</span> <span class="n">obtain</span> <span class="n">the</span> <span class="n">mean</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="ow">and</span> <span class="n">standard</span> <span class="n">deviation</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">})</span> <span class="n">of</span> <span class="n">the</span> <span class="n">data</span> <span class="n">X</span> <span class="ow">and</span>
-<span class="n">then</span> <span class="n">normalize</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="n">by</span> <span class="p">(</span><span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="o">-</span> <span class="n">X_</span><span class="p">{</span><span class="n">mean</span><span class="p">})</span> <span class="o">/</span> <span class="n">X_</span><span class="p">{</span><span class="n">std</span><span class="p">}</span><span class="o">.</span>
-<span class="n">Also</span><span class="p">,</span> <span class="n">the</span> <span class="n">data</span> <span class="nb">format</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">is</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
-<span class="n">Therefore</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">single</span> <span class="n">data</span><span class="p">,</span> <span class="n">it</span> <span class="n">must</span> <span class="n">be</span> <span class="n">transformed</span> <span class="n">to</span> <span class="n">ndarray</span> <span class="nb">format</span><span class="o">.</span>
-<span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="k">if</span> <span class="n">X_</span><span class="p">{</span><span class="n">new</span><span class="p">}</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">real</span> <span class="n">number</span><span class="p">,</span> <span class="n">you</span> <span class="n">should</span> <span class="n">replace</span> <span class="n">X_new</span> <span class="k">as</span>
-<span class="n">X_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_new</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
+<p>Note: In the example above, we used the same pre-registered X to make predictions. If you want to make predictions for parameters X_new that is not included in X using the trained model, you first obtain the mean (X_{mean}) and standard deviation (X_{std}) of the data X and then normalize X_{new} by (X_{new} - X_{mean}) / X_{std}. Also, the data format for X is ndarray format. Therefore, if X_{new} is a single data, it must be transformed to ndarray format. For example, if X_{new} is a
+real number, you should replace X_new as X_new = np.array(X_new).reshape(1)</p>
 </section>
 </section>
 
@@ -543,6 +584,76 @@ array([0.00056069, 0.00075529, 0.00043006, ..., 0.0016925 , 0.00070103,
       
 
       <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.0.0/en/notebook/tutorial_Gaussian_process.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/en/notebook/tutorial_Gaussian_process.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/en/notebook/tutorial_Gaussian_process.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/en/notebook/tutorial_Gaussian_process.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/en/notebook/tutorial_Gaussian_process.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/en/notebook/tutorial_Gaussian_process.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/en/notebook/tutorial_Gaussian_process.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/en/notebook/tutorial_Gaussian_process.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/en/notebook/tutorial_Gaussian_process.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/en/notebook/tutorial_Gaussian_process.html">v1.0.0</a>
+        
+        </dd>
       
 
     </dl>

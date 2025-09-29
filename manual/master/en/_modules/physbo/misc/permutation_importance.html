@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physbo.misc.permutation_importance &mdash; PHYSBO 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../misc.html">physbo.misc</a></li>
+      <li class="breadcrumb-item active">physbo.misc.permutation_importance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for physbo.misc.permutation_importance</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="c1"># TODO: move to base_model after base_model is implemented</span>
+<div class="viewcode-block" id="get_permutation_importance">
+<a class="viewcode-back" href="../../../api/physbo.misc.permutation_importance.html#physbo.misc.permutation_importance.get_permutation_importance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculating permutation importance of model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ==========</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        inputs</span>
+<span class="sd">    t: numpy.ndarray</span>
+<span class="sd">        target (label)</span>
+<span class="sd">    n_perm: int</span>
+<span class="sd">        number of permutations</span>
+<span class="sd">    comm: MPI.Comm</span>
+<span class="sd">        MPI communicator</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    =======</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        importance_mean</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        importance_std</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">n_perm</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: n_perm is less than 1. Return 0.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+    <span class="n">MSE_base</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mpisize</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">mpirank</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mpisize</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+        <span class="n">mpirank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">split_features_parallel</span><span class="p">:</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">mpisize</span><span class="p">)[</span><span class="n">mpirank</span><span class="p">]</span>
+    <span class="n">n_features_local</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+    <span class="n">scores_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i_feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="n">X_perm</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i_perm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_perm</span><span class="p">):</span>
+            <span class="n">X_perm</span><span class="p">[:,</span> <span class="n">i_feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">X_perm</span><span class="p">[:,</span> <span class="n">i_feature</span><span class="p">])</span>
+            <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_perm</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">MSE_base</span>
+            <span class="n">scores</span><span class="p">[</span><span class="n">i_feature</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span>
+            <span class="n">scores_2</span><span class="p">[</span><span class="n">i_feature</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+        <span class="n">res_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+        <span class="n">comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>  <span class="c1"># default of op is MPI.SUM</span>
+        <span class="n">comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">scores_2</span><span class="p">,</span> <span class="n">res_2</span><span class="p">)</span>
+        <span class="n">scores</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">res</span>
+        <span class="n">scores_2</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">res_2</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">split_features_parallel</span><span class="p">:</span>
+        <span class="n">n_perm</span> <span class="o">*=</span> <span class="n">mpisize</span>
+
+    <span class="n">importance_mean</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">/</span> <span class="n">n_perm</span>
+    <span class="n">importance_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scores_2</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_perm</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">importance_mean</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">importance_mean</span><span class="p">,</span> <span class="n">importance_std</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: master
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../master/en/_modules/physbo/misc/permutation_importance.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../master/ja/_modules/physbo/misc/permutation_importance.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../../../develop/en/_modules/physbo/misc/permutation_importance.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../master/en/_modules/physbo/misc/permutation_importance.html">master</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v3.0.0/en/_modules/physbo/misc/permutation_importance.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v2.2.0/en/_modules/physbo/misc/permutation_importance.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v2.1.0/en/_modules/physbo/misc/permutation_importance.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v2.0.2/en/_modules/physbo/misc/permutation_importance.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v2.0.1/en/_modules/physbo/misc/permutation_importance.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v2.0.0/en/_modules/physbo/misc/permutation_importance.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v1.1.1/en/_modules/physbo/misc/permutation_importance.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v1.1.0/en/_modules/physbo/misc/permutation_importance.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v1.0.1/en/_modules/physbo/misc/permutation_importance.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v1.0.0/en/_modules/physbo/misc/permutation_importance.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

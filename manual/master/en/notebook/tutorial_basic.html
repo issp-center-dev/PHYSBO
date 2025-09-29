@@ -6,15 +6,16 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Basic usage of PHYSBO &mdash; PHYSBO 2.2.0 documentation</title>
+  <title>Basic usage of PHYSBO &mdash; PHYSBO 3.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=b21de401"></script>
+      <script src="../_static/documentation_options.js?v=acc74ff5"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -35,8 +36,8 @@
 
           
           
-          <a href="../index.html" class="icon icon-home">
-            PHYSBO
+          <a href="../index.html">
+            
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -73,10 +74,13 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">Optimization in Continuous Space</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/physbo.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
 </ul>
@@ -106,20 +110,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial">ISSP Data Repository</a>.</p>
+  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/master/data/tutorial">ISSP Data Repository</a> (master branch).</p>
 <section id="Basic-usage-of-PHYSBO">
 <h1>Basic usage of PHYSBO<a class="headerlink" href="#Basic-usage-of-PHYSBO" title="Link to this heading"></a></h1>
 <section id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading"></a></h2>
 <p>In this tutorial, we will introduce how to define the simulator class and find the minimum value of a one-dimensional function using PHYSBO.</p>
 <p>First, we will import PHYSBO.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
 </div>
 </section>
 <section id="Defining-the-search-space">
@@ -157,20 +169,12 @@ is designed to find the maximum value of the objective function</strong>, it ret
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">simulator</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
         <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
-        <span class="n">fx_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
-        <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;*********************&quot;</span><span class="p">)</span>
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Present optimum interactions&quot;</span><span class="p">)</span>
-
-        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;x_opt=&quot;</span><span class="p">,</span> <span class="n">x_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fx_list</span><span class="p">))])</span>
-
         <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
 </pre></div>
 </div>
@@ -180,14 +184,14 @@ is designed to find the maximum value of the objective function</strong>, it ret
 <h2>Performing optimization<a class="headerlink" href="#Performing-optimization" title="Link to this heading"></a></h2>
 <section id="Setting-policy">
 <h3>Setting policy<a class="headerlink" href="#Setting-policy" title="Link to this heading"></a></h3>
-<p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">policy</span></code>.</p>
+<p>First, set the optimization <code class="docutils literal notranslate"><span class="pre">Policy</span></code>.</p>
 <p>Next, set <code class="docutils literal notranslate"><span class="pre">test_X</span></code> to the matrix of search candidates (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set policy</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
 <span class="c1"># set seed</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -217,16 +221,80 @@ tutorial.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code>: Number of search steps.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">simulator</span></code>: The simulator of the objective function (an object of class simulator).</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fx_list</span><span class="o">=</span><span class="p">[]</span>
-<span class="n">x_list</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -51.387604 (action=9395)
+   current best f(x) = -51.387604 (best action=9395)
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">())</span>
-</pre></div>
-</div>
+0002-th step: f(x) = -0.581263 (action=3583)
+   current best f(x) = -0.581263 (best action=3583)
+
+0003-th step: f(x) = -0.827643 (action=4015)
+   current best f(x) = -0.581263 (best action=3583)
+
+0004-th step: f(x) = -14.220707 (action=154)
+   current best f(x) = -0.581263 (best action=3583)
+
+0005-th step: f(x) = -34.192764 (action=8908)
+   current best f(x) = -0.581263 (best action=3583)
+
+0006-th step: f(x) = -31.595527 (action=8819)
+   current best f(x) = -0.581263 (best action=3583)
+
+0007-th step: f(x) = -0.361729 (action=3269)
+   current best f(x) = -0.361729 (best action=3269)
+
+0008-th step: f(x) = -0.755839 (action=3870)
+   current best f(x) = -0.361729 (best action=3269)
+
+0009-th step: f(x) = -10.883996 (action=370)
+   current best f(x) = -0.361729 (best action=3269)
+
+0010-th step: f(x) = -0.150313 (action=2949)
+   current best f(x) = -0.150313 (best action=2949)
+
+0011-th step: f(x) = -3.885764 (action=6926)
+   current best f(x) = -0.150313 (best action=2949)
+
+0012-th step: f(x) = -3.525070 (action=6851)
+   current best f(x) = -0.150313 (best action=2949)
+
+0013-th step: f(x) = -3.252476 (action=6789)
+   current best f(x) = -0.150313 (best action=2949)
+
+0014-th step: f(x) = -7.524212 (action=641)
+   current best f(x) = -0.150313 (best action=2949)
+
+0015-th step: f(x) = -16.136719 (action=8125)
+   current best f(x) = -0.150313 (best action=2949)
+
+0016-th step: f(x) = -1.439937 (action=6090)
+   current best f(x) = -0.150313 (best action=2949)
+
+0017-th step: f(x) = -9.415991 (action=480)
+   current best f(x) = -0.150313 (best action=2949)
+
+0018-th step: f(x) = -4.854365 (action=925)
+   current best f(x) = -0.150313 (best action=2949)
+
+0019-th step: f(x) = -1.042368 (action=5523)
+   current best f(x) = -0.150313 (best action=2949)
+
+0020-th step: f(x) = -19.075990 (action=8288)
+   current best f(x) = -0.150313 (best action=2949)
+
+</pre></div></div>
 </div>
 <p>When executed, the objective function value and its action ID for each step, and the best value up to now and its action ID will be printed as follows.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0020-th step: f(x) = -19.075990 (action=8288)
@@ -254,14 +322,188 @@ If a negative value is specified, no hyperparameter will be learned.
 0 means that hyperparameter learning will be performed only in the first step.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">num_rand_basis</span></code>: Number of basis functions. 0 means that a normal Gaussian process without Bayesian linear model will be used.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
                                                   <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 55.074208787406135
+50 -th epoch marginal likelihood 54.02707203875113
+100 -th epoch marginal likelihood 53.187697419916795
+150 -th epoch marginal likelihood 52.41026245373357
+200 -th epoch marginal likelihood 51.64554036744889
+250 -th epoch marginal likelihood 50.88537231963794
+300 -th epoch marginal likelihood 50.12972033759564
+350 -th epoch marginal likelihood 49.37883516837167
+400 -th epoch marginal likelihood 48.632896402510426
+450 -th epoch marginal likelihood 47.89227385595791
+500 -th epoch marginal likelihood 47.15741745486788
+Done
+
+0021-th step: f(x) = -0.129612 (action=2163)
+   current best f(x) = -0.129612 (best action=2163)
+
+0022-th step: f(x) = -0.002719 (action=2554)
+   current best f(x) = -0.002719 (best action=2554)
+
+0023-th step: f(x) = -1.000342 (action=5109)
+   current best f(x) = -0.002719 (best action=2554)
+
+0024-th step: f(x) = -0.070645 (action=2246)
+   current best f(x) = -0.002719 (best action=2554)
+
+0025-th step: f(x) = -0.957339 (action=4413)
+   current best f(x) = -0.002719 (best action=2554)
+
+0026-th step: f(x) = -0.297858 (action=2008)
+   current best f(x) = -0.002719 (best action=2554)
+
+0027-th step: f(x) = -0.002921 (action=2556)
+   current best f(x) = -0.002719 (best action=2554)
+
+0028-th step: f(x) = -0.135520 (action=2156)
+   current best f(x) = -0.002719 (best action=2554)
+
+0029-th step: f(x) = -1.008844 (action=5316)
+   current best f(x) = -0.002719 (best action=2554)
+
+0030-th step: f(x) = -0.303300 (action=2004)
+   current best f(x) = -0.002719 (best action=2554)
+
+0031-th step: f(x) = -0.007081 (action=2416)
+   current best f(x) = -0.002719 (best action=2554)
+
+0032-th step: f(x) = -0.218576 (action=2072)
+   current best f(x) = -0.002719 (best action=2554)
+
+0033-th step: f(x) = -0.062810 (action=2776)
+   current best f(x) = -0.002719 (best action=2554)
+
+0034-th step: f(x) = -0.000161 (action=2513)
+   current best f(x) = -0.000161 (best action=2513)
+
+0035-th step: f(x) = -0.000078 (action=2491)
+   current best f(x) = -0.000078 (best action=2491)
+
+0036-th step: f(x) = -0.040848 (action=2304)
+   current best f(x) = -0.000078 (best action=2491)
+
+0037-th step: f(x) = -0.117955 (action=2891)
+   current best f(x) = -0.000078 (best action=2491)
+
+0038-th step: f(x) = -0.010968 (action=2396)
+   current best f(x) = -0.000078 (best action=2491)
+
+0039-th step: f(x) = -0.093074 (action=2211)
+   current best f(x) = -0.000078 (best action=2491)
+
+0040-th step: f(x) = -0.049143 (action=2286)
+   current best f(x) = -0.000078 (best action=2491)
+
+0041-th step: f(x) = -0.006779 (action=2586)
+   current best f(x) = -0.000078 (best action=2491)
+
+0042-th step: f(x) = -0.031452 (action=2327)
+   current best f(x) = -0.000078 (best action=2491)
+
+0043-th step: f(x) = -0.006626 (action=2585)
+   current best f(x) = -0.000078 (best action=2491)
+
+0044-th step: f(x) = -0.000061 (action=2508)
+   current best f(x) = -0.000061 (best action=2508)
+
+0045-th step: f(x) = -0.063184 (action=2259)
+   current best f(x) = -0.000061 (best action=2508)
+
+0046-th step: f(x) = -0.004198 (action=2435)
+   current best f(x) = -0.000061 (best action=2508)
+
+0047-th step: f(x) = -0.007608 (action=2413)
+   current best f(x) = -0.000061 (best action=2508)
+
+0048-th step: f(x) = -0.019405 (action=2648)
+   current best f(x) = -0.000061 (best action=2508)
+
+0049-th step: f(x) = -0.091016 (action=2214)
+   current best f(x) = -0.000061 (best action=2508)
+
+0050-th step: f(x) = -0.009453 (action=2602)
+   current best f(x) = -0.000061 (best action=2508)
+
+0051-th step: f(x) = -0.001649 (action=2459)
+   current best f(x) = -0.000061 (best action=2508)
+
+0052-th step: f(x) = -0.146001 (action=2144)
+   current best f(x) = -0.000061 (best action=2508)
+
+0053-th step: f(x) = -0.008914 (action=2406)
+   current best f(x) = -0.000061 (best action=2508)
+
+0054-th step: f(x) = -0.123044 (action=2171)
+   current best f(x) = -0.000061 (best action=2508)
+
+0055-th step: f(x) = -0.006176 (action=2582)
+   current best f(x) = -0.000061 (best action=2508)
+
+0056-th step: f(x) = -0.035779 (action=2316)
+   current best f(x) = -0.000061 (best action=2508)
+
+0057-th step: f(x) = -0.021468 (action=2356)
+   current best f(x) = -0.000061 (best action=2508)
+
+0058-th step: f(x) = -0.000024 (action=2495)
+   current best f(x) = -0.000024 (best action=2495)
+
+0059-th step: f(x) = -0.005317 (action=2427)
+   current best f(x) = -0.000024 (best action=2495)
+
+0060-th step: f(x) = -0.042619 (action=2300)
+   current best f(x) = -0.000024 (best action=2495)
+
+0061-th step: f(x) = -0.095860 (action=2207)
+   current best f(x) = -0.000024 (best action=2495)
+
+0062-th step: f(x) = -0.048180 (action=2288)
+   current best f(x) = -0.000024 (best action=2495)
+
+0063-th step: f(x) = -0.008721 (action=2407)
+   current best f(x) = -0.000024 (best action=2495)
+
+0064-th step: f(x) = -0.000244 (action=2516)
+   current best f(x) = -0.000024 (best action=2495)
+
+0065-th step: f(x) = -0.000137 (action=2512)
+   current best f(x) = -0.000024 (best action=2495)
+
+0066-th step: f(x) = -0.167353 (action=2121)
+   current best f(x) = -0.000024 (best action=2495)
+
+0067-th step: f(x) = -0.005170 (action=2428)
+   current best f(x) = -0.000024 (best action=2495)
+
+0068-th step: f(x) = -0.099800 (action=2856)
+   current best f(x) = -0.000024 (best action=2495)
+
+0069-th step: f(x) = -0.000062 (action=2492)
+   current best f(x) = -0.000024 (best action=2495)
+
+0070-th step: f(x) = -0.044891 (action=2295)
+   current best f(x) = -0.000024 (best action=2495)
+
+</pre></div></div>
 </div>
 </section>
 </section>
@@ -304,7 +546,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7f816129d820&gt;]
+[&lt;matplotlib.lines.Line2D at 0x129b7b5b0&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -329,7 +571,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7f8130b30f70&gt;]
+[&lt;matplotlib.lines.Line2D at 0x129c6dc70&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -364,7 +606,7 @@ If a negative value is specified, no hyperparameter will be learned.
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">history</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">History</span><span class="p">()</span>
 <span class="n">res</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -411,7 +653,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.collections.PolyCollection at 0x7f81613d8370&gt;
+&lt;matplotlib.collections.PolyCollection at 0x129d36520&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -440,7 +682,7 @@ If a negative value is specified, no hyperparameter will be learned.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7f8130b84070&gt;]
+[&lt;matplotlib.lines.Line2D at 0x129e19e50&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -538,6 +780,76 @@ If a negative value is specified, no hyperparameter will be learned.
       
 
       <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.0.0/en/notebook/tutorial_basic.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/en/notebook/tutorial_basic.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/en/notebook/tutorial_basic.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/en/notebook/tutorial_basic.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/en/notebook/tutorial_basic.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/en/notebook/tutorial_basic.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/en/notebook/tutorial_basic.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/en/notebook/tutorial_basic.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/en/notebook/tutorial_basic.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/en/notebook/tutorial_basic.html">v1.0.0</a>
+        
+        </dd>
       
 
     </dl>

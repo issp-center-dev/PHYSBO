@@ -6,14 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Algorithm &mdash; PHYSBO 2.2.0 documentation</title>
+  <title>Algorithm &mdash; PHYSBO 3.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b21de401"></script>
+      <script src="_static/documentation_options.js?v=acc74ff5"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,8 +23,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="physbo package" href="api/physbo.html" />
-    <link rel="prev" title="Multi-objective optimization" href="notebook/tutorial_multi_objective.html" /> 
+    <link rel="next" title="PHYSBO API Reference" href="api.html" />
+    <link rel="prev" title="Optimization in Continuous Space" href="notebook/tutorial_range.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -34,8 +35,8 @@
 
           
           
-          <a href="index.html" class="icon icon-home">
-            PHYSBO
+          <a href="index.html">
+            
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -53,9 +54,12 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithm</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#bayesian-optimization">Bayesian optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#accelerating-bayesian-optimization-with-physbo">Accelerating Bayesian Optimization with PHYSBO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#importance-of-explanatory-variables-in-regression-models">Importance of Explanatory Variables in Regression Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="api/physbo.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
 </ul>
@@ -191,14 +195,36 @@ The <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is obtained
 \[L^\top L \boldsymbol{\mu} = \frac{1}{\sigma^2} \Phi \mathbf{y}.\]</div>
 <p>By using these techniques, a computation time becomes almost linear in the number of training data.</p>
 </section>
+<section id="importance-of-explanatory-variables-in-regression-models">
+<h2>Importance of Explanatory Variables in Regression Models<a class="headerlink" href="#importance-of-explanatory-variables-in-regression-models" title="Link to this heading"></a></h2>
+<p>The importance of explanatory variables (features) in a regression model <span class="math notranslate nohighlight">\(f(\mathbf{x})\)</span> can be evaluated by assessing how much the model’s prediction accuracy deteriorates when each explanatory variable is randomly permuted in the test data.</p>
+<p>Let the number of explanatory variables (the dimension of the search space) be <span class="math notranslate nohighlight">\(D\)</span>, and the number of test data samples be <span class="math notranslate nohighlight">\(N\)</span>.
+In this case, the input of the test data is represented by a matrix <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> of size <span class="math notranslate nohighlight">\(N \times D\)</span>.
+The output (objective function) is represented by an <span class="math notranslate nohighlight">\(N\)</span>-dimensional vector <span class="math notranslate nohighlight">\(\mathbf{y}\)</span>.
+The prediction accuracy of the model is evaluated using the mean squared error (MSE) between the model output and the test data output.</p>
+<p>First, compute the MSE for the original test data as a baseline for the model’s prediction accuracy:</p>
+<div class="math notranslate nohighlight">
+\[\text{MSE}^{\text{base}} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}) \|^2\]</div>
+<p>To evaluate the importance of the <span class="math notranslate nohighlight">\(a\)</span>-th explanatory variable, create a new dataset <span class="math notranslate nohighlight">\(\mathbf{X}^{P}\)</span> in which only the <span class="math notranslate nohighlight">\(a\)</span>-th column of the input data is permuted using a random permutation <span class="math notranslate nohighlight">\(P\)</span> of <span class="math notranslate nohighlight">\(N\)</span> elements:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}X^{P}_{i,a} &amp;= X_{P(i),a}\\
+X^{P}_{i,b} &amp;= X_{i,b} \ \ \ \text{for} \ b \neq a\end{split}\]</div>
+<p>The test error for <span class="math notranslate nohighlight">\(\mathbf{X}^{P}\)</span> is then:</p>
+<div class="math notranslate nohighlight">
+\[\text{MSE}^{P}_{a} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}^{P}) \|^2\]</div>
+<p>Permutation Importance (PI) is computed by generating <span class="math notranslate nohighlight">\(N_\text{perm}\)</span> random permutations <span class="math notranslate nohighlight">\(P\)</span> and averaging the MSE differences:</p>
+<div class="math notranslate nohighlight">
+\[\text{PI}_{a} = \frac{1}{N_\text{perm}} \sum_{P} \text{MSE}^{P}_{a} - \text{MSE}^{\text{base}}\]</div>
+<p>The larger the value of <span class="math notranslate nohighlight">\(\text{PI}_{a}\)</span>, the more the model’s prediction accuracy deteriorates due to the random permutation of variable <span class="math notranslate nohighlight">\(a\)</span>, indicating that <span class="math notranslate nohighlight">\(a\)</span> is an important feature.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="notebook/tutorial_multi_objective.html" class="btn btn-neutral float-left" title="Multi-objective optimization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api/physbo.html" class="btn btn-neutral float-right" title="physbo package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="notebook/tutorial_range.html" class="btn btn-neutral float-left" title="Optimization in Continuous Space" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="PHYSBO API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
@@ -265,6 +291,76 @@ The <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> is obtained
       
 
       <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../v3.0.0/en/algorithm.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.2.0/en/algorithm.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.1.0/en/algorithm.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.2/en/algorithm.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.1/en/algorithm.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.0/en/algorithm.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.1/en/algorithm.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.0/en/algorithm.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.1/en/algorithm.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.0/en/algorithm.html">v1.0.0</a>
+        
+        </dd>
       
 
     </dl>

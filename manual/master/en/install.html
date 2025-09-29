@@ -6,14 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Basic usage &mdash; PHYSBO 2.2.0 documentation</title>
+  <title>Basic usage &mdash; PHYSBO 3.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b21de401"></script>
+      <script src="_static/documentation_options.js?v=acc74ff5"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -32,8 +33,8 @@
 
           
           
-          <a href="index.html" class="icon icon-home">
-            PHYSBO
+          <a href="index.html">
+            
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -59,7 +60,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithm.html">Algorithm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/physbo.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
 </ul>
@@ -95,25 +98,24 @@
 <section id="required-packages">
 <h3>Required Packages<a class="headerlink" href="#required-packages" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Python &gt;= 3.6</p></li>
-<li><p>numpy &lt; 2.0.0</p></li>
+<li><p>Python &gt;= 3.9</p></li>
+<li><p>numpy</p></li>
 <li><p>scipy</p></li>
 </ul>
+<p>From v3.0.0, PHYSBO no longer uses Cython in order to simplify installation process particularly on Windows.
+This means that the performance of PHYSBO is slightly degraded from older versions.
+If you need more performance, you can install <code class="docutils literal notranslate"><span class="pre">physbo-core-cython</span></code> additionally.
+This package offers Cythonized version of some functions of PHYSBO.</p>
 </section>
 <section id="download-and-install">
 <h3>Download and Install<a class="headerlink" href="#download-and-install" title="Link to this heading"></a></h3>
 <ul>
 <li><p>From <code class="docutils literal notranslate"><span class="pre">PyPI</span></code> (recommended)</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip3 install physbo
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 -m pip install physbo
 </pre></div>
 </div>
-<ul>
+<ul class="simple">
 <li><p>Required packages such as NumPy will also be installed at the same time.</p></li>
-<li><p>If you add the <code class="docutils literal notranslate"><span class="pre">--user</span></code> option, it will be installed under the user’s home directory</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip3 install --user physbo
-</pre></div>
-</div>
-</li>
 </ul>
 </li>
 <li><p>From source (for developers)</p>
@@ -123,45 +125,75 @@
 <div><p>$ git clone <a class="reference external" href="https://github.com/issp-center-dev/PHYSBO">https://github.com/issp-center-dev/PHYSBO</a></p>
 </div></blockquote>
 </li>
-<li><p>Update <code class="docutils literal notranslate"><span class="pre">pip</span></code> to 19.0 or higher</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip3 install -U pip
-
-- If you don&#39;t have ``pip3``, you can install it with ``python3 -m ensurepip``.
-</pre></div>
-</div>
-</li>
 <li><p>Install</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd PHYSBO
-$ pip3 install --user ./
+$ python3 -m pip install ./
 </pre></div>
 </div>
 </li>
 </ol>
+</li>
+<li><p>To install <code class="docutils literal notranslate"><span class="pre">physbo-core-cython</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 -m pip install physbo-core-cython
+</pre></div>
+</div>
 </li>
 </ul>
 </section>
 <section id="uninstall">
 <h3>Uninstall<a class="headerlink" href="#uninstall" title="Link to this heading"></a></h3>
-<ol class="arabic">
-<li><p>Execute the following command.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip uninstall physbo
-</pre></div>
-</div>
-</li>
+<ol class="arabic simple">
+<li><p>Execute the following command.</p></li>
 </ol>
+<blockquote>
+<div><p>$ python3 -m pip uninstall physbo</p>
+</div></blockquote>
 </section>
 </section>
 <section id="basic-structures">
 <h2>Basic structures<a class="headerlink" href="#basic-structures" title="Link to this heading"></a></h2>
-<p>PHYSBO has the following structure (shown up to the second level).</p>
+<p>PHYSBO package includes the following modules.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>physbo
+├── blm
+│   ├── basis
+│   ├── core
+│   ├── inf
+│   ├── lik
+│   └── prior
+├── gp
+│   ├── core
+│   ├── cov
+│   ├── inf
+│   ├── lik
+│   └── mean
+├── misc
+├── opt
+├── predictor
+└── search
+    ├── discrete
+    ├── discrete_multi
+    ├── optimize
+    ├── range
+    └── range_multi
+</pre></div>
+</div>
 <p>Each module is created with the following structure.</p>
-<ul class="simple">
+<ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">blm</span></code> :Module for Baysean linear model</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">gp</span></code> :Module for Gaussian Process</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">opt</span></code> :Module for optimazation</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">search</span></code> :Module for searching for optimal solutions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">predictor.py</span></code> :Abstract class for predictors</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">variable.py</span></code> :Class defined for variable associations used in physbo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gp</span></code> :Module for Gaussian Process regression model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">opt</span></code> :Module for optimazation of hyperparameters of Gaussian Process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">search</span></code> :Module for Bayesian optimization</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">discrete</span></code> : Single-objective optimization for discrete search space</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">discrete_multi</span></code> : Multi-objective optimization for discrete search space</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">range</span></code> : Single-objective optimization for continuous search space</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">range_multi</span></code> : Multi-objective optimization for continuous search space</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">optimize</span></code> : Optimization of acquisition function</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predictor</span></code> :Abstract class for predictors</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">misc</span></code> : Others (e.g., modules for normalizing the search space)</p></li>
 </ul>
 <p>For more information about each module, please refer to the API reference.</p>
@@ -204,7 +236,10 @@ If you specify the simulator and the number of search steps in these methods, th
 <div><p>i). Select the next parameter to be executed from the list of candidate parameters.</p>
 <p>ii). Run the simulator with the selected parameters.</p>
 </div></blockquote>
-<p>The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the “Exploring multiple candidates at once” section of the tutorial. Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside. In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYSBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO. For more details, please refer to the “Running Interactively” section of the tutorial.</p>
+<p>The number of parameter returned in i) is one by default, but it is possible to return multiple parameters in one step. For more details, please refer to the <a class="reference external" href="notebook/tutorial_multi_probe.html">“Search multiple candidates at once”</a> section of the tutorial.
+Also, instead of running the above loop inside PHYSBO, it is possible to control i) and ii) separately from the outside.
+In other words, it is possible to propose the next parameter to be executed from PHYSBO, evaluate its objective function value in some way outside PHYSBO (e.g., by experiment rather than numerical calculation), and register the evaluated value in PHYSBO.
+For more details, please refer to the <a class="reference external" href="notebook/tutorial_interactive_mode.html">“Running PHYSBO Interactively”</a> section of the tutorial.</p>
 </div></blockquote>
 </div></blockquote>
 <ol class="arabic simple" start="4">
@@ -218,7 +253,10 @@ If you specify the simulator and the number of search steps in these methods, th
 <li><p><code class="docutils literal notranslate"><span class="pre">fbest,</span> <span class="pre">best_action=</span> <span class="pre">res.export_all_sequence_best_fx()</span></code>: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">res.total_num_search</span></code>: Total number steps where the simulator has executed.</p></li>
 </ul>
-<p>The search results can be saved to an external file using the <code class="docutils literal notranslate"><span class="pre">save</span></code> method, and the output results can be loaded using the <code class="docutils literal notranslate"><span class="pre">load</span></code> method. See the tutorial for details on how to use it.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">policy</span></code> after Bayesian optimization can be saved to external files using the <code class="docutils literal notranslate"><span class="pre">save</span></code> method, and the <code class="docutils literal notranslate"><span class="pre">policy</span></code> can be loaded from them by using the <code class="docutils literal notranslate"><span class="pre">load</span></code> method.
+See the <a class="reference external" href="notebook/tutorial_interactive_mode.html">“Running PHYSBO Interactively”</a> section of the tutorial for details on how to use it.</p>
+<p>PHYSBO also implements various optimization methods such as multi-objective optimization and optimization in continuous search spaces.
+For more details, please refer to the <a class="reference external" href="notebook/tutorial_multi_objective.html">“Multi-objective optimization”</a> and <a class="reference external" href="notebook/tutorial_range.html">“Optimization in Continuous Space”</a> sections of the tutorial.</p>
 </div></blockquote>
 </section>
 </section>
@@ -295,6 +333,76 @@ If you specify the simulator and the number of search steps in these methods, th
       
 
       <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../v3.0.0/en/install.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.2.0/en/install.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.1.0/en/install.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.2/en/install.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.1/en/install.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.0/en/install.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.1/en/install.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.0/en/install.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.1/en/install.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.0/en/install.html">v1.0.0</a>
+        
+        </dd>
       
 
     </dl>

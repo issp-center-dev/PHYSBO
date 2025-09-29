@@ -1,7 +1,0 @@
-physbo.blm.basis.fourier module
-===============================
-
-.. automodule:: physbo.blm.basis.fourier
-   :members:
-   :undoc-members:
-   :show-inheritance:
