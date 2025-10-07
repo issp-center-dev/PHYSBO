@@ -14,12 +14,15 @@ import time
 from ._history import History
 from .. import utility
 from .. import score as search_score
+from ..search_space import DiscreteSearchSpace
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable
 
+
+USE_SEARCH_SPACE = True
 
 class Policy:
     """Single objective Bayesian optimization with discrete search space"""
@@ -29,7 +32,7 @@ class Policy:
         Parameters
         ----------
         test_X: numpy.ndarray or physbo.Variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+            The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
@@ -71,6 +74,8 @@ class Policy:
             self.config.learning.is_disp = (
                 self.config.learning.is_disp and self.mpirank == 0
             )
+
+        self.search_space = DiscreteSearchSpace(test_X, comm=comm)
 
     def set_seed(self, seed):
         """
