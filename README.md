@@ -20,13 +20,6 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - NumPy
 - SciPy
 
-### About Cython
-
-From v3.0.0, PHYSBO no longer uses Cython in order to simplify installation process particularly on Windows.
-This means that the performance of PHYSBO is slightly degraded from older versions.
-If you need more performance, you can install ``physbo-core-cython`` additionally.
-This package offers Cythonized version of some functions of PHYSBO.
-
 ## Install
 
 - From PyPI (recommended)
@@ -51,12 +44,6 @@ python3 -m pip install physbo
 
         python3 -m pip install ./PHYSBO
         ```
-
-- To install ``physbo-core-cython`` ::
-
-  ```bash
-  python3 -m pip install physbo-core-cython
-  ```
 
 ## Uninstall
 

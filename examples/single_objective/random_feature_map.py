@@ -59,7 +59,7 @@ def run(num_rand_basis):
 results = []
 
 for nrs in nrss:
-    local_result = run(D, N, nrs)
+    local_result = run(nrs)
     results.append(local_result)
 
 for name in results[0].keys():

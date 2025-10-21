@@ -8,8 +8,37 @@
 # -*- coding:utf-8 -*-
 import numpy as np
 from scipy import spatial
-from ._src import grad_width64
 
+
+def grad_width(X, width, G):
+    """
+    Gradiant along width direction.
+
+    Parameters
+    ----------
+    X: numpy.ndarray[numpy.float64_t, ndim = 2]
+
+    width: numpy.ndarray[numpy.float64_t, ndim = 1]
+        The grid width
+    G: numpy.ndarray[numpy.float64_t, ndim = 2]
+        The gram matrix
+    Returns
+    -------
+    numpy.ndarray
+    """
+
+    ## The meaning of the following einsum is:
+    # N = X.shape[0]
+    # D = X.shape[1]
+    # gradG = np.zeros([D, N, N], dtype=DTYPE64)
+    # for d in range(D):
+    #     for i in range(N):
+    #         for j in range(i + 1, N):
+    #             gradG[d, i, j] = (X[i, d] - X[j, d]) / width[d]
+    #             gradG[d, i, j] = gradG[d, i, j] ** 2 * G[i, j]
+    #             gradG[d, j, i] = gradG[d, i, j]
+    gradG = np.einsum("ijd,ij->dij", ((X[:, None, :] - X) / width)**2, G)
+    return gradG
 
 class Gauss:
     """gaussian kernel"""
@@ -126,7 +155,7 @@ class Gauss:
 
         grad = np.zeros((self.num_params, num_data, num_data))
         if self.ard:
-            grad[0 : self.num_params - 1, :, :] = grad_width64(X, width, G)
+            grad[0 : self.num_params - 1, :, :] = grad_width(X, width, G)
         else:
             pairwise_dists = spatial.distance.pdist(X / width, "euclidean")
             grad[0, :, :] = G * spatial.distance.squareform(pairwise_dists**2)

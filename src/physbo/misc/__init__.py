@@ -8,17 +8,14 @@
 from ._centering import centering as centering
 from ._gauss_elim import gauss_elim as gauss_elim
 from ._set_config import SetConfig as SetConfig
-from ._use_cython import use_cython as use_cython
 
-from ._src import cholupdate as cholupdate
-from ._src import diagAB as diagAB
-from ._src import logsumexp64 as logsumexp64
-from ._src import traceAB2 as traceAB2
-from ._src import traceAB3 as traceAB3
-
+from ._cholsky import cholupdate as cholupdate
+from ._matrix import diagAB as diagAB
+from ._matrix import logsumexp as logsumexp
+from ._matrix import traceAB2 as traceAB2
+from ._matrix import traceAB3 as traceAB3
 
 __warned_names = set()
-
 
 def deprecated_warning(old: str, new: str):
     """
