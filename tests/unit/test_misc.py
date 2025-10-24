@@ -81,10 +81,10 @@ def test_traceAB3(NM):
     np.testing.assert_array_almost_equal(res, ref)
 
 
-def test_logsumexp64():
+def test_logsumexp():
     np.random.seed(12345)
     N = 10
     xs = np.random.randn(N)
     ref = np.log(sum(np.exp(xs)))
-    res = physbo.misc.logsumexp64(xs)
+    res = physbo.misc.logsumexp(xs)
     assert res == pytest.approx(ref)
