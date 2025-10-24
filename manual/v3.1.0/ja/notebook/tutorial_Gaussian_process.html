@@ -1,0 +1,681 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ガウス過程 &mdash; PHYSBO 3.1.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=4408be02"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="インタラクティブに実行する" href="tutorial_interactive_mode.html" />
+    <link rel="prev" title="PHYSBO の基本" href="tutorial_basic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ガウス過程</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#学習データの定義">学習データの定義</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ガウス過程の学習と予測">ガウス過程の学習と予測</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#訓練済みモデルによる予測">訓練済みモデルによる予測</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">連続空間での最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">ガウス過程</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_Gaussian_process.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>この jupyter notebook ファイルは <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/v3.1.0/data/tutorial">ISSP Data Repository</a> (v3.1.0 branch) から入手できます。</p>
+<section id="ガウス過程">
+<h1>ガウス過程<a class="headerlink" href="#ガウス過程" title="Link to this heading"></a></h1>
+<p>PHYSBOではガウス過程回帰を実行しながらベイズ最適化を行なっています。</p>
+<p>そのため、学習データが与えられた際にガウス過程回帰を実行することもでき、学習済みモデルを利用したテストデータの予測も行うことができます。</p>
+<p>ここでは、その手順について紹介します。</p>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
+<p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
+</div>
+</section>
+<section id="学習データの定義">
+<h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="Link to this heading"></a></h2>
+<p>対象データのうち、ランダムに選んだ1割をトレーニングデータとして利用し、別のランダムに選んだ1割をテストデータとして利用します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">Ntrain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">Ntest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">N</span><span class="o">-</span><span class="n">Ntrain</span><span class="p">)</span>
+
+<span class="n">id_all</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">id_train</span>  <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ntrain</span><span class="p">]</span>
+<span class="n">id_test</span> <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="n">Ntrain</span><span class="p">:</span><span class="n">Ntrain</span><span class="o">+</span><span class="n">Ntest</span><span class="p">]</span>
+
+<span class="n">X_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">id_train</span><span class="p">]</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">id_test</span><span class="p">]</span>
+
+<span class="n">t_train</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">id_train</span><span class="p">]</span>
+<span class="n">t_test</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">id_test</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ntrain =&quot;</span><span class="p">,</span> <span class="n">Ntrain</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ntest =&quot;</span><span class="p">,</span> <span class="n">Ntest</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ntrain = 1798
+Ntest = 1798
+</pre></div></div>
+</div>
+</section>
+<section id="ガウス過程の学習と予測">
+<h2>ガウス過程の学習と予測<a class="headerlink" href="#ガウス過程の学習と予測" title="Link to this heading"></a></h2>
+<p>以下のプロセスでガウス過程を学習し、テストデータの予測を行います。</p>
+<ol class="arabic simple">
+<li><p>ガウス過程のモデルを生成します。</p></li>
+<li><p>X_train（学習データのパラメータ）, t_train（学習データの目的関数値）を用いてモデルを学習します。</p></li>
+<li><p>学習されたモデルを用いてテストデータ(X_test)に対する予測を実行します。</p></li>
+</ol>
+<p>共分散の定義(ガウシアン)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>平均の定義</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>尤度関数の定義(ガウシアン)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>ガウス過程モデルの生成</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">set_config</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+--------------------------------------------------------------------------------
+WARNING: physbo.set_config is deprecated and will be removed in the future.
+         Use physbo.SetConfig instead.
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>ガウス過程モデルを学習</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 17286.344814363532
+50 -th epoch marginal likelihood 3941.141158356132
+100 -th epoch marginal likelihood 1224.4325203178405
+150 -th epoch marginal likelihood 78.87839479900322
+200 -th epoch marginal likelihood -701.4985461671986
+250 -th epoch marginal likelihood -1344.3964878511624
+300 -th epoch marginal likelihood -1676.1549909534815
+350 -th epoch marginal likelihood -1815.6458851286318
+400 -th epoch marginal likelihood -1917.6558525403716
+450 -th epoch marginal likelihood -1968.1828578348936
+500 -th epoch marginal likelihood -1998.5771581916174
+Done
+
+</pre></div></div>
+</div>
+<p>学習されたガウス過程におけるパラメタを出力</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">print_params</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+
+likelihood parameter =   [-2.76166841]
+mean parameter in GP prior:  [-1.05925247]
+covariance parameter in GP prior:  [-0.68395227 -2.67155333]
+
+
+</pre></div></div>
+</div>
+<p>テストデータの平均値（予測値）および分散を計算</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
+<span class="n">fmean</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
+<span class="n">fcov</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>予測の結果</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
+       -1.16971609, -1.13126194])
+</pre></div></div>
+</div>
+<p>分散の結果</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
+       0.00053075])
+</pre></div></div>
+</div>
+<p>予測値の平均二乗誤差の出力</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.011857078799698457
+</pre></div></div>
+</div>
+<p>得られた回帰モデルについて、どの特徴量がどのくらい重要なのかを調べるための簡単な指標として permutation importance (PI)があります。 PHYSBOでは <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数で計算できます。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">pi_mean</span><span class="p">,</span>
+    <span class="n">xerr</span><span class="o">=</span><span class="n">pi_std</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_Gaussian_process_26_0.png" src="../_images/notebook_tutorial_Gaussian_process_26_0.png" />
+</div>
+</div>
+<p>このグラフにおいて、棒グラフはPIの平均値を、線分は標準偏差を示しており、0番の特徴量と比べて1,2番の特徴量のほうが重要そうだ、ということが読み取れます。</p>
+<p><code class="docutils literal notranslate"><span class="pre">gp.model</span></code> だけではなく, <code class="docutils literal notranslate"><span class="pre">policy</span></code> も <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数を持っています。 使い方は <code class="docutils literal notranslate"><span class="pre">policy.get_permutation_importance(n_perm)</span></code> です。 <code class="docutils literal notranslate"><span class="pre">policy</span></code> では保存してある学習済みデータに対してPIを計算するため、 <code class="docutils literal notranslate"><span class="pre">model</span></code> とは違い、改めて渡す必要はありません。</p>
+</section>
+<section id="訓練済みモデルによる予測">
+<h2>訓練済みモデルによる予測<a class="headerlink" href="#訓練済みモデルによる予測" title="Link to this heading"></a></h2>
+<p>学習済みモデルのパラメタをgp_paramsとして読み出し、これを用いた予測を行います。</p>
+<p>gp_paramsおよび学習データ(X_train, t_train)を記憶しておくことで、訓練済みモデルによる予測が可能となります。</p>
+<p>学習されたパラメタを準備(学習の直後に行う必要あり)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習したパラメタを１次元配列として準備</span>
+<span class="n">gp_params</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+<span class="n">gp_params</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-2.76166841, -1.05925247, -0.68395227, -2.67155333])
+</pre></div></div>
+</div>
+<p>学習に利用したモデルと同様のモデルをgpとして準備</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#共分散の定義 (ガウシアン)</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+
+<span class="c1">#平均の定義</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
+
+<span class="c1">#尤度関数の定義 (ガウシアン)</span>
+<span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
+
+<span class="c1">#ガウス過程モデルの生成</span>
+<span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<p>学習済みのパラメタをモデルに入力し予測を実行</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習済みのパラメタをガウス過程に入力</span>
+<span class="n">gp</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">gp_params</span><span class="p">)</span>
+
+
+<span class="c1">#テストデータの平均値（予測値）および分散を計算</span>
+<span class="n">gp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
+<span class="n">fmean</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
+<span class="n">fcov</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>予測の結果</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
+       -1.16971609, -1.13126194])
+</pre></div></div>
+</div>
+<p>分散の結果</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
+       0.00053075])
+</pre></div></div>
+</div>
+<p>予測値の平均二乗誤差の出力</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.011857078799698457
+</pre></div></div>
+</div>
+<p>(注) 上の例では事前に登録されているXと同じものを利用して予測を行いました。 学習済みのモデルを利用してXに含まれていないパラメータ X_new に対して予測をしたい場合には、 学習モデルで使用したデータXの平均(X_{mean})と標準偏差(X_{std})を求めていただいたうえで、 X_{new} = (X_{new} - X_{mean}) / X_{std} の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、X_{new}が一つのデータの場合には事前に変換する必要があります。
+例えば、X_{new}が実数である場合には、 X_new = np.array(X_new).reshape(1) などとして変換する必要があります。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_basic.html" class="btn btn-neutral float-left" title="PHYSBO の基本" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_interactive_mode.html" class="btn btn-neutral float-right" title="インタラクティブに実行する" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v3.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v3.1.0/en/notebook/tutorial_Gaussian_process.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v3.1.0/ja/notebook/tutorial_Gaussian_process.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_Gaussian_process.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_Gaussian_process.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        <strong>
+        <a href="../../../v3.1.0/ja/notebook/tutorial_Gaussian_process.html">v3.1.0</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.0.0/ja/notebook/tutorial_Gaussian_process.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/ja/notebook/tutorial_Gaussian_process.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/ja/notebook/tutorial_Gaussian_process.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/ja/notebook/tutorial_Gaussian_process.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/ja/notebook/tutorial_Gaussian_process.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/ja/notebook/tutorial_Gaussian_process.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/ja/notebook/tutorial_Gaussian_process.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/ja/notebook/tutorial_Gaussian_process.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/ja/notebook/tutorial_Gaussian_process.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/ja/notebook/tutorial_Gaussian_process.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

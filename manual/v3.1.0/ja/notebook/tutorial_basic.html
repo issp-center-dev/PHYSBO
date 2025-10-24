@@ -1,0 +1,872 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHYSBO の基本 &mdash; PHYSBO 3.1.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=4408be02"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="ガウス過程" href="tutorial_Gaussian_process.html" />
+    <link rel="prev" title="チュートリアル" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">PHYSBO の基本</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#はじめに">はじめに</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulatorクラスの定義">simulatorクラスの定義</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#最適化の実行">最適化の実行</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Policy-のセット">Policy のセット</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ランダムサーチ">ランダムサーチ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ベイズ最適化">ベイズ最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#結果の確認">結果の確認</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#結果のシリアライズ">結果のシリアライズ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#回帰">回帰</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#獲得関数">獲得関数</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#並列化">並列化</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">連続空間での最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">PHYSBO の基本</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_basic.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>この jupyter notebook ファイルは <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/v3.1.0/data/tutorial">ISSP Data Repository</a> (v3.1.0 branch) から入手できます。</p>
+<section id="PHYSBO-の基本">
+<h1>PHYSBO の基本<a class="headerlink" href="#PHYSBO-の基本" title="Link to this heading"></a></h1>
+<section id="はじめに">
+<h2>はじめに<a class="headerlink" href="#はじめに" title="Link to this heading"></a></h2>
+<p>本チュートリアルでは例として、一次元の関数の最小値を求める例題を解きます。 はじめに、PHYSBOをインポートします。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
+</div>
+</section>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>最初に関数を探索する空間を定義します。 以下の例では、探索空間<code class="docutils literal notranslate"><span class="pre">X</span></code>を <code class="docutils literal notranslate"><span class="pre">x_min</span> <span class="pre">=</span> <span class="pre">-2.0</span></code>から<code class="docutils literal notranslate"><span class="pre">x_max</span> <span class="pre">=</span> <span class="pre">2.0</span></code>まで<code class="docutils literal notranslate"><span class="pre">window_num=10001</span></code>分割で刻んだグリッドで定義しています。 なお、<code class="docutils literal notranslate"><span class="pre">X</span></code>は <code class="docutils literal notranslate"><span class="pre">window_num</span></code> x <code class="docutils literal notranslate"><span class="pre">d</span></code> のndarray形式にする必要があります(<code class="docutils literal notranslate"><span class="pre">d</span></code>は次元数、この場合は1次元)。そのため、reshapeを行って変形しています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#In</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+
+<span class="c1">#In</span>
+<span class="c1">#Create candidate</span>
+<span class="n">window_num</span><span class="o">=</span><span class="mi">10001</span>
+<span class="n">x_max</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">x_min</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">,</span><span class="n">window_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">window_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="simulatorクラスの定義">
+<h2>simulatorクラスの定義<a class="headerlink" href="#simulatorクラスの定義" title="Link to this heading"></a></h2>
+<p>目的関数を定義するためのsimulatorクラスをここで定義します。</p>
+<p>今回は<span class="math notranslate nohighlight">\(f(x) = 3 x^4 + 4 x ^3 + 1.0\)</span> が最小となるxを探索するという問題設定にしています(答えは<span class="math notranslate nohighlight">\(x=-1.0\)</span>)。</p>
+<p>simulatorクラスでは、<code class="docutils literal notranslate"><span class="pre">__call__</span></code>関数を定義します(初期変数などがある場合は<code class="docutils literal notranslate"><span class="pre">__init__</span></code>を定義します)。 actionは探索空間の中から取り出すグリッドのindex番号を示しており、複数の候補を一度に計算できるように一般的にndarrayの形式を取っています。 今回は一つの候補のみを毎回計算するため、<code class="docutils literal notranslate"><span class="pre">action_idx=action[0]</span></code>として<code class="docutils literal notranslate"><span class="pre">X</span></code>から候補点を一つ選んでいます。 <strong>PHYSBOでは目的関数値が最大となる</strong>ものを求める仕様になっているため、候補点でのf(x)の値に-1をかけたものを返しています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Declare the class for calling the simulator.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="n">action_idx</span> <span class="o">=</span> <span class="n">action</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">action_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fx</span> <span class="o">=</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">4.0</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">fx</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="最適化の実行">
+<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Link to this heading"></a></h2>
+<section id="Policy-のセット">
+<h3>Policy のセット<a class="headerlink" href="#Policy-のセット" title="Link to this heading"></a></h3>
+<p>まず、最適化の <code class="docutils literal notranslate"><span class="pre">Policy</span></code> をセットします。</p>
+<p><code class="docutils literal notranslate"><span class="pre">test_X</span></code> に探索候補の行列 (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>) を指定します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy のセット</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+
+<span class="c1"># シード値のセット</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">policy</span></code> をセットした段階では、まだ最適化は行われません。 <code class="docutils literal notranslate"><span class="pre">policy</span></code> に対して以下のメソッドを実行することで、最適化を行います。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">random_search</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bayes_search</span></code></p></li>
+</ul>
+<p>これらのメソッドに先ほど定義した <code class="docutils literal notranslate"><span class="pre">simulator</span></code> と探索ステップ数を指定すると、探索ステップ数だけ以下のループが回ります。</p>
+<ol class="lowerroman simple">
+<li><p>パラメータ候補の中から次に実行するパラメータを選択</p></li>
+<li><p>選択されたパラメータで <code class="docutils literal notranslate"><span class="pre">simulator</span></code> を実行</p></li>
+<li><p>で返されるパラメータはデフォルトでは1つですが、1ステップで複数のパラメータを返すことも可能です。 詳しくは「複数候補を一度に探索する」の項目を参照してください。</p></li>
+</ol>
+<p>また、上記のループを PHYSBO の中で回すのではなく、i) と ii) を別個に外部から制御することも可能です。つまり、PHYSBO から次に実行するパラメータを提案し、その目的関数値をPHYSBOの外部で何らかの形で評価し（例えば、数値計算ではなく、実験による評価など）、それをPHYSBOの外部で何らかの形で提案し、評価値をPHYSBOに登録する、という手順が可能です。詳しくは、チュートリアルの「インタラクティブに実行する」の項目を参照してください。</p>
+</section>
+<section id="ランダムサーチ">
+<h3>ランダムサーチ<a class="headerlink" href="#ランダムサーチ" title="Link to this heading"></a></h3>
+<p>まず初めに、ランダムサーチを行ってみましょう。</p>
+<p>ベイズ最適化の実行には、目的関数値が2つ以上求まっている必要があるため（初期に必要なデータ数は、最適化したい問題、パラメータの次元dに依存して変わります）、まずランダムサーチを実行します。</p>
+<p><strong>引数</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code>: 探索ステップ数</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulator</span></code>: 目的関数のシミュレータ (simulator クラスのオブジェクト)</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th step: f(x) = -51.387604 (action=9395)
+   current best f(x) = -51.387604 (best action=9395)
+
+0002-th step: f(x) = -0.581263 (action=3583)
+   current best f(x) = -0.581263 (best action=3583)
+
+0003-th step: f(x) = -0.827643 (action=4015)
+   current best f(x) = -0.581263 (best action=3583)
+
+0004-th step: f(x) = -14.220707 (action=154)
+   current best f(x) = -0.581263 (best action=3583)
+
+0005-th step: f(x) = -34.192764 (action=8908)
+   current best f(x) = -0.581263 (best action=3583)
+
+0006-th step: f(x) = -31.595527 (action=8819)
+   current best f(x) = -0.581263 (best action=3583)
+
+0007-th step: f(x) = -0.361729 (action=3269)
+   current best f(x) = -0.361729 (best action=3269)
+
+0008-th step: f(x) = -0.755839 (action=3870)
+   current best f(x) = -0.361729 (best action=3269)
+
+0009-th step: f(x) = -10.883996 (action=370)
+   current best f(x) = -0.361729 (best action=3269)
+
+0010-th step: f(x) = -0.150313 (action=2949)
+   current best f(x) = -0.150313 (best action=2949)
+
+0011-th step: f(x) = -3.885764 (action=6926)
+   current best f(x) = -0.150313 (best action=2949)
+
+0012-th step: f(x) = -3.525070 (action=6851)
+   current best f(x) = -0.150313 (best action=2949)
+
+0013-th step: f(x) = -3.252476 (action=6789)
+   current best f(x) = -0.150313 (best action=2949)
+
+0014-th step: f(x) = -7.524212 (action=641)
+   current best f(x) = -0.150313 (best action=2949)
+
+0015-th step: f(x) = -16.136719 (action=8125)
+   current best f(x) = -0.150313 (best action=2949)
+
+0016-th step: f(x) = -1.439937 (action=6090)
+   current best f(x) = -0.150313 (best action=2949)
+
+0017-th step: f(x) = -9.415991 (action=480)
+   current best f(x) = -0.150313 (best action=2949)
+
+0018-th step: f(x) = -4.854365 (action=925)
+   current best f(x) = -0.150313 (best action=2949)
+
+0019-th step: f(x) = -1.042368 (action=5523)
+   current best f(x) = -0.150313 (best action=2949)
+
+0020-th step: f(x) = -19.075990 (action=8288)
+   current best f(x) = -0.150313 (best action=2949)
+
+</pre></div></div>
+</div>
+<p>実行すると、各ステップの目的関数値とその action ID、現在までのベスト値とその action ID に関する情報が以下のように出力されます。</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0020-th step: f(x) = -19.075990 (action=8288)
+   current best f(x) = -0.150313 (best action=2949)
+</pre></div>
+</div>
+</section>
+<section id="ベイズ最適化">
+<h3>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="Link to this heading"></a></h3>
+<p>続いて、ベイズ最適化を以下のように実行します。</p>
+<p><strong>引数</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code>: 探索ステップ数</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulator</span></code>: 目的関数のシミュレータ (simulator クラスのオブジェクト)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">score</span></code>: 獲得関数(acquisition function) のタイプ。以下のいずれかを指定します。</p>
+<ul>
+<li><p>TS (Thompson Sampling)</p></li>
+<li><p>EI (Expected Improvement)</p></li>
+<li><p>PI (Probability of Improvement)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval</span></code>:
+指定したインターバルごとに、ハイパーパラメータを学習します。
+負の値を指定すると、ハイパーパラメータの学習は行われません。
+0 を指定すると、ハイパーパラメータの学習は最初のステップでのみ行われます。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_rand_basis</span></code>: 基底関数の数。0を指定すると、Bayesian linear modelを利用しない通常のガウス過程が使用されます。</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span>
+                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 55.074208787406135
+50 -th epoch marginal likelihood 54.02707203875113
+100 -th epoch marginal likelihood 53.187697419916795
+150 -th epoch marginal likelihood 52.41026245373357
+200 -th epoch marginal likelihood 51.64554036744889
+250 -th epoch marginal likelihood 50.88537231963794
+300 -th epoch marginal likelihood 50.12972033759564
+350 -th epoch marginal likelihood 49.37883516837167
+400 -th epoch marginal likelihood 48.632896402510426
+450 -th epoch marginal likelihood 47.89227385595791
+500 -th epoch marginal likelihood 47.15741745486788
+Done
+
+0021-th step: f(x) = -0.129612 (action=2163)
+   current best f(x) = -0.129612 (best action=2163)
+
+0022-th step: f(x) = -0.002719 (action=2554)
+   current best f(x) = -0.002719 (best action=2554)
+
+0023-th step: f(x) = -1.000342 (action=5109)
+   current best f(x) = -0.002719 (best action=2554)
+
+0024-th step: f(x) = -0.070645 (action=2246)
+   current best f(x) = -0.002719 (best action=2554)
+
+0025-th step: f(x) = -0.957339 (action=4413)
+   current best f(x) = -0.002719 (best action=2554)
+
+0026-th step: f(x) = -0.297858 (action=2008)
+   current best f(x) = -0.002719 (best action=2554)
+
+0027-th step: f(x) = -0.002921 (action=2556)
+   current best f(x) = -0.002719 (best action=2554)
+
+0028-th step: f(x) = -0.135520 (action=2156)
+   current best f(x) = -0.002719 (best action=2554)
+
+0029-th step: f(x) = -1.008844 (action=5316)
+   current best f(x) = -0.002719 (best action=2554)
+
+0030-th step: f(x) = -0.303300 (action=2004)
+   current best f(x) = -0.002719 (best action=2554)
+
+0031-th step: f(x) = -0.007081 (action=2416)
+   current best f(x) = -0.002719 (best action=2554)
+
+0032-th step: f(x) = -0.218576 (action=2072)
+   current best f(x) = -0.002719 (best action=2554)
+
+0033-th step: f(x) = -0.062810 (action=2776)
+   current best f(x) = -0.002719 (best action=2554)
+
+0034-th step: f(x) = -0.000161 (action=2513)
+   current best f(x) = -0.000161 (best action=2513)
+
+0035-th step: f(x) = -0.000078 (action=2491)
+   current best f(x) = -0.000078 (best action=2491)
+
+0036-th step: f(x) = -0.040848 (action=2304)
+   current best f(x) = -0.000078 (best action=2491)
+
+0037-th step: f(x) = -0.117955 (action=2891)
+   current best f(x) = -0.000078 (best action=2491)
+
+0038-th step: f(x) = -0.010968 (action=2396)
+   current best f(x) = -0.000078 (best action=2491)
+
+0039-th step: f(x) = -0.093074 (action=2211)
+   current best f(x) = -0.000078 (best action=2491)
+
+0040-th step: f(x) = -0.049143 (action=2286)
+   current best f(x) = -0.000078 (best action=2491)
+
+0041-th step: f(x) = -0.006779 (action=2586)
+   current best f(x) = -0.000078 (best action=2491)
+
+0042-th step: f(x) = -0.031452 (action=2327)
+   current best f(x) = -0.000078 (best action=2491)
+
+0043-th step: f(x) = -0.006626 (action=2585)
+   current best f(x) = -0.000078 (best action=2491)
+
+0044-th step: f(x) = -0.000061 (action=2508)
+   current best f(x) = -0.000061 (best action=2508)
+
+0045-th step: f(x) = -0.063184 (action=2259)
+   current best f(x) = -0.000061 (best action=2508)
+
+0046-th step: f(x) = -0.004198 (action=2435)
+   current best f(x) = -0.000061 (best action=2508)
+
+0047-th step: f(x) = -0.007608 (action=2413)
+   current best f(x) = -0.000061 (best action=2508)
+
+0048-th step: f(x) = -0.019405 (action=2648)
+   current best f(x) = -0.000061 (best action=2508)
+
+0049-th step: f(x) = -0.091016 (action=2214)
+   current best f(x) = -0.000061 (best action=2508)
+
+0050-th step: f(x) = -0.009453 (action=2602)
+   current best f(x) = -0.000061 (best action=2508)
+
+0051-th step: f(x) = -0.001649 (action=2459)
+   current best f(x) = -0.000061 (best action=2508)
+
+0052-th step: f(x) = -0.146001 (action=2144)
+   current best f(x) = -0.000061 (best action=2508)
+
+0053-th step: f(x) = -0.008914 (action=2406)
+   current best f(x) = -0.000061 (best action=2508)
+
+0054-th step: f(x) = -0.123044 (action=2171)
+   current best f(x) = -0.000061 (best action=2508)
+
+0055-th step: f(x) = -0.006176 (action=2582)
+   current best f(x) = -0.000061 (best action=2508)
+
+0056-th step: f(x) = -0.035779 (action=2316)
+   current best f(x) = -0.000061 (best action=2508)
+
+0057-th step: f(x) = -0.021468 (action=2356)
+   current best f(x) = -0.000061 (best action=2508)
+
+0058-th step: f(x) = -0.000024 (action=2495)
+   current best f(x) = -0.000024 (best action=2495)
+
+0059-th step: f(x) = -0.005317 (action=2427)
+   current best f(x) = -0.000024 (best action=2495)
+
+0060-th step: f(x) = -0.042619 (action=2300)
+   current best f(x) = -0.000024 (best action=2495)
+
+0061-th step: f(x) = -0.095860 (action=2207)
+   current best f(x) = -0.000024 (best action=2495)
+
+0062-th step: f(x) = -0.048180 (action=2288)
+   current best f(x) = -0.000024 (best action=2495)
+
+0063-th step: f(x) = -0.008721 (action=2407)
+   current best f(x) = -0.000024 (best action=2495)
+
+0064-th step: f(x) = -0.000244 (action=2516)
+   current best f(x) = -0.000024 (best action=2495)
+
+0065-th step: f(x) = -0.000137 (action=2512)
+   current best f(x) = -0.000024 (best action=2495)
+
+0066-th step: f(x) = -0.167353 (action=2121)
+   current best f(x) = -0.000024 (best action=2495)
+
+0067-th step: f(x) = -0.005170 (action=2428)
+   current best f(x) = -0.000024 (best action=2495)
+
+0068-th step: f(x) = -0.099800 (action=2856)
+   current best f(x) = -0.000024 (best action=2495)
+
+0069-th step: f(x) = -0.000062 (action=2492)
+   current best f(x) = -0.000024 (best action=2495)
+
+0070-th step: f(x) = -0.044891 (action=2295)
+   current best f(x) = -0.000024 (best action=2495)
+
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="結果の確認">
+<h2>結果の確認<a class="headerlink" href="#結果の確認" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">探索結果 res は history クラスのオブジェクト (<code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.results.history</span></code>) として返されます。</div>
+<div class="line">以下より探索結果を参照します。</div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">res.fx</span></code> : simulator (目的関数) の評価値の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">res.chosen_actions</span></code>: simulator を評価したときの action ID (パラメータ) の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fbest,</span> <span class="pre">best_action=</span> <span class="pre">res.export_all_sequence_best_fx()</span></code>: simulator を評価した全タイミングにおけるベスト値とその action ID (パラメータ)の履歴。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">res.total_num_search</span></code>: simulator のトータル評価数。</p></li>
+</ul>
+<div class="line-block">
+<div class="line">各ステップでの目的関数値と、ベスト値の推移をプロットしてみましょう。</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">res.fx</span></code>, <code class="docutils literal notranslate"><span class="pre">best_fx</span></code> はそれぞれ <code class="docutils literal notranslate"><span class="pre">res.total_num_search</span></code> までの範囲を指定します。</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x148bbc5e0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_15_1.png" src="../_images/notebook_tutorial_basic_15_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x148d05a90&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_16_1.png" src="../_images/notebook_tutorial_basic_16_1.png" />
+</div>
+</div>
+</section>
+<section id="結果のシリアライズ">
+<h2>結果のシリアライズ<a class="headerlink" href="#結果のシリアライズ" title="Link to this heading"></a></h2>
+<p>探索結果は <code class="docutils literal notranslate"><span class="pre">save</span></code> メソッドにより外部ファイルに保存できます。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">del</span> <span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<p>保存した結果ファイルは以下のようにロードすることができます。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">History</span><span class="p">()</span>
+<span class="n">res</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;search_result.npz&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>最後に、一番よいスコアを持つ候補は以下のようにして表示することができます。正しい解 x=-1に行き着いていることがわかります。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">best_action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[-1.002]
+</pre></div></div>
+</div>
+</section>
+<section id="回帰">
+<h2>回帰<a class="headerlink" href="#回帰" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">get_post_fmean</span></code>, <code class="docutils literal notranslate"><span class="pre">get_post_fcov</span></code> メソッドでガウス過程（事後分布）の期待値と分散を計算可能です。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">var</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">mean</span><span class="o">-</span><span class="n">std</span><span class="p">),</span> <span class="p">(</span><span class="n">mean</span><span class="o">+</span><span class="n">std</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.collections.PolyCollection at 0x148d955b0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_25_1.png" src="../_images/notebook_tutorial_basic_25_1.png" />
+</div>
+</div>
+</section>
+<section id="獲得関数">
+<h2>獲得関数<a class="headerlink" href="#獲得関数" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">get_score</span></code> メソッドで獲得関数を計算可能です。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">score</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x148e59e80&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_basic_27_1.png" src="../_images/notebook_tutorial_basic_27_1.png" />
+</div>
+</div>
+</section>
+<section id="並列化">
+<h2>並列化<a class="headerlink" href="#並列化" title="Link to this heading"></a></h2>
+<p>PHYSBO は全候補点に対する獲得関数の計算をMPI を用いて並列化出来ます。 MPI 並列には <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> を用います。</p>
+<p>並列化を有効化するには、 <code class="docutils literal notranslate"><span class="pre">policy</span></code> のコンストラクタのキーワード引数 <code class="docutils literal notranslate"><span class="pre">comm</span></code> に MPI コミュニケータ、たとえば <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> を渡してください。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># from mpi4py import MPI</span>
+<span class="c1"># policy = physbo.search.discrete.Policy(X=test_X, comm=MPI.COMM_WORLD)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="チュートリアル" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_Gaussian_process.html" class="btn btn-neutral float-right" title="ガウス過程" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v3.1.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v3.1.0/en/notebook/tutorial_basic.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v3.1.0/ja/notebook/tutorial_basic.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_basic.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_basic.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        <strong>
+        <a href="../../../v3.1.0/ja/notebook/tutorial_basic.html">v3.1.0</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.0.0/ja/notebook/tutorial_basic.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/ja/notebook/tutorial_basic.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/ja/notebook/tutorial_basic.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/ja/notebook/tutorial_basic.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/ja/notebook/tutorial_basic.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/ja/notebook/tutorial_basic.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/ja/notebook/tutorial_basic.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/ja/notebook/tutorial_basic.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/ja/notebook/tutorial_basic.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/ja/notebook/tutorial_basic.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
