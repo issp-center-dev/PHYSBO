@@ -6,24 +6,50 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import scipy
 
-def cholupdate(L, x):
-    """Cholesky update
 
-    L is updated in place.
-    x is not updated.
+def _cholupdate_fastupdate(U, x):
+    """ Cholesky update using fast update method.
+
+    This method is implemented in pure Python with NumPy arrays,
+    and so, unfortunately, this is slower than that just by calling scipy.linalg.cholesky directly (method _cholupdate_naive).
     """
 
     N = x.shape[0]
     x2 = x.copy()
 
     for k in range(N):
-        r = np.hypot(L[k, k], x2[k])
-        c = r / L[k, k]
-        s = x2[k] / L[k, k]
-        L[k, k] = r
+        r = np.hypot(U[k, k], x2[k])
+        c = r / U[k, k]
+        s = x2[k] / U[k, k]
+        U[k, k] = r
 
-        L[k, k+1:] += s * x2[k+1:]
-        L[k, k+1:] /= c
+        U[k, k+1:] += s * x2[k+1:]
+        U[k, k+1:] /= c
         x2[k+1:] *= c
-        x2[k+1:] -= s * L[k, k+1:]
+        x2[k+1:] -= s * U[k, k+1:]
+
+
+def _cholupdate_naive(U, x):
+    """ Cholesky update just by calling scipy.linalg.cholesky directly. """
+
+    A = np.dot(U.T, U) + np.outer(x, x)
+    U[:] = scipy.linalg.cholesky(A, check_finite=True)
+
+
+def cholupdate(U, x):
+    """Cholesky update
+
+    This calculates the Cholesky decomposition of A = U.T @ U + x @ x.T.
+
+    Parameters
+    ----------
+    U: numpy.ndarray
+        Upper triangular matrix of the Cholesky decomposition of the original matrix.
+        U is updated to U' of A in place.
+    x: numpy.ndarray
+        Vector to be added to the original matrix.
+    """
+
+    _cholupdate_naive(U, x)
