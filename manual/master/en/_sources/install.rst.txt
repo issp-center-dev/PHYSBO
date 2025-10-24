@@ -11,11 +11,6 @@ Required Packages
 * numpy
 * scipy
 
-From v3.0.0, PHYSBO no longer uses Cython in order to simplify installation process particularly on Windows.
-This means that the performance of PHYSBO is slightly degraded from older versions.
-If you need more performance, you can install ``physbo-core-cython`` additionally.
-This package offers Cythonized version of some functions of PHYSBO.
-
 Download and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -37,9 +32,6 @@ Download and Install
       $ cd PHYSBO
       $ python3 -m pip install ./
 
-- To install ``physbo-core-cython`` ::
-
-  $ python3 -m pip install physbo-core-cython
 
 Uninstall
 ~~~~~~~~~~~~~~~~~~~~~~~~
