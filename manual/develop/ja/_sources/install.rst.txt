@@ -13,12 +13,6 @@ PHYSBOの実行環境および必要なパッケージは以下の通りです�
 * scipy
 
 
-PHYSBO v3.0.0 から、（特にWindows環境での）インストールプロセスの簡略化のために、Cythonは使用されなくなりました。
-しかし、Cythonを使用しないことで、PHYSBOの性能が旧バージョンと比べて若干低下します。
-より高速な実行が必要な場合には、 ``physbo-core-cython`` を追加でインストールしてください。
-このパッケージはPHYSBOの一部の関数をCythonを用いて高速化したものです。
-
-
 ダウンロード・インストール
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -41,10 +35,6 @@ PHYSBO v3.0.0 から、（特にWindows環境での）インストールプロ�
 
       $ cd PHYSBO
       $ pip3 install --user ./
-
-- ``physbo-core-cython`` をインストールする場合 ::
-
-  $ python3 -m pip install physbo-core-cython
 
 アンインストール
 ~~~~~~~~~~~~~~~~~~~~~~~~
