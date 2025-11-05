@@ -34,7 +34,7 @@ class Predictor(physbo.predictor.BasePredictor):
         super(Predictor, self).__init__(config, model)
         self.blm = None
 
-    def fit(self, training, num_basis=None, comm=None):
+    def fit(self, training, num_basis=None, comm=None, objective_index=0):
         """
         fit model to training dataset
 
@@ -46,17 +46,21 @@ class Predictor(physbo.predictor.BasePredictor):
             the number of basis (default: self.config.predict.num_basis)
         comm: MPI.Comm
             MPI communicator
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
         """
         if num_basis is None:
             num_basis = self.config.predict.num_basis
 
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
-        self.model.fit(training.X, training.t, self.config, comm=comm)
+        # Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is
+        t_fit = training.t[:, objective_index] if training.t.ndim == 2 else training.t
+        self.model.fit(training.X, t_fit, self.config, comm=comm)
         self.blm = self.model.export_blm(num_basis, comm=comm)
         self.delete_stats()
 
-    def prepare(self, training):
+    def prepare(self, training, objective_index=0):
         """
         initializes model by using training data set
 
@@ -64,8 +68,12 @@ class Predictor(physbo.predictor.BasePredictor):
         ==========
         training: physbo.variable
             dataset for training
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
         """
-        self.blm.prepare(training.X, training.t, training.Z)
+        # Extract 1D t for model preparation: if 2D, take specified column; if 1D, use as is
+        t_prep = training.t[:, objective_index] if training.t.ndim == 2 else training.t
+        self.blm.prepare(training.X, t_prep, training.Z)
 
     def delete_stats(self):
         """
@@ -89,7 +97,7 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         return self.blm.lik.get_basis(X)
 
-    def get_post_fmean(self, training, test):
+    def get_post_fmean(self, training, test, objective_index=0):
         """
         calculates posterior mean value of model
 
@@ -99,6 +107,8 @@ class Predictor(physbo.predictor.BasePredictor):
             training dataset. If already trained, the model does not use this.
         test: physbo.variable
             inputs
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         =======
@@ -107,10 +117,10 @@ class Predictor(physbo.predictor.BasePredictor):
             where num_points is the number of points in test.
         """
         if self.blm.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.blm.get_post_fmean(test.X, test.Z)
 
-    def get_post_fcov(self, training, test, diag=True):
+    def get_post_fcov(self, training, test, diag=True, objective_index=0):
         """
         calculates posterior variance-covariance matrix of model
 
@@ -122,6 +132,8 @@ class Predictor(physbo.predictor.BasePredictor):
             inputs
         diag: bool
             If true, only variances (diagonal elements) are returned.
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
         Returns
         =======
         numpy.ndarray
@@ -129,10 +141,10 @@ class Predictor(physbo.predictor.BasePredictor):
             where num_points is the number of points in test.
         """
         if self.blm.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.blm.get_post_fcov(test.X, test.Z, diag)
 
-    def get_post_params(self, training, test):
+    def get_post_params(self, training, test, objective_index=0):
         """
         calculates posterior weights
 
@@ -142,16 +154,18 @@ class Predictor(physbo.predictor.BasePredictor):
             training dataset. If already trained, the model does not use this.
         test: physbo.variable
             inputs (not used)
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         =======
         numpy.ndarray
         """
         if self.blm.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.blm.get_post_params_mean()
 
-    def get_post_samples(self, training, test, N=1, alpha=1.0):
+    def get_post_samples(self, training, test, N=1, alpha=1.0, objective_index=0):
         """
         draws samples of mean values of model
 
@@ -167,16 +181,18 @@ class Predictor(physbo.predictor.BasePredictor):
         alpha: float
             noise for sampling source
             (default: 1.0)
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         =======
         numpy.ndarray
         """
         if self.blm.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.blm.post_sampling(test.X, Psi=test.Z, N=N, alpha=alpha)
 
-    def get_predict_samples(self, training, test, N=1):
+    def get_predict_samples(self, training, test, N=1, objective_index=0):
         """
         draws samples of values of model
 
@@ -189,19 +205,18 @@ class Predictor(physbo.predictor.BasePredictor):
         N: int
             number of samples
             (default: 1)
-        alpha: float
-            noise for sampling source
-            (default: 1.0)
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         =======
         numpy.ndarray (N x len(test))
         """
         if self.blm.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.blm.predict_sampling(test.X, Psi=test.Z, N=N).transpose()
 
-    def update(self, training, test):
+    def update(self, training, test, objective_index=0):
         """
         updates the model.
 
@@ -216,30 +231,35 @@ class Predictor(physbo.predictor.BasePredictor):
         test: physbo.variable
             training data for update.
             If not prepared, the model ignore this.
+        objective_index: int
+            Index of objective column to use when training.t or test.t is 2D (default: 0)
         """
         if self.model.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
             return None
 
-        if hasattr(test.t, "__len__"):
-            N = len(test.t)
-        else:
-            N = 1
+        N = test.X.shape[0]
 
         if N == 1:
+            if test.t.ndim == 2:
+                t_val = test.t[0, objective_index]
+            else:
+                t_val = test.t[0] if test.t.ndim == 1 else test.t
             if test.Z is None:
-                if test.X.ndim == 1:
-                    self.blm.update_stats(test.X, test.t)
-                else:
-                    self.blm.update_stats(test.X[0, :], test.t)
+                self.blm.update_stats(test.X, t_val)
             else:
                 if test.Z.ndim == 1:
-                    self.blm.update_stats(test.X, test.t, psi=test.Z)
+                    self.blm.update_stats(test.X, t_val, psi=test.Z)
                 else:
-                    self.blm.update_stats(test.X[0, :], test.t, psi=test.Z[0, :])
+                    self.blm.update_stats(test.X[0, :], t_val, psi=test.Z[0, :])
         else:
             for n in range(N):
-                if test.Z is None:
-                    self.blm.update_stats(test.X[n, :], test.t[n])
+                if test.t.ndim == 2:
+                    t_val = test.t[n, objective_index]
                 else:
-                    self.blm.update_stats(test.X[n, :], test.t[n], psi=test.Z[n, :])
+                    t_val = test.t[n]
+                if test.Z is None:
+                    # Extract n-th row value: if 2D, take row; if 1D, take scalar
+                    self.blm.update_stats(test.X[n, :], t_val)
+                else:
+                    self.blm.update_stats(test.X[n, :], t_val, psi=test.Z[n, :])

@@ -32,7 +32,7 @@ class Policy(discrete.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
-        self.training_list = [Variable() for _ in range(self.num_objectives)]
+        self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.test_list = [
             self._make_variable_X(test_X) for _ in range(self.num_objectives)
@@ -92,21 +92,38 @@ class Policy(discrete.Policy):
         action = np.array(action)
         t = np.array(t)
 
-        for i in range(self.num_objectives):
-            test = self.test_list[i]
-            predictor = self.predictor_list[i]
-
-            if X is None:
-                X = test.X[action, :]
-                Z = test.Z[action, :] if test.Z is not None else None
+        # Ensure t is 2D: shape (N, num_objectives)
+        if t.ndim == 1:
+            if len(t) == self.num_objectives:
+                t = t.reshape(1, -1)
             else:
-                Z = predictor.get_basis(X) if predictor is not None else None
+                t = t.reshape(-1, 1)
 
+        # Determine X and Z (same for all objectives)
+        if X is None:
+            X = self.test_list[0].X[action, :]
+        # Get Z from first predictor that is not None
+        Z = None
+        for i in range(self.num_objectives):
+            predictor = self.predictor_list[i]
+            if predictor is not None:
+                Z = predictor.get_basis(X)
+                break
+        if Z is None:
+            # If no predictor available, get Z from test
+            Z = self.test_list[0].Z[action, :] if self.test_list[0].Z is not None else None
+
+        for i in range(self.num_objectives):
             if self.new_data_list[i] is None:
                 self.new_data_list[i] = Variable(X, t[:, i], Z)
             else:
                 self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
-            self.training_list[i].add(X=X, t=t[:, i], Z=Z)
+
+        # Add to single training Variable with full 2D t matrix
+        if self.training.X is None:
+            self.training = Variable(X=X, t=t, Z=Z)
+        else:
+            self.training.add(X=X, t=t, Z=Z)
 
         # remove action from candidates if exists
         if len(self.actions) > 0:
@@ -117,12 +134,11 @@ class Policy(discrete.Policy):
             self.actions = self._delete_actions(local_index)
 
     def _model(self, i):
-        training = self.training_list[i]
         predictor = self.predictor_list[i]
         test = self.test_list[i]
         new_data = self.new_data_list[i]
         return {
-            "training": training,
+            "training": self.training,
             "predictor": predictor,
             "test": test,
             "new_data": new_data,
@@ -205,7 +221,18 @@ class Policy(discrete.Policy):
         is_rand_expans = False if num_rand_basis == 0 else True
 
         if training_list is not None:
-            self.training_list = training_list
+            # Convert old format (list of Variables) to new format (single Variable)
+            if isinstance(training_list, list) and len(training_list) > 0:
+                if isinstance(training_list[0], Variable):
+                    # Old format: list of Variables, convert to single Variable
+                    X = training_list[0].X
+                    Z = training_list[0].Z
+                    t = np.column_stack([tr.t for tr in training_list])
+                    self.training = Variable(X=X, t=t, Z=Z)
+                else:
+                    self.training = training_list
+            else:
+                self.training = training_list
 
         if predictor_list is None:
             if is_rand_expans:
@@ -317,16 +344,16 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training_list[i], 0, comm=self.mpicomm)
-                predictor.prepare(self.training_list[i])
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
             self._update_predictor()
             predictor_list = self.predictor_list[:]
         X = self._make_variable_X(xs)
         fmean = [
-            predictor.get_post_fmean(training, X)
-            for predictor, training in zip(predictor_list, self.training_list)
+            predictor.get_post_fmean(self.training, X, objective_index=i)
+            for i, predictor in enumerate(predictor_list)
         ]
         return np.array(fmean).T
 
@@ -353,16 +380,16 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training_list[i], 0, comm=self.mpicomm)
-                predictor.prepare(self.training_list[i])
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
             self._update_predictor()
             predictor_list = self.predictor_list[:]
         X = self._make_variable_X(xs)
         fcov = [
-            predictor.get_post_fcov(training, X, diag)
-            for predictor, training in zip(predictor_list, self.training_list)
+            predictor.get_post_fcov(self.training, X, diag, objective_index=i)
+            for i, predictor in enumerate(predictor_list)
         ]
         arr = np.array(fcov)
         if diag:
@@ -382,11 +409,25 @@ class Policy(discrete.Policy):
         alpha=1,
     ):
         if training_list is None:
-            training_list = self.training_list
+            training = self.training
+        else:
+            # Handle both old format (list) and new format (single Variable)
+            if isinstance(training_list, list) and len(training_list) > 0:
+                if isinstance(training_list[0], Variable):
+                    # Old format: convert to single Variable
+                    X = training_list[0].X
+                    Z = training_list[0].Z
+                    t = np.column_stack([tr.t for tr in training_list])
+                    training = Variable(X=X, t=t, Z=Z)
+                else:
+                    training = training_list
+            else:
+                training = training_list
+
         if pareto is None:
             pareto = self.history.pareto
 
-        if training_list[0].X is None or training_list[0].X.shape[0] == 0:
+        if training.X is None or training.X.shape[0] == 0:
             msg = "ERROR: No training data is registered."
             raise RuntimeError(msg)
 
@@ -396,8 +437,8 @@ class Policy(discrete.Policy):
                 predictor_list = []
                 for i in range(self.num_objectives):
                     predictor = gp_predictor(self.config)
-                    predictor.fit(training_list[i], 0, comm=self.mpicomm)
-                    predictor.prepare(training_list[i])
+                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i)
+                    predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
             else:
                 self._update_predictor()
@@ -426,7 +467,7 @@ class Policy(discrete.Policy):
         f = search_score.score(
             mode,
             predictor_list=predictor_list,
-            training_list=training_list,
+            training=training,
             test=test,
             pareto=pareto,
             reduced_candidate_num=self.TS_candidate_num,
@@ -461,8 +502,8 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training_list[i], 0)
-                predictor.prepare(self.training_list[i])
+                predictor.fit(self.training, 0, objective_index=i)
+                predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
             self._update_predictor()
@@ -475,10 +516,11 @@ class Policy(discrete.Policy):
             importance_mean[i], importance_std[i] = predictor_list[
                 i
             ].get_permutation_importance(
-                self.training_list[i],
+                self.training,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                objective_index=i,
             )
 
         return np.array(importance_mean).T, np.array(importance_std).T
@@ -513,7 +555,7 @@ class Policy(discrete.Policy):
         for i in range(self.num_objectives):
             new_test_local = self.test_list[i].get_subset(chosen_actions)
             virtual_t_local = self.predictor_list[i].get_predict_samples(
-                self.training_list[i], new_test_local, K
+                self.training, new_test_local, K, objective_index=i
             )
             if self.mpisize == 1:
                 new_test_list[i] = new_test_local
@@ -527,25 +569,38 @@ class Policy(discrete.Policy):
 
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
-            training_list = [copy.deepcopy(t) for t in self.training_list]
+            # Create temporary training_list for this k-th sample
+            training_list_temp = []
 
             for i in range(self.num_objectives):
+                # Create temporary training Variable with virtual data for objective i
+                training_temp = copy.deepcopy(self.training)
                 virtual_train = new_test_list[i]
                 virtual_train.t = virtual_t_list[i][k, :]
 
-                if virtual_train.Z is None:
-                    training_list[i].add(virtual_train.X, virtual_train.t)
-                else:
-                    training_list[i].add(
-                        virtual_train.X, virtual_train.t, virtual_train.Z
-                    )
+                # Create temporary Variable with single column t for this objective
+                # Add virtual data: create 2D t matrix with column i updated
+                t_virtual = training_temp.t.copy()
+                # Append new rows
+                t_new_rows = np.zeros((len(virtual_train.t), self.num_objectives))
+                for j in range(self.num_objectives):
+                    if j == i:
+                        t_new_rows[:, j] = virtual_train.t
+                    else:
+                        # Use last value from training_temp for other objectives
+                        t_new_rows[:, j] = t_virtual[-1, j] if len(t_virtual) > 0 else 0.0
+                training_temp.add(X=virtual_train.X, t=t_new_rows, Z=virtual_train.Z)
 
-                predictor_list[i].update(training_list[i], virtual_train)
+                # Create single-column Variable for this objective
+                training_i = Variable(X=training_temp.X, t=training_temp.t[:, i], Z=training_temp.Z)
+                training_list_temp.append(training_i)
+
+                predictor_list[i].update(training_i, virtual_train, objective_index=i)
 
             f[k, :] = self.get_score(
                 mode,
                 predictor_list=predictor_list,
-                training_list=training_list,
+                training_list=training_list_temp,
                 parallel=False,
             )
         return np.mean(f, axis=0)
@@ -565,9 +620,7 @@ class Policy(discrete.Policy):
             N = self.history.total_num_search
             X = self.test_list[0].X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
-            self.training_list = [
-                Variable(X=X, t=t[:, i]) for i in range(self.num_objectives)
-            ]
+            self.training = Variable(X=X, t=t)
         else:
             self.load_training_list(file_training_list)
 
@@ -588,10 +641,7 @@ class Policy(discrete.Policy):
             pickle.dump(self.predictor_list, f, 2)
 
     def save_training_list(self, file_name):
-        obj = [
-            {"X": training.X, "t": training.t, "Z": training.Z}
-            for training in self.training_list
-        ]
+        obj = {"X": self.training.X, "t": self.training.t, "Z": self.training.Z}
         with open(file_name, "wb") as f:
             pickle.dump(obj, f, 2)
 
@@ -601,37 +651,41 @@ class Policy(discrete.Policy):
 
     def load_training_list(self, file_name):
         with open(file_name, "rb") as f:
-            data_list = pickle.load(f)
+            data = pickle.load(f)
 
-        self.training_list = [Variable() for i in range(self.num_objectives)]
-        for data, training in zip(data_list, self.training_list):
-            training.X = data["X"]
-            training.t = data["t"]
-            training.Z = data["Z"]
+        # Handle both old format (list) and new format (dict/Variable)
+        if isinstance(data, list):
+            # Old format: list of dicts, convert to single Variable
+            X = data[0]["X"]
+            Z = data[0]["Z"]
+            t = np.column_stack([d["t"] for d in data])
+            self.training = Variable(X=X, t=t, Z=Z)
+        elif isinstance(data, dict):
+            # New format: single dict
+            self.training = Variable(X=data["X"], t=data["t"], Z=data["Z"])
+        else:
+            # Assume it's already a Variable
+            self.training = data
 
     def _learn_hyperparameter(self, num_rand_basis):
         for i in range(self.num_objectives):
             m = self._model(i)
             predictor = m["predictor"]
-            training = m["training"]
             test = m["test"]
 
-            predictor.fit(training, num_rand_basis, comm=self.mpicomm)
+            predictor.fit(self.training, num_rand_basis, comm=self.mpicomm, objective_index=i)
             test.Z = predictor.get_basis(test.X)
-            training.Z = predictor.get_basis(training.X)
-            predictor.prepare(training)
+            # Update training.Z (same for all objectives)
+            if self.training.Z is None:
+                self.training.Z = predictor.get_basis(self.training.X)
+            predictor.prepare(self.training, objective_index=i)
             self.new_data_list[i] = None
-            # self.predictor_list[i].fit(self.training_list[i], num_rand_basis)
-            # self.test_list[i].Z = self.predictor_list[i].get_basis(self.test_list[i].X)
-            # self.training_list[i].Z = self.predictor_list[i].get_basis(self.training_list[i].X)
-            # self.predictor_list[i].prepare(self.training_list[i])
-            # self.new_data_list[i] = None
 
     def _update_predictor(self):
         for i in range(self.num_objectives):
             if self.new_data_list[i] is not None:
                 self.predictor_list[i].update(
-                    self.training_list[i], self.new_data_list[i]
+                    self.training, self.new_data_list[i], objective_index=i
                 )
                 self.new_data_list[i] = None
 

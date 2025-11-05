@@ -29,7 +29,7 @@ class Policy:
         Parameters
         ----------
         test_X: numpy.ndarray or physbo.Variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+            The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
@@ -56,7 +56,9 @@ class Policy:
             if len(actions) != len(fs):
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
-            self.write(actions, fs)
+            # Normalize fs to (N, 1) shape before passing to write()
+            fs_normalized = _normalize_t(fs)
+            self.write(actions, fs_normalized)
             self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
@@ -86,6 +88,7 @@ class Policy:
         self.seed = seed
         np.random.seed(self.seed)
 
+
     def write(
         self,
         action,
@@ -104,7 +107,9 @@ class Policy:
         action: numpy.ndarray
             Indexes of actions.
         t:  numpy.ndarray
-            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+            N dimensional array (1D) or N x k dimensional array (2D).
+            The negative energy of each search candidate (value of the objective function to be optimized).
+            Will be normalized to (N, 1) shape internally.
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         time_total: numpy.ndarray
@@ -136,15 +141,18 @@ class Policy:
         else:
             Z = self.predictor.get_basis(X) if self.predictor is not None else None
 
+        # Normalize t to (N, 1) shape
+        t_normalized = _normalize_t(t)
+
         self.history.write(
-            t,
+            t_normalized,
             action,
             time_total=time_total,
             time_update_predictor=time_update_predictor,
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        self.training.add(X=X, t=t, Z=Z)
+        self.training.add(X=X, t=t_normalized, Z=Z)
 
         # remove the selected actions from the list of candidates if exists
         if len(self.actions) > 0:
@@ -155,9 +163,9 @@ class Policy:
             self.actions = self._delete_actions(local_index)
 
         if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=Z)
+            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
         else:
-            self.new_data.add(X=X, t=t, Z=Z)
+            self.new_data.add(X=X, t=t_normalized, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -586,7 +594,8 @@ class Policy:
             predictor = copy.deepcopy(self.predictor)
             train = copy.deepcopy(self.training)
             virtual_train = new_test
-            virtual_train.t = virtual_t[k, :]
+            # Normalize virtual_t[k, :] to (N, 1) shape
+            virtual_train.t = _normalize_t(virtual_t[k, :])
 
             if virtual_train.Z is None:
                 train.add(virtual_train.X, virtual_train.t)
@@ -760,7 +769,9 @@ class Policy:
             N = self.history.total_num_search
             X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
-            self.training = Variable(X=X, t=t)
+            # Normalize t to (N, 1) shape
+            t_normalized = _normalize_t(t)
+            self.training = Variable(X=X, t=t_normalized)
         else:
             self.training = Variable()
             self.training.load(file_training)
@@ -884,11 +895,68 @@ class Policy:
         return np.delete(actions, index)
 
 
+def _normalize_t(t):
+    """
+    Normalize t to always be a 2D array with shape (N, 1).
+
+    Parameters
+    ----------
+    t: scalar, numpy.ndarray, or None
+        Input value(s) to normalize
+
+    Returns
+    -------
+    numpy.ndarray
+        Normalized array with shape (N, 1), or None if input is None
+    """
+    if t is None:
+        return None
+
+    t = np.array(t)
+
+    # Handle scalar case
+    if t.ndim == 0:
+        return t.reshape(1, 1)
+
+    # Handle 1D array: (N,) -> (N, 1)
+    if t.ndim == 1:
+        return t.reshape(-1, 1)
+
+    # Handle 2D array: (N, k), k should be 1
+    if t.ndim == 2:
+        if t.shape[1] == 1:
+            return t
+        else:
+            raise ValueError(f"Second dimension of t must be 1: {t.shape}")
+
+    # Should not reach here, but handle for safety
+    raise ValueError(f"Unexpected t shape: {t.shape}")
+
 def _run_simulator(simulator, action, comm=None):
+    """
+    Run simulator and normalize return value to (N, 1) shape.
+
+    Parameters
+    ----------
+    simulator: callable
+        Function that takes action and returns t value(s)
+    action: numpy.ndarray
+        Array of actions
+    comm: MPI.Comm, optional
+        MPI communicator
+
+    Returns
+    -------
+    numpy.ndarray
+        Normalized array with shape (N, 1)
+    """
     if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
         t = simulator(action)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        if comm.rank == 0:
+            t = simulator(action)
+        else:
+            t = 0.0
+        t = comm.bcast(t, root=0)
+
+    return _normalize_t(t)
