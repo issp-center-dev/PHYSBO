@@ -10,6 +10,7 @@ import copy
 import pickle as pickle
 import itertools
 import time
+from typing import Optional, Any
 
 from ._history import History
 from .. import utility
@@ -23,6 +24,62 @@ from ..._variable import Variable
 
 class Policy:
     """Single objective Bayesian optimization with discrete search space"""
+
+    predictor: Optional[Any]
+    """Predictor used for Bayesian optimization.
+
+    Base class is defined in physbo.predictor.
+    If None, predictor is not yet initialized.
+    """
+
+    training: Variable
+    """Training dataset containing pairs of input (X) and output (t).
+
+    Stores all evaluated data points.
+    """
+
+    new_data: Optional[Variable]
+    """New data that has been added to training but not yet to predictor.
+
+    Set to None after predictor is updated.
+    """
+
+    test: Variable
+    """The set of candidate search points.
+
+    Each row of X represents the feature vector of each search candidate.
+    """
+
+    actions: np.ndarray
+    """Array of action indices that have not been searched yet.
+
+    Initially contains all candidate indices, and decreases as actions are evaluated.
+    """
+
+    history: History
+    """History object storing search results including chosen actions,
+
+    objective function values, and timing information.
+    """
+
+    config: SetConfig
+    """Configuration object containing settings for learning and search."""
+
+    mpicomm: Optional[Any]
+    """MPI communicator for parallel computation.
+
+    If None, MPI is not used (single process).
+    """
+
+    mpisize: int
+    """Number of MPI processes. Set to 1 if MPI is not used."""
+
+    mpirank: int
+    """Rank of the current MPI process. Set to 0 if MPI is not used."""
+
+    seed: Optional[int]
+    """Seed parameter for np.random. Set by set_seed() method."""
+
     def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
 
@@ -87,7 +144,6 @@ class Policy:
         """
         self.seed = seed
         np.random.seed(self.seed)
-
 
     def write(
         self,
@@ -931,6 +987,7 @@ def _normalize_t(t):
 
     # Should not reach here, but handle for safety
     raise ValueError(f"Unexpected t shape: {t.shape}")
+
 
 def _run_simulator(simulator, action, comm=None):
     """
