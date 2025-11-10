@@ -73,7 +73,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         # Extract 1D t for model preparation: if 2D, take specified column; if 1D, use as is
         t_prep = training.t[:, objective_index] if training.t.ndim == 2 else training.t
-        self.blm.prepare(training.X, t_prep, training.Z)
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_prep = training.Z[objective_index, :, :] if training.Z is not None else None
+        self.blm.prepare(training.X, t_prep, Z_prep)
 
     def delete_stats(self):
         """
@@ -118,7 +120,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.blm.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.blm.get_post_fmean(test.X, test.Z)
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
+        return self.blm.get_post_fmean(test.X, Z_test)
 
     def get_post_fcov(self, training, test, diag=True, objective_index=0):
         """
@@ -142,7 +146,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.blm.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.blm.get_post_fcov(test.X, test.Z, diag)
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
+        return self.blm.get_post_fcov(test.X, Z_test, diag)
 
     def get_post_params(self, training, test, objective_index=0):
         """
@@ -190,7 +196,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.blm.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.blm.post_sampling(test.X, Psi=test.Z, N=N, alpha=alpha)
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
+        return self.blm.post_sampling(test.X, Psi=Z_test, N=N, alpha=alpha)
 
     def get_predict_samples(self, training, test, N=1, objective_index=0):
         """
@@ -214,7 +222,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.blm.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.blm.predict_sampling(test.X, Psi=test.Z, N=N).transpose()
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
+        return self.blm.predict_sampling(test.X, Psi=Z_test, N=N).transpose()
 
     def update(self, training, test, objective_index=0):
         """
@@ -248,10 +258,14 @@ class Predictor(physbo.predictor.BasePredictor):
             if test.Z is None:
                 self.blm.update_stats(test.X, t_val)
             else:
-                if test.Z.ndim == 1:
-                    self.blm.update_stats(test.X, t_val, psi=test.Z)
+                # Extract basis for this objective: Z is (k, N, n), get (n,) for this objective and first sample
+                if test.Z.ndim == 3:
+                    psi_val = test.Z[objective_index, 0, :]
+                elif test.Z.ndim == 1:
+                    psi_val = test.Z
                 else:
-                    self.blm.update_stats(test.X[0, :], t_val, psi=test.Z[0, :])
+                    psi_val = test.Z[0, :]
+                self.blm.update_stats(test.X[0, :], t_val, psi=psi_val)
         else:
             for n in range(N):
                 if test.t.ndim == 2:
@@ -262,4 +276,11 @@ class Predictor(physbo.predictor.BasePredictor):
                     # Extract n-th row value: if 2D, take row; if 1D, take scalar
                     self.blm.update_stats(test.X[n, :], t_val)
                 else:
-                    self.blm.update_stats(test.X[n, :], t_val, psi=test.Z[n, :])
+                    # Extract basis for this objective: Z is (k, N, n), get (n,) for this objective and n-th sample
+                    if test.Z.ndim == 3:
+                        psi_val = test.Z[objective_index, n, :]
+                    elif test.Z.ndim == 1:
+                        psi_val = test.Z
+                    else:
+                        psi_val = test.Z[n, :]
+                    self.blm.update_stats(test.X[n, :], t_val, psi=psi_val)

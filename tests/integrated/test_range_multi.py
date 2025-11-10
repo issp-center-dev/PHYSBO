@@ -100,7 +100,7 @@ def test_multi_objective_EHVI_rand():
         max_num_probes=nsearch, simulator=sim, score="EHVI", num_rand_basis=100
     )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.09650538804527486
+    vid_ref = 0.22722097654091666
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("EHVI", xs=np.array([[0.0, 0.0]]))
 
@@ -120,7 +120,7 @@ def test_multi_objective_HVPI_rand():
         max_num_probes=nsearch, simulator=sim, score="HVPI", num_rand_basis=100
     )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.09743352915261405
+    vid_ref = 0.22381132051342423
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("HVPI", xs=np.array([[0.0, 0.0]]))
 

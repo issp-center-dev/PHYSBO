@@ -25,21 +25,68 @@ class Variable(object):
             N x k dimensional array, where k is the number of objectives.
             The negative energy of each search candidate (value of the objective function to be optimized).
         Z: numpy array
+            (N, n) or (k, N, n) dimensional array. If (N, n), will be converted to (k, N, n) based on t.shape[1].
 
         """
         if X is not None:
             self.X = np.array(X)
         else:
             self.X = None
-        if Z is not None:
-            self.Z = np.array(Z)
-        else:
-            self.Z = None
         if t is not None:
             self.t = np.array(t)
         else:
             self.t = None
+        if Z is not None:
+            self.Z = np.array(Z)
+            # Convert Z to (k, N, n) format if needed
+            self.Z = self._normalize_Z(self.Z, self.t)
+        else:
+            self.Z = None
         self.check_shape()
+
+    def _normalize_Z(self, Z, t):
+        """
+        Normalize Z to (k, N, n) format.
+
+        Parameters
+        ----------
+        Z: numpy array
+            (N, n) or (k, N, n) dimensional array
+        t: numpy array
+            t array to determine k (number of objectives)
+
+        Returns
+        -------
+        Z: numpy array
+            (k, N, n) dimensional array
+        """
+        if Z is None:
+            return None
+
+        Z = np.array(Z)
+
+        # Determine k (number of objectives)
+        if t is None:
+            k = None
+        elif t.ndim == 1:
+            k = 1
+        else:
+            k = t.shape[1]
+
+        # Convert Z to (k, N, n) format
+        if Z.ndim == 2:
+            if k is None or k == 1:
+                Z = Z[np.newaxis, :, :]
+            else:
+                raise ValueError(f"t is given but Z is 2D and k ({k}) > 1")
+        elif Z.ndim == 3:
+            # Already (k, N, n), check consistency
+            if k is not None and Z.shape[0] != k:
+                raise ValueError(f"Z.shape[0] ({Z.shape[0]}) must match t.shape[1] ({k})")
+        else:
+            raise ValueError(f"Z must be 2D (N, n) or 3D (k, N, n), got {Z.ndim}D")
+
+        return Z
 
     def check_shape(self):
         if self.X is not None:
@@ -51,19 +98,25 @@ class Variable(object):
             assert self.t.ndim == 1 or self.t.ndim == 2, "t must be a 1D or 2D array"
             if self.t.ndim == 1:
                 nt = len(self.t)
+                k = 1
             else:
                 nt = self.t.shape[0]
+                k = self.t.shape[1]
         else:
             nt = None
+            k = None
         if self.Z is not None:
-            assert self.Z.ndim == 2, "Z must be a 2D array"
-            nZ = self.Z.shape[0]
+            assert self.Z.ndim == 3, "Z must be a 3D array (k, N, n)"
+            kZ = self.Z.shape[0]
+            nZ = self.Z.shape[1]
         else:
+            kZ = None
             nZ = None
 
         assert nX is None or nt is None or nX == nt, "The number of X and t must be the same"
         assert nX is None or nZ is None or nX == nZ, "The number of X and Z must be the same"
         assert nt is None or nZ is None or nt == nZ, "The number of t and Z must be the same"
+        assert k is None or kZ is None or k == kZ, f"The number of objectives in t ({k}) and Z ({kZ}) must be the same"
 
     def __len__(self):
         if self.X is not None:
@@ -93,7 +146,10 @@ class Variable(object):
                 temp_t = self.t[index, :] if self.t is not None else None
         else:
             temp_t = None
-        temp_Z = self.Z[index, :] if self.Z is not None else None
+        if self.Z is not None:
+            temp_Z = self.Z[:, index, :]
+        else:
+            temp_Z = None
 
         return Variable(X=temp_X, t=temp_t, Z=temp_Z)
 
@@ -132,9 +188,10 @@ class Variable(object):
         -------
 
         """
+        z = self._normalize_Z(Z, t)
         self.add_X(X)
         self.add_t(t)
-        self.add_Z(Z)
+        self.add_Z(z)
         self.check_shape()
 
     def delete_X(self, num_row):
@@ -184,7 +241,8 @@ class Variable(object):
 
         """
         if self.Z is not None:
-            self.Z = np.delete(self.Z, num_row, 0)
+            # Z is (k, N, n), delete along axis=1 (N dimension)
+            self.Z = np.delete(self.Z, num_row, axis=1)
 
     def add_X(self, X=None):
         """
@@ -264,7 +322,8 @@ class Variable(object):
 
         Parameters
         ----------
-        Z
+        Z: numpy array
+            (N, n) or (k, N, n) dimensional array. Will be normalized to (k, N, n) format.
 
         Returns
         -------
@@ -274,7 +333,8 @@ class Variable(object):
             if self.Z is None:
                 self.Z = Z
             else:
-                self.Z = np.vstack((self.Z, Z))
+                # Concatenate along axis=1 (N dimension)
+                self.Z = np.concatenate((self.Z, Z), axis=1)
 
     def save(self, file_name):
         """
@@ -289,7 +349,7 @@ class Variable(object):
         -------
 
         """
-        np.savez_compressed(file_name, X=self.X, t=self.t, Z=self.Z, version=2)
+        np.savez_compressed(file_name, X=self.X, t=self.t, Z=self.Z, version=3)
 
     def load(self, file_name):
         """
@@ -311,17 +371,22 @@ class Variable(object):
         else:
             version = int(version)
         old_t = version < 2
+        old_Z = version < 3
         self.X = data["X"]
         self.t = data["t"]
         self.Z = data["Z"]
         self.X = self.__load_helper(self.X)
         self.t = self.__load_helper(self.t, old_t=old_t)
-        self.Z = self.__load_helper(self.Z)
+        self.Z = self.__load_helper(self.Z, old_Z=old_Z)
+        
+        # Convert Z to (k, N, n) format if needed
+        if self.Z is not None:
+            self.Z = self._normalize_Z(self.Z, self.t)
 
         self.check_shape()
 
 
-    def __load_helper(self, arr, old_t=False):
+    def __load_helper(self, arr, old_t=False, old_Z=False):
         if arr is None:
             return None
         if arr.ndim == 0:
@@ -335,5 +400,10 @@ class Variable(object):
             else:
                 return arr.reshape(1,-1)
         if arr.ndim == 2:
+            # For Z: if old_Z is True, this is (N, n) format which will be converted later
+            # For t: return as is
+            return arr
+        if arr.ndim == 3:
+            # For Z: this is (k, N, n) format (version >= 3)
             return arr
         raise ValueError(f'Invalid array dimension: {arr.ndim}')

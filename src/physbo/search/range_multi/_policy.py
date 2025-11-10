@@ -20,12 +20,9 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 
-from typing import List, Optional
-
 
 class Policy(range_single.Policy):
     """Multi objective Bayesian optimization with continuous search space"""
-    new_data_list: List[Optional[Variable]]
 
     def __init__(
         self,
@@ -49,7 +46,7 @@ class Policy(range_single.Policy):
 
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
-        self.new_data_list = [None for _ in range(self.num_objectives)]
+        self.new_data = None
 
         if config is None:
             self.config = SetConfig()
@@ -104,7 +101,7 @@ class Policy(range_single.Policy):
         )
         t = np.array(t)
 
-        assert X.shape[0] == len(t), "The number of X and t must be the same"
+        assert X.shape[0] == t.shape[0], "The number of X and t must be the same"
         assert X.shape[1] == self.dim, (
             "The dimension of X must be the same as the dimension of min_X and max_X"
         )
@@ -116,37 +113,27 @@ class Policy(range_single.Policy):
             else:
                 t = t.reshape(-1, 1)
 
-        # Determine Z (same for all objectives)
-        Z = None
-        for i in range(self.num_objectives):
-            predictor = self.predictor_list[i]
-            if predictor is not None:
-                Z = predictor.get_basis(X)
-                break
-
-        for i in range(self.num_objectives):
-            if self.new_data_list[i] is None:
-                self.new_data_list[i] = Variable(X, t[:, i], Z)
+        if self.predictor_list[0] is not None:
+            z = []
+            for p in self.predictor_list:
+                z.append(p.get_basis(X))
+            if z[0] is not None:
+                Z = np.stack(z, axis=0)
             else:
-                self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
+                Z = None
+        else:
+            Z = None
 
-        # Add to single training Variable with full 2D t matrix
+        if self.new_data is None:
+            self.new_data = Variable(X=X, t=t, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t, Z=Z)
+
+        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
         if self.training.X is None:
             self.training = Variable(X=X, t=t, Z=Z)
         else:
             self.training.add(X=X, t=t, Z=Z)
-
-    def _model(self, i):
-        training = self.training
-        predictor = self.predictor_list[i]
-        # test = self.test_list[i]
-        new_data = self.new_data_list[i]
-        return {
-            "training": training,
-            "predictor": predictor,
-            # "test": test,
-            "new_data": new_data,
-        }
 
     def random_search(
         self,
@@ -680,25 +667,32 @@ class Policy(range_single.Policy):
             self.training = data
 
     def _learn_hyperparameter(self, num_rand_basis):
+        # Collect Z for each objective
+        Z_list = []
+        training = self.training
         for i in range(self.num_objectives):
-            m = self._model(i)
-            predictor = m["predictor"]
-            training = m["training"]
+            predictor = self.predictor_list[i]
 
             predictor.fit(training, num_rand_basis, comm=self.mpicomm, objective_index=i)
-            # Update training.Z (same for all objectives)
-            if training.Z is None:
-                training.Z = predictor.get_basis(training.X)
+
+            # Collect Z for training (will be combined into (k, N, n))
+            training_Z_basis = predictor.get_basis(training.X)
+            Z_list.append(training_Z_basis)
             predictor.prepare(training, objective_index=i)
-            self.new_data_list[i] = None
+
+        # Update training.Z with (k, N, n) format
+        if all(z is not None for z in Z_list):
+            # Stack along first dimension: (k, N, n)
+            self.training.Z = np.stack(Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+        self.new_data = None
 
     def _update_predictor(self):
-        for i in range(self.num_objectives):
-            if self.new_data_list[i] is not None:
+        if self.new_data is not None:
+            for i in range(self.num_objectives):
                 self.predictor_list[i].update(
-                    self.training, self.new_data_list[i], objective_index=i
+                    self.training, self.new_data, objective_index=i
                 )
-                self.new_data_list[i] = None
+            self.new_data = None
 
 
 def _run_simulator(simulator, action_X, comm=None):

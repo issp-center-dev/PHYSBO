@@ -19,12 +19,9 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 
-from typing import List, Optional
-
 
 class Policy(discrete.Policy):
     """Multi objective Bayesian optimization with discrete search space"""
-    new_data_list: List[Optional[Variable]]
 
     def __init__(
         self, test_X, num_objectives, comm=None, config=None, initial_data=None
@@ -34,10 +31,8 @@ class Policy(discrete.Policy):
 
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
-        self.test_list = [
-            self._make_variable_X(test_X) for _ in range(self.num_objectives)
-        ]
-        self.new_data_list = [None for _ in range(self.num_objectives)]
+        self.test = self._make_variable_X(test_X)
+        self.new_data = None
 
         self.actions = np.arange(0, test_X.shape[0])
         if config is None:
@@ -99,27 +94,28 @@ class Policy(discrete.Policy):
             else:
                 t = t.reshape(-1, 1)
 
-        # Determine X and Z (same for all objectives)
+        # Determine X and Z (different for each objective)
         if X is None:
-            X = self.test_list[0].X[action, :]
-        # Get Z from first predictor that is not None
-        Z = None
-        for i in range(self.num_objectives):
-            predictor = self.predictor_list[i]
-            if predictor is not None:
-                Z = predictor.get_basis(X)
-                break
-        if Z is None:
-            # If no predictor available, get Z from test
-            Z = self.test_list[0].Z[action, :] if self.test_list[0].Z is not None else None
-
-        for i in range(self.num_objectives):
-            if self.new_data_list[i] is None:
-                self.new_data_list[i] = Variable(X, t[:, i], Z)
+            X = self.test.X[action, :]
+            Z = self.test.Z[:, action, :] if self.test.Z is not None else None
+        else:
+            if self.predictor_list[0] is not None:
+                z = []
+                for p in self.predictor_list:
+                    z.append(p.get_basis(X))
+                if z[0] is not None:
+                    Z = np.stack(z, axis=0)
+                else:
+                    Z = None
             else:
-                self.new_data_list[i].add(X=X, t=t[:, i], Z=Z)
+                Z = None
 
-        # Add to single training Variable with full 2D t matrix
+        if self.new_data is None:
+            self.new_data = Variable(X=X, t=t, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t, Z=Z)
+
+        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
         if self.training.X is None:
             self.training = Variable(X=X, t=t, Z=Z)
         else:
@@ -132,17 +128,6 @@ class Policy(discrete.Policy):
                 np.take(self.actions, local_index, mode="clip") == action
             ]
             self.actions = self._delete_actions(local_index)
-
-    def _model(self, i):
-        predictor = self.predictor_list[i]
-        test = self.test_list[i]
-        new_data = self.new_data_list[i]
-        return {
-            "training": self.training,
-            "predictor": predictor,
-            "test": test,
-            "new_data": new_data,
-        }
 
     def random_search(
         self,
@@ -462,7 +447,7 @@ class Policy(discrete.Policy):
                     actions = [actions]
                 if parallel and self.mpisize > 1:
                     actions = np.array_split(actions, self.mpisize)[self.mpirank]
-            test = self.test_list[0].get_subset(actions)
+            test = self.test.get_subset(actions)
 
         f = search_score.score(
             mode,
@@ -553,7 +538,15 @@ class Policy(discrete.Policy):
         new_test_list = [Variable() for _ in range(self.num_objectives)]
         virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
         for i in range(self.num_objectives):
-            new_test_local = self.test_list[i].get_subset(chosen_actions)
+            # Get subset from test
+            new_test_subset = self.test.get_subset(chosen_actions)
+            # Extract Z for this objective: test.Z is (k, N, n), get (N, n) for objective i
+            if new_test_subset.Z is not None:
+                Z_i = new_test_subset.Z[i, :, :]  # (N, n)
+            else:
+                Z_i = None
+            # Create a Variable with single-objective Z (will be converted to (1, N, n))
+            new_test_local = Variable(X=new_test_subset.X, t=new_test_subset.t, Z=Z_i)
             virtual_t_local = self.predictor_list[i].get_predict_samples(
                 self.training, new_test_local, K, objective_index=i
             )
@@ -618,7 +611,7 @@ class Policy(discrete.Policy):
 
         if file_training_list is None:
             N = self.history.total_num_search
-            X = self.test_list[0].X[self.history.chosen_actions[0:N], :]
+            X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
             self.training = Variable(X=X, t=t)
         else:
@@ -668,26 +661,42 @@ class Policy(discrete.Policy):
             self.training = data
 
     def _learn_hyperparameter(self, num_rand_basis):
+        # Collect Z for each objective
+        Z_list = []
         for i in range(self.num_objectives):
-            m = self._model(i)
-            predictor = m["predictor"]
-            test = m["test"]
+            predictor = self.predictor_list[i]
 
             predictor.fit(self.training, num_rand_basis, comm=self.mpicomm, objective_index=i)
-            test.Z = predictor.get_basis(test.X)
-            # Update training.Z (same for all objectives)
-            if self.training.Z is None:
-                self.training.Z = predictor.get_basis(self.training.X)
+            # Get basis for this objective
+            test_Z_basis = predictor.get_basis(self.test.X)
+            training_Z_basis = predictor.get_basis(self.training.X)
+            
+            # Collect Z for test and training (will be combined into (k, N, n))
+            Z_list.append(test_Z_basis)
+            
             predictor.prepare(self.training, objective_index=i)
-            self.new_data_list[i] = None
+            # self.new_data_list[i] = None
+        
+        # Update test.Z and training.Z with (k, N, n) format
+        if all(z is not None for z in Z_list):
+            # Stack along first dimension: (k, N, n)
+            self.test.Z = np.stack(Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+        
+        # Update training.Z with (k, N, n) format
+        training_Z_list = []
+        for i in range(self.num_objectives):
+            training_Z_basis = self.predictor_list[i].get_basis(self.training.X)
+            training_Z_list.append(training_Z_basis)
+        if all(z is not None for z in training_Z_list):
+            self.training.Z = np.stack(training_Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
 
     def _update_predictor(self):
-        for i in range(self.num_objectives):
-            if self.new_data_list[i] is not None:
+        if self.new_data is not None:
+            for i in range(self.num_objectives):
                 self.predictor_list[i].update(
-                    self.training, self.new_data_list[i], objective_index=i
+                    self.training, self.new_data, objective_index=i
                 )
-                self.new_data_list[i] = None
+            self.new_data = None
 
 
 def _run_simulator(simulator, action, comm=None):

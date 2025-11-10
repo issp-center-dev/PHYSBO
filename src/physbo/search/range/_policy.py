@@ -154,7 +154,12 @@ class Policy:
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        Z = self.predictor.get_basis(X) if self.predictor is not None else None
+        # Get basis and convert to (1, N, n) format for single-objective
+        Z_basis = self.predictor.get_basis(X) if self.predictor is not None else None
+        if Z_basis is not None:
+            Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+        else:
+            Z = None
         self.training.add(X=X, t=t_normalized, Z=Z)
 
         if self.new_data is None:
@@ -708,8 +713,10 @@ class Policy:
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm, objective_index=0)
-        # self.test.Z = self.predictor.get_basis(self.test.X)
-        self.training.Z = self.predictor.get_basis(self.training.X)
+        # Get basis and convert to (1, N, n) format for single-objective
+        training_Z_basis = self.predictor.get_basis(self.training.X)
+        if training_Z_basis is not None:
+            self.training.Z = training_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
         self.predictor.prepare(self.training, objective_index=0)
         self.new_data = None
 

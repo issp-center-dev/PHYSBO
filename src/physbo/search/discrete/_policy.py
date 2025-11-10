@@ -193,9 +193,15 @@ class Policy:
         """
         if X is None:
             X = self.test.X[action, :]
-            Z = self.test.Z[action, :] if self.test.Z is not None else None
+            # Z is (1, N, n), extract (N, n) for objective_index=0
+            Z = self.test.Z[0, action, :] if self.test.Z is not None else None
         else:
-            Z = self.predictor.get_basis(X) if self.predictor is not None else None
+            # Get basis and convert to (1, N, n) format
+            Z_basis = self.predictor.get_basis(X) if self.predictor is not None else None
+            if Z_basis is not None:
+                Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+            else:
+                Z = None
 
         # Normalize t to (N, 1) shape
         t_normalized = _normalize_t(t)
@@ -892,8 +898,13 @@ class Policy:
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
-        self.test.Z = self.predictor.get_basis(self.test.X)
-        self.training.Z = self.predictor.get_basis(self.training.X)
+        # Get basis and convert to (1, N, n) format for single-objective
+        test_Z_basis = self.predictor.get_basis(self.test.X)
+        training_Z_basis = self.predictor.get_basis(self.training.X)
+        if test_Z_basis is not None:
+            self.test.Z = test_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+        if training_Z_basis is not None:
+            self.training.Z = training_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
         self.predictor.prepare(self.training)
         self.new_data = None
 
