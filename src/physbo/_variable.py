@@ -59,7 +59,6 @@ class Variable(object):
                 raise ValueError(f"The number of objectives in t ({k}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
         else:
             nt = None
-            k = None
 
         if self.Z is not None:
             assert self.Z.ndim == 3, "Z must be a 3D array (k, N, n)"
@@ -68,7 +67,6 @@ class Variable(object):
             if kZ != self.number_of_objectives:
                 raise ValueError(f"The number of objectives in Z ({kZ}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
         else:
-            kZ = None
             nZ = None
 
         assert nX is None or nt is None or nX == nt, "The number of X and t must be the same"
