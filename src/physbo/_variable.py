@@ -12,81 +12,37 @@ class Variable(object):
     """ Variable class
 
     Variable class represents a set of pairs of input (X) and output (t).
-
     """
+
+    X: np.ndarray
+    """ Points in the search space.
+    N x d dimensional array, where N is the number of points and d is the dimension of the search space.
+    """
+
+    t: np.ndarray
+    """ Values of the objective functions to be maximized for each point.
+    N x k dimensional array, where N is the number of points and k is the number of objectives."""
+
+    Z: np.ndarray
+    """ Random basis representation of the search candidates for each objective.
+    k x N x n dimensional array, where k is the number of objectives, N is the number of points, and n is the dimension of the random basis.
+    """
+
     def __init__(self, X=None, t=None, Z=None):
-        """
 
-        Parameters
-        ----------
-        X:  numpy array
-            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
-        t:  numpy array
-            N x k dimensional array, where k is the number of objectives.
-            The negative energy of each search candidate (value of the objective function to be optimized).
-        Z: numpy array
-            (N, n) or (k, N, n) dimensional array. If (N, n), will be converted to (k, N, n) based on t.shape[1].
-
-        """
         if X is not None:
             self.X = np.array(X)
         else:
             self.X = None
-        if t is not None:
-            self.t = np.array(t)
-        else:
-            self.t = None
-        if Z is not None:
-            self.Z = np.array(Z)
-            # Convert Z to (k, N, n) format if needed
-            self.Z = self._normalize_Z(self.Z, self.t)
-        else:
-            self.Z = None
+
+        self.t = _normalize_t(t)
+        self.number_of_objectives = self.t.shape[1] if self.t is not None else None
+
+        self.Z = _normalize_Z(Z, self.number_of_objectives)
+        if self.number_of_objectives is None:
+            self.number_of_objectives = self.Z.shape[0] if self.Z is not None else None
+
         self.check_shape()
-
-    def _normalize_Z(self, Z, t):
-        """
-        Normalize Z to (k, N, n) format.
-
-        Parameters
-        ----------
-        Z: numpy array
-            (N, n) or (k, N, n) dimensional array
-        t: numpy array
-            t array to determine k (number of objectives)
-
-        Returns
-        -------
-        Z: numpy array
-            (k, N, n) dimensional array
-        """
-        if Z is None:
-            return None
-
-        Z = np.array(Z)
-
-        # Determine k (number of objectives)
-        if t is None:
-            k = None
-        elif t.ndim == 1:
-            k = 1
-        else:
-            k = t.shape[1]
-
-        # Convert Z to (k, N, n) format
-        if Z.ndim == 2:
-            if k is None or k == 1:
-                Z = Z[np.newaxis, :, :]
-            else:
-                raise ValueError(f"t is given but Z is 2D and k ({k}) > 1")
-        elif Z.ndim == 3:
-            # Already (k, N, n), check consistency
-            if k is not None and Z.shape[0] != k:
-                raise ValueError(f"Z.shape[0] ({Z.shape[0]}) must match t.shape[1] ({k})")
-        else:
-            raise ValueError(f"Z must be 2D (N, n) or 3D (k, N, n), got {Z.ndim}D")
-
-        return Z
 
     def check_shape(self):
         if self.X is not None:
@@ -94,21 +50,23 @@ class Variable(object):
             nX = self.X.shape[0]
         else:
             nX = None
+
         if self.t is not None:
-            assert self.t.ndim == 1 or self.t.ndim == 2, "t must be a 1D or 2D array"
-            if self.t.ndim == 1:
-                nt = len(self.t)
-                k = 1
-            else:
-                nt = self.t.shape[0]
-                k = self.t.shape[1]
+            assert self.t.ndim == 2, "t must be a 2D array"
+            nt = self.t.shape[0]
+            k = self.t.shape[1]
+            if k != self.number_of_objectives:
+                raise ValueError(f"The number of objectives in t ({k}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
         else:
             nt = None
             k = None
+
         if self.Z is not None:
             assert self.Z.ndim == 3, "Z must be a 3D array (k, N, n)"
             kZ = self.Z.shape[0]
             nZ = self.Z.shape[1]
+            if kZ != self.number_of_objectives:
+                raise ValueError(f"The number of objectives in Z ({kZ}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
         else:
             kZ = None
             nZ = None
@@ -116,7 +74,6 @@ class Variable(object):
         assert nX is None or nt is None or nX == nt, "The number of X and t must be the same"
         assert nX is None or nZ is None or nX == nZ, "The number of X and Z must be the same"
         assert nt is None or nZ is None or nt == nZ, "The number of t and Z must be the same"
-        assert k is None or kZ is None or k == kZ, f"The number of objectives in t ({k}) and Z ({kZ}) must be the same"
 
     def __len__(self):
         if self.X is not None:
@@ -166,9 +123,9 @@ class Variable(object):
         -------
 
         """
-        self.delete_X(num_row)
-        self.delete_t(num_row)
-        self.delete_Z(num_row)
+        self._delete_X(num_row)
+        self._delete_t(num_row)
+        self._delete_Z(num_row)
         self.check_shape()
 
     def add(self, X=None, t=None, Z=None):
@@ -188,13 +145,12 @@ class Variable(object):
         -------
 
         """
-        z = self._normalize_Z(Z, t)
-        self.add_X(X)
-        self.add_t(t)
-        self.add_Z(z)
+        self._add_X(X)
+        self._add_t(t)
+        self._add_Z(Z)
         self.check_shape()
 
-    def delete_X(self, num_row):
+    def _delete_X(self, num_row):
         """
         Deleting variables of X whose indexes are specified by num_row.
 
@@ -211,7 +167,7 @@ class Variable(object):
         if self.X is not None:
             self.X = np.delete(self.X, num_row, 0)
 
-    def delete_t(self, num_row):
+    def _delete_t(self, num_row):
         """
         Deleting variables of t whose indexes are specified by num_row.
 
@@ -227,7 +183,7 @@ class Variable(object):
         if self.t is not None:
             self.t = np.delete(self.t, num_row, axis=0)
 
-    def delete_Z(self, num_row):
+    def _delete_Z(self, num_row):
         """
         Deleting variables of Z whose indexes are specified by num_row.
 
@@ -244,7 +200,7 @@ class Variable(object):
             # Z is (k, N, n), delete along axis=1 (N dimension)
             self.Z = np.delete(self.Z, num_row, axis=1)
 
-    def add_X(self, X=None):
+    def _add_X(self, X=None):
         """
         Adding variable X. If self.X is None, self.X is set as X.
 
@@ -263,7 +219,7 @@ class Variable(object):
             else:
                 self.X = X
 
-    def add_t(self, t=None):
+    def _add_t(self, t=None):
         """
         Adding variable t. If self.t is None, self.t is set as t.
 
@@ -280,43 +236,19 @@ class Variable(object):
         if t is None:
             return
 
-        if not isinstance(t, np.ndarray):
-            t = np.array([t])
+        t = _normalize_t(t)
 
         # Ensure consistent shape for concatenation
         if self.t is not None:
-            # Normalize shapes
-            t_ndim = t.ndim
-            self_t_ndim = self.t.ndim
-
-            # Convert 1D to 2D if needed for consistency
-            if self_t_ndim == 1 and t_ndim == 2:
-                # self.t is 1D, t is 2D -> convert self.t to 2D
-                # Match the number of columns from t
-                self.t = self.t[:, np.newaxis]
-                self_t_ndim = 2
-            elif self_t_ndim == 2 and t_ndim == 1:
-                # self.t is 2D, t is 1D -> convert t to 2D
-                # Match the number of columns from self.t
-                n_cols = self.t.shape[1]
-                if n_cols == 1:
-                    t = t[:, np.newaxis]
-                else:
-                    # For multi-objective, broadcast 1D to match number of columns
-                    # This represents repeating the same value for all objectives
-                    t = np.tile(t[:, np.newaxis], (1, n_cols))
-                t_ndim = 2
-
-            if self_t_ndim == 1:
-                # Both 1D: use hstack for backward compatibility
-                self.t = np.hstack((self.t, t))
-            else:
-                # Both 2D: use vstack
-                self.t = np.vstack((self.t, t))
+            if t.shape[1] != self.number_of_objectives:
+                raise ValueError(f"The number of objectives in t ({t.shape[1]}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
+            self.t = np.vstack((self.t, t))
         else:
             self.t = t
+            self.number_of_objectives = self.t.shape[1]
 
-    def add_Z(self, Z=None):
+
+    def _add_Z(self, Z=None):
         """
         Adding variable Z. If self.Z is None, self.Z is set as Z.
 
@@ -330,8 +262,11 @@ class Variable(object):
 
         """
         if Z is not None:
+            Z = _normalize_Z(Z, self.number_of_objectives)
             if self.Z is None:
                 self.Z = Z
+                if self.number_of_objectives is None:
+                    self.number_of_objectives = self.Z.shape[0]
             else:
                 # Concatenate along axis=1 (N dimension)
                 self.Z = np.concatenate((self.Z, Z), axis=1)
@@ -378,13 +313,14 @@ class Variable(object):
         self.X = self.__load_helper(self.X)
         self.t = self.__load_helper(self.t, old_t=old_t)
         self.Z = self.__load_helper(self.Z, old_Z=old_Z)
-        
-        # Convert Z to (k, N, n) format if needed
-        if self.Z is not None:
-            self.Z = self._normalize_Z(self.Z, self.t)
 
+        if self.t is not None:
+            self.number_of_objectives = self.t.shape[1]
+        elif self.Z is not None:
+            self.number_of_objectives = self.Z.shape[0]
+        else:
+            self.number_of_objectives = None
         self.check_shape()
-
 
     def __load_helper(self, arr, old_t=False, old_Z=False):
         if arr is None:
@@ -400,10 +336,87 @@ class Variable(object):
             else:
                 return arr.reshape(1,-1)
         if arr.ndim == 2:
-            # For Z: if old_Z is True, this is (N, n) format which will be converted later
-            # For t: return as is
-            return arr
+            if old_Z:
+                return arr[np.newaxis, :, :]
+            else:
+                return arr
         if arr.ndim == 3:
             # For Z: this is (k, N, n) format (version >= 3)
             return arr
         raise ValueError(f'Invalid array dimension: {arr.ndim}')
+
+
+def _normalize_t(t, k=None):
+    """
+    Normalize t to always be a 2D array with shape (N, k).
+
+    Parameters
+    ----------
+    t: scalar, numpy.ndarray, or None
+        Input value(s) to normalize
+    k: int
+        Number of objectives
+    Returns
+    -------
+    numpy.ndarray
+        Normalized array with shape (N, k), or None if input is None
+    """
+    if t is None:
+        return None
+
+    t = np.array(t)
+
+    # Handle scalar case
+    if t.ndim == 0:
+        return t.reshape(1, 1)
+
+    # Handle 1D array: (N,) -> (N, 1)
+    elif t.ndim == 1:
+        return t.reshape(-1, 1)
+
+    # Handle 2D array: (N, k), k should be 1
+    elif t.ndim == 2:
+        if k is None or k == 1:
+            return t
+        else:
+            raise ValueError(f"given k is {k} > 1 but t is 2D")
+
+    else:
+        raise ValueError(f"Unexpected t shape: {t.shape}")
+
+
+def _normalize_Z(Z, k=None):
+    """
+    Normalize Z to (k, N, n) format.
+
+    Parameters
+    ----------
+    Z: numpy array
+        (N, n) or (k, N, n) dimensional array
+    k: int
+        Number of objectives
+
+    Returns
+    -------
+    Z: numpy array
+        (k, N, n) dimensional array
+    """
+    if Z is None:
+        return None
+
+    Z = np.array(Z)
+
+    # Convert Z to (k, N, n) format
+    if Z.ndim == 2:
+        if k is None or k == 1:
+            Z = Z[np.newaxis, :, :]
+        else:
+            raise ValueError(f"given k is {k} > 1 but Z is 2D")
+    elif Z.ndim == 3:
+        # Already (k, N, n), check consistency
+        if k is not None and Z.shape[0] != k:
+            raise ValueError(f"Z.shape[0] ({Z.shape[0]}) must match t.shape[1] ({k})")
+    else:
+        raise ValueError(f"Z must be 2D (N, n) or 3D (k, N, n), got {Z.ndim}D")
+
+    return Z

@@ -67,21 +67,21 @@ def test_get_subset(variable, X, t, Z, index):
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_X(variable, X, index):
-    variable.delete_X(index)
+    variable._delete_X(index)
     ref = np.delete(X, index, 0)
     assert np.array_equal(variable.X, ref)
 
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_t(variable, t, index):
-    variable.delete_t(index)
+    variable._delete_t(index)
     ref = np.delete(t, index, axis=0)  # Use axis=0 for 2D array
     assert np.array_equal(variable.t, ref)
 
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_Z(variable, Z, index):
-    variable.delete_Z(index)
+    variable._delete_Z(index)
     ref = np.delete(Z, index, axis=0)
     assert np.array_equal(variable.Z, ref[np.newaxis, :, :])
 
@@ -133,17 +133,15 @@ def test_get_subset_2d(variable_2d, X, t_2d, Z_3d, index):
 
 @pytest.mark.parametrize("index", [2, [0, 1]])
 def test_delete_t_2d(variable_2d, t_2d, index):
-    variable_2d.delete_t(index)
+    variable_2d._delete_t(index)
     ref = np.delete(t_2d, index, axis=0)
     assert np.array_equal(variable_2d.t, ref)
 
 
 def test_add_t_2d(variable_2d, t_2d):
     n = t_2d.shape[0]
-    variable_2d.add_t(t_2d)
+    variable_2d._add_t(t_2d)
     assert np.array_equal(variable_2d.t[n : 2 * n, :], t_2d)
-
-
 
 
 def test_add_2d(variable_2d, X, t_2d, Z_3d):
@@ -200,7 +198,7 @@ def test_t_must_be_2d():
         assert "2D array" in str(e) or "must be" in str(e), f"Unexpected error: {e}"
 
     # t as 3D should raise AssertionError
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         physbo.Variable(X=X, t=t_3d)
 
 
