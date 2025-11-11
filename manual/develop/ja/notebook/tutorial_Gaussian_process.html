@@ -111,7 +111,7 @@
 <h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
 <p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
 <p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
@@ -130,16 +130,10 @@
 
 <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
-<br/></pre></div>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+</pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Cythonized version of physbo is used
-</pre></div></div>
 </div>
 </section>
 <section id="学習データの定義">
@@ -252,17 +246,17 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 17286.344814363532
-50 -th epoch marginal likelihood 3941.141158356132
-100 -th epoch marginal likelihood 1224.4325203178405
-150 -th epoch marginal likelihood 78.87839479900322
-200 -th epoch marginal likelihood -701.4985461671986
-250 -th epoch marginal likelihood -1344.3964878511624
-300 -th epoch marginal likelihood -1676.1549909534815
-350 -th epoch marginal likelihood -1815.6458851286318
-400 -th epoch marginal likelihood -1917.6558525403716
-450 -th epoch marginal likelihood -1968.1828578348936
-500 -th epoch marginal likelihood -1998.5771581916174
+0 -th epoch marginal likelihood 16183.32665836015
+50 -th epoch marginal likelihood 3766.7342499250817
+100 -th epoch marginal likelihood 1450.3500890284013
+150 -th epoch marginal likelihood 127.98987541458473
+200 -th epoch marginal likelihood -665.7141798300413
+250 -th epoch marginal likelihood -1132.4472253356093
+300 -th epoch marginal likelihood -1340.554624477777
+350 -th epoch marginal likelihood -1438.3983041110043
+400 -th epoch marginal likelihood -1464.5751633473951
+450 -th epoch marginal likelihood -1478.481755278168
+500 -th epoch marginal likelihood -1485.7013807794128
 Done
 
 </pre></div></div>
@@ -283,9 +277,9 @@ Done
 <div class="highlight"><pre>
 
 
-likelihood parameter =   [-2.76166841]
-mean parameter in GP prior:  [-1.05925247]
-covariance parameter in GP prior:  [-0.68395227 -2.67155333]
+likelihood parameter =   [-2.44630277]
+mean parameter in GP prior:  [-1.06536273]
+covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 
 
 </pre></div></div>
@@ -316,8 +310,8 @@ covariance parameter in GP prior:  [-0.68395227 -2.67155333]
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
-       -1.16971609, -1.13126194])
+array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
+       -1.07684287, -1.10315271])
 </pre></div></div>
 </div>
 <p>分散の結果</p>
@@ -335,8 +329,8 @@ array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
-       0.00053075])
+array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
+       0.00055919])
 </pre></div></div>
 </div>
 <p>予測値の平均二乗誤差の出力</p>
@@ -354,7 +348,7 @@ array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.011857078799698457
+0.006925305425496949
 </pre></div></div>
 </div>
 <p>得られた回帰モデルについて、どの特徴量がどのくらい重要なのかを調べるための簡単な指標として permutation importance (PI)があります。 PHYSBOでは <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数で計算できます。</p>
@@ -418,7 +412,7 @@ array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-2.76166841, -1.05925247, -0.68395227, -2.67155333])
+array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </pre></div></div>
 </div>
 <p>学習に利用したモデルと同様のモデルをgpとして準備</p>
@@ -471,8 +465,8 @@ array([-2.76166841, -1.05925247, -0.68395227, -2.67155333])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
-       -1.16971609, -1.13126194])
+array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
+       -1.07684287, -1.10315271])
 </pre></div></div>
 </div>
 <p>分散の結果</p>
@@ -490,8 +484,8 @@ array([-1.04740175, -1.09605145, -1.0802498 , ..., -0.99629321,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
-       0.00053075])
+array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
+       0.00055919])
 </pre></div></div>
 </div>
 <p>予測値の平均二乗誤差の出力</p>
@@ -509,7 +503,7 @@ array([0.00043518, 0.00045412, 0.00055981, ..., 0.0003406 , 0.00037195,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.011857078799698457
+0.006925305425496949
 </pre></div></div>
 </div>
 <p>(注) 上の例では事前に登録されているXと同じものを利用して予測を行いました。 学習済みのモデルを利用してXに含まれていないパラメータ X_new に対して予測をしたい場合には、 学習モデルで使用したデータXの平均(X_{mean})と標準偏差(X_{std})を求めていただいたうえで、 X_{new} = (X_{new} - X_{mean}) / X_{std} の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、X_{new}が一つのデータの場合には事前に変換する必要があります。
