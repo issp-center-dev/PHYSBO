@@ -534,66 +534,42 @@ class Policy(discrete.Policy):
         """
         f = np.zeros((K, len(self.actions)), dtype=float)
 
+        N = len(chosen_actions)
         # draw K samples of the values of objective function of chosen actions
-        new_test_list = [Variable() for _ in range(self.num_objectives)]
-        virtual_t_list = [np.zeros((K, 0)) for _ in range(self.num_objectives)]
+        new_test_local = self.test.get_subset(chosen_actions)
+        virtual_t_local = np.zeros((K, N, self.num_objectives))
         for i in range(self.num_objectives):
-            # Get subset from test
-            new_test_subset = self.test.get_subset(chosen_actions)
-            # Extract Z for this objective: test.Z is (k, N, n), get (N, n) for objective i
-            if new_test_subset.Z is not None:
-                Z_i = new_test_subset.Z[i, :, :]  # (N, n)
-            else:
-                Z_i = None
-            # Create a Variable with single-objective Z (will be converted to (1, N, n))
-            new_test_local = Variable(X=new_test_subset.X, t=new_test_subset.t, Z=Z_i)
-            virtual_t_local = self.predictor_list[i].get_predict_samples(
+            virtual_t_local[:, :, i] = self.predictor_list[i].get_predict_samples(
                 self.training, new_test_local, K, objective_index=i
             )
-            if self.mpisize == 1:
-                new_test_list[i] = new_test_local
-                virtual_t_list[i] = virtual_t_local
-            else:
-                for nt in self.mpicomm.allgather(new_test_local):
-                    new_test_list[i].add(X=nt.X, t=nt.t, Z=nt.Z)
-                virtual_t_list[i] = np.concatenate(
-                    self.mpicomm.allgather(virtual_t_local), axis=1
-                )
+
+        if self.mpisize == 1:
+            new_test = new_test_local
+            virtual_t = virtual_t_local
+        else:
+            new_test = Variable()
+            virtual_t = np.zeros((K, 0, self.num_objectives))
+            for nt in self.mpicomm.allgather(new_test_local):
+                new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
+            for vt in self.mpicomm.allgather(virtual_t_local):
+                virtual_t = np.concatenate((virtual_t, vt), axis=1)
 
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
-            # Create temporary training_list for this k-th sample
-            training_list_temp = []
+
+            virtual_train = copy.deepcopy(new_test)
+            virtual_train.t = virtual_t[k, :, :]
+
+            training_k = copy.deepcopy(self.training)
+            training_k.add(X=virtual_train.X, t=virtual_train.t, Z=virtual_train.Z)
 
             for i in range(self.num_objectives):
-                # Create temporary training Variable with virtual data for objective i
-                training_temp = copy.deepcopy(self.training)
-                virtual_train = new_test_list[i]
-                virtual_train.t = virtual_t_list[i][k, :]
-
-                # Create temporary Variable with single column t for this objective
-                # Add virtual data: create 2D t matrix with column i updated
-                t_virtual = training_temp.t.copy()
-                # Append new rows
-                t_new_rows = np.zeros((len(virtual_train.t), self.num_objectives))
-                for j in range(self.num_objectives):
-                    if j == i:
-                        t_new_rows[:, j] = virtual_train.t
-                    else:
-                        # Use last value from training_temp for other objectives
-                        t_new_rows[:, j] = t_virtual[-1, j] if len(t_virtual) > 0 else 0.0
-                training_temp.add(X=virtual_train.X, t=t_new_rows, Z=virtual_train.Z)
-
-                # Create single-column Variable for this objective
-                training_i = Variable(X=training_temp.X, t=training_temp.t[:, i], Z=training_temp.Z)
-                training_list_temp.append(training_i)
-
-                predictor_list[i].update(training_i, virtual_train, objective_index=i)
+                predictor_list[i].update(training_k, virtual_train, objective_index=i)
 
             f[k, :] = self.get_score(
                 mode,
                 predictor_list=predictor_list,
-                training_list=training_list_temp,
+                training_list=training_k,
                 parallel=False,
             )
         return np.mean(f, axis=0)
@@ -662,7 +638,8 @@ class Policy(discrete.Policy):
 
     def _learn_hyperparameter(self, num_rand_basis):
         # Collect Z for each objective
-        Z_list = []
+        training_Z_list = []
+        test_Z_list = []
         for i in range(self.num_objectives):
             predictor = self.predictor_list[i]
 
@@ -670,25 +647,20 @@ class Policy(discrete.Policy):
             # Get basis for this objective
             test_Z_basis = predictor.get_basis(self.test.X)
             training_Z_basis = predictor.get_basis(self.training.X)
-            
+
             # Collect Z for test and training (will be combined into (k, N, n))
-            Z_list.append(test_Z_basis)
-            
-            predictor.prepare(self.training, objective_index=i)
-            # self.new_data_list[i] = None
-        
-        # Update test.Z and training.Z with (k, N, n) format
-        if all(z is not None for z in Z_list):
-            # Stack along first dimension: (k, N, n)
-            self.test.Z = np.stack(Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
-        
-        # Update training.Z with (k, N, n) format
-        training_Z_list = []
-        for i in range(self.num_objectives):
-            training_Z_basis = self.predictor_list[i].get_basis(self.training.X)
+            test_Z_list.append(test_Z_basis)
             training_Z_list.append(training_Z_basis)
+
+        # Update test.Z and training.Z with (k, N, n) format
+        if all(z is not None for z in test_Z_list):
+            self.test.Z = np.stack(test_Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
         if all(z is not None for z in training_Z_list):
             self.training.Z = np.stack(training_Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+
+        for i in range(self.num_objectives):
+            self.predictor_list[i].prepare(self.training, objective_index=i)
+        self.new_data = None
 
     def _update_predictor(self):
         if self.new_data is not None:

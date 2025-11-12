@@ -81,7 +81,7 @@ class Variable(object):
 
     def get_subset(self, index):
         """
-        Getting subset of variables.
+        Getting subset of variables as a new Variable.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class Variable(object):
             Index of selected action.
         Returns
         -------
-        variable: physbo.variable
+        variable: physbo.Variable
         """
         if isinstance(index, int):
             index = [index]

@@ -121,7 +121,7 @@ def test_multi_objective_TS_rand():
         max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100
     )
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-    vid_ref = 0.21778676545656983
+    vid_ref = 0.20394729383806942
 
     assert vid == pytest.approx(vid_ref, rel=1e-3)
     policy.get_score("TS", xs=sim.X)
