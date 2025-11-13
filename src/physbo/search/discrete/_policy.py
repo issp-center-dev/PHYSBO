@@ -19,7 +19,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
-from ..._variable import Variable
+from ..._variable import Variable, normalize_t
 
 
 class Policy:
@@ -114,7 +114,7 @@ class Policy:
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
             # Normalize fs to (N, 1) shape before passing to write()
-            fs_normalized = _normalize_t(fs)
+            fs_normalized = normalize_t(fs, k=1)
             self.write(actions, fs_normalized)
             self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
@@ -206,7 +206,7 @@ class Policy:
                 Z = None
 
         # Normalize t to (N, 1) shape
-        t_normalized = _normalize_t(t)
+        t_normalized = normalize_t(t, k=1)
 
         self.history.write(
             t_normalized,
@@ -659,7 +659,7 @@ class Policy:
             train = copy.deepcopy(self.training)
             virtual_train = new_test
             # Normalize virtual_t[k, :] to (N, 1) shape
-            virtual_train.t = _normalize_t(virtual_t[k, :])
+            virtual_train.t = normalize_t(virtual_t[k, :], k=1)
 
             if virtual_train.Z is None:
                 train.add(virtual_train.X, virtual_train.t)
@@ -834,7 +834,7 @@ class Policy:
             X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
             # Normalize t to (N, 1) shape
-            t_normalized = _normalize_t(t)
+            t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)
         else:
             self.training = Variable()
@@ -964,44 +964,6 @@ class Policy:
         return np.delete(actions, index)
 
 
-def _normalize_t(t):
-    """
-    Normalize t to always be a 2D array with shape (N, 1).
-
-    Parameters
-    ----------
-    t: scalar, numpy.ndarray, or None
-        Input value(s) to normalize
-
-    Returns
-    -------
-    numpy.ndarray
-        Normalized array with shape (N, 1), or None if input is None
-    """
-    if t is None:
-        return None
-
-    t = np.array(t)
-
-    # Handle scalar case
-    if t.ndim == 0:
-        return t.reshape(1, 1)
-
-    # Handle 1D array: (N,) -> (N, 1)
-    if t.ndim == 1:
-        return t.reshape(-1, 1)
-
-    # Handle 2D array: (N, k), k should be 1
-    if t.ndim == 2:
-        if t.shape[1] == 1:
-            return t
-        else:
-            raise ValueError(f"Second dimension of t must be 1: {t.shape}")
-
-    # Should not reach here, but handle for safety
-    raise ValueError(f"Unexpected t shape: {t.shape}")
-
-
 def _run_simulator(simulator, action, comm=None):
     """
     Run simulator and normalize return value to (N, 1) shape.
@@ -1029,4 +991,4 @@ def _run_simulator(simulator, action, comm=None):
             t = 0.0
         t = comm.bcast(t, root=0)
 
-    return _normalize_t(t)
+    return normalize_t(t, k=1)

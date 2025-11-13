@@ -99,19 +99,21 @@ class Policy(range_single.Policy):
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
+        N = X.shape[0]
         t = np.array(t)
 
         # Ensure t is 2D: shape (N, num_objectives)
         if t.ndim == 1:
-            if len(t) == self.num_objectives:
+            if N == 1:
                 t = t.reshape(1, -1)
             else:
-                t = t.reshape(-1, 1)
+                raise ValueError(f"Number of actions is {N} > 1, but t is 1D array")
 
         assert X.shape[0] == t.shape[0], "The number of X and t must be the same"
         assert X.shape[1] == self.dim, (
             "The dimension of X must be the same as the dimension of min_X and max_X"
         )
+        assert t.shape[1] == self.num_objectives, "The number of objectives in t must be the same as num_objectives"
 
         if self.predictor_list[0] is not None:
             z = []
@@ -213,7 +215,7 @@ class Policy(range_single.Policy):
         is_rand_expans = False if num_rand_basis == 0 else True
 
         if training_list is not None:
-            self.training = _convert_list_of_variables_to_variable(training_list)
+            self.training = training_list
 
         if predictor_list is None:
             if is_rand_expans:
@@ -461,7 +463,7 @@ class Policy(range_single.Policy):
         if training_list is None:
             training = self.training
         else:
-            training = _convert_list_of_variables_to_variable(training_list)
+            training = training_list
 
         if pareto is None:
             pareto = self.history.pareto
@@ -651,19 +653,3 @@ def _run_simulator(simulator, action_X, comm=None):
     else:
         t = 0.0
     return comm.bcast(t, root=0)
-
-def _convert_list_of_variables_to_variable(variables):
-    """For backward compatibility"""
-    if variables is not None:
-        # Convert old format (list of Variables) to new format (single Variable)
-        if isinstance(variables, list) and len(variables) > 0:
-            if isinstance(variables[0], Variable):
-                # Old format: list of Variables, convert to single Variable
-                X = variables[0].X
-                Z = variables[0].Z
-                t = np.column_stack([v.t for v in variables])
-                return Variable(X=X, t=t, Z=Z)
-            else:
-                return variables
-        else:
-            return variables

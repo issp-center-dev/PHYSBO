@@ -34,10 +34,10 @@ class Variable(object):
         else:
             self.X = None
 
-        self.t = _normalize_t(t)
+        self.t = normalize_t(t)
         self.number_of_objectives = self.t.shape[1] if self.t is not None else None
 
-        self.Z = _normalize_Z(Z, self.number_of_objectives)
+        self.Z = normalize_Z(Z, self.number_of_objectives)
         if self.number_of_objectives is None:
             self.number_of_objectives = self.Z.shape[0] if self.Z is not None else None
 
@@ -243,7 +243,7 @@ class Variable(object):
         if t is None:
             return
 
-        t = _normalize_t(t)
+        t = normalize_t(t)
 
         # Ensure consistent shape for concatenation
         if self.t is not None:
@@ -270,7 +270,7 @@ class Variable(object):
 
         """
         if Z is not None:
-            Z = _normalize_Z(Z, self.number_of_objectives)
+            Z = normalize_Z(Z, self.number_of_objectives)
             if self.Z is None:
                 self.Z = Z
                 if self.number_of_objectives is None:
@@ -338,7 +338,7 @@ class Variable(object):
             if old_t:
                 return arr.reshape(-1, 1)
             else:
-                return arr.reshape(1, -1)
+                raise ValueError(f"t should be 2D array, got {arr.ndim}D")
         if arr.ndim == 2:
             if old_Z:
                 return arr[np.newaxis, :, :]
@@ -350,7 +350,7 @@ class Variable(object):
         raise ValueError(f"Invalid array dimension: {arr.ndim}")
 
 
-def _normalize_t(t, k=None):
+def normalize_t(t, k=None):
     """
     Normalize t to always be a 2D array with shape (N, k).
 
@@ -378,7 +378,7 @@ def _normalize_t(t, k=None):
     elif t.ndim == 1:
         return t.reshape(-1, 1)
 
-    # Handle 2D array: (N, k), k should be 1
+    # Handle 2D array: (N, k)
     elif t.ndim == 2:
         if k is not None:
             if t.shape[1] != k:
@@ -392,7 +392,7 @@ def _normalize_t(t, k=None):
         raise ValueError(f"Unexpected t shape: {t.shape}")
 
 
-def _normalize_Z(Z, k=None):
+def normalize_Z(Z, k=None):
     """
     Normalize Z to (k, N, n) format.
 

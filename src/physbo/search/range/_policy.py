@@ -17,7 +17,7 @@ from ..optimize.random import Optimizer as RandomOptimizer
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
-from ..._variable import Variable
+from ..._variable import Variable, normalize_t
 
 
 class Policy:
@@ -69,7 +69,7 @@ class Policy:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
                 raise RuntimeError(msg)
             init_X, fs = initial_data
-            fs_normalized = _normalize_t(fs)
+            fs_normalized = normalize_t(fs, k=1)
             assert init_X.shape[0] == fs_normalized.shape[0], (
                 "The number of initial data must be the same"
             )
@@ -145,7 +145,7 @@ class Policy:
 
         """
         # Normalize t to (N, 1) shape
-        t_normalized = _normalize_t(t)
+        t_normalized = normalize_t(t, k=1)
 
         self.history.write(
             t.flatten(),
@@ -517,7 +517,7 @@ class Policy:
                 extra_train = extra_trainings[k]
                 # Ensure t is normalized
                 if extra_train.t is not None:
-                    extra_train.t = _normalize_t(extra_train.t)
+                    extra_train.t = normalize_t(extra_train.t, k=1)
                 trains[k].add(X=extra_train.X, t=extra_train.t)
                 predictors[k].update(trains[k], extra_train, objective_index=0)
 
@@ -577,7 +577,7 @@ class Policy:
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
                 # Normalize t to (N, 1) shape
-                t_normalized = _normalize_t(t[k, :])
+                t_normalized = normalize_t(t[k, :], k=1)
                 extra_trainings[k].t = t_normalized
             X[n, :] = self._argmax_score(
                 mode, predictor, self.training, extra_trainings, optimizer=optimizer
@@ -658,14 +658,14 @@ class Policy:
             X = self.history.action_X[0:N, :]
             t = self.history.fx[0:N]
             # Normalize t to (N, 1) shape
-            t_normalized = _normalize_t(t)
+            t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)
         else:
             self.training = Variable()
             self.training.load(file_training)
             # Ensure t is normalized to (N, 1) shape after loading
             if self.training.t is not None:
-                self.training.t = _normalize_t(self.training.t)
+                self.training.t = normalize_t(self.training.t, k=1)
 
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
@@ -754,44 +754,6 @@ class Policy:
         return test
 
 
-def _normalize_t(t):
-    """
-    Normalize t to always be a 2D array with shape (N, 1).
-
-    Parameters
-    ----------
-    t: scalar, numpy.ndarray, or None
-        Input value(s) to normalize
-
-    Returns
-    -------
-    numpy.ndarray
-        Normalized array with shape (N, 1), or None if input is None
-    """
-    if t is None:
-        return None
-
-    t = np.array(t)
-
-    # Handle scalar case
-    if t.ndim == 0:
-        return t.reshape(1, 1)
-
-    # Handle 1D array: (N,) -> (N, 1)
-    if t.ndim == 1:
-        return t.reshape(-1, 1)
-
-    # Handle 2D array: (N, k), k should be 1
-    if t.ndim == 2:
-        if t.shape[1] == 1:
-            return t
-        else:
-            raise ValueError(f"Second dimension of t must be 1: {t.shape}")
-
-    # Should not reach here, but handle for safety
-    raise ValueError(f"Unexpected t shape: {t.shape}")
-
-
 def _run_simulator(simulator, action, comm=None):
     """
     Run simulator and normalize return value to (N, 1) shape.
@@ -819,4 +781,4 @@ def _run_simulator(simulator, action, comm=None):
             t = 0.0
         t = comm.bcast(t, root=0)
 
-    return _normalize_t(t)
+    return normalize_t(t, k=1)
