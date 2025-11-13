@@ -328,8 +328,12 @@ class Policy(range_single.Policy):
         else:  # marginal score
             trains_k = [copy.deepcopy(training) for _ in range(K)]
             predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-            for predictor, training, virtual_training in zip(predictors_k, trains_k, virtual_trainings):
-                training.add(X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z)
+            for predictor, training, virtual_training in zip(
+                predictors_k, trains_k, virtual_trainings
+            ):
+                training.add(
+                    X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
+                )
                 for i in range(self.num_objectives):
                     predictor[i].update(training, virtual_training, objective_index=i)
 
@@ -361,10 +365,7 @@ class Policy(range_single.Policy):
         )
 
         for n in range(1, N):
-            virtual_trainings = [
-                Variable(X=X[0:n, :])
-                for _ in range(K)
-            ]
+            virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
             virtual_t = np.zeros((K, n, self.num_objectives))
             for i in range(self.num_objectives):
                 virtual_t[:, :, i] = predictors[i].get_predict_samples(
@@ -638,7 +639,9 @@ class Policy(range_single.Policy):
         for i in range(self.num_objectives):
             predictor = self.predictor_list[i]
 
-            predictor.fit(training, num_rand_basis, comm=self.mpicomm, objective_index=i)
+            predictor.fit(
+                training, num_rand_basis, comm=self.mpicomm, objective_index=i
+            )
 
             # Collect Z for training (will be combined into (k, N, n))
             training_Z_basis = predictor.get_basis(training.X)
@@ -648,7 +651,9 @@ class Policy(range_single.Policy):
         # Update training.Z with (k, N, n) format
         if all(z is not None for z in Z_list):
             # Stack along first dimension: (k, N, n)
-            self.training.Z = np.stack(Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+            self.training.Z = np.stack(
+                Z_list, axis=0
+            )  # Each Z_i is (N, n), stack to (k, N, n)
         self.new_data = None
 
     def _update_predictor(self):

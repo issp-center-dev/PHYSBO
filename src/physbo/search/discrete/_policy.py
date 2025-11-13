@@ -197,7 +197,9 @@ class Policy:
             Z = self.test.Z[0, action, :] if self.test.Z is not None else None
         else:
             # Get basis and convert to (1, N, n) format
-            Z_basis = self.predictor.get_basis(X) if self.predictor is not None else None
+            Z_basis = (
+                self.predictor.get_basis(X) if self.predictor is not None else None
+            )
             if Z_basis is not None:
                 Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
             else:

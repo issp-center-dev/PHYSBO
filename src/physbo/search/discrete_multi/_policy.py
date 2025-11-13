@@ -643,7 +643,9 @@ class Policy(discrete.Policy):
         for i in range(self.num_objectives):
             predictor = self.predictor_list[i]
 
-            predictor.fit(self.training, num_rand_basis, comm=self.mpicomm, objective_index=i)
+            predictor.fit(
+                self.training, num_rand_basis, comm=self.mpicomm, objective_index=i
+            )
             # Get basis for this objective
             test_Z_basis = predictor.get_basis(self.test.X)
             training_Z_basis = predictor.get_basis(self.training.X)
@@ -654,9 +656,13 @@ class Policy(discrete.Policy):
 
         # Update test.Z and training.Z with (k, N, n) format
         if all(z is not None for z in test_Z_list):
-            self.test.Z = np.stack(test_Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+            self.test.Z = np.stack(
+                test_Z_list, axis=0
+            )  # Each Z_i is (N, n), stack to (k, N, n)
         if all(z is not None for z in training_Z_list):
-            self.training.Z = np.stack(training_Z_list, axis=0)  # Each Z_i is (N, n), stack to (k, N, n)
+            self.training.Z = np.stack(
+                training_Z_list, axis=0
+            )  # Each Z_i is (N, n), stack to (k, N, n)
 
         for i in range(self.num_objectives):
             self.predictor_list[i].prepare(self.training, objective_index=i)

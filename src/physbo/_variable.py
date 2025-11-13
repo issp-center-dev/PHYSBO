@@ -9,7 +9,7 @@ import numpy as np
 
 
 class Variable(object):
-    """ Variable class
+    """Variable class
 
     Variable class represents a set of pairs of input (X) and output (t).
     """
@@ -29,7 +29,6 @@ class Variable(object):
     """
 
     def __init__(self, X=None, t=None, Z=None):
-
         if X is not None:
             self.X = np.array(X)
         else:
@@ -56,7 +55,9 @@ class Variable(object):
             nt = self.t.shape[0]
             k = self.t.shape[1]
             if k != self.number_of_objectives:
-                raise ValueError(f"The number of objectives in t ({k}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
+                raise ValueError(
+                    f"The number of objectives in t ({k}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same"
+                )
         else:
             nt = None
 
@@ -65,13 +66,21 @@ class Variable(object):
             kZ = self.Z.shape[0]
             nZ = self.Z.shape[1]
             if kZ != self.number_of_objectives:
-                raise ValueError(f"The number of objectives in Z ({kZ}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
+                raise ValueError(
+                    f"The number of objectives in Z ({kZ}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same"
+                )
         else:
             nZ = None
 
-        assert nX is None or nt is None or nX == nt, "The number of X and t must be the same"
-        assert nX is None or nZ is None or nX == nZ, "The number of X and Z must be the same"
-        assert nt is None or nZ is None or nt == nZ, "The number of t and Z must be the same"
+        assert nX is None or nt is None or nX == nt, (
+            "The number of X and t must be the same"
+        )
+        assert nX is None or nZ is None or nX == nZ, (
+            "The number of X and Z must be the same"
+        )
+        assert nt is None or nZ is None or nt == nZ, (
+            "The number of t and Z must be the same"
+        )
 
     def __len__(self):
         if self.X is not None:
@@ -239,12 +248,13 @@ class Variable(object):
         # Ensure consistent shape for concatenation
         if self.t is not None:
             if t.shape[1] != self.number_of_objectives:
-                raise ValueError(f"The number of objectives in t ({t.shape[1]}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same")
+                raise ValueError(
+                    f"The number of objectives in t ({t.shape[1]}) and the number of objectives in the variable ({self.number_of_objectives}) must be the same"
+                )
             self.t = np.vstack((self.t, t))
         else:
             self.t = t
             self.number_of_objectives = self.t.shape[1]
-
 
     def _add_Z(self, Z=None):
         """
@@ -330,9 +340,9 @@ class Variable(object):
             return np.array([[v]])
         if arr.ndim == 1:
             if old_t:
-                return arr.reshape(-1,1)
+                return arr.reshape(-1, 1)
             else:
-                return arr.reshape(1,-1)
+                return arr.reshape(1, -1)
         if arr.ndim == 2:
             if old_Z:
                 return arr[np.newaxis, :, :]
@@ -341,7 +351,7 @@ class Variable(object):
         if arr.ndim == 3:
             # For Z: this is (k, N, n) format (version >= 3)
             return arr
-        raise ValueError(f'Invalid array dimension: {arr.ndim}')
+        raise ValueError(f"Invalid array dimension: {arr.ndim}")
 
 
 def _normalize_t(t, k=None):

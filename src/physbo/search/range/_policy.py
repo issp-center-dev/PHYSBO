@@ -22,6 +22,7 @@ from ..._variable import Variable
 
 class Policy:
     """Single objective Bayesian optimization with continuous search space"""
+
     def __init__(
         self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
     ):
@@ -421,7 +422,9 @@ class Policy:
             return predictor.get_post_fcov(self.training, X, diag, objective_index=0)
         else:
             self._update_predictor()
-            return self.predictor.get_post_fcov(self.training, X, diag, objective_index=0)
+            return self.predictor.get_post_fcov(
+                self.training, X, diag, objective_index=0
+            )
 
     def get_score(
         self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
@@ -568,7 +571,9 @@ class Policy:
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(self.training, extra_training, K, objective_index=0)
+            t = self.predictor.get_predict_samples(
+                self.training, extra_training, K, objective_index=0
+            )
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
                 # Normalize t to (N, 1) shape
@@ -712,7 +717,9 @@ class Policy:
             self.predictor = gp_predictor(self.config)
 
     def _learn_hyperparameter(self, num_rand_basis):
-        self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm, objective_index=0)
+        self.predictor.fit(
+            self.training, num_rand_basis, comm=self.mpicomm, objective_index=0
+        )
         # Get basis and convert to (1, N, n) format for single-objective
         training_Z_basis = self.predictor.get_basis(self.training.X)
         if training_Z_basis is not None:
