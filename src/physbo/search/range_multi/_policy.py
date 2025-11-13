@@ -101,17 +101,17 @@ class Policy(range_single.Policy):
         )
         t = np.array(t)
 
-        assert X.shape[0] == t.shape[0], "The number of X and t must be the same"
-        assert X.shape[1] == self.dim, (
-            "The dimension of X must be the same as the dimension of min_X and max_X"
-        )
-
         # Ensure t is 2D: shape (N, num_objectives)
         if t.ndim == 1:
             if len(t) == self.num_objectives:
                 t = t.reshape(1, -1)
             else:
                 t = t.reshape(-1, 1)
+
+        assert X.shape[0] == t.shape[0], "The number of X and t must be the same"
+        assert X.shape[1] == self.dim, (
+            "The dimension of X must be the same as the dimension of min_X and max_X"
+        )
 
         if self.predictor_list[0] is not None:
             z = []
@@ -292,7 +292,7 @@ class Policy(range_single.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _argmax_score(self, mode, predictors, trainings, extra_trainings, optimizer):
+    def _argmax_score(self, mode, predictors, training, virtual_trainings, optimizer):
         """
         Get the action that maximizes the score.
 
@@ -304,29 +304,15 @@ class Policy(range_single.Policy):
             These functions are defined in score.py.
         predictors: list[Predictor]
             List of predictors.
-        trainings: Variable or list[Variable]
-            Training data (single Variable with 2D t, or list of Variables for backward compatibility).
-        extra_trainings: list[list[Variable]]
+        training: Variable
+            Training data.
+        virtual_trainings: list[Variable]
             List of extra training data.
-            The outermost list is for the sample index, and the inner list is for the objective index.
         optimizer: Function or Optimizer object
             Optimizer object for optimizing the acquisition function.
-
         """
-        # Handle both old format (list) and new format (single Variable)
-        if isinstance(trainings, list) and len(trainings) > 0:
-            if isinstance(trainings[0], Variable):
-                # Old format: convert to single Variable
-                X = trainings[0].X
-                Z = trainings[0].Z
-                t = np.column_stack([tr.t for tr in trainings])
-                training = Variable(X=X, t=t, Z=Z)
-            else:
-                training = trainings
-        else:
-            training = trainings
 
-        K = len(extra_trainings)
+        K = len(virtual_trainings)
         if K == 0:
             for i, predictor in enumerate(predictors):
                 predictor.prepare(training, objective_index=i)
@@ -340,29 +326,12 @@ class Policy(range_single.Policy):
                     parallel=False,
                 )[0]
         else:  # marginal score
-            trains = [copy.deepcopy(training) for _ in range(K)]
+            trains_k = [copy.deepcopy(training) for _ in range(K)]
             predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-            for k in range(K):
-                extra_train = extra_trainings[k]
+            for predictor, training, virtual_training in zip(predictors_k, trains_k, virtual_trainings):
+                training.add(X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z)
                 for i in range(self.num_objectives):
-                    # Create temporary training Variable with virtual data for objective i
-                    training_temp = copy.deepcopy(trains[k])
-                    virtual_train = extra_train[i]
-                    
-                    # Create temporary Variable with single column t for this objective
-                    # Add virtual data: create 2D t matrix with column i updated
-                    t_virtual = training_temp.t.copy()
-                    # Append new rows
-                    t_new_rows = np.zeros((len(virtual_train.t), self.num_objectives))
-                    for j in range(self.num_objectives):
-                        if j == i:
-                            t_new_rows[:, j] = virtual_train.t
-                        else:
-                            # Use last value from training_temp for other objectives
-                            t_new_rows[:, j] = t_virtual[-1, j] if len(t_virtual) > 0 else 0.0
-                    training_temp.add(X=virtual_train.X, t=t_new_rows, Z=virtual_train.Z)
-                    trains[k] = training_temp
-                    predictors_k[k][i].update(training_temp, virtual_train, objective_index=i)
+                    predictor[i].update(training, virtual_training, objective_index=i)
 
             def fn(x):
                 f = np.zeros(K)
@@ -371,7 +340,7 @@ class Policy(range_single.Policy):
                         mode,
                         xs=x.reshape(1, -1),
                         predictor_list=predictors_k[k],
-                        training_list=trains[k],
+                        training_list=trains_k[k],
                         parallel=False,
                     )[0]
                 return np.mean(f)
@@ -392,26 +361,22 @@ class Policy(range_single.Policy):
         )
 
         for n in range(1, N):
-            extra_trainings_list_of_K = []
-            X_test = Variable(X=X[0:n, :])
-            ts = [
-                predictor.get_predict_samples(self.training, X_test, K, objective_index=i)
-                for i, predictor in enumerate(predictors)
+            virtual_trainings = [
+                Variable(X=X[0:n, :])
+                for _ in range(K)
             ]
-
+            virtual_t = np.zeros((K, n, self.num_objectives))
+            for i in range(self.num_objectives):
+                virtual_t[:, :, i] = predictors[i].get_predict_samples(
+                    self.training, virtual_trainings[0], K, objective_index=i
+                )
             for k in range(K):
-                et_list = [
-                    copy.deepcopy(Variable(X=X[0:n, :]))
-                    for _ in range(self.num_objectives)
-                ]
-                for i in range(self.num_objectives):
-                    et_list[i].t = ts[i][k, :]
-                extra_trainings_list_of_K.append(et_list)
+                virtual_trainings[k].t = virtual_t[k, :, :]
             X[n, :] = self._argmax_score(
                 mode,
                 predictors,
                 self.training,
-                extra_trainings_list_of_K,
+                virtual_trainings,
                 optimizer=optimizer,
             )
         return X
