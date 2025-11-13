@@ -254,9 +254,9 @@ class Predictor(physbo.predictor.BasePredictor):
             if test.t.ndim == 2:
                 t_val = test.t[0, objective_index]
             else:
-                t_val = test.t[0] if test.t.ndim == 1 else test.t
+                t_val = test.t[0]
             if test.Z is None:
-                self.blm.update_stats(test.X, t_val)
+                self.blm.update_stats(test.X[0, :], t_val)
             else:
                 # Extract basis for this objective: Z is (k, N, n), get (n,) for this objective and first sample
                 if test.Z.ndim == 3:

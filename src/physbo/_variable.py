@@ -308,11 +308,7 @@ class Variable(object):
 
         """
         data = np.load(file_name, allow_pickle=True)
-        version = data["version"]
-        if version is None:
-            version = 1
-        else:
-            version = int(version)
+        version = int(data.get("version", 1))
         old_t = version < 2
         old_Z = version < 3
         self.X = data["X"]
@@ -384,10 +380,13 @@ def _normalize_t(t, k=None):
 
     # Handle 2D array: (N, k), k should be 1
     elif t.ndim == 2:
-        if k is None or k == 1:
-            return t
+        if k is not None:
+            if t.shape[1] != k:
+                raise ValueError(f"k is given but does not match the second dimension of t: {k=}, {t.shape[1]=}")
+            else:
+                return t
         else:
-            raise ValueError(f"given k is {k} > 1 but t is 2D")
+            return t
 
     else:
         raise ValueError(f"Unexpected t shape: {t.shape}")

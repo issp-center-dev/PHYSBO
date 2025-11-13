@@ -213,18 +213,7 @@ class Policy(range_single.Policy):
         is_rand_expans = False if num_rand_basis == 0 else True
 
         if training_list is not None:
-            # Convert old format (list of Variables) to new format (single Variable)
-            if isinstance(training_list, list) and len(training_list) > 0:
-                if isinstance(training_list[0], Variable):
-                    # Old format: list of Variables, convert to single Variable
-                    X = training_list[0].X
-                    Z = training_list[0].Z
-                    t = np.column_stack([tr.t for tr in training_list])
-                    self.training = Variable(X=X, t=t, Z=Z)
-                else:
-                    self.training = training_list
-            else:
-                self.training = training_list
+            self.training = _convert_list_of_variables_to_variable(training_list)
 
         if predictor_list is None:
             if is_rand_expans:
@@ -472,18 +461,7 @@ class Policy(range_single.Policy):
         if training_list is None:
             training = self.training
         else:
-            # Handle both old format (list) and new format (single Variable)
-            if isinstance(training_list, list) and len(training_list) > 0:
-                if isinstance(training_list[0], Variable):
-                    # Old format: convert to single Variable
-                    X = training_list[0].X
-                    Z = training_list[0].Z
-                    t = np.column_stack([tr.t for tr in training_list])
-                    training = Variable(X=X, t=t, Z=Z)
-                else:
-                    training = training_list
-            else:
-                training = training_list
+            training = _convert_list_of_variables_to_variable(training_list)
 
         if pareto is None:
             pareto = self.history.pareto
@@ -622,8 +600,8 @@ class Policy(range_single.Policy):
         if isinstance(data, list):
             # Old format: list of dicts, convert to single Variable
             X = data[0]["X"]
-            Z = data[0]["Z"]
-            t = np.column_stack([d["t"] for d in data])
+            Z = np.stack([d["Z"] for d in data], axis=0)
+            t = np.stack([d["t"] for d in data], axis=1)
             self.training = Variable(X=X, t=t, Z=Z)
         elif isinstance(data, dict):
             # New format: single dict
@@ -673,3 +651,19 @@ def _run_simulator(simulator, action_X, comm=None):
     else:
         t = 0.0
     return comm.bcast(t, root=0)
+
+def _convert_list_of_variables_to_variable(variables):
+    """For backward compatibility"""
+    if variables is not None:
+        # Convert old format (list of Variables) to new format (single Variable)
+        if isinstance(variables, list) and len(variables) > 0:
+            if isinstance(variables[0], Variable):
+                # Old format: list of Variables, convert to single Variable
+                X = variables[0].X
+                Z = variables[0].Z
+                t = np.column_stack([v.t for v in variables])
+                return Variable(X=X, t=t, Z=Z)
+            else:
+                return variables
+        else:
+            return variables

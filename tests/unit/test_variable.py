@@ -188,14 +188,10 @@ def test_t_must_be_2d():
 
     # t as 1D - should either raise error or be converted to 2D
     # This test verifies that t is treated as 2D (either by error or conversion)
-    try:
-        var = physbo.Variable(X=X, t=t_1d)
-        # If creation succeeds, t should be 2D (either converted or already 2D)
-        assert var.t.ndim == 2, f"t should be 2D array, got ndim={var.t.ndim}"
-        assert var.t.shape == (3, 1), f"t should have shape (3, 1), got {var.t.shape}"
-    except AssertionError as e:
-        # If creation fails, verify it's because t must be 2D
-        assert "2D array" in str(e) or "must be" in str(e), f"Unexpected error: {e}"
+    var = physbo.Variable(X=X, t=t_1d)
+    # If creation succeeds, t should be 2D (either converted or already 2D)
+    assert var.t.ndim == 2, f"t should be 2D array, got ndim={var.t.ndim}"
+    assert var.t.shape == (3, 1), f"t should have shape (3, 1), got {var.t.shape}"
 
     # t as 3D should raise AssertionError
     with pytest.raises(ValueError):

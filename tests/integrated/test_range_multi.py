@@ -41,7 +41,7 @@ def test_multi_objective_EHVI():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EHVI")
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
     vid_ref = 0.21186716996705868
@@ -59,7 +59,7 @@ def test_multi_objective_HVPI():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="HVPI")
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
     vid_ref = 0.2517842814632759
@@ -77,7 +77,7 @@ def test_multi_objective_TS():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
     vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
     vid_ref = 0.13505409808944357
@@ -95,7 +95,7 @@ def test_multi_objective_EHVI_rand():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="EHVI", num_rand_basis=100
     )
@@ -115,7 +115,7 @@ def test_multi_objective_HVPI_rand():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="HVPI", num_rand_basis=100
     )
@@ -135,7 +135,7 @@ def test_multi_objective_TS_rand():
         min_X=min_X, max_X=max_X, num_objectives=2
     )
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100
     )

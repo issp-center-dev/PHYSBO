@@ -50,7 +50,7 @@ def test_bayes_search():
     nsearch = 5
     policy = physbo.search.range.Policy(min_X=min_X, max_X=max_X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EI")
     best_fx, best_X = res.export_all_sequence_best_fx()
     print(best_fx)
@@ -68,7 +68,7 @@ def test_bayes_search_rand():
     nsearch = 5
     policy = physbo.search.range.Policy(min_X=min_X, max_X=max_X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="EI", num_rand_basis=100
     )

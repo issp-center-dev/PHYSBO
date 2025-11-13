@@ -53,7 +53,7 @@ def test_bayes_search_EI():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="EI")
     best_fx, best_action = res.export_all_sequence_best_fx()
     print(best_fx)
@@ -69,7 +69,7 @@ def test_bayes_search_EI_rand():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="EI", num_rand_basis=100
     )
@@ -87,7 +87,7 @@ def test_bayes_search_PI():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="PI")
     best_fx, best_action = res.export_all_sequence_best_fx()
     print(best_fx)
@@ -103,7 +103,7 @@ def test_bayes_search_PI_rand():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="PI", num_rand_basis=100
     )
@@ -121,7 +121,7 @@ def test_bayes_search_TS():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(max_num_probes=nsearch, simulator=sim, score="TS")
     best_fx, best_action = res.export_all_sequence_best_fx()
     print(best_fx)
@@ -137,7 +137,7 @@ def test_bayes_search_TS_rand():
     nsearch = 5
     policy = physbo.search.discrete.Policy(test_X=sim.X)
     policy.set_seed(12345)
-    res = policy.random_search(max_num_probes=nrand, simulator=sim)
+    policy.random_search(max_num_probes=nrand, simulator=sim)
     res = policy.bayes_search(
         max_num_probes=nsearch, simulator=sim, score="TS", num_rand_basis=100
     )
