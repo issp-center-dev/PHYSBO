@@ -76,12 +76,18 @@ class History:
         -------
 
         """
-        N = utility.length_vector(t)
+        N = utility.length_vector(action)
         st = self.total_num_search
         en = st + N
 
+        t_shape = t.shape
+        if t_shape[0] != N:
+            raise ValueError(f"Number of actions and t must be the same: {N} != {t_shape[0]}")
+        if t_shape[1] != 1:
+            raise ValueError(f"t.shape[1] must be 1: {t_shape}")
+
         self.terminal_num_run[self.num_runs] = en
-        self.fx[st:en] = t
+        self.fx[st:en] = t[:, 0]
         self.chosen_actions[st:en] = action
         self.num_runs += 1
         self.total_num_search += N

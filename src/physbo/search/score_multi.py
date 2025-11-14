@@ -11,24 +11,24 @@ import scipy.stats
 from .pareto import Pareto
 
 
-def score(mode, predictor_list, test, training_list, **kwargs):
+def score(mode, predictor_list, test, training, **kwargs):
     if test.X.shape[0] == 0:
         return np.zeros(0)
 
     if mode == "EHVI":
         pareto = kwargs["pareto"]
-        fmean, fstd = _get_fmean_fstd(predictor_list, training_list, test)
+        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
         f = EHVI(fmean, fstd, pareto)
     elif mode == "HVPI":
         pareto = kwargs["pareto"]
-        fmean, fstd = _get_fmean_fstd(predictor_list, training_list, test)
+        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
         f = HVPI(fmean, fstd, pareto)
     elif mode == "TS":
         alpha = kwargs.get("alpha", 1.0)
         reduced_candidate_num = kwargs["reduced_candidate_num"]
         f = TS(
             predictor_list,
-            training_list,
+            training,
             test,
             alpha,
             reduced_candidate_num=reduced_candidate_num,
@@ -184,15 +184,15 @@ def EHVI(fmean, fstd, pareto):
     return score
 
 
-def TS(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None):
+def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
     """Thompson Sampling for multi-objective optimization.
 
     Parameters
     ----------
     predictor_list : list of Predictor
         List of predictors for each objective.
-    training_list : list of Variable
-        List of training data for each objective.
+    training : Variable
+        Training data containing all objectives.
     test : Variable
         Test points.
     alpha : float, optional
@@ -210,8 +210,8 @@ def TS(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None)
     """
 
     score = [
-        predictor.get_post_samples(training, test, alpha=alpha)
-        for predictor, training in zip(predictor_list, training_list)
+        predictor.get_post_samples(training, test, alpha=alpha, objective_index=i)
+        for i, predictor in enumerate(predictor_list)
     ]
     score = np.array(score).reshape((len(predictor_list), test.X.shape[0])).T
     pareto = Pareto(num_objectives=len(predictor_list))
@@ -233,14 +233,14 @@ def TS(predictor_list, training_list, test, alpha=1, reduced_candidate_num=None)
     return score_res
 
 
-def _get_fmean_fstd(predictor_list, training_list, test):
+def _get_fmean_fstd(predictor_list, training, test):
     fmean = [
-        predictor.get_post_fmean(training, test)
-        for predictor, training in zip(predictor_list, training_list)
+        predictor.get_post_fmean(training, test, objective_index=i)
+        for i, predictor in enumerate(predictor_list)
     ]
     fcov = [
-        predictor.get_post_fcov(training, test)
-        for predictor, training in zip(predictor_list, training_list)
+        predictor.get_post_fcov(training, test, objective_index=i)
+        for i, predictor in enumerate(predictor_list)
     ]
 
     # shape: (N, n_obj)

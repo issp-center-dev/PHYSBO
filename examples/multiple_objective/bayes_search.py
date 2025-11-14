@@ -10,13 +10,17 @@ import itertools
 import numpy as np
 import physbo
 
+max_num_probes = 40
+num_search_each_probe = 1
+num_rand_basis = 0
+# score = "HVPI"
+score = "EHVI"
+# score = "TS"
+
 # Make a set of candidates, test_X
 D = 2  # The number of params (the dimension of parameter space)
 Nx = 11  # The number of candidates
 N = Nx * Nx
-
-# score = "HVPI"
-score = "EHVI"
 
 a = np.linspace(-2, 2, Nx)
 test_X = np.array(list(itertools.product(a, a)))
@@ -47,7 +51,14 @@ policy.random_search(max_num_probes=10, simulator=sim)
 
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
-policy.bayes_search(max_num_probes=40, simulator=sim, score=score, interval=0)
+policy.bayes_search(
+    max_num_probes=max_num_probes,
+    simulator=sim,
+    score=score,
+    interval=0,
+    num_rand_basis=num_rand_basis,
+    num_search_each_probe=num_search_each_probe,
+)
 
 print("Pareto fronts:")
 res = policy.history

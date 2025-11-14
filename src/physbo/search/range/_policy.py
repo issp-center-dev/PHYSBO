@@ -17,11 +17,12 @@ from ..optimize.random import Optimizer as RandomOptimizer
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
-from ..._variable import Variable
+from ..._variable import Variable, normalize_t
 
 
 class Policy:
     """Single objective Bayesian optimization with continuous search space"""
+
     def __init__(
         self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
     ):
@@ -68,7 +69,8 @@ class Policy:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
                 raise RuntimeError(msg)
             init_X, fs = initial_data
-            assert init_X.shape[0] == len(fs), (
+            fs_normalized = normalize_t(fs, k=1)
+            assert init_X.shape[0] == fs_normalized.shape[0], (
                 "The number of initial data must be the same"
             )
             assert init_X.shape[1] == self.dim, (
@@ -76,7 +78,7 @@ class Policy:
             )
             ## TODO: add initial data to the history
             ## The following code is for discrete search
-            ## self.write(actions, fs)
+            ## self.write(init_X, fs_normalized)
             ## self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
@@ -122,7 +124,9 @@ class Policy:
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         t:  numpy.ndarray
-            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+            N dimensional array (1D) or N x 1 dimensional array (2D).
+            The negative energy of each search candidate (value of the objective function to be optimized).
+            Will be normalized to (N, 1) shape internally.
         time_total: numpy.ndarray
             N dimenstional array. The total elapsed time in each step.
             If None (default), filled by 0.0.
@@ -140,22 +144,29 @@ class Policy:
         -------
 
         """
+        # Normalize t to (N, 1) shape
+        t_normalized = normalize_t(t, k=1)
 
         self.history.write(
-            t,
+            t.flatten(),
             X,
             time_total=time_total,
             time_update_predictor=time_update_predictor,
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        Z = self.predictor.get_basis(X) if self.predictor is not None else None
-        self.training.add(X=X, t=t, Z=Z)
+        # Get basis and convert to (1, N, n) format for single-objective
+        Z_basis = self.predictor.get_basis(X) if self.predictor is not None else None
+        if Z_basis is not None:
+            Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+        else:
+            Z = None
+        self.training.add(X=X, t=t_normalized, Z=Z)
 
         if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=Z)
+            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
         else:
-            self.new_data.add(X=X, t=t, Z=Z)
+            self.new_data.add(X=X, t=t_normalized, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -377,12 +388,12 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0, comm=self.mpicomm)
-            predictor.prepare(self.training)
-            return predictor.get_post_fmean(self.training, X)
+            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
+            predictor.prepare(self.training, objective_index=0)
+            return predictor.get_post_fmean(self.training, X, objective_index=0)
         else:
             self._update_predictor()
-            return self.predictor.get_post_fmean(self.training, X)
+            return self.predictor.get_post_fmean(self.training, X, objective_index=0)
 
     def get_post_fcov(self, xs, diag=True):
         """
@@ -406,12 +417,14 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0, comm=self.mpicomm)
-            predictor.prepare(self.training)
-            return predictor.get_post_fcov(self.training, X, diag)
+            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
+            predictor.prepare(self.training, objective_index=0)
+            return predictor.get_post_fcov(self.training, X, diag, objective_index=0)
         else:
             self._update_predictor()
-            return self.predictor.get_post_fcov(self.training, X, diag)
+            return self.predictor.get_post_fcov(
+                self.training, X, diag, objective_index=0
+            )
 
     def get_score(
         self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
@@ -466,8 +479,8 @@ class Policy:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = gp_predictor(self.config)
-                predictor.fit(training, 0, comm=self.mpicomm)
-                predictor.prepare(training)
+                predictor.fit(training, 0, comm=self.mpicomm, objective_index=0)
+                predictor.prepare(training, objective_index=0)
             else:
                 self._update_predictor()
                 predictor = self.predictor
@@ -491,7 +504,7 @@ class Policy:
     def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
         K = len(extra_trainings)
         if K == 0:
-            predictor.prepare(training)
+            predictor.prepare(training, objective_index=0)
 
             def fn(x):
                 return self.get_score(
@@ -502,8 +515,11 @@ class Policy:
             predictors = [copy.deepcopy(predictor) for _ in range(K)]
             for k in range(K):
                 extra_train = extra_trainings[k]
+                # Ensure t is normalized
+                if extra_train.t is not None:
+                    extra_train.t = normalize_t(extra_train.t, k=1)
                 trains[k].add(X=extra_train.X, t=extra_train.t)
-                predictors[k].update(trains[k], extra_train)
+                predictors[k].update(trains[k], extra_train, objective_index=0)
 
             def fn(x):
                 f = np.zeros(K)
@@ -555,10 +571,14 @@ class Policy:
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(self.training, extra_training, K)
+            t = self.predictor.get_predict_samples(
+                self.training, extra_training, K, objective_index=0
+            )
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
-                extra_trainings[k].t = t[k, :]
+                # Normalize t to (N, 1) shape
+                t_normalized = normalize_t(t[k, :], k=1)
+                extra_trainings[k].t = t_normalized
             X[n, :] = self._argmax_score(
                 mode, predictor, self.training, extra_trainings, optimizer=optimizer
             )
@@ -637,10 +657,15 @@ class Policy:
             N = self.history.total_num_search
             X = self.history.action_X[0:N, :]
             t = self.history.fx[0:N]
-            self.training = Variable(X=X, t=t)
+            # Normalize t to (N, 1) shape
+            t_normalized = normalize_t(t, k=1)
+            self.training = Variable(X=X, t=t_normalized)
         else:
             self.training = Variable()
             self.training.load(file_training)
+            # Ensure t is normalized to (N, 1) shape after loading
+            if self.training.t is not None:
+                self.training.t = normalize_t(self.training.t, k=1)
 
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
@@ -692,15 +717,19 @@ class Policy:
             self.predictor = gp_predictor(self.config)
 
     def _learn_hyperparameter(self, num_rand_basis):
-        self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
-        # self.test.Z = self.predictor.get_basis(self.test.X)
-        self.training.Z = self.predictor.get_basis(self.training.X)
-        self.predictor.prepare(self.training)
+        self.predictor.fit(
+            self.training, num_rand_basis, comm=self.mpicomm, objective_index=0
+        )
+        # Get basis and convert to (1, N, n) format for single-objective
+        training_Z_basis = self.predictor.get_basis(self.training.X)
+        if training_Z_basis is not None:
+            self.training.Z = training_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+        self.predictor.prepare(self.training, objective_index=0)
         self.new_data = None
 
     def _update_predictor(self):
         if self.new_data is not None:
-            self.predictor.update(self.training, self.new_data)
+            self.predictor.update(self.training, self.new_data, objective_index=0)
             self.new_data = None
 
     def _make_variable_X(self, test_X):
@@ -726,10 +755,30 @@ class Policy:
 
 
 def _run_simulator(simulator, action, comm=None):
+    """
+    Run simulator and normalize return value to (N, 1) shape.
+
+    Parameters
+    ----------
+    simulator: callable
+        Function that takes action and returns t value(s)
+    action: numpy.ndarray
+        Array of actions
+    comm: MPI.Comm, optional
+        MPI communicator
+
+    Returns
+    -------
+    numpy.ndarray
+        Normalized array with shape (N, 1)
+    """
     if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
         t = simulator(action)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        if comm.rank == 0:
+            t = simulator(action)
+        else:
+            t = 0.0
+        t = comm.bcast(t, root=0)
+
+    return normalize_t(t, k=1)

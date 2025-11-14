@@ -205,7 +205,7 @@ class BasePredictor(object):
         raise NotImplementedError
 
     def get_permutation_importance(
-        self, training, num_permutations=10, comm=None, split_features_parallel=False
+        self, training, num_permutations=10, comm=None, split_features_parallel=False, objective_index=0
     ):
         """
         Calculate permutation importance of the predictor.
@@ -222,6 +222,8 @@ class BasePredictor(object):
             MPI communicator
         split_features_parallel: bool
             If true, split features in parallel.
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         -------
@@ -230,9 +232,11 @@ class BasePredictor(object):
         numpy.ndarray
             importance_std
         """
+        # Extract 1D t for permutation importance: if 2D, take specified column; if 1D, use as is
+        t_perm = training.t[:, objective_index] if training.t.ndim == 2 else training.t
         return self.model.get_permutation_importance(
             training.X,
-            training.t,
+            t_perm,
             num_permutations,
             comm=comm,
             split_features_parallel=split_features_parallel,

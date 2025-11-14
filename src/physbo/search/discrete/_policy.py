@@ -10,6 +10,7 @@ import copy
 import pickle as pickle
 import itertools
 import time
+from typing import Optional, Any
 
 from ._history import History
 from .. import utility
@@ -18,18 +19,74 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
-from ..._variable import Variable
+from ..._variable import Variable, normalize_t
 
 
 class Policy:
     """Single objective Bayesian optimization with discrete search space"""
+
+    predictor: Optional[Any]
+    """Predictor used for Bayesian optimization.
+
+    Base class is defined in physbo.predictor.
+    If None, predictor is not yet initialized.
+    """
+
+    training: Variable
+    """Training dataset containing pairs of input (X) and output (t).
+
+    Stores all evaluated data points.
+    """
+
+    new_data: Optional[Variable]
+    """New data that has been added to training but not yet to predictor.
+
+    Set to None after predictor is updated.
+    """
+
+    test: Variable
+    """The set of candidate search points.
+
+    Each row of X represents the feature vector of each search candidate.
+    """
+
+    actions: np.ndarray
+    """Array of action indices that have not been searched yet.
+
+    Initially contains all candidate indices, and decreases as actions are evaluated.
+    """
+
+    history: History
+    """History object storing search results including chosen actions,
+
+    objective function values, and timing information.
+    """
+
+    config: SetConfig
+    """Configuration object containing settings for learning and search."""
+
+    mpicomm: Optional[Any]
+    """MPI communicator for parallel computation.
+
+    If None, MPI is not used (single process).
+    """
+
+    mpisize: int
+    """Number of MPI processes. Set to 1 if MPI is not used."""
+
+    mpirank: int
+    """Rank of the current MPI process. Set to 0 if MPI is not used."""
+
+    seed: Optional[int]
+    """Seed parameter for np.random. Set by set_seed() method."""
+
     def __init__(self, test_X, config=None, initial_data=None, comm=None):
         """
 
         Parameters
         ----------
         test_X: numpy.ndarray or physbo.Variable
-             The set of candidates. Each row vector represents the feature vector of each search candidate.
+            The set of candidates. Each row vector represents the feature vector of each search candidate.
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
@@ -56,7 +113,9 @@ class Policy:
             if len(actions) != len(fs):
                 msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
                 raise RuntimeError(msg)
-            self.write(actions, fs)
+            # Normalize fs to (N, 1) shape before passing to write()
+            fs_normalized = normalize_t(fs, k=1)
+            self.write(actions, fs_normalized)
             self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
@@ -104,7 +163,9 @@ class Policy:
         action: numpy.ndarray
             Indexes of actions.
         t:  numpy.ndarray
-            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).
+            N dimensional array (1D) or N x k dimensional array (2D).
+            The negative energy of each search candidate (value of the objective function to be optimized).
+            Will be normalized to (N, 1) shape internally.
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         time_total: numpy.ndarray
@@ -132,19 +193,30 @@ class Policy:
         """
         if X is None:
             X = self.test.X[action, :]
-            Z = self.test.Z[action, :] if self.test.Z is not None else None
+            # Z is (1, N, n), extract (N, n) for objective_index=0
+            Z = self.test.Z[0, action, :] if self.test.Z is not None else None
         else:
-            Z = self.predictor.get_basis(X) if self.predictor is not None else None
+            # Get basis and convert to (1, N, n) format
+            Z_basis = (
+                self.predictor.get_basis(X) if self.predictor is not None else None
+            )
+            if Z_basis is not None:
+                Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+            else:
+                Z = None
+
+        # Normalize t to (N, 1) shape
+        t_normalized = normalize_t(t, k=1)
 
         self.history.write(
-            t,
+            t_normalized,
             action,
             time_total=time_total,
             time_update_predictor=time_update_predictor,
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        self.training.add(X=X, t=t, Z=Z)
+        self.training.add(X=X, t=t_normalized, Z=Z)
 
         # remove the selected actions from the list of candidates if exists
         if len(self.actions) > 0:
@@ -155,9 +227,9 @@ class Policy:
             self.actions = self._delete_actions(local_index)
 
         if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=Z)
+            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
         else:
-            self.new_data.add(X=X, t=t, Z=Z)
+            self.new_data.add(X=X, t=t_normalized, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -586,7 +658,8 @@ class Policy:
             predictor = copy.deepcopy(self.predictor)
             train = copy.deepcopy(self.training)
             virtual_train = new_test
-            virtual_train.t = virtual_t[k, :]
+            # Normalize virtual_t[k, :] to (N, 1) shape
+            virtual_train.t = normalize_t(virtual_t[k, :], k=1)
 
             if virtual_train.Z is None:
                 train.add(virtual_train.X, virtual_train.t)
@@ -760,7 +833,9 @@ class Policy:
             N = self.history.total_num_search
             X = self.test.X[self.history.chosen_actions[0:N], :]
             t = self.history.fx[0:N]
-            self.training = Variable(X=X, t=t)
+            # Normalize t to (N, 1) shape
+            t_normalized = normalize_t(t, k=1)
+            self.training = Variable(X=X, t=t_normalized)
         else:
             self.training = Variable()
             self.training.load(file_training)
@@ -825,8 +900,13 @@ class Policy:
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
-        self.test.Z = self.predictor.get_basis(self.test.X)
-        self.training.Z = self.predictor.get_basis(self.training.X)
+        # Get basis and convert to (1, N, n) format for single-objective
+        test_Z_basis = self.predictor.get_basis(self.test.X)
+        training_Z_basis = self.predictor.get_basis(self.training.X)
+        if test_Z_basis is not None:
+            self.test.Z = test_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
+        if training_Z_basis is not None:
+            self.training.Z = training_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
         self.predictor.prepare(self.training)
         self.new_data = None
 
@@ -885,10 +965,30 @@ class Policy:
 
 
 def _run_simulator(simulator, action, comm=None):
+    """
+    Run simulator and normalize return value to (N, 1) shape.
+
+    Parameters
+    ----------
+    simulator: callable
+        Function that takes action and returns t value(s)
+    action: numpy.ndarray
+        Array of actions
+    comm: MPI.Comm, optional
+        MPI communicator
+
+    Returns
+    -------
+    numpy.ndarray
+        Normalized array with shape (N, 1)
+    """
     if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
         t = simulator(action)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        if comm.rank == 0:
+            t = simulator(action)
+        else:
+            t = 0.0
+        t = comm.bcast(t, root=0)
+
+    return normalize_t(t, k=1)

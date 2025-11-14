@@ -26,16 +26,16 @@ def policy(min_X, max_X):
 def test_write(policy):
     # Generate two points arbitrarily
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
-    t = np.array([1.0, 2.0])
+    t = np.array([[1.0], [2.0]])
     policy.write(X, t)
     # Check if they are recorded in history
-    np.testing.assert_array_equal(policy.history.fx[:2], t)
+    np.testing.assert_array_equal(policy.history.fx[:2], t.flatten())
     np.testing.assert_array_equal(policy.history.action_X[:2], X)
     assert policy.history.total_num_search == 2
 
 
 def test_random_search(policy, mocker):
-    simulator = mocker.MagicMock(return_value=np.array([1.0, 2.0]))
+    simulator = mocker.MagicMock(return_value=np.array([[1.0], [2.0]]))
     write_spy = mocker.spy(policy, "write")
     N = 2
     # Without simulator: candidate points are returned
@@ -51,9 +51,9 @@ def test_random_search(policy, mocker):
 def test_bayes_search(policy, mocker):
     # First, add initial data
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
-    t = np.array([1.0, 2.0])
+    t = np.array([[1.0], [2.0]])
     policy.write(X, t)
-    simulator = mocker.MagicMock(return_value=np.array([3.0]))
+    simulator = mocker.MagicMock(return_value=np.array([[3.0]]))
     write_spy = mocker.spy(policy, "write")
     get_actions_spy = mocker.spy(policy, "_get_actions")
     N = 1
@@ -71,7 +71,7 @@ def test_bayes_search(policy, mocker):
 def test_get_score(policy, mocker):
     # First, add initial data
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
-    t = np.array([1.0, 2.0])
+    t = np.array([[1.0], [2.0]])
     policy.write(X, t)
     policy.set_seed(42)
     # EI
@@ -91,7 +91,7 @@ def test_get_score(policy, mocker):
 def test_saveload(policy, min_X, max_X):
     # Initial data
     X = np.array([[0.1, 0.2], [0.9, 0.8]])
-    t = np.array([1.0, 2.0])
+    t = np.array([[1.0], [2.0]])
     policy.write(X, t)
     # Save to a temporary directory
     with tempfile.TemporaryDirectory() as tempdir:

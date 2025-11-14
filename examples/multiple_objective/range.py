@@ -9,15 +9,19 @@ import numpy as np
 import physbo
 from physbo.search.optimize.random import Optimizer as RandomOptimizer
 
+# score = "HVPI"
+score = "EHVI"
+# score = "TS"
+
+num_rand_basis = 0
+num_search_each_probe = 1
+max_num_probes = 40
+
 # Make a set of candidates, test_X
 D = 2  # The number of params (the dimension of parameter space)
 
 min_X = [-2, -2]
 max_X = [2, 2]
-
-# score = "HVPI"
-score = "EHVI"
-# score = "TS"
 
 
 def vlmop2_minus(x):
@@ -37,10 +41,12 @@ policy.random_search(max_num_probes=10, simulator=vlmop2_minus)
 # Bayesian search (40 times)
 #   score function (acquition function): expectation of improvement (EI)
 policy.bayes_search(
-    max_num_probes=40,
+    max_num_probes=max_num_probes,
+    num_search_each_probe=num_search_each_probe,
     simulator=vlmop2_minus,
     score=score,
     interval=0,
+    num_rand_basis=num_rand_basis,
     optimizer=optimizer,
 )
 

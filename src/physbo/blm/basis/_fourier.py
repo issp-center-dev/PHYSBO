@@ -79,7 +79,11 @@ class Fourier:
         self._check_params(params)
         self._check_len_params(params)
 
-        return np.cos(np.dot(X, params[0].transpose()) + params[1]) * params[2]
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+
+        Z = np.cos(np.dot(X, params[0].transpose()) + params[1]) * params[2]
+        return Z
 
     def set_params(self, params):
         """

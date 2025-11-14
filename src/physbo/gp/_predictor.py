@@ -26,7 +26,7 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         super(Predictor, self).__init__(config, model)
 
-    def fit(self, training, num_basis=None, comm=None):
+    def fit(self, training, num_basis=None, comm=None, objective_index=0):
         """
         Fitting model to training dataset
 
@@ -39,10 +39,14 @@ class Predictor(physbo.predictor.BasePredictor):
             the number of basis (default: self.config.predict.num_basis)
         comm: MPI.Comm
             MPI communicator
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
         """
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
-        self.model.fit(training.X, training.t, self.config, comm=comm)
+        # Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is
+        t_fit = training.t[:, objective_index] if training.t.ndim == 2 else training.t
+        self.model.fit(training.X, t_fit, self.config, comm=comm)
         self.delete_stats()
 
     def get_basis(self, *args, **kwds):
@@ -73,10 +77,10 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         pass
 
-    def update(self, training, test):
-        self.prepare(training)
+    def update(self, training, test, objective_index=0):
+        self.prepare(training, objective_index=objective_index)
 
-    def prepare(self, training):
+    def prepare(self, training, objective_index=0):
         """
         Initializing model by using training data set
 
@@ -84,14 +88,18 @@ class Predictor(physbo.predictor.BasePredictor):
         ----------
         training: physbo.variable
             dataset for training
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         """
-        self.model.prepare(training.X, training.t)
+        # Extract 1D t for model preparation: if 2D, take specified column; if 1D, use as is
+        t_prep = training.t[:, objective_index] if training.t.ndim == 2 else training.t
+        self.model.prepare(training.X, t_prep)
 
     def delete_stats(self):
         self.model.stats = None
 
-    def get_post_fmean(self, training, test):
+    def get_post_fmean(self, training, test, objective_index=0):
         """
         Calculating posterior mean value of model
 
@@ -101,6 +109,8 @@ class Predictor(physbo.predictor.BasePredictor):
             training dataset. If already trained, the model does not use this.
         test: physbo.variable
             inputs
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         -------
@@ -108,10 +118,10 @@ class Predictor(physbo.predictor.BasePredictor):
 
         """
         if self.model.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.model.get_post_fmean(training.X, test.X)
 
-    def get_post_fcov(self, training, test, diag=True):
+    def get_post_fcov(self, training, test, diag=True, objective_index=0):
         """
         Calculating posterior variance-covariance matrix of model
 
@@ -123,6 +133,8 @@ class Predictor(physbo.predictor.BasePredictor):
             inputs
         diag: bool
             If true, only variances (diagonal elements) are returned.
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         -------
@@ -132,10 +144,10 @@ class Predictor(physbo.predictor.BasePredictor):
 
         """
         if self.model.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.model.get_post_fcov(training.X, test.X, diag=diag)
 
-    def get_post_samples(self, training, test, alpha=1):
+    def get_post_samples(self, training, test, alpha=1, objective_index=0):
         """
         Drawing samples of mean values of model
 
@@ -147,16 +159,18 @@ class Predictor(physbo.predictor.BasePredictor):
             inputs (not used)
         alpha: float
             tuning parameter of the covariance by multiplying alpha**2 for np.random.multivariate_normal.
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
         Returns
         -------
         numpy.ndarray
 
         """
         if self.model.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.model.post_sampling(training.X, test.X, alpha=alpha)
 
-    def get_predict_samples(self, training, test, N=1):
+    def get_predict_samples(self, training, test, N=1, objective_index=0):
         """
         Drawing samples of values of model
 
@@ -169,6 +183,8 @@ class Predictor(physbo.predictor.BasePredictor):
         N: int
             number of samples
             (default: 1)
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
 
         Returns
         -------
@@ -176,5 +192,5 @@ class Predictor(physbo.predictor.BasePredictor):
 
         """
         if self.model.stats is None:
-            self.prepare(training)
+            self.prepare(training, objective_index=objective_index)
         return self.model.predict_sampling(training.X, test.X, N=N)
