@@ -348,11 +348,6 @@ If you want to split the input array itself, set <em>parallel</em> be False and 
 <span class="sig-name descname"><span class="pre">load_training_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_multi/_policy.html#Policy.load_training_list"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.range_multi.Policy.load_training_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physbo.search.range_multi.Policy.new_data_list">
-<span class="sig-name descname"><span class="pre">new_data_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="physbo.html#physbo.Variable" title="physbo._variable.Variable"><span class="pre">Variable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physbo.search.range_multi.Policy.new_data_list" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_multi.Policy.random_search">
 <span class="sig-name descname"><span class="pre">random_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_num_probes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_search_each_probe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_disp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disp_pareto_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_multi/_policy.html#Policy.random_search"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.range_multi.Policy.random_search" title="Link to this definition"></a></dt>
@@ -409,7 +404,9 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>numpy.ndarray</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
-<li><p><strong>t</strong> (<em>numpy.ndarray</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) -- N dimensional array (1D) or N x 1 dimensional array (2D).
+The negative energy of each search candidate (value of the objective function to be optimized).
+Will be normalized to (N, 1) shape internally.</p></li>
 <li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) -- N dimenstional array. The total elapsed time in each step.
 If None (default), filled by 0.0.</p></li>
 <li><p><strong>time_update_predictor</strong> (<em>numpy.ndarray</em>) -- N dimenstional array. The elapsed time for updating predictor (e.g., learning hyperparemters) in each step.

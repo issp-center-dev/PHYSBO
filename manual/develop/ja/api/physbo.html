@@ -220,15 +220,20 @@
 <dd><p>ベースクラス: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Variable class</p>
 <p>Variable class represents a set of pairs of input (X) and output (t).</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
-<li><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
-<li><p><strong>Z</strong> (<em>numpy array</em>)</p></li>
-</ul>
-</dd>
-</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.Variable.X">
+<span class="sig-name descname"><span class="pre">X</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#physbo.Variable.X" title="Link to this definition"></a></dt>
+<dd><p>Points in the search space.
+N x d dimensional array, where N is the number of points and d is the dimension of the search space.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.Variable.Z">
+<span class="sig-name descname"><span class="pre">Z</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#physbo.Variable.Z" title="Link to this definition"></a></dt>
+<dd><p>Random basis representation of the search candidates for each objective.
+k x N x n dimensional array, where k is the number of objectives, N is the number of points, and n is the dimension of the random basis.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.Variable.add">
 <span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add" title="Link to this definition"></a></dt>
@@ -237,7 +242,8 @@
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
-<li><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array (single-objective) or N x k dimensional matrix (multi-objective).
+The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
 <li><p><strong>Z</strong></p></li>
 </ul>
 </dd>
@@ -245,37 +251,9 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.add_X">
-<span class="sig-name descname"><span class="pre">add_X</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_X"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_X" title="Link to this definition"></a></dt>
-<dd><p>Adding variable X. If self.X is None, self.X is set as X.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>numpy array</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.add_Z">
-<span class="sig-name descname"><span class="pre">add_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_Z"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_Z" title="Link to this definition"></a></dt>
-<dd><p>Adding variable Z. If self.Z is None, self.Z is set as Z.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Z</strong></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.add_t">
-<span class="sig-name descname"><span class="pre">add_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.add_t"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.add_t" title="Link to this definition"></a></dt>
-<dd><p>Adding variable t. If self.t is None, self.t is set as t.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>t</strong> (<em>numpy array</em>) -- N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="physbo.Variable.check_shape">
+<span class="sig-name descname"><span class="pre">check_shape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.check_shape"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.check_shape" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.Variable.delete">
@@ -289,42 +267,9 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.delete_X">
-<span class="sig-name descname"><span class="pre">delete_X</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_X"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_X" title="Link to this definition"></a></dt>
-<dd><p>Deleting variables of X whose indexes are specified by num_row.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.delete_Z">
-<span class="sig-name descname"><span class="pre">delete_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_Z"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_Z" title="Link to this definition"></a></dt>
-<dd><p>Deleting variables of Z whose indexes are specified by num_row.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physbo.Variable.delete_t">
-<span class="sig-name descname"><span class="pre">delete_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.delete_t"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.delete_t" title="Link to this definition"></a></dt>
-<dd><p>Deleting variables of t whose indexes are specified by num_row.</p>
-<dl class="field-list simple">
-<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>num_row</strong> (<em>numpy array</em>) -- Index array to be deleted.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="physbo.Variable.get_subset">
 <span class="sig-name descname"><span class="pre">get_subset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/_variable.html#Variable.get_subset"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.Variable.get_subset" title="Link to this definition"></a></dt>
-<dd><p>Getting subset of variables.</p>
+<dd><p>Getting subset of variables as a new Variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>index</strong> (<em>int</em><em> or </em><em>array</em><em> of </em><em>int</em>) -- Index of selected action.</p>
@@ -333,7 +278,7 @@
 <dd class="field-even"><p><strong>variable</strong></p>
 </dd>
 <dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
-<dd class="field-odd"><p>physbo.variable</p>
+<dd class="field-odd"><p><a class="reference internal" href="#physbo.Variable" title="physbo.Variable">physbo.Variable</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -358,6 +303,13 @@
 <dd class="field-odd"><p><strong>file_name</strong> (<em>str</em>) -- A file name for saving variables X, t, Z using numpy.savez_compressed.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.Variable.t">
+<span class="sig-name descname"><span class="pre">t</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#physbo.Variable.t" title="Link to this definition"></a></dt>
+<dd><p>Values of the objective functions to be maximized for each point.
+N x k dimensional array, where N is the number of points and k is the number of objectives.</p>
 </dd></dl>
 
 </dd></dl>

@@ -161,12 +161,18 @@
 <span class="sd">        -------</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">length_vector</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">length_vector</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
         <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
         <span class="n">en</span> <span class="o">=</span> <span class="n">st</span> <span class="o">+</span> <span class="n">N</span>
 
+        <span class="n">t_shape</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">t_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">N</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of actions and t must be the same: </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">t_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t.shape[1] must be 1: </span><span class="si">{</span><span class="n">t_shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span> <span class="o">=</span> <span class="n">en</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">+=</span> <span class="n">N</span>

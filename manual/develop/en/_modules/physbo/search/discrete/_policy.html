@@ -91,6 +91,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">History</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
@@ -99,20 +100,76 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">...blm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">blm_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">normalize_t</span>
 
 
 <div class="viewcode-block" id="Policy">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Single objective Bayesian optimization with discrete search space&quot;&quot;&quot;</span>
+
+    <span class="n">predictor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Predictor used for Bayesian optimization.</span>
+
+<span class="sd">    Base class is defined in physbo.predictor.</span>
+<span class="sd">    If None, predictor is not yet initialized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">training</span><span class="p">:</span> <span class="n">Variable</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Training dataset containing pairs of input (X) and output (t).</span>
+
+<span class="sd">    Stores all evaluated data points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">new_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Variable</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;New data that has been added to training but not yet to predictor.</span>
+
+<span class="sd">    Set to None after predictor is updated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">test</span><span class="p">:</span> <span class="n">Variable</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The set of candidate search points.</span>
+
+<span class="sd">    Each row of X represents the feature vector of each search candidate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">actions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Array of action indices that have not been searched yet.</span>
+
+<span class="sd">    Initially contains all candidate indices, and decreases as actions are evaluated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">history</span><span class="p">:</span> <span class="n">History</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;History object storing search results including chosen actions,</span>
+
+<span class="sd">    objective function values, and timing information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config</span><span class="p">:</span> <span class="n">SetConfig</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration object containing settings for learning and search.&quot;&quot;&quot;</span>
+
+    <span class="n">mpicomm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MPI communicator for parallel computation.</span>
+
+<span class="sd">    If None, MPI is not used (single process).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">mpisize</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of MPI processes. Set to 1 if MPI is not used.&quot;&quot;&quot;</span>
+
+    <span class="n">mpirank</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rank of the current MPI process. Set to 0 if MPI is not used.&quot;&quot;&quot;</span>
+
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Seed parameter for np.random. Set by set_seed() method.&quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        test_X: numpy.ndarray or physbo.Variable</span>
-<span class="sd">             The set of candidates. Each row vector represents the feature vector of each search candidate.</span>
+<span class="sd">            The set of candidates. Each row vector represents the feature vector of each search candidate.</span>
 <span class="sd">        config: SetConfig object (physbo.misc.SetConfig)</span>
 <span class="sd">        initial_data: tuple[np.ndarray, np.ndarray]</span>
 <span class="sd">            The initial training datasets.</span>
@@ -139,7 +196,9 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: len(initial_data[0]) != len(initial_data[1])&quot;</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+            <span class="c1"># Normalize fs to (N, 1) shape before passing to write()</span>
+            <span class="n">fs_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">fs_normalized</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">actions</span><span class="p">))))</span>
 
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -192,7 +251,9 @@
 <span class="sd">        action: numpy.ndarray</span>
 <span class="sd">            Indexes of actions.</span>
 <span class="sd">        t:  numpy.ndarray</span>
-<span class="sd">            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">            N dimensional array (1D) or N x k dimensional array (2D).</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">            Will be normalized to (N, 1) shape internally.</span>
 <span class="sd">        X:  numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</span>
 <span class="sd">        time_total: numpy.ndarray</span>
@@ -220,19 +281,30 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">action</span><span class="p">,</span> <span class="p">:]</span>
-            <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">action</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="c1"># Z is (1, N, n), extract (N, n) for objective_index=0</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="c1"># Get basis and convert to (1, N, n) format</span>
+            <span class="n">Z_basis</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">Z_basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">Z</span> <span class="o">=</span> <span class="n">Z_basis</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (N, n) -&gt; (1, N, n)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Normalize t to (N, 1) shape</span>
+        <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span>
+            <span class="n">t_normalized</span><span class="p">,</span>
             <span class="n">action</span><span class="p">,</span>
             <span class="n">time_total</span><span class="o">=</span><span class="n">time_total</span><span class="p">,</span>
             <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">time_update_predictor</span><span class="p">,</span>
             <span class="n">time_get_action</span><span class="o">=</span><span class="n">time_get_action</span><span class="p">,</span>
             <span class="n">time_run_simulator</span><span class="o">=</span><span class="n">time_run_simulator</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
 
         <span class="c1"># remove the selected actions from the list of candidates if exists</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -243,9 +315,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.random_search">
@@ -693,7 +765,8 @@
             <span class="n">predictor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">)</span>
             <span class="n">train</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
             <span class="n">virtual_train</span> <span class="o">=</span> <span class="n">new_test</span>
-            <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">virtual_t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># Normalize virtual_t[k, :] to (N, 1) shape</span>
+            <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">virtual_t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">train</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
@@ -872,7 +945,9 @@
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
             <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span> <span class="p">:]</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+            <span class="c1"># Normalize t to (N, 1) shape</span>
+            <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_training</span><span class="p">)</span>
@@ -947,8 +1022,13 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_learn_hyperparameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="c1"># Get basis and convert to (1, N, n) format for single-objective</span>
+        <span class="n">test_Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">training_Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">test_Z_basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">test_Z_basis</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (N, n) -&gt; (1, N, n)</span>
+        <span class="k">if</span> <span class="n">training_Z_basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">training_Z_basis</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (N, n) -&gt; (1, N, n)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1008,13 +1088,33 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run simulator and normalize return value to (N, 1) shape.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    simulator: callable</span>
+<span class="sd">        Function that takes action and returns t value(s)</span>
+<span class="sd">    action: numpy.ndarray</span>
+<span class="sd">        Array of actions</span>
+<span class="sd">    comm: MPI.Comm, optional</span>
+<span class="sd">        MPI communicator</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Normalized array with shape (N, 1)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="k">return</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
            </div>

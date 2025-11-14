@@ -98,13 +98,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">...gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">gp_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...blm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">blm_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">normalize_t</span>
 
 
 <div class="viewcode-block" id="Policy">
 <a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.Policy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Single objective Bayesian optimization with continuous search space&quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
@@ -151,7 +152,8 @@
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: initial_data should be 2-elements tuple or list (X and objectives)&quot;</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="n">init_X</span><span class="p">,</span> <span class="n">fs</span> <span class="o">=</span> <span class="n">initial_data</span>
-            <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">),</span> <span class="p">(</span>
+            <span class="n">fs_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">fs_normalized</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span>
                 <span class="s2">&quot;The number of initial data must be the same&quot;</span>
             <span class="p">)</span>
             <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="p">(</span>
@@ -159,7 +161,7 @@
             <span class="p">)</span>
             <span class="c1">## TODO: add initial data to the history</span>
             <span class="c1">## The following code is for discrete search</span>
-            <span class="c1">## self.write(actions, fs)</span>
+            <span class="c1">## self.write(init_X, fs_normalized)</span>
             <span class="c1">## self.actions = np.array(sorted(list(set(self.actions) - set(actions))))</span>
 
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -210,7 +212,9 @@
 <span class="sd">        X:  numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</span>
 <span class="sd">        t:  numpy.ndarray</span>
-<span class="sd">            N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">            N dimensional array (1D) or N x 1 dimensional array (2D).</span>
+<span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
+<span class="sd">            Will be normalized to (N, 1) shape internally.</span>
 <span class="sd">        time_total: numpy.ndarray</span>
 <span class="sd">            N dimenstional array. The total elapsed time in each step.</span>
 <span class="sd">            If None (default), filled by 0.0.</span>
@@ -228,22 +232,29 @@
 <span class="sd">        -------</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Normalize t to (N, 1) shape</span>
+        <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
             <span class="n">X</span><span class="p">,</span>
             <span class="n">time_total</span><span class="o">=</span><span class="n">time_total</span><span class="p">,</span>
             <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">time_update_predictor</span><span class="p">,</span>
             <span class="n">time_get_action</span><span class="o">=</span><span class="n">time_get_action</span><span class="p">,</span>
             <span class="n">time_run_simulator</span><span class="o">=</span><span class="n">time_run_simulator</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+        <span class="c1"># Get basis and convert to (1, N, n) format for single-objective</span>
+        <span class="n">Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">Z_basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="n">Z_basis</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (N, n) -&gt; (1, N, n)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.random_search">
@@ -474,12 +485,12 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.get_post_fcov">
@@ -506,12 +517,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fcov()&quot;</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.get_score">
@@ -569,8 +582,8 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_score()&quot;</span><span class="p">)</span>
                 <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
                 <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span>
@@ -595,7 +608,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_argmax_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">extra_trainings</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">):</span>
         <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">extra_trainings</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">K</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
@@ -606,8 +619,11 @@
             <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
                 <span class="n">extra_train</span> <span class="o">=</span> <span class="n">extra_trainings</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="c1"># Ensure t is normalized</span>
+                <span class="k">if</span> <span class="n">extra_train</span><span class="o">.</span><span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">extra_train</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">extra_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">trains</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">extra_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">extra_train</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
-                <span class="n">predictors</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">trains</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">extra_train</span><span class="p">)</span>
+                <span class="n">predictors</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">trains</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">extra_train</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
@@ -659,10 +675,14 @@
 
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
             <span class="n">extra_training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">,</span> <span class="p">:])</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">extra_training</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">extra_training</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
             <span class="n">extra_trainings</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">extra_training</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
-                <span class="n">extra_trainings</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="c1"># Normalize t to (N, 1) shape</span>
+                <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">extra_trainings</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t_normalized</span>
             <span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmax_score</span><span class="p">(</span>
                 <span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">extra_trainings</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span>
             <span class="p">)</span>
@@ -746,10 +766,15 @@
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
             <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span>
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+            <span class="c1"># Normalize t to (N, 1) shape</span>
+            <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_training</span><span class="p">)</span>
+            <span class="c1"># Ensure t is normalized to (N, 1) shape after loading</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">file_predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_predictor</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -811,15 +836,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_learn_hyperparameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-        <span class="c1"># self.test.Z = self.predictor.get_basis(self.test.X)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="c1"># Get basis and convert to (1, N, n) format for single-objective</span>
+        <span class="n">training_Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">training_Z_basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">training_Z_basis</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>  <span class="c1"># (N, n) -&gt; (1, N, n)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_make_variable_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">):</span>
@@ -846,13 +875,33 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run simulator and normalize return value to (N, 1) shape.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    simulator: callable</span>
+<span class="sd">        Function that takes action and returns t value(s)</span>
+<span class="sd">    action: numpy.ndarray</span>
+<span class="sd">        Array of actions</span>
+<span class="sd">    comm: MPI.Comm, optional</span>
+<span class="sd">        MPI communicator</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Normalized array with shape (N, 1)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="k">return</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
            </div>

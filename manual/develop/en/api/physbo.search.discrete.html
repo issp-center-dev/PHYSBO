@@ -228,6 +228,13 @@ The first elements is the array of actions and the second is the array of value 
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.actions">
+<span class="sig-name descname"><span class="pre">actions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.actions" title="Link to this definition"></a></dt>
+<dd><p>Array of action indices that have not been searched yet.</p>
+<p>Initially contains all candidate indices, and decreases as actions are evaluated.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.Policy.bayes_search">
 <span class="sig-name descname"><span class="pre">bayes_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_probes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_search_each_probe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_disp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rand_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_policy.html#Policy.bayes_search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.discrete.Policy.bayes_search" title="Link to this definition"></a></dt>
@@ -258,6 +265,12 @@ If you set zero to interval, the hyper parameter learning is performed only at t
 <dd class="field-odd"><p>history object (physbo.search.discrete.results.history)</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.config">
+<span class="sig-name descname"><span class="pre">config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SetConfig</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.config" title="Link to this definition"></a></dt>
+<dd><p>Configuration object containing settings for learning and search.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -376,6 +389,13 @@ In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha
 If you want to split the input array itself, set <em>parallel</em> be False and merge results by yourself.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.history">
+<span class="sig-name descname"><span class="pre">history</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#physbo.search.discrete.History" title="physbo.search.discrete._history.History"><span class="pre">History</span></a></em><a class="headerlink" href="#physbo.search.discrete.Policy.history" title="Link to this definition"></a></dt>
+<dd><p>History object storing search results including chosen actions,</p>
+<p>objective function values, and timing information.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.Policy.load">
 <span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_policy.html#Policy.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.discrete.Policy.load" title="Link to this definition"></a></dt>
@@ -389,6 +409,40 @@ If you want to split the input array itself, set <em>parallel</em> be False and 
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.mpicomm">
+<span class="sig-name descname"><span class="pre">mpicomm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.mpicomm" title="Link to this definition"></a></dt>
+<dd><p>MPI communicator for parallel computation.</p>
+<p>If None, MPI is not used (single process).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.mpirank">
+<span class="sig-name descname"><span class="pre">mpirank</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.mpirank" title="Link to this definition"></a></dt>
+<dd><p>Rank of the current MPI process. Set to 0 if MPI is not used.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.mpisize">
+<span class="sig-name descname"><span class="pre">mpisize</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.mpisize" title="Link to this definition"></a></dt>
+<dd><p>Number of MPI processes. Set to 1 if MPI is not used.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.new_data">
+<span class="sig-name descname"><span class="pre">new_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="physbo.html#physbo.Variable" title="physbo._variable.Variable"><span class="pre">Variable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.new_data" title="Link to this definition"></a></dt>
+<dd><p>New data that has been added to training but not yet to predictor.</p>
+<p>Set to None after predictor is updated.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.predictor">
+<span class="sig-name descname"><span class="pre">predictor</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.predictor" title="Link to this definition"></a></dt>
+<dd><p>Predictor used for Bayesian optimization.</p>
+<p>Base class is defined in physbo.predictor.
+If None, predictor is not yet initialized.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -429,6 +483,12 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#physbo.search.discrete.Policy.seed" title="Link to this definition"></a></dt>
+<dd><p>Seed parameter for np.random. Set by set_seed() method.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.Policy.set_seed">
 <span class="sig-name descname"><span class="pre">set_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_policy.html#Policy.set_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.discrete.Policy.set_seed" title="Link to this definition"></a></dt>
@@ -443,6 +503,20 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.test">
+<span class="sig-name descname"><span class="pre">test</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="physbo.html#physbo.Variable" title="physbo._variable.Variable"><span class="pre">Variable</span></a></em><a class="headerlink" href="#physbo.search.discrete.Policy.test" title="Link to this definition"></a></dt>
+<dd><p>The set of candidate search points.</p>
+<p>Each row of X represents the feature vector of each search candidate.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.discrete.Policy.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="physbo.html#physbo.Variable" title="physbo._variable.Variable"><span class="pre">Variable</span></a></em><a class="headerlink" href="#physbo.search.discrete.Policy.training" title="Link to this definition"></a></dt>
+<dd><p>Training dataset containing pairs of input (X) and output (t).</p>
+<p>Stores all evaluated data points.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.Policy.write">
 <span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_total</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_get_action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_run_simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_policy.html#Policy.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.discrete.Policy.write" title="Link to this definition"></a></dt>
@@ -451,7 +525,9 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>action</strong> (<em>numpy.ndarray</em>) – Indexes of actions.</p></li>
-<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array (1D) or N x k dimensional array (2D).
+The negative energy of each search candidate (value of the objective function to be optimized).
+Will be normalized to (N, 1) shape internally.</p></li>
 <li><p><strong>X</strong> (<em>numpy.ndarray</em>) – N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
 <li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) – N dimenstional array. The total elapsed time in each step.
 If None (default), filled by 0.0.</p></li>

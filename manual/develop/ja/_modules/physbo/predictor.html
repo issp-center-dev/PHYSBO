@@ -321,7 +321,7 @@
 <div class="viewcode-block" id="BasePredictor.get_permutation_importance">
 <a class="viewcode-back" href="../../api/physbo.predictor.html#physbo.predictor.BasePredictor.get_permutation_importance">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_permutations</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_permutations</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate permutation importance of the predictor.</span>
@@ -338,6 +338,8 @@
 <span class="sd">            MPI communicator</span>
 <span class="sd">        split_features_parallel: bool</span>
 <span class="sd">            If true, split features in parallel.</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -346,9 +348,11 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            importance_std</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract 1D t for permutation importance: if 2D, take specified column; if 1D, use as is</span>
+        <span class="n">t_perm</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span> <span class="n">objective_index</span><span class="p">]</span> <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span>
             <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span>
-            <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">t_perm</span><span class="p">,</span>
             <span class="n">num_permutations</span><span class="p">,</span>
             <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
             <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">,</span>

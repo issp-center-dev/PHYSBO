@@ -519,7 +519,7 @@ This function must be overwritten in each model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.fit"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.fit" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.fit"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.fit" title="Link to this definition"></a></dt>
 <dd><p>Fitting model to training dataset</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
@@ -528,6 +528,7 @@ This function must be overwritten in each model.</p>
 <li><p><strong>num_basis</strong> (<em>int</em>) -- Not used for gp.model
 the number of basis (default: self.config.predict.num_basis)</p></li>
 <li><p><strong>comm</strong> (<em>MPI.Comm</em>) -- MPI communicator</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 </dl>
@@ -548,7 +549,7 @@ the number of basis (default: self.config.predict.num_basis)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.get_post_fcov">
-<span class="sig-name descname"><span class="pre">get_post_fcov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_fcov"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_fcov" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_fcov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_fcov"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_fcov" title="Link to this definition"></a></dt>
 <dd><p>Calculating posterior variance-covariance matrix of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
@@ -556,6 +557,7 @@ the number of basis (default: self.config.predict.num_basis)</p></li>
 <li><p><strong>training</strong> (<em>physbo.variable</em>) -- training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) -- inputs</p></li>
 <li><p><strong>diag</strong> (<em>bool</em>) -- If true, only variances (diagonal elements) are returned.</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値<span class="colon">:</span></dt>
@@ -570,13 +572,14 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.get_post_fmean">
-<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_fmean"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_fmean" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_fmean"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_fmean" title="Link to this definition"></a></dt>
 <dd><p>Calculating posterior mean value of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>training</strong> (<em>physbo.variable</em>) -- training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) -- inputs</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値の型<span class="colon">:</span></dt>
@@ -600,7 +603,7 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.get_post_samples">
-<span class="sig-name descname"><span class="pre">get_post_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_samples"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_samples" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_post_samples"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_post_samples" title="Link to this definition"></a></dt>
 <dd><p>Drawing samples of mean values of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
@@ -608,6 +611,7 @@ where num_points is the number of points in test.</p>
 <li><p><strong>training</strong> (<em>physbo.variable</em>) -- training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) -- inputs (not used)</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) -- tuning parameter of the covariance by multiplying alpha**2 for np.random.multivariate_normal.</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値の型<span class="colon">:</span></dt>
@@ -618,7 +622,7 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.get_predict_samples">
-<span class="sig-name descname"><span class="pre">get_predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_predict_samples"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_predict_samples" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.get_predict_samples"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.get_predict_samples" title="Link to this definition"></a></dt>
 <dd><p>Drawing samples of values of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
@@ -627,6 +631,7 @@ where num_points is the number of points in test.</p>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) -- inputs</p></li>
 <li><p><strong>N</strong> (<em>int</em>) -- number of samples
 (default: 1)</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値の型<span class="colon">:</span></dt>
@@ -637,18 +642,21 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.prepare">
-<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.prepare"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.prepare" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.prepare"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.prepare" title="Link to this definition"></a></dt>
 <dd><p>Initializing model by using training data set</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>physbo.variable</em>) -- dataset for training</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>training</strong> (<em>physbo.variable</em>) -- dataset for training</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) -- Index of objective column to use when training.t is 2D (default: 0)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.gp.Predictor.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.update"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.update" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/_predictor.html#Predictor.update"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.gp.Predictor.update" title="Link to this definition"></a></dt>
 <dd><p>Default function to update variables.
 This function must be overwritten in each model.</p>
 <dl class="field-list simple">

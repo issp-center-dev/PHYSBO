@@ -94,24 +94,24 @@
 
 <div class="viewcode-block" id="score">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.score">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;EHVI&quot;</span><span class="p">:</span>
         <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pareto&quot;</span><span class="p">]</span>
-        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">EHVI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">:</span>
         <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pareto&quot;</span><span class="p">]</span>
-        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">HVPI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;TS&quot;</span><span class="p">:</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="n">reduced_candidate_num</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;reduced_candidate_num&quot;</span><span class="p">]</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">TS</span><span class="p">(</span>
             <span class="n">predictor_list</span><span class="p">,</span>
-            <span class="n">training_list</span><span class="p">,</span>
+            <span class="n">training</span><span class="p">,</span>
             <span class="n">test</span><span class="p">,</span>
             <span class="n">alpha</span><span class="p">,</span>
             <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span><span class="p">,</span>
@@ -276,15 +276,15 @@
 
 <div class="viewcode-block" id="TS">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.TS">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Thompson Sampling for multi-objective optimization.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    predictor_list : list of Predictor</span>
 <span class="sd">        List of predictors for each objective.</span>
-<span class="sd">    training_list : list of Variable</span>
-<span class="sd">        List of training data for each objective.</span>
+<span class="sd">    training : Variable</span>
+<span class="sd">        Training data containing all objectives.</span>
 <span class="sd">    test : Variable</span>
 <span class="sd">        Test points.</span>
 <span class="sd">    alpha : float, optional</span>
@@ -302,8 +302,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">score</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">),</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span>
     <span class="n">pareto</span> <span class="o">=</span> <span class="n">Pareto</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">))</span>
@@ -326,14 +326,14 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
     <span class="n">fmean</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">fcov</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training_list</span><span class="p">)</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="c1"># shape: (N, n_obj)</span>

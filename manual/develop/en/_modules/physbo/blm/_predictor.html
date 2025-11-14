@@ -119,7 +119,7 @@
 
 <div class="viewcode-block" id="Predictor.fit">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.fit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        fit model to training dataset</span>
 
@@ -131,20 +131,24 @@
 <span class="sd">            the number of basis (default: self.config.predict.num_basis)</span>
 <span class="sd">        comm: MPI.Comm</span>
 <span class="sd">            MPI communicator</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">num_basis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">num_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">predict</span><span class="o">.</span><span class="n">num_basis</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
+        <span class="c1"># Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is</span>
+        <span class="n">t_fit</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span> <span class="n">objective_index</span><span class="p">]</span> <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t_fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">export_blm</span><span class="p">(</span><span class="n">num_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_stats</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Predictor.prepare">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.prepare">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        initializes model by using training data set</span>
 
@@ -152,8 +156,14 @@
 <span class="sd">        ==========</span>
 <span class="sd">        training: physbo.variable</span>
 <span class="sd">            dataset for training</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">training</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span></div>
+        <span class="c1"># Extract 1D t for model preparation: if 2D, take specified column; if 1D, use as is</span>
+        <span class="n">t_prep</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span> <span class="n">objective_index</span><span class="p">]</span> <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_prep</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t_prep</span><span class="p">,</span> <span class="n">Z_prep</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.delete_stats">
@@ -186,7 +196,7 @@
 
 <div class="viewcode-block" id="Predictor.get_post_fmean">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_post_fmean">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calculates posterior mean value of model</span>
 
@@ -196,6 +206,8 @@
 <span class="sd">            training dataset. If already trained, the model does not use this.</span>
 <span class="sd">        test: physbo.variable</span>
 <span class="sd">            inputs</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
@@ -204,13 +216,15 @@
 <span class="sd">            where num_points is the number of points in test.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Z_test</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.get_post_fcov">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_post_fcov">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calculates posterior variance-covariance matrix of model</span>
 
@@ -222,6 +236,8 @@
 <span class="sd">            inputs</span>
 <span class="sd">        diag: bool</span>
 <span class="sd">            If true, only variances (diagonal elements) are returned.</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
 <span class="sd">        numpy.ndarray</span>
@@ -229,13 +245,15 @@
 <span class="sd">            where num_points is the number of points in test.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Z_test</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.get_post_params">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_post_params">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        calculates posterior weights</span>
 
@@ -245,19 +263,21 @@
 <span class="sd">            training dataset. If already trained, the model does not use this.</span>
 <span class="sd">        test: physbo.variable</span>
 <span class="sd">            inputs (not used)</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_params_mean</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Predictor.get_post_samples">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_post_samples">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        draws samples of mean values of model</span>
 
@@ -273,19 +293,23 @@
 <span class="sd">        alpha: float</span>
 <span class="sd">            noise for sampling source</span>
 <span class="sd">            (default: 1.0)</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.get_predict_samples">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_predict_samples">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        draws samples of values of model</span>
 
@@ -298,22 +322,23 @@
 <span class="sd">        N: int</span>
 <span class="sd">            number of samples</span>
 <span class="sd">            (default: 1)</span>
-<span class="sd">        alpha: float</span>
-<span class="sd">            noise for sampling source</span>
-<span class="sd">            (default: 1.0)</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
 <span class="sd">        numpy.ndarray (N x len(test))</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Predictor.update">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.update">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        updates the model.</span>
 
@@ -328,33 +353,49 @@
 <span class="sd">        test: physbo.variable</span>
 <span class="sd">            training data for update.</span>
 <span class="sd">            If not prepared, the model ignore this.</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t or test.t is 2D (default: 0)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">):</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">t_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">objective_index</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">psi</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
+                <span class="n">t_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">t_val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (n,) for this objective and first sample</span>
+                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="k">elif</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">psi</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+                    <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">t_val</span><span class="p">,</span> <span class="n">psi</span><span class="o">=</span><span class="n">psi_val</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:],</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">t_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="n">objective_index</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:],</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">psi</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:])</span></div>
+                    <span class="n">t_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Extract n-th row value: if 2D, take row; if 1D, take scalar</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:],</span> <span class="n">t_val</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (n,) for this objective and n-th sample</span>
+                    <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                        <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="k">elif</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">psi_val</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">update_stats</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:],</span> <span class="n">t_val</span><span class="p">,</span> <span class="n">psi</span><span class="o">=</span><span class="n">psi_val</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

@@ -448,7 +448,7 @@ where num_points is the number of points in X.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.fit" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.fit" title="Link to this definition"></a></dt>
 <dd><p>fit model to training dataset</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -456,6 +456,7 @@ where num_points is the number of points in X.</p>
 <li><p><strong>training</strong> (<em>physbo.variable</em>) – dataset for training</p></li>
 <li><p><strong>num_basis</strong> (<em>int</em>) – the number of basis (default: self.config.predict.num_basis)</p></li>
 <li><p><strong>comm</strong> (<em>MPI.Comm</em>) – MPI communicator</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 </dl>
@@ -480,7 +481,7 @@ where num_points is the number of points in X.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.get_post_fcov">
-<span class="sig-name descname"><span class="pre">get_post_fcov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_fcov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_fcov" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_fcov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_fcov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_fcov" title="Link to this definition"></a></dt>
 <dd><p>calculates posterior variance-covariance matrix of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -488,6 +489,7 @@ where num_points is the number of points in X.</p>
 <li><p><strong>training</strong> (<em>physbo.variable</em>) – training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – inputs</p></li>
 <li><p><strong>diag</strong> (<em>bool</em>) – If true, only variances (diagonal elements) are returned.</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -502,13 +504,14 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.get_post_fmean">
-<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_fmean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_fmean" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_fmean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_fmean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_fmean" title="Link to this definition"></a></dt>
 <dd><p>calculates posterior mean value of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>training</strong> (<em>physbo.variable</em>) – training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – inputs</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -523,13 +526,14 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.get_post_params">
-<span class="sig-name descname"><span class="pre">get_post_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_params" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_params" title="Link to this definition"></a></dt>
 <dd><p>calculates posterior weights</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>training</strong> (<em>physbo.variable</em>) – training dataset. If already trained, the model does not use this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – inputs (not used)</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -540,7 +544,7 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.get_post_samples">
-<span class="sig-name descname"><span class="pre">get_post_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_samples" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_post_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_post_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_post_samples" title="Link to this definition"></a></dt>
 <dd><p>draws samples of mean values of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -551,6 +555,7 @@ where num_points is the number of points in test.</p>
 (default: 1)</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source
 (default: 1.0)</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -561,7 +566,7 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.get_predict_samples">
-<span class="sig-name descname"><span class="pre">get_predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_predict_samples" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.get_predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.get_predict_samples" title="Link to this definition"></a></dt>
 <dd><p>draws samples of values of model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -570,8 +575,7 @@ where num_points is the number of points in test.</p>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – inputs</p></li>
 <li><p><strong>N</strong> (<em>int</em>) – number of samples
 (default: 1)</p></li>
-<li><p><strong>alpha</strong> (<em>float</em>) – noise for sampling source
-(default: 1.0)</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -582,18 +586,21 @@ where num_points is the number of points in test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.prepare">
-<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.prepare" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.prepare" title="Link to this definition"></a></dt>
 <dd><p>initializes model by using training data set</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>physbo.variable</em>) – dataset for training</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>training</strong> (<em>physbo.variable</em>) – dataset for training</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t is 2D (default: 0)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.blm.Predictor.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.update" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/blm/_predictor.html#Predictor.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.blm.Predictor.update" title="Link to this definition"></a></dt>
 <dd><p>updates the model.</p>
 <p>If not yet initialized (prepared), the model will be prepared by <code class="docutils literal notranslate"><span class="pre">training</span></code>.
 Otherwise, the model will be updated by <code class="docutils literal notranslate"><span class="pre">test</span></code>.</p>
@@ -604,6 +611,7 @@ Otherwise, the model will be updated by <code class="docutils literal notranslat
 If already prepared, the model ignore this.</p></li>
 <li><p><strong>test</strong> (<em>physbo.variable</em>) – training data for update.
 If not prepared, the model ignore this.</p></li>
+<li><p><strong>objective_index</strong> (<em>int</em>) – Index of objective column to use when training.t or test.t is 2D (default: 0)</p></li>
 </ul>
 </dd>
 </dl>
