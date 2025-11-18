@@ -88,14 +88,14 @@ class History:
         self.fx[st:en] = t
         self.action_X[st:en, :] = action_X
 
-        if st == 0:
-            self.best_index[0] = 0
-        else:
-            for n in range(st, en):
-                if self.fx[n] > self.fx[self.best_index[n - 1]]:
-                    self.best_index[n] = n
-                else:
-                    self.best_index[n] = self.best_index[n - 1]
+        for n in range(st, en):
+            if n == 0:
+                self.best_index[0] = 0
+                continue
+            if self.fx[n] > self.fx[self.best_index[n - 1]]:
+                self.best_index[n] = n
+            else:
+                self.best_index[n] = self.best_index[n - 1]
 
         self.num_runs += 1
         self.total_num_search += N
