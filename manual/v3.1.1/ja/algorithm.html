@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アルゴリズム &mdash; PHYSBO 3.1.1 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e0703a1b"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="PHYSBO API Reference" href="api.html" />
+    <link rel="prev" title="連続空間での最適化" href="notebook/tutorial_range.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">基本的な使用方法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">チュートリアル</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">アルゴリズム</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id3">ベイズ最適化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physbo">PHYSBOによるベイズ最適化の高速化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">回帰モデルにおける説明変数の重要度</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">アルゴリズム</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/algorithm.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="chap-algorithm">
+<span id="id1"></span><h1>アルゴリズム<a class="headerlink" href="#chap-algorithm" title="Link to this heading"></a></h1>
+<p>ここでは、ベイズ最適化に関する説明を行います。技術的な詳細については、<a class="reference external" href="https://github.com/tsudalab/combo/blob/master/docs/combo_document.pdf">こちらの文献</a> を参照してください。</p>
+<section id="id3">
+<h2>ベイズ最適化<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<p>ベイズ最適化は、複雑なシミュレーションや、実世界における実験タスクなど、目的関数（特性値など）の評価に大きなコストがかかるような場合に利用できる手法です。つまり、「できるだけ少ない実験・シミュレーション回数でより良い目的関数（材料特性など）を持つ説明変数（材料の組成、構造、プロセスやシミュレーションパラメータなど）を見つけ出す」ことが、ベイズ最適化によって解かれる問題です。ベイズ最適化では、探索する説明変数（ベクトル <span class="math notranslate nohighlight">\({\bf x}\)</span> で表す）の候補をあらかじめリストアップした状況からスタートします。そして、候補の中から目的関数 <span class="math notranslate nohighlight">\(y\)</span> が良くなると考えられる候補を、機械学習（ガウス過程回帰を利用）による予測をうまく利用することで選定します。その候補に対して実験・シミュレーションを行い目的関数の値を評価します。機械学習による選定・実験シミュレーションによる評価を繰り返すことにより、できるだけ少ない回数で最適化が可能となります。</p>
+<p>ベイズ最適化のアルゴリズムの詳細を以下に示します。
+- ステップ１：初期化</p>
+<p>探索したい空間をあらかじめ用意します。つまり、候補となる材料の組成・構造・プロセスやシミュレーションパラメータ等を、ベクトル <span class="math notranslate nohighlight">\({\bf x}\)</span> で表現しリストアップします。この段階では、目的関数の値はわかっていません。このうち初期状態としていくつかの候補を選び、実験またはシミュレーションによって目的関数の値 <span class="math notranslate nohighlight">\(y\)</span> を見積もります。これにより、説明変数 <span class="math notranslate nohighlight">\({\bf x}\)</span> と目的関数 <span class="math notranslate nohighlight">\(y\)</span> が揃った学習データ <span class="math notranslate nohighlight">\(D = \{ {\bf x}_i, y_i \}_{(i=1, \cdots, N)}\)</span> が得られます。</p>
+<ul class="simple">
+<li><p>ステップ２：候補選定</p></li>
+</ul>
+<p>学習データを用いて、ガウス過程を学習します。ガウス過程によれば、任意の <span class="math notranslate nohighlight">\({\bf x}\)</span> における予測値の平均を <span class="math notranslate nohighlight">\(\mu_c ({\bf x})\)</span> 、分散を <span class="math notranslate nohighlight">\(\sigma_c ({\bf x})\)</span> とすると、</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mu_c ({\bf x}) &amp;= {\bf k}({\bf x})^T (K+\sigma^2 I)^{-1}{\bf y}\\\sigma_c({\bf x}) &amp;= k({\bf x}, {\bf x}) + \sigma^2 - {\bf k}({\bf x})^T  (K+\sigma^2 I)^{-1}{\bf k}({\bf x})\end{aligned}\end{align} \]</div>
+<p>となります。ただし、 <span class="math notranslate nohighlight">\(k({\bf x}, {\bf x}')\)</span> はカーネルと呼ばれる関数であり、２つのベクトルの類似度を表します。一般に、以下のガウスカーネルが使われます。</p>
+<div class="math notranslate nohighlight">
+\[k({\bf x}, {\bf x}') = \exp \left[ -\frac{1}{2\eta^2}||{\bf x} - {\bf x}'||^2 \right]\]</div>
+<p>また、このカーネル関数を利用し、 <span class="math notranslate nohighlight">\({\bf k}({\bf x})\)</span> および <span class="math notranslate nohighlight">\(K\)</span> は以下のように計算されます。</p>
+<div class="math notranslate nohighlight">
+\[{\bf k}({\bf x}) = \left( k({\bf x}_1, {\bf x}), k({\bf x}_2, {\bf x}), \cdots, k({\bf x}_N, {\bf x}) \right)^\top\]</div>
+<div class="math notranslate nohighlight">
+ \[
+ K = \left(
+ \begin{array}{cccc}
+    k({\bf x}_1, {\bf x}_1) &amp; k({\bf x}_1, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_1, {\bf x}_N) \\
+    k({\bf x}_2, {\bf x}_1) &amp; k({\bf x}_2, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_2, {\bf x}_N) \\
+   \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+    k({\bf x}_N, {\bf x}_1) &amp; k({\bf x}_N, {\bf x}_2) &amp; \ldots &amp;  k({\bf x}_N, {\bf x}_N)
+ \end{array}
+ \right)
+ \]</div><p>まだ実験やシミュレーションを行っていない候補全てに対して、予測値 <span class="math notranslate nohighlight">\(\mu_c ({\bf x})\)</span> および予測の不確かさに関連する分散 <span class="math notranslate nohighlight">\(\sigma_c ({\bf x})\)</span> を見積もります。これを用いて獲得関数を計算し、目的関数の値がまだわかっていない候補の中から、獲得関数を最大化する候補 <span class="math notranslate nohighlight">\({\bf x}^*\)</span> を選定します。このとき、 <span class="math notranslate nohighlight">\(\sigma\)</span> および <span class="math notranslate nohighlight">\(\eta\)</span> はハイパーパラメタと呼ばれ、PHYSBOでは最適な値が自動で設定されます。</p>
+<p>獲得関数として、例えば、最大改善確率(PI : Probability of Improvement)、最大期待改善率(EI : Expected Improvement)が有用です。
+PIによるスコアは次のように定義される。</p>
+<div class="math notranslate nohighlight">
+\[\text{PI} (\mathbf{x}) = \Phi (z (\mathbf{x})), \ \ \ z(\mathbf{x}) = \frac{\mu_c (\mathbf{x}) - y_{\max}}{\sigma_c (\mathbf{x})}\]</div>
+<p>ここで <span class="math notranslate nohighlight">\(\Phi(\cdot)\)</span> は累積分布関数です。
+PIスコアは、現在得られている <span class="math notranslate nohighlight">\(y\)</span> の最大値 <span class="math notranslate nohighlight">\(y_{\max}\)</span> を超える確率を表します。
+さらに、EIによるスコアは、予測値と現在の最大値 <span class="math notranslate nohighlight">\(y_{\max}\)</span> との差の期待値であり、次式で与えられます。</p>
+<div class="math notranslate nohighlight">
+\[\text{EI} (\mathbf{x}) = [\mu_c (\mathbf{x})-y_{\max}] \Phi (z (\mathbf{x})) + \sigma_c (\mathbf{x}) \phi (z (\mathbf{x})), \ \ \ z(\mathbf{x}) = \frac{\mu_c (\mathbf{x}) - y_{\max}}{\sigma_c (\mathbf{x})}\]</div>
+<p>ここで <span class="math notranslate nohighlight">\(\phi(\cdot)\)</span> は確率密度関数です。</p>
+<ul class="simple">
+<li><p>ステップ３：実験</p></li>
+</ul>
+<p>ステップ２で選定された獲得関数が最大となる候補 <span class="math notranslate nohighlight">\({\bf x}^*\)</span> に対して実験またはシミュレーションを行い、目的関数値 <span class="math notranslate nohighlight">\(y\)</span> を見積もります。これにより学習データが一つ追加されます。このステップ２、３を繰り返すことで、スコアのよい候補を探索します。</p>
+</section>
+<section id="physbo">
+<h2>PHYSBOによるベイズ最適化の高速化<a class="headerlink" href="#physbo" title="Link to this heading"></a></h2>
+<p>PHYSBOでは、random feature map、トンプソンサンプリング、コレスキー分解を利用することで、
+ベイズ最適化の高速化を実現しています。
+まず、random feature mapについて説明します。
+random feature map <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span> を導入することで
+ガウスカーネル <span class="math notranslate nohighlight">\(k(\mathbf{x},\mathbf{x}')\)</span> を以下のように近似しています。</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}k(\mathbf{x},\mathbf{x}') = \exp \left[ - \frac{1}{2 \eta^2} \| \mathbf{x} -\mathbf{x}' \| \right]^2  \simeq \phi (\mathbf{x})^\top \phi(\mathbf{x}') \\
+\phi (\mathbf{x}) = \left( z_{\omega_1, b_1} (\mathbf{x}/\eta),..., z_{\omega_l, b_l} (\mathbf{x}/\eta) \right)^\top\end{split}\]</div>
+<p>ただし、 <span class="math notranslate nohighlight">\(z_{\omega, b} (\mathbf{x}) = \sqrt{2} \cos (\boldsymbol{\omega}^\top \mathbf{x}+b)\)</span> としています。
+このとき、 <span class="math notranslate nohighlight">\(\boldsymbol{\omega}\)</span> は <span class="math notranslate nohighlight">\(p(\boldsymbol{\omega}) = (2\pi)^{-d/2} \exp (-\|\boldsymbol{\omega}\|^2/2)\)</span> より生成され、 <span class="math notranslate nohighlight">\(b\)</span> は <span class="math notranslate nohighlight">\([0, 2 \pi]\)</span> から一様に選ばれます。
+この近似は、 <span class="math notranslate nohighlight">\(l \to \infty\)</span> の極限で厳密に成立し、 <span class="math notranslate nohighlight">\(l\)</span> の値がrandom feature mapの次元となります。</p>
+<p>このとき <span class="math notranslate nohighlight">\(\Phi\)</span> を、以下のように学習データのベクトル <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> による <span class="math notranslate nohighlight">\(\phi(\mathbf{x}_i)\)</span> を各列に持つ <span class="math notranslate nohighlight">\(l\)</span> 行 <span class="math notranslate nohighlight">\(n\)</span> 列行列とします。</p>
+<div class="math notranslate nohighlight">
+\[\Phi = ( \phi(\mathbf{x}_1),..., \phi(\mathbf{x}_n) )\]</div>
+<p>すると、</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{k} (\mathbf{x}) = \Phi^\top \phi(\mathbf{x}) \\
+K= \Phi^\top \Phi\end{split}\]</div>
+<p>という関係が成立することがわかります。</p>
+<p>次に、トンプソンサンプリングを利用することで、候補の予測にかかる計算時間を <span class="math notranslate nohighlight">\(O(l)\)</span> にする手法について紹介します。
+EIやPIを利用すると、分散を評価する必要があるため <span class="math notranslate nohighlight">\(O(l^2)\)</span> になってしまうことに注意が必要です。
+トンプソンサンプリングを行うために、
+以下で定義されるベイズ線形モデルを利用します。</p>
+<div class="math notranslate nohighlight">
+\[y = \mathbf{w}^\top \phi (\mathbf{x})\]</div>
+<p>ただし、この <span class="math notranslate nohighlight">\(\phi(\mathbf{x})\)</span> は前述したrandom feature mapであり、 <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> は係数ベクトルです。
+ガウス過程では、学習データ <span class="math notranslate nohighlight">\(D\)</span> があたえられたとき、この <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> が以下のガウス分布に従うように決まります。</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}p(\mathbf{w}|D) = \mathcal{N} (\boldsymbol{\mu}, \Sigma) \\
+\boldsymbol{\mu} = (\Phi \Phi^\top + \sigma^2 I)^{-1} \Phi \mathbf{y} \\
+\Sigma = \sigma^2 (\Phi \Phi^\top + \sigma^2 I)^{-1}\end{split}\]</div>
+<p>トンプソンサンプリングでは、この事後確率分布にしたがって係数ベクトルを一つサンプリングし、
+それを <span class="math notranslate nohighlight">\(\mathbf{w}^*\)</span> とすることで、
+獲得関数を</p>
+<div class="math notranslate nohighlight">
+\[\text{TS} (\mathbf{x}) = {\mathbf{w}^*}^\top \phi (\mathbf{x})\]</div>
+<p>と表す。
+これを最大とする <span class="math notranslate nohighlight">\(\mathbf{x}^*\)</span> が次の候補として選出されます。
+このとき、 <span class="math notranslate nohighlight">\(\phi (\mathbf{x})\)</span> は <span class="math notranslate nohighlight">\(l\)</span> 次元ベクトルなため、
+獲得関数の計算は <span class="math notranslate nohighlight">\(O(l)\)</span> で実行できます。</p>
+<p>次に <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> のサンプリングの高速化について紹介します。
+行列 <span class="math notranslate nohighlight">\(A\)</span> を以下のように定義します。</p>
+<div class="math notranslate nohighlight">
+\[A = \frac{1}{\sigma^2} \Phi \Phi^\top +I\]</div>
+<p>すると、事後確率分布は、</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{w}|D) = \mathcal{N} \left( \frac{1}{\sigma^2} A^{-1} \Phi \mathbf{y}, A^{-1} \right)\]</div>
+<p>と表すことができます。
+そのため、 <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> をサンプリングするためには、 <span class="math notranslate nohighlight">\(A^{-1}\)</span> の計算が必要となります。
+ここで、ベイズ最適化のイテレーションにおいて、
+新しく <span class="math notranslate nohighlight">\((\mathbf{x}', y')\)</span> が加わった場合について考えます。
+このデータの追加により、行列 <span class="math notranslate nohighlight">\(A\)</span> は、</p>
+<div class="math notranslate nohighlight">
+\[A' = A + \frac{1}{\sigma^2} \phi (\mathbf{x}') \phi (\mathbf{x}')^\top\]</div>
+<p>と更新されます。
+この更新は、コレスキー分解( <span class="math notranslate nohighlight">\(A= L^\top L\)</span> )を用いることで、 <span class="math notranslate nohighlight">\(A^{-1}\)</span> の計算にかかる時間を <span class="math notranslate nohighlight">\(O(l^2)\)</span> にすることができます。
+もし、 <span class="math notranslate nohighlight">\(A^{-1}\)</span> をイテレーションごとに毎回計算すると <span class="math notranslate nohighlight">\(O(l^3)\)</span> の計算が必要になります。
+実際、 <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> をサンプリングする際は、</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{w}^* = \boldsymbol{\mu} + \mathbf{w}_0\]</div>
+<p>とし、 <span class="math notranslate nohighlight">\(\mathbf{w}_0\)</span> を <span class="math notranslate nohighlight">\(\mathcal{N} (0,A^{-1})\)</span> からサンプリングします。
+また、 <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> は、</p>
+<div class="math notranslate nohighlight">
+\[L^\top L \boldsymbol{\mu} = \frac{1}{\sigma^2} \Phi \mathbf{y}\]</div>
+<p>を解くことで得られます。
+これらの技術を利用することで、学習データ数に対してほぼ線形の計算時間を実現しています。</p>
+</section>
+<section id="id4">
+<h2>回帰モデルにおける説明変数の重要度<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<p>回帰モデル <span class="math notranslate nohighlight">\(f(\mathbf{x})\)</span> における説明変数（特徴量）の重要度は、それぞれの説明変数をランダムに並べ替えたテストデータに対して、
+モデルの予測精度がどれだけ低下するかを評価することで計算できます。</p>
+<p>説明変数の数（探索空間の次元）を <span class="math notranslate nohighlight">\(D\)</span> とし、テストデータの数を <span class="math notranslate nohighlight">\(N\)</span> とします。
+この時、テストデータの入力は <span class="math notranslate nohighlight">\(N \times D\)</span> の行列 <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> で表されます。
+出力（目的関数）は <span class="math notranslate nohighlight">\(N\)</span> 次元ベクトル <span class="math notranslate nohighlight">\(\mathbf{y}\)</span> で表されます。
+モデルの予測精度は、モデルの出力とテストデータの出力の平均二乗誤差（MSE）とします。</p>
+<p>まず、モデルの予測精度のベースラインとして、テストデータそのものの予測値の平均二乗誤差（MSE）を計算します。</p>
+<div class="math notranslate nohighlight">
+\[\text{MSE}^{\text{base}} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}) \|^2\]</div>
+<p><span class="math notranslate nohighlight">\(a\)</span> 番目の説明変数の重要度を調べるために、入力データのうち <span class="math notranslate nohighlight">\(a\)</span> 番目の変数のみ、<span class="math notranslate nohighlight">\(N\)</span> 要素の置換 <span class="math notranslate nohighlight">\(P\)</span> で並べ替えたデータ <span class="math notranslate nohighlight">\(X^{P}\)</span> を作成します。</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}X^{P}_{i,a} &amp;= X_{P(i),a}\\
+X^{P}_{i,b} &amp;= X_{i,b} \ \ \ \text{for} \ b \neq a\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(\mathbf{X}^{P}\)</span> のテスト誤差は</p>
+<div class="math notranslate nohighlight">
+\[\text{MSE}^{P}_{a} = \frac{1}{N}  \| \mathbf{y} - f(\mathbf{X}^{P}) \|^2\]</div>
+<p>となります。
+Permutation Importance (PI) は、置換 <span class="math notranslate nohighlight">\(P\)</span> をランダムに <span class="math notranslate nohighlight">\(N_\text{perm}\)</span> 個生成して、</p>
+<div class="math notranslate nohighlight">
+\[\text{PI}_{a} = \frac{1}{N_\text{perm}} \sum_{P} \text{MSE}^{P}_{a} - \text{MSE}^{\text{base}}\]</div>
+<p>と計算されます。 <span class="math notranslate nohighlight">\(\text{PI}_{a}\)</span> が大きければ大きいほど、説明変数 <span class="math notranslate nohighlight">\(a\)</span> のランダム置換によってモデルの予測精度が悪化していることになり、つまり <span class="math notranslate nohighlight">\(a\)</span> が重要であることを示します。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="notebook/tutorial_range.html" class="btn btn-neutral float-left" title="連続空間での最適化" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="PHYSBO API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v3.1.1
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../v3.1.1/en/algorithm.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../v3.1.1/ja/algorithm.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/ja/algorithm.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/ja/algorithm.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        <strong>
+        <a href="../../v3.1.1/ja/algorithm.html">v3.1.1</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v3.1.0/ja/algorithm.html">v3.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v3.0.0/ja/algorithm.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.2.0/ja/algorithm.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.1.0/ja/algorithm.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.2/ja/algorithm.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.1/ja/algorithm.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v2.0.0/ja/algorithm.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.1/ja/algorithm.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.1.0/ja/algorithm.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.1/ja/algorithm.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../v1.0.0/ja/algorithm.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

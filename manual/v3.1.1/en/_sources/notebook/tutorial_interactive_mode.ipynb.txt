@@ -1,0 +1,421 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Running PHYSBO interactively\n",
+    "\n",
+    "You can run PHYSBO interactively in the following way:\n",
+    "\n",
+    "1. Get the next parameter to run from PHYSBO\n",
+    "2. Get the evaluation values outside of PHYSBO\n",
+    "3. Register the evaluation values into PHYSBO\n",
+    "\n",
+    "For example, it is suitable for the following cases.\n",
+    "\n",
+    "- You want to perform an experiment manually and give the evaluation values to PHYSBO.\n",
+    "- You want to control the execution flexibly, such as running the simulator in a separate process.\n",
+    "\n",
+    "## Preparation of search candidate data\n",
+    "\n",
+    "As the previous tutorials, save the dataset file [s5-210.csv](https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv) and load dataset from this file as the following:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:17:28.657314Z",
+     "start_time": "2020-12-04T06:17:27.967614Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Cythonized version of physbo is used\n"
+     ]
+    }
+   ],
+   "source": [
+    "import physbo\n",
+    "\n",
+    "import numpy as np\n",
+    "\n",
+    "\n",
+    "def load_data():\n",
+    "    A =  np.asarray(np.loadtxt('s5-210.csv',skiprows=1, delimiter=',') )\n",
+    "    X = A[:,0:3]\n",
+    "    t  = -A[:,3]\n",
+    "    return X, t\n",
+    "\n",
+    "X, t = load_data()\n",
+    "X = physbo.misc.centering(X)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Definition of simulator"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:17:28.663215Z",
+     "start_time": "2020-12-04T06:17:28.658656Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class Simulator:\n",
+    "    def __init__( self ):\n",
+    "        _, self.t = load_data()\n",
+    "    \n",
+    "    def __call__( self, action ):\n",
+    "        return self.t[action]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Executing optimization"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:17:28.674407Z",
+     "start_time": "2020-12-04T06:17:28.669875Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Set policy\n",
+    "policy = physbo.search.discrete.Policy(test_X=X)\n",
+    "\n",
+    "# Set seed\n",
+    "policy.set_seed( 0 )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "In each search step, the following processes are performed.\n",
+    "\n",
+    "1. Running random_search or bayes_search with `max_num_probes=1, simulator=None` to get action IDs (parameters). \n",
+    "2. Getting the evaluation value (array of actions) by `t = simulator(actions)`. \n",
+    "3. Registering the evaluation value for the action ID (parameter) with `policy.write(actions, t)`. \n",
+    "4. Showing the history with `physbo.search.utility.show_search_results`.\n",
+    "\n",
+    "In the following, we will perform two random sampling (1st, and 2nd steps) and two Bayesian optimization proposals (3rd, and 4th steps)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:17:47.726433Z",
+     "start_time": "2020-12-04T06:17:28.677429Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "interactive mode starts ... \n",
+      " \n",
+      "current best f(x) = -1.070602 (best action = 15673) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "\n",
+      "\n",
+      "current best f(x) = -1.070602 (best action = 15673) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "f(x)=-1.153410 (action = 16489)\n",
+      "\n",
+      "\n",
+      "Start the initial hyper parameter searching ...\n",
+      "Done\n",
+      "\n",
+      "Start the hyper parameter learning ...\n",
+      "0 -th epoch marginal likelihood -3.530887145012235\n",
+      "50 -th epoch marginal likelihood -3.530886068830362\n",
+      "100 -th epoch marginal likelihood -3.530887353880807\n",
+      "150 -th epoch marginal likelihood -3.5308873663578604\n",
+      "200 -th epoch marginal likelihood -3.530887366409382\n",
+      "250 -th epoch marginal likelihood -3.5308873664094484\n",
+      "300 -th epoch marginal likelihood -3.5308873664094484\n",
+      "350 -th epoch marginal likelihood -3.530887366409448\n",
+      "400 -th epoch marginal likelihood -3.530887366409449\n",
+      "450 -th epoch marginal likelihood -3.530887366409449\n",
+      "500 -th epoch marginal likelihood -3.530887366409448\n",
+      "Done\n",
+      "\n",
+      "current best f(x) = -0.993712 (best action = 11874) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "f(x)=-1.153410 (action = 16489)\n",
+      "f(x)=-0.993712 (action = 11874)\n",
+      "\n",
+      "\n",
+      "Start the initial hyper parameter searching ...\n",
+      "Done\n",
+      "\n",
+      "Start the hyper parameter learning ...\n",
+      "0 -th epoch marginal likelihood -3.9335555735844907\n",
+      "50 -th epoch marginal likelihood -3.933559178581591\n",
+      "100 -th epoch marginal likelihood -3.9335601169323873\n",
+      "150 -th epoch marginal likelihood -3.933560116971464\n",
+      "200 -th epoch marginal likelihood -3.9335601170149546\n",
+      "250 -th epoch marginal likelihood -3.933560117015064\n",
+      "300 -th epoch marginal likelihood -3.933560117015065\n",
+      "350 -th epoch marginal likelihood -3.933560117015066\n",
+      "400 -th epoch marginal likelihood -3.933560117015066\n",
+      "450 -th epoch marginal likelihood -3.933560117015066\n",
+      "500 -th epoch marginal likelihood -3.933560117015065\n",
+      "Done\n",
+      "\n",
+      "current best f(x) = -0.985424 (best action = 8061) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "f(x)=-1.153410 (action = 16489)\n",
+      "f(x)=-0.993712 (action = 11874)\n",
+      "f(x)=-0.985424 (action = 8061)\n",
+      "\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "simulator = Simulator()\n",
+    "\n",
+    "''' 1st step (random sampling) '''\n",
+    "actions = policy.random_search(max_num_probes=1, simulator=None)\n",
+    "t  = simulator(actions)\n",
+    "policy.write(actions, t)\n",
+    "physbo.search.utility.show_search_results(policy.history, 10)\n",
+    "\n",
+    "''' 2nd step (random sampling) '''\n",
+    "actions = policy.random_search(max_num_probes=1, simulator=None)\n",
+    "t = simulator(actions)\n",
+    "policy.write(actions, t)\n",
+    "physbo.search.utility.show_search_results(policy.history, 10)\n",
+    "\n",
+    "''' 3rd step (bayesian optimization) '''\n",
+    "actions = policy.bayes_search(max_num_probes=1, simulator=None, score='EI', interval=0,  num_rand_basis = 5000)\n",
+    "t = simulator(actions)  \n",
+    "policy.write(actions, t) \n",
+    "physbo.search.utility.show_search_results(policy.history, 10) \n",
+    "\n",
+    "''' 4-th step (bayesian optimization) '''\n",
+    "actions = policy.bayes_search(max_num_probes=1, simulator=None, score='EI', interval=0,  num_rand_basis = 5000)\n",
+    "t = simulator(actions) \n",
+    "policy.write(actions, t)\n",
+    "physbo.search.utility.show_search_results(policy.history, 10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Suspend and restart\n",
+    "\n",
+    "You can suspend and restart the optimization process by saving the following predictor, training, and history to an external file.\n",
+    "\n",
+    "- predictor: Prediction model of the objective function\n",
+    "- training: Data used to train the predictor (`physbo.Variable` object)\n",
+    "- history: History of optimization runs (`physbo.search.discrete.History` object)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:17:48.722691Z",
+     "start_time": "2020-12-04T06:17:47.728006Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "policy.save(file_history='history.npz', file_training='training.npz', file_predictor='predictor.dump')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2020-12-04T06:18:05.746742Z",
+     "start_time": "2020-12-04T06:17:48.724101Z"
+    },
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Start the initial hyper parameter searching ...\n",
+      "Done\n",
+      "\n",
+      "Start the hyper parameter learning ...\n",
+      "0 -th epoch marginal likelihood -5.282317837949537\n",
+      "50 -th epoch marginal likelihood -5.314394752726803\n",
+      "100 -th epoch marginal likelihood -5.333676604278033\n",
+      "150 -th epoch marginal likelihood -5.344148457109117\n",
+      "200 -th epoch marginal likelihood -5.349388232794448\n",
+      "250 -th epoch marginal likelihood -5.351839835112543\n",
+      "300 -th epoch marginal likelihood -5.352933499846448\n",
+      "350 -th epoch marginal likelihood -5.353415283021385\n",
+      "400 -th epoch marginal likelihood -5.3536398281059405\n",
+      "450 -th epoch marginal likelihood -5.3537614274261145\n",
+      "500 -th epoch marginal likelihood -5.353841697978967\n",
+      "Done\n",
+      "\n",
+      "current best f(x) = -0.985424 (best action = 8061) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "f(x)=-1.153410 (action = 16489)\n",
+      "f(x)=-0.993712 (action = 11874)\n",
+      "f(x)=-0.985424 (action = 8061)\n",
+      "f(x)=-1.033129 (action = 8509)\n",
+      "\n",
+      "\n",
+      "Start the initial hyper parameter searching ...\n",
+      "Done\n",
+      "\n",
+      "Start the hyper parameter learning ...\n",
+      "0 -th epoch marginal likelihood -7.1246867953581425\n",
+      "50 -th epoch marginal likelihood -7.125240732973938\n",
+      "100 -th epoch marginal likelihood -7.125738402977026\n",
+      "150 -th epoch marginal likelihood -7.126320570892344\n",
+      "200 -th epoch marginal likelihood -7.127007900107863\n",
+      "250 -th epoch marginal likelihood -7.127824732094982\n",
+      "300 -th epoch marginal likelihood -7.1288019858435145\n",
+      "350 -th epoch marginal likelihood -7.129979143770724\n",
+      "400 -th epoch marginal likelihood -7.131406793529879\n",
+      "450 -th epoch marginal likelihood -7.133149836164181\n",
+      "500 -th epoch marginal likelihood -7.135291360142487\n",
+      "Done\n",
+      "\n",
+      "current best f(x) = -0.985424 (best action = 8061) \n",
+      "list of simulation results\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=0.000000 (action = 0)\n",
+      "f(x)=-1.070602 (action = 15673)\n",
+      "f(x)=-1.153410 (action = 16489)\n",
+      "f(x)=-0.993712 (action = 11874)\n",
+      "f(x)=-0.985424 (action = 8061)\n",
+      "f(x)=-1.033129 (action = 8509)\n",
+      "f(x)=-1.061677 (action = 11352)\n",
+      "\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# delete policy \n",
+    "del policy\n",
+    "\n",
+    "# load policy\n",
+    "policy = physbo.search.discrete.Policy(test_X=X)\n",
+    "policy.load(file_history='history.npz', file_training='training.npz', file_predictor='predictor.dump')\n",
+    "\n",
+    "''' 5-th step (bayesian optimization) '''\n",
+    "actions = policy.bayes_search(max_num_probes=1, simulator=None, score='EI', interval=0,  num_rand_basis = 5000)\n",
+    "t = simulator(actions) \n",
+    "policy.write(actions, t) \n",
+    "physbo.search.utility.show_search_results(policy.history, 10) \n",
+    "\n",
+    "# It is also possible to specify predictor and training separately.\n",
+    "''' 6-th step (bayesian optimization) '''\n",
+    "actions = policy.bayes_search(max_num_probes=1,  \n",
+    "                                            predictor=policy.predictor, training=policy.training,\n",
+    "                                            simulator=None, score='EI', interval=0,  num_rand_basis = 5000)\n",
+    "t = simulator(actions) \n",
+    "policy.write(actions, t) \n",
+    "physbo.search.utility.show_search_results(policy.history, 10) "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.19"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

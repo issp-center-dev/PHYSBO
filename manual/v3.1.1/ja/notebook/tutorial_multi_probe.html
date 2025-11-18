@@ -1,0 +1,692 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>複数候補を一度に探索する &mdash; PHYSBO 3.1.1 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=e0703a1b"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="多目的最適化" href="tutorial_multi_objective.html" />
+    <link rel="prev" title="既存の計算結果を読み込んで実行する" href="tutorial_once_mode.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">複数候補を一度に探索する</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#探索候補データの準備">探索候補データの準備</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulator-の定義">simulator の定義</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#最適化の実行">最適化の実行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#結果の確認">結果の確認</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">連続空間での最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">複数候補を一度に探索する</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_multi_probe.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>この jupyter notebook ファイルは <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/v3.1.1/data/tutorial">ISSP Data Repository</a> (v3.1.1 branch) から入手できます。</p>
+<section id="複数候補を一度に探索する">
+<h1>複数候補を一度に探索する<a class="headerlink" href="#複数候補を一度に探索する" title="Link to this heading"></a></h1>
+<p>1回の探索ステップで、2つ以上の候補を一度に評価する場合のチュートリアルです。</p>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>これまでのチュートリアルと同様、データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Cythonized version of physbo is used
+</pre></div></div>
+</div>
+</section>
+<section id="simulator-の定義">
+<h2>simulator の定義<a class="headerlink" href="#simulator-の定義" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">後述の <code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span></code> を2以上にした場合、action には action ID の array が入力されます。</div>
+<div class="line">各 action ID に対応した評価値のリストを返すように定義してください。</div>
+</div>
+<p>基本チュートリアルと simulator の定義は同じですが、 t は numpy.array であり、action に array が入力されると <code class="docutils literal notranslate"><span class="pre">self.t[action]</span></code> も array になる点に留意してください。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>simulator の実行例</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">()</span>
+<span class="n">sim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">123</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-1.01487066, -1.22884748, -1.05572838])
+</pre></div></div>
+</div>
+</section>
+<section id="最適化の実行">
+<h2>最適化の実行<a class="headerlink" href="#最適化の実行" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy のセット</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+
+<span class="c1"># シード値のセット</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span> <span class="mi">0</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span></code> によって、各探索ステップにおいて評価する候補数を指定することができます。</p>
+<p>下記の実行例だと、ランダムサーチにより 2 ×10 = 20回、ベイズ最適化により 8 ×10 = 80回 simulator を評価することになります。</p>
+<p><strong>引数</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_num_probes</span></code>: 探索ステップ数</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span></code>: 各探索ステップにおいて評価する候補数</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span>
+                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0001-th multiple probe search (random)
+current best f(x) = -0.980054 (best action = 4547)
+list of simulation results
+f(x)=-1.070602 (action = 15673)
+f(x)=-1.009056 (action = 9559)
+f(x)=-1.195844 (action = 16927)
+f(x)=-0.980054 (action = 4547)
+f(x)=-0.992820 (action = 2553)
+f(x)=-1.146676 (action = 13144)
+f(x)=-1.006255 (action = 10827)
+f(x)=-0.999862 (action = 1995)
+f(x)=-1.055445 (action = 10763)
+f(x)=-1.100970 (action = 16450)
+
+
+0002-th multiple probe search (random)
+current best f(x) = -0.980054 (best action = 4547)
+list of simulation results
+f(x)=-1.208666 (action = 13085)
+f(x)=-1.069404 (action = 15133)
+f(x)=-1.031642 (action = 1706)
+f(x)=-1.016702 (action = 2464)
+f(x)=-1.172569 (action = 17812)
+f(x)=-1.082219 (action = 16533)
+f(x)=-1.025272 (action = 1336)
+f(x)=-1.031761 (action = 10076)
+f(x)=-0.984972 (action = 8876)
+f(x)=-1.107730 (action = 15577)
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood -22.83973847978999
+50 -th epoch marginal likelihood -24.177617139908286
+100 -th epoch marginal likelihood -24.831018285821855
+150 -th epoch marginal likelihood -25.15416148652374
+200 -th epoch marginal likelihood -25.33446562798866
+250 -th epoch marginal likelihood -25.455155010625035
+300 -th epoch marginal likelihood -25.550091453614577
+350 -th epoch marginal likelihood -25.631301279338548
+400 -th epoch marginal likelihood -25.702387457449046
+450 -th epoch marginal likelihood -25.76434767734443
+500 -th epoch marginal likelihood -25.817697844806304
+Done
+
+0003-th multiple probe search (EI)
+current best f(x) = -0.963125 (best action = 7028)
+list of simulation results
+f(x)=-0.999831 (action = 8311)
+f(x)=-0.971324 (action = 7695)
+f(x)=-1.022353 (action = 11640)
+f(x)=-2.231758 (action = 2989)
+f(x)=-1.330630 (action = 14999)
+f(x)=-1.490831 (action = 8998)
+f(x)=-0.963461 (action = 8382)
+f(x)=-1.006954 (action = 1144)
+f(x)=-1.072227 (action = 8240)
+f(x)=-0.963125 (action = 7028)
+
+
+0004-th multiple probe search (EI)
+current best f(x) = -0.963125 (best action = 7028)
+list of simulation results
+f(x)=-1.020075 (action = 2308)
+f(x)=-1.013442 (action = 14800)
+f(x)=-1.021923 (action = 2271)
+f(x)=-1.008847 (action = 2272)
+f(x)=-1.011485 (action = 2235)
+f(x)=-1.124811 (action = 15021)
+f(x)=-1.019125 (action = 2345)
+f(x)=-1.034768 (action = 2344)
+f(x)=-1.509526 (action = 15013)
+f(x)=-1.007610 (action = 14763)
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 23.07362820544381
+50 -th epoch marginal likelihood 9.71916785472228
+100 -th epoch marginal likelihood 1.4617496079117842
+150 -th epoch marginal likelihood -3.7988360129276657
+200 -th epoch marginal likelihood -7.323789523166525
+250 -th epoch marginal likelihood -9.785789330036444
+300 -th epoch marginal likelihood -11.565934427597423
+350 -th epoch marginal likelihood -12.890764162978346
+400 -th epoch marginal likelihood -13.902281570598038
+450 -th epoch marginal likelihood -14.69390233986634
+500 -th epoch marginal likelihood -15.32925771239109
+Done
+
+0005-th multiple probe search (EI)
+current best f(x) = -0.963125 (best action = 7028)
+list of simulation results
+f(x)=-1.065906 (action = 6464)
+f(x)=-1.016857 (action = 9064)
+f(x)=-1.052785 (action = 17091)
+f(x)=-1.091519 (action = 14954)
+f(x)=-0.984545 (action = 7141)
+f(x)=-0.994764 (action = 3492)
+f(x)=-0.986965 (action = 6497)
+f(x)=-1.059148 (action = 5)
+f(x)=-1.062454 (action = 16945)
+f(x)=-1.076059 (action = 677)
+
+
+0006-th multiple probe search (EI)
+current best f(x) = -0.963125 (best action = 7028)
+list of simulation results
+f(x)=-0.990597 (action = 1590)
+f(x)=-1.076706 (action = 13246)
+f(x)=-1.145412 (action = 16280)
+f(x)=-0.995306 (action = 11877)
+f(x)=-1.023616 (action = 11106)
+f(x)=-1.052131 (action = 11400)
+f(x)=-0.991510 (action = 1627)
+f(x)=-1.227426 (action = 6008)
+f(x)=-0.965286 (action = 4587)
+f(x)=-1.060802 (action = 13209)
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 473.65628141708936
+50 -th epoch marginal likelihood 363.6169713454118
+100 -th epoch marginal likelihood 280.4346034309078
+150 -th epoch marginal likelihood 218.0054785862597
+200 -th epoch marginal likelihood 170.65000562578464
+250 -th epoch marginal likelihood 134.22268953329964
+300 -th epoch marginal likelihood 105.78132811282697
+350 -th epoch marginal likelihood 83.25038707552142
+400 -th epoch marginal likelihood 65.1578863512562
+450 -th epoch marginal likelihood 50.44852382153658
+500 -th epoch marginal likelihood 38.355770381159886
+Done
+
+0007-th multiple probe search (EI)
+current best f(x) = -0.960321 (best action = 8213)
+list of simulation results
+f(x)=-1.057612 (action = 14984)
+f(x)=-0.990722 (action = 10878)
+f(x)=-0.963464 (action = 8250)
+f(x)=-1.043198 (action = 14947)
+f(x)=-0.983485 (action = 10915)
+f(x)=-0.968059 (action = 8287)
+f(x)=-1.059552 (action = 14983)
+f(x)=-0.999771 (action = 10841)
+f(x)=-0.960321 (action = 8213)
+f(x)=-0.977957 (action = 10952)
+
+
+0008-th multiple probe search (EI)
+current best f(x) = -0.960321 (best action = 8213)
+list of simulation results
+f(x)=-0.995292 (action = 703)
+f(x)=-0.983678 (action = 8968)
+f(x)=-0.997529 (action = 8967)
+f(x)=-0.999770 (action = 666)
+f(x)=-0.992400 (action = 740)
+f(x)=-1.014959 (action = 4879)
+f(x)=-0.977174 (action = 11967)
+f(x)=-1.005922 (action = 629)
+f(x)=-1.013689 (action = 592)
+f(x)=-0.972775 (action = 8969)
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0 -th epoch marginal likelihood 70.33429991441193
+50 -th epoch marginal likelihood 28.76449106005964
+100 -th epoch marginal likelihood 0.48485195525671543
+150 -th epoch marginal likelihood -18.236558043785863
+200 -th epoch marginal likelihood -32.065352898632085
+250 -th epoch marginal likelihood -42.76818194667307
+300 -th epoch marginal likelihood -51.46052158149956
+350 -th epoch marginal likelihood -56.687714339736516
+400 -th epoch marginal likelihood -61.70347758865687
+450 -th epoch marginal likelihood -65.19178853027769
+500 -th epoch marginal likelihood -68.05551755259076
+Done
+
+0009-th multiple probe search (EI)
+current best f(x) = -0.960321 (best action = 8213)
+list of simulation results
+f(x)=-1.055798 (action = 985)
+f(x)=-0.997708 (action = 3033)
+f(x)=-1.038770 (action = 1614)
+f(x)=-1.031694 (action = 652)
+f(x)=-1.033686 (action = 1207)
+f(x)=-1.036349 (action = 763)
+f(x)=-1.033301 (action = 1688)
+f(x)=-1.045945 (action = 3133)
+f(x)=-1.052235 (action = 947)
+f(x)=-1.040833 (action = 430)
+
+
+0010-th multiple probe search (EI)
+current best f(x) = -0.960321 (best action = 8213)
+list of simulation results
+f(x)=-2.497328 (action = 17945)
+f(x)=-0.990424 (action = 1480)
+f(x)=-0.991675 (action = 5957)
+f(x)=-0.990406 (action = 1517)
+f(x)=-0.990488 (action = 1443)
+f(x)=-1.094922 (action = 17908)
+f(x)=-1.058552 (action = 3766)
+f(x)=-1.053202 (action = 3803)
+f(x)=-1.110345 (action = 15737)
+f(x)=-0.990559 (action = 1554)
+
+
+</pre></div></div>
+</div>
+</section>
+<section id="結果の確認">
+<h2>結果の確認<a class="headerlink" href="#結果の確認" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x1300a2460&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_probe_11_1.png" src="../_images/notebook_tutorial_multi_probe_11_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_all_sequence_best_fx</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x134af5460&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_probe_12_1.png" src="../_images/notebook_tutorial_multi_probe_12_1.png" />
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">res.export_sequence_best_fx()</span></code> により、各ステップまでに得られたベスト値とその action の履歴 を得られます。</p>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">res.export_all_sequence_best_fx()</span></code> との違いは、simulator の評価毎ではなく、探索ステップ毎の情報になるという点です。</div>
+<div class="line">(今回の場合は合計ステップ数は 10, 評価数は 100 です）</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_fx</span><span class="p">,</span> <span class="n">best_action</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">best_fx</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x134b62df0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_probe_14_1.png" src="../_images/notebook_tutorial_multi_probe_14_1.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_once_mode.html" class="btn btn-neutral float-left" title="既存の計算結果を読み込んで実行する" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_multi_objective.html" class="btn btn-neutral float-right" title="多目的最適化" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: v3.1.1
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../v3.1.1/en/notebook/tutorial_multi_probe.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../v3.1.1/ja/notebook/tutorial_multi_probe.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_multi_probe.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_multi_probe.html">master</a>
+        
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        <strong>
+        <a href="../../../v3.1.1/ja/notebook/tutorial_multi_probe.html">v3.1.1</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.1.0/ja/notebook/tutorial_multi_probe.html">v3.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.0.0/ja/notebook/tutorial_multi_probe.html">v3.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.2.0/ja/notebook/tutorial_multi_probe.html">v2.2.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.1.0/ja/notebook/tutorial_multi_probe.html">v2.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.2/ja/notebook/tutorial_multi_probe.html">v2.0.2</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.1/ja/notebook/tutorial_multi_probe.html">v2.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v2.0.0/ja/notebook/tutorial_multi_probe.html">v2.0.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.1/ja/notebook/tutorial_multi_probe.html">v1.1.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.1.0/ja/notebook/tutorial_multi_probe.html">v1.1.0</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.1/ja/notebook/tutorial_multi_probe.html">v1.0.1</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+        <a href="../../../v1.0.0/ja/notebook/tutorial_multi_probe.html">v1.0.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
