@@ -74,10 +74,7 @@ class Policy:
             assert init_X.shape[1] == self.dim, (
                 "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
             )
-            ## TODO: add initial data to the history
-            ## The following code is for discrete search
-            ## self.write(actions, fs)
-            ## self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
+            self.write(init_X, fs)
 
         if comm is None:
             self.mpicomm = None

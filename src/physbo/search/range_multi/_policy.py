@@ -69,11 +69,11 @@ class Policy(range_single.Policy):
             assert init_X.shape[1] == self.dim, (
                 "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
             )
+            assert fs.shape[1] == self.num_objectives, (
+                "The number of objectives in initial_data[1] must be the same as num_objectives"
+            )
 
-            ## TODO: add initial data to the history
-            ## The following code is for discrete search
-            ## self.write(actions, fs)
-            ## self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
+            self.write(init_X, fs)
 
         if comm is None:
             self.mpicomm = None

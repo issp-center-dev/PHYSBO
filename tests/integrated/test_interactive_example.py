@@ -65,3 +65,22 @@ def test_interactive():
     print(best_action)
     assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
     assert best_action[-1] == 60
+
+
+def test_policy_with_initial_data():
+    sim = simulator()
+    nrand = 10
+    policy = physbo.search.discrete.Policy(test_X=sim.X)
+    policy.set_seed(12345)
+
+    actions = policy.random_search(
+        max_num_probes=1, num_search_each_probe=nrand, simulator=None
+    )
+    targets = sim(actions)
+
+    policy_2 = physbo.search.discrete.Policy(test_X=sim.X, initial_data=(actions, targets))
+    best_fx, best_action = policy_2.history.export_all_sequence_best_fx()
+    ref_best_fx = np.max(targets)
+    ref_best_action = actions[np.argmax(targets)]
+    assert best_fx[-1] == pytest.approx(ref_best_fx, abs=0.001)
+    assert np.allclose(best_action[-1], ref_best_action, atol=0.1)
