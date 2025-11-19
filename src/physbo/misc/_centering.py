@@ -26,3 +26,26 @@ def centering(X):
     index = np.where(stdX != 0)
     X_normalized = (X[:, index[0]] - np.mean(X[:, index[0]], 0)) / stdX[index[0]]
     return X_normalized
+
+
+def min_max_scaling(X):
+    """
+    Normalize the minimum and maximum along the each column of X to 0 and 1, respectively
+
+    if all the elements in a column are the same, return 0.5 for the column.
+
+    Parameters
+    ----------
+    X: numpy array
+        N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of search candidate.
+
+    Returns
+    -------
+    X_normalized: numpy array
+    """
+    min, max = np.min(X, 0), np.max(X, 0)
+    diff = max - min
+    index = np.where(diff != 0)
+    res = np.ones_like(X) * 0.5
+    res[:, index] = (X[:, index] - min[index]) / diff[index]
+    return  res

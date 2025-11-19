@@ -6,10 +6,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from . import score
+from . import unify
 from . import discrete
 from . import range
 from . import score_multi
 from . import discrete_multi
 from . import range_multi
+from . import discrete_unified
 
-__all__ = ["score", "discrete", "range", "score_multi", "discrete_multi", "range_multi"]
+__all__ = ["score", "unify", "discrete", "range", "score_multi", "discrete_multi", "range_multi", "discrete_unified"]
