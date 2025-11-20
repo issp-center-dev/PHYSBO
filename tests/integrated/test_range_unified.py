@@ -7,8 +7,6 @@
 
 from __future__ import print_function
 
-from itertools import product
-
 import numpy as np
 import pytest
 
@@ -23,49 +21,53 @@ def vlmop2_minus(x):
     return np.c_[-y1, -y2]
 
 
-class simulator:
+class Simulator:
     def __init__(self):
-        a = np.linspace(-2, 2, 11)
-        self.X = np.array(list(product(a, a)))
-        self.t = vlmop2_minus(self.X)
+        pass
 
-    def __call__(self, action):
-        X = self.X[action]
-        t = vlmop2_minus(X)
-        return t
+    def __call__(self, X):
+        # X: (N, 2) or (2,) ndarray
+        X = np.atleast_2d(X)
+        return vlmop2_minus(X)
 
 
-class TestDiscreteUnify:
+class TestRangeUnified:
     def setup_method(self):
-        self.sim = simulator()
+        self.sim = Simulator()
+        self.min_X = np.array([-2.0, -2.0])
+        self.max_X = np.array([2.0, 2.0])
         self.nrand = 10
         self.nsearch = 5
-        self.interval = 2
-        self.policy = physbo.search.discrete_unified.Policy(
-            test_X=self.sim.X, num_objectives=2
-        )
-        self.policy.set_seed(12345)
+        self.num_rand_basis = 100
         self.unify_method = {
             "ParEGO": physbo.search.unify.ParEGO(
                 num_objectives=2, weight_sum=0.5, weight_max=0.5, weights=None
             ),
             "NDS": physbo.search.unify.NDS(num_objectives=2, rank_max=10),
         }
+        self.policy = physbo.search.range_unified.Policy(
+            min_X=self.min_X, max_X=self.max_X, num_objectives=2
+        )
+        self.policy.set_seed(12345)
 
         self.vid_ref = {
-            ("PI", "ParEGO", 0): 0.10003702093436417,
-            ("EI", "ParEGO", 0): 0.08608343705975985,
-            ("TS", "ParEGO", 0): 0.08400891973743863,
-            ("PI", "NDS", 0): 0.18343541849063327,
-            ("EI", "NDS", 0): 0.18343541849063327,
-            ("TS", "NDS", 0): 0.2163315871396495,
-            ("PI", "ParEGO", 10): 0.14710521168216195,
-            ("EI", "ParEGO", 10): 0.18378443188055693,
-            ("TS", "ParEGO", 10): 0.20155428823928256,
-            ("PI", "NDS", 10): 0.1954734380647939,
-            ("EI", "NDS", 10): 0.16112209109885733,
-            ("TS", "NDS", 10): 0.09917790729602605,
+            ("PI", "ParEGO", 0): 0.0999442245812544,
+            ("EI", "ParEGO", 0): 0.10316945167256875,
+            ("TS", "ParEGO", 0): 0.10070811168862714,
+
+            ("PI", "NDS", 0): 0.1119472197450172,
+            ("EI", "NDS", 0): 0.12220607591910027,
+            ("TS", "NDS", 0): 0.15968650725088385,
+
+            ("PI", "ParEGO", 10): 0.09422696928304863,
+            ("EI", "ParEGO", 10): 0.09468429709321047,
+            ("TS", "ParEGO", 10): 0.09480830402031681,
+
+            ("PI", "NDS", 10): 0.10152195377567941,
+            ("EI", "NDS", 10): 0.09534518826538585,
+            ("TS", "NDS", 10): 0.09482336791327406,
         }
+
 
     @pytest.mark.parametrize("score", ["PI", "EI", "TS"])
     @pytest.mark.parametrize("unify_method", ["ParEGO", "NDS"])
@@ -78,10 +80,8 @@ class TestDiscreteUnify:
             simulator=self.sim,
             score=score,
             unify_method=self.unify_method[unify_method],
-            interval=self.interval,
             num_rand_basis=num_rand_basis,
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
         assert vid == pytest.approx(vid_ref, rel=1e-3)
-        # test to run without error
-        self.policy.get_score(score, xs=self.sim.X)
+        self.policy.get_score(score, xs=np.array([[0.0, 0.0]]))

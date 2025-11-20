@@ -117,14 +117,7 @@ class Policy(discrete.Policy):
             X = self.test.X[action, :]
             Z = self.test.Z[:, action, :] if self.test.Z is not None else None
         else:
-            if self.predictor is not None:
-                z = [self.predictor.get_basis(X) for _ in range(self.num_objectives)]
-                if z[0] is not None:
-                    Z = np.stack(z, axis=0)
-                else:
-                    Z = None
-            else:
-                Z = None
+            Z = None
 
         if self.new_data is None:
             self.new_data = Variable(X=X, t=t, Z=Z)
@@ -672,6 +665,9 @@ class Policy(discrete.Policy):
             self.training_unified, num_rand_basis, comm=self.mpicomm
         )
         self.predictor.prepare(self.training_unified)
+        Z = self.predictor.get_basis(self.training_unified.X)
+        if Z is not None:
+            self.training_unified.Z = Z[np.newaxis, :, :]
         self.new_data = None
 
     def _initialize_predictor(self, is_rand_expans):

@@ -13,5 +13,16 @@ from . import score_multi
 from . import discrete_multi
 from . import range_multi
 from . import discrete_unified
+from . import range_unified
 
-__all__ = ["score", "unify", "discrete", "range", "score_multi", "discrete_multi", "range_multi", "discrete_unified"]
+__all__ = [
+    "score",
+    "unify",
+    "discrete",
+    "range",
+    "score_multi",
+    "discrete_multi",
+    "range_multi",
+    "discrete_unified",
+    "range_unified",
+]
