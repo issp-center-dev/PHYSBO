@@ -7,6 +7,8 @@
 
 from __future__ import print_function
 
+from itertools import product
+
 import numpy as np
 import pytest
 
@@ -21,57 +23,62 @@ def vlmop2_minus(x):
     return np.c_[-y1, -y2]
 
 
-class Simulator:
+class simulator:
     def __init__(self):
-        pass
+        a = np.linspace(-2, 2, 11)
+        self.X = np.array(list(product(a, a)))
+        self.t = vlmop2_minus(self.X)
 
-    def __call__(self, X):
-        # X: (N, 2) or (2,) ndarray
-        X = np.atleast_2d(X)
-        return vlmop2_minus(X)
+    def __call__(self, action):
+        return self.t[action]
 
 
-class TestRangeMulti:
+class TestDiscreteMulti:
     def setup_method(self):
-        self.sim = Simulator()
-        self.min_X = np.array([-2.0, -2.0])
-        self.max_X = np.array([2.0, 2.0])
+        self.sim = simulator()
         self.nrand = 10
         self.nsearch = 5
         self.num_rand_basis = 100
-        self.policy = physbo.search.range_multi.Policy(
-            min_X=self.min_X, max_X=self.max_X, num_objectives=2
+        self.policy = physbo.search.discrete_multi.Policy(
+            test_X=self.sim.X, num_objectives=2
         )
         self.policy.set_seed(12345)
-
 
     @pytest.mark.parametrize(
         "score, vid_ref",
         [
-            ("EHVI", 0.21186716996705868),
-            ("HVPI", 0.2517842814632759),
-            ("TS", 0.13505409808944357),
+            ("EHVI", 0.2392468337984477),
+            ("HVPI", 0.25322554948754283),
+            ("TS", 0.17724278568874974),
         ],
     )
     def test_multi_objective(self, score, vid_ref):
         self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
-        res = self.policy.bayes_search(max_num_probes=self.nsearch, simulator=self.sim, score=score)
+        res = self.policy.bayes_search(
+            max_num_probes=self.nsearch, simulator=self.sim, score=score
+        )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
         assert vid == pytest.approx(vid_ref, rel=1e-3)
-        self.policy.get_score(score, xs=np.array([[0.0, 0.0]]))
-
+        # test to run without error
+        self.policy.get_score(score, xs=self.sim.X)
 
     @pytest.mark.parametrize(
         "score, vid_ref",
         [
-            ("EHVI", 0.22722097654091666),
-            ("HVPI", 0.22381132051342423),
-            ("TS", 0.16007470367651644),
+            ("EHVI", 0.23838772016010945),
+            ("HVPI", 0.25322554948754283),
+            ("TS", 0.20394729383806942),
         ],
     )
     def test_multi_objective_rand(self, score, vid_ref):
         self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
-        res = self.policy.bayes_search(max_num_probes=self.nsearch, simulator=self.sim, score=score, num_rand_basis=self.num_rand_basis)
+        res = self.policy.bayes_search(
+            max_num_probes=self.nsearch,
+            simulator=self.sim,
+            score=score,
+            num_rand_basis=self.num_rand_basis,
+        )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
         assert vid == pytest.approx(vid_ref, rel=1e-3)
-        self.policy.get_score(score, xs=np.array([[0.0, 0.0]]))
+        # test to run without error
+        self.policy.get_score(score, xs=self.sim.X)
