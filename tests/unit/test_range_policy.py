@@ -18,9 +18,7 @@ def max_X():
 
 @pytest.fixture
 def policy(min_X, max_X):
-    from physbo.search.range import Policy
-
-    return Policy(min_X=min_X, max_X=max_X)
+    return physbo.search.range.Policy(min_X=min_X, max_X=max_X)
 
 
 def test_write(policy):
@@ -100,9 +98,7 @@ def test_saveload(policy, min_X, max_X):
         file_predictor = os.path.join(tempdir, "predictor.dump")
         policy.save(file_history, file_training, file_predictor)
         # Load with a new Policy
-        from physbo.search.range import Policy
-
-        policy2 = Policy(min_X=min_X, max_X=max_X)
+        policy2 = physbo.search.range.Policy(min_X=min_X, max_X=max_X)
         policy2.load(file_history, file_training, file_predictor)
         np.testing.assert_array_equal(policy.history.fx[:2], policy2.history.fx[:2])
         assert policy.history.total_num_search == policy2.history.total_num_search
