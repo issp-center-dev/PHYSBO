@@ -33,20 +33,20 @@ jobs:
       with:
         python-version: '3.13'
 
+    - name: Set up UV
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: '3.13'
+
     - name: Install dependencies
       run: |
-        sudo apt update
-        sudo apt install pandoc
-        python -m pip install --upgrade pip setuptools wheel
-        pip install tox tox-gh-actions
-
-    - name: Build docs with tox
+        uv sync --extra docs
+    - name: Build docs
       env:
         TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
       run: |
         cd main
-        tox run -e docs
-        cd ../
+        sh ./docs/make_docs.sh
 
     - name: Deploy Configuration
       run: |
@@ -65,7 +65,7 @@ jobs:
           for lang in ja en; do
             rm -rf "gh-pages/manual/${TARGET_NAME}/${lang}"
             mkdir -p "gh-pages/manual/${TARGET_NAME}"
-            cp -r "main/.tox/docs_out/manual/${lang}" "gh-pages/manual/${TARGET_NAME}/"
+            cp -r "main/docs/built/manual/${lang}" "gh-pages/manual/${TARGET_NAME}/"
           done
           cd gh-pages
           git config --local user.name "${GIT_USER}"

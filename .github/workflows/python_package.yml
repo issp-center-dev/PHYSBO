@@ -1,6 +1,6 @@
 name: Test python package
 
-on: 
+on:
   push:
   pull_request:
   schedule:
@@ -16,16 +16,26 @@ jobs:
       matrix:
         os: ['ubuntu-latest']
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        numpy-version: ['latest']
         include:
           - os: 'macos-latest'
             python-version: '3.9'
+            numpy-version: 'latest'
           - os: 'macos-latest'
             python-version: '3.13'
+            numpy-version: 'latest'
           - os: 'windows-latest'
             python-version: '3.9'
+            numpy-version: 'latest'
           - os: 'windows-latest'
             python-version: '3.13'
-
+            numpy-version: 'latest'
+          - os: 'ubuntu-latest'
+            python-version: '3.9'
+            numpy-version: '1.26.4'
+          - os: 'ubuntu-latest'
+            python-version: '3.13'
+            numpy-version: '1.26.4'
 
     steps:
     - uses: actions/checkout@v4
@@ -33,9 +43,16 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Set up UV
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install tox tox-gh-actions
-    - name: Test with tox
-      run: tox run
+        uv sync --dev
+        if [ "${{ matrix.numpy-version }}" != "latest" ]; then
+          uv pip install "numpy==${{ matrix.numpy-version }}"
+        fi
+    - name: PyTest
+      run: uv run pytest --capture=sys tests
