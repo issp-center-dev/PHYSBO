@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with NumPy ${{ matrix.numpy-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,10 +49,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: |
-        uv sync --dev
-        if [ "${{ matrix.numpy-version }}" != "latest" ]; then
-          uv pip install "numpy==${{ matrix.numpy-version }}"
-        fi
+      run:  uv sync --dev
+    - name: Install NumPy 1.26.4
+      if: matrix.numpy-version == '1.26.4'
+      run: uv pip install "numpy==1.26.4"
     - name: PyTest
       run: uv run pytest --capture=sys tests
