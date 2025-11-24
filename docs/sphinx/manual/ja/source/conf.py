@@ -74,13 +74,13 @@ for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
         exclude_patterns.append("api")
 
 # The suffix of source filenames.
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst"]
 
-from recommonmark.parser import CommonMarkParser
+# from recommonmark.parser import CommonMarkParser
 
-source_parsers = {
-    ".md": CommonMarkParser,
-}
+# source_parsers = {
+#     ".md": CommonMarkParser,
+# }
 
 pygments_style = "sphinx"
 

@@ -1,35 +1,28 @@
-name: deploy
+name: Build and deploy documentation
+
+# Build documentation for all branches and tags for purpose of testing.
+# Deploy documentation to gh-pages only for master and develop branches, and tags.
 
 on:
   push:
-    branches:
-      - master
-      - develop
-      - '!gh-pages'
-      - changedocs
-    tags: '*'
+    branches: ['*']
+    tags: ['*']
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: Inject slug/short variables
-      uses: rlespinasse/github-slug-action@v4.x
-
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        path: main
-        fetch-depth: 0
 
-    - name: Checkout gh-pages
-      uses: actions/checkout@v4
-      with:
-        ref: gh-pages
-        path: gh-pages
 
     - name: Set up Python
       uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Set up UV
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.13'
 
@@ -37,16 +30,34 @@ jobs:
       run: |
         sudo apt update
         sudo apt install pandoc
-        python -m pip install --upgrade pip setuptools wheel
-        pip install tox tox-gh-actions
-
-    - name: Build docs with tox
-      env:
-        TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
+        uv sync --extra docs
+    - name: Build docs
       run: |
-        cd main
-        tox run -e docs
-        cd ../
+        sh ${{ github.workspace }}/docs/make_docs.sh
+
+    - name: Upload built docs for deployment
+      uses: actions/upload-artifact@v4
+      if: github.ref_name == 'master' || github.ref_name == 'develop' || github.ref_type == 'tag'
+      with:
+        name: docs-${{ github.ref_name }}
+        path: ${{ github.workspace }}/docs/built
+        retention-days: 1
+
+  deploy:
+    if: github.ref_name == 'master' || github.ref_name == 'develop' || github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout gh-pages
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Download built docs
+      uses: actions/download-artifact@v4
+      with:
+        name: docs-${{ github.ref_name }}
+        path: ${{ github.workspace }}/built-docs
 
     - name: Deploy Configuration
       run: |
@@ -59,13 +70,13 @@ jobs:
       env:
         GIT_USER: "PHYSBO Developers"
         GIT_EMAIL: "physbo-dev@issp.u-tokyo.ac.jp"
-        TARGET_NAME: ${{ env.GITHUB_REF_SLUG }}
+        TARGET_NAME: ${{ github.ref_name }}
       run: |
           cd ${GITHUB_WORKSPACE}
           for lang in ja en; do
             rm -rf "gh-pages/manual/${TARGET_NAME}/${lang}"
             mkdir -p "gh-pages/manual/${TARGET_NAME}"
-            cp -r "main/.tox/docs_out/manual/${lang}" "gh-pages/manual/${TARGET_NAME}/"
+            cp -r "built-docs/manual/${lang}" "gh-pages/manual/${TARGET_NAME}/"
           done
           cd gh-pages
           git config --local user.name "${GIT_USER}"
