@@ -20,13 +20,21 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - NumPy
 - SciPy
 
+### Optional dependencies
+
+- [ODAT-SE](https://github.com/issp-center-dev/ODAT-SE) (for continuous space optimization)
+
+  ``` bash
+  python3 -m pip install odat-se
+  ```
+
 ## Install
 
 - From PyPI (recommended)
 
-```bash
-python3 -m pip install physbo
-```
+  ```bash
+  python3 -m pip install physbo
+  ```
 
 - From source (for developers)
 
