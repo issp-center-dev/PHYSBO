@@ -69,6 +69,31 @@ For an introductory tutorial please consult the documentation. ([English](https:
 
 A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery](https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery).
 
+## For developers
+
+[UV](https://docs.astral.sh/uv/) is recommended to make a virtual environment and install dependencies for development.
+
+### Run tests
+
+When using UV, the command `uv sync --dev` will install the dependencies to run tests like `pytest`.
+Test files are in `tests/` directory, and use `pytest` to run tests.
+
+``` bash
+uv run pytest tests
+```
+
+### Build documentation
+
+When using UV, the command `uv sync --extra docs` will install the dependencies for building the documentation like `sphinx`.
+
+The command
+
+```bash
+uv run bash docs/make_docs.sh
+```
+
+will build the documentation into `docs/built`.
+
 ## License
 
 PHYSBO was developed based on [COMBO](https://github.com/tsudalab/COMBO) for academic use.

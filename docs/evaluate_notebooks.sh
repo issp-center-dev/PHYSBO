@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! python3 -m jupyter --version > /dev/null 2>&1; then
+  echo "ERROR: Jupyter is not found"
+  exit 1
+fi
+
 INPLACE=""
 PARALLEL_JOBS=4
 
@@ -39,10 +44,10 @@ for lang in ja en; do
     NOTEBOOKS_DIR="$DOCS_DIR/$lang/source/notebook"
     cd "$NOTEBOOKS_DIR" || exit 1
     if which parallel > /dev/null 2>&1; then
-        parallel -j "$PARALLEL_JOBS" uv run -m jupyter execute $INPLACE ::: *.ipynb
+        parallel -j "$PARALLEL_JOBS" python3 -m jupyter execute $INPLACE ::: *.ipynb
     else
         for notebook in *.ipynb; do
-            uv run -m jupyter execute $INPLACE "$notebook"
+            python3 -m jupyter execute $INPLACE "$notebook"
         done
     fi
 done
