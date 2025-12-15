@@ -11,6 +11,7 @@ from . import blm
 from . import misc
 from . import search
 from . import predictor
+from . import test_functions
 from ._variable import Variable
 
 
@@ -30,4 +31,4 @@ __version__ = "3.2-dev"
 
 # __all__ is used to specify the public API of the package
 # and is used by sphinx to generate the API documentation
-__all__ = ["gp", "opt", "blm", "misc", "search", "predictor", "Variable"]
+__all__ = ["gp", "opt", "blm", "misc", "search", "predictor", "Variable", "test_functions"]
