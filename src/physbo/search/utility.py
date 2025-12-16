@@ -198,7 +198,7 @@ def plot_pareto_front(
     undominated = []
     dominated = []
     if steps_end is None:
-        steps_end = history.num_runs
+        steps_end = history.total_num_search
     for i in range(steps_begin, steps_end):
         if i in front_num:
             undominated.append(i)
