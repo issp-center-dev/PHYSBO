@@ -87,7 +87,338 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Simulator">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.Simulator">[ドキュメント]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulator class wrapping the test function for discrete search space.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    test_X: numpy.ndarray</span>
+<span class="sd">        The test points. Each row is a candidate.</span>
+<span class="sd">    test_function: physbo.test_functions.base.TestFunction</span>
+<span class="sd">        The test function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">test_function</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;ERROR: test_X must be a 2D array, but got </span><span class="si">{</span><span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_X</span> <span class="o">=</span> <span class="n">test_X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_function</span> <span class="o">=</span> <span class="n">test_function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_X</span><span class="p">[</span><span class="n">action</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_function</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="make_grid">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.make_grid">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_grid</span><span class="p">(</span>
+    <span class="n">min_X</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">max_X</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">num_X</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a grid of points in the search space.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    min_X: np.ndarray | list[float] | float</span>
+<span class="sd">        Minimum value of search space for each dimension</span>
+<span class="sd">    max_X: np.ndarray | list[float] | float</span>
+<span class="sd">        Maximum value of search space for each dimension</span>
+<span class="sd">    num_X: int | list[int] | np.ndarray</span>
+<span class="sd">        Number of points in each dimension</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    =======</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        The grid of points in the search space</span>
+<span class="sd">        The output is a numpy array of shape (N, d), where N is the number of points and d is the dimension of the search space</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ======</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If min_X and max_X have different number of dimensions</span>
+<span class="sd">        If num_X has different number of dimensions from min_X and max_X</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_X</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_X</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ERROR: min_X must be a 1D array, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ERROR: max_X must be a 1D array, but got </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">max_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ERROR: min_X and max_X must have the same number of dimensions, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_X</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">num_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">num_X</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_X</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">num_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">num_X</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ERROR: num_X must be a 1D array, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">num_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">d</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ERROR: num_X must have the same number of dimensions as min_X and max_X, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">ls</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">max_X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">num_X</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">num_X</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">ls</span><span class="p">)):</span>
+        <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">return</span> <span class="n">X</span></div>
+
+
+
+<div class="viewcode-block" id="plot_pareto_front">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.plot_pareto_front">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_pareto_front</span><span class="p">(</span>
+    <span class="n">history</span><span class="p">,</span>
+    <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pareto_front_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dominated_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pareto_front_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dominated_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    history: History</span>
+<span class="sd">        The history of the search.</span>
+<span class="sd">    x: int, default=0</span>
+<span class="sd">        The index of the objective to plot on the x-axis.</span>
+<span class="sd">    y: int, default=1</span>
+<span class="sd">        The index of the objective to plot on the y-axis.</span>
+<span class="sd">    steps_begin: int, default=0</span>
+<span class="sd">        The index (inclusive) of the step to begin plotting.</span>
+<span class="sd">    steps_end: int, optional</span>
+<span class="sd">        The index (exclusive) of the step to end plotting.</span>
+<span class="sd">        If None, plot until the end.</span>
+<span class="sd">    ax: matplotlib.axes.Axes, optional</span>
+<span class="sd">        The axes to plot on. If None, a new figure is created.</span>
+<span class="sd">    color: str, optional</span>
+<span class="sd">        The color of the points.</span>
+<span class="sd">    pareto_front_color: str, optional</span>
+<span class="sd">        The color of the Pareto front.</span>
+<span class="sd">    dominated_color: str, optional</span>
+<span class="sd">        The color of the dominated points.</span>
+<span class="sd">    marker: str, optional</span>
+<span class="sd">        The marker of the points.</span>
+<span class="sd">    pareto_front_marker: str, optional</span>
+<span class="sd">        The marker of the Pareto front.</span>
+<span class="sd">    dominated_marker: str, optional</span>
+<span class="sd">        The marker of the dominated points.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ====</span>
+<span class="sd">    - colors:</span>
+<span class="sd">        - If both color and *_color are provided, *_color is used.</span>
+<span class="sd">        - If only color is provided, the color is used for both the Pareto front and the dominated points.</span>
+<span class="sd">        - If neither color nor *_color is provided, the color is set to &quot;red&quot; for the Pareto front and &quot;blue&quot; for the dominated points.</span>
+<span class="sd">    - markers:</span>
+<span class="sd">        - If both marker and *_marker are provided, *_marker is used.</span>
+<span class="sd">        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.</span>
+<span class="sd">        - If neither marker nor *_marker is provided, the marker is set to &quot;o&quot; for the Pareto front and &quot;o&quot; for the dominated points.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+    <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pareto_front_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pareto_front_color</span> <span class="o">=</span> <span class="n">color</span>
+        <span class="k">if</span> <span class="n">dominated_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dominated_color</span> <span class="o">=</span> <span class="n">color</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pareto_front_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pareto_front_color</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
+        <span class="k">if</span> <span class="n">dominated_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dominated_color</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span>
+
+    <span class="k">if</span> <span class="n">marker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pareto_front_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pareto_front_marker</span> <span class="o">=</span> <span class="n">marker</span>
+        <span class="k">if</span> <span class="n">dominated_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dominated_marker</span> <span class="o">=</span> <span class="n">marker</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pareto_front_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pareto_front_marker</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span>
+        <span class="k">if</span> <span class="n">dominated_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dominated_marker</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span>
+
+    <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
+    <span class="n">min_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="n">max_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="n">undominated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">dominated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">steps_end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">steps_end</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_begin</span><span class="p">,</span> <span class="n">steps_end</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">:</span>
+            <span class="n">undominated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dominated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">min_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">min_fx</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]])</span>
+        <span class="n">max_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">max_fx</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]])</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
+        <span class="n">c</span><span class="o">=</span><span class="n">dominated_color</span><span class="p">,</span>
+        <span class="n">marker</span><span class="o">=</span><span class="n">dominated_marker</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">undominated</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">undominated</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
+        <span class="n">c</span><span class="o">=</span><span class="n">pareto_front_color</span><span class="p">,</span>
+        <span class="n">marker</span><span class="o">=</span><span class="n">pareto_front_marker</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">xlim</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_fx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_fx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">ylim</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_fx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">max_fx</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">xlim</span><span class="p">,</span> <span class="n">ylim</span></div>
+
+
+
+<div class="viewcode-block" id="plot_pareto_front_all">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.plot_pareto_front_all">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">history</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pareto_front_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dominated_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pareto_front_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">dominated_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history for all pairs of objectives.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    history: History</span>
+<span class="sd">        The history of the search.</span>
+<span class="sd">    steps_begin: int, optional</span>
+<span class="sd">        The index (inclusive) of the step to begin plotting.</span>
+<span class="sd">        If None, plot from the beginning.</span>
+<span class="sd">    steps_end: int, optional</span>
+<span class="sd">        The index (exclusive) of the step to end plotting.</span>
+<span class="sd">        If None, plot until the end.</span>
+<span class="sd">    ax: matplotlib.axes.Axes, optional</span>
+<span class="sd">        The axes to plot on. If None, a new figure is created.</span>
+<span class="sd">    color: str, optional</span>
+<span class="sd">        The color of the points.</span>
+<span class="sd">    pareto_front_color: str, optional</span>
+<span class="sd">        The color of the Pareto front.</span>
+<span class="sd">    dominated_color: str, optional</span>
+<span class="sd">        The color of the dominated points.</span>
+<span class="sd">    marker: str, optional</span>
+<span class="sd">        The marker of the points.</span>
+<span class="sd">    pareto_front_marker: str, optional</span>
+<span class="sd">        The marker of the Pareto front.</span>
+<span class="sd">    dominated_marker: str, optional</span>
+<span class="sd">        The marker of the dominated points.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ====</span>
+<span class="sd">    - colors:</span>
+<span class="sd">        - If both color and *_color are provided, *_color is used.</span>
+<span class="sd">        - If only color is provided, the color is used for both the Pareto front and the dominated points.</span>
+<span class="sd">        - If neither color nor *_color is provided, the color is set to &quot;red&quot; for the Pareto front and &quot;blue&quot; for the dominated points.</span>
+<span class="sd">    - markers:</span>
+<span class="sd">        - If both marker and *_marker are provided, *_marker is used.</span>
+<span class="sd">        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.</span>
+<span class="sd">        - If neither marker nor *_marker is provided, the marker is set to &quot;o&quot; for the Pareto front and &quot;o&quot; for the dominated points.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+    <span class="n">nobj</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">nmatrix</span> <span class="o">=</span> <span class="n">nobj</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+            <span class="n">nmatrix</span><span class="p">,</span>
+            <span class="n">nmatrix</span><span class="p">,</span>
+            <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">nmatrix</span><span class="p">,</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">nmatrix</span><span class="p">),</span>
+            <span class="n">sharex</span><span class="o">=</span><span class="s2">&quot;col&quot;</span><span class="p">,</span>
+            <span class="n">sharey</span><span class="o">=</span><span class="s2">&quot;row&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">ax</span><span class="p">]])</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmatrix</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmatrix</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">col</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">row</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">j</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">plot_pareto_front</span><span class="p">(</span>
+                <span class="n">history</span><span class="p">,</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+                <span class="n">steps_begin</span><span class="o">=</span><span class="n">steps_begin</span><span class="p">,</span>
+                <span class="n">steps_end</span><span class="o">=</span><span class="n">steps_end</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">pareto_front_color</span><span class="o">=</span><span class="n">pareto_front_color</span><span class="p">,</span>
+                <span class="n">dominated_color</span><span class="o">=</span><span class="n">dominated_color</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span>
+                <span class="n">pareto_front_marker</span><span class="o">=</span><span class="n">pareto_front_marker</span><span class="p">,</span>
+                <span class="n">dominated_marker</span><span class="o">=</span><span class="n">dominated_marker</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Remove redundant labels</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmatrix</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmatrix</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="n">nmatrix</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span></div>
+
 
 
 <div class="viewcode-block" id="show_search_results">
