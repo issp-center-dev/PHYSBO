@@ -228,4 +228,4 @@ class Pareto(object):
 
         if debug:
             print("Execution time:", end_time - start_time, "seconds")
-            print("call times: ", call_time, " times")
+            print(f"call times: {call_time} times")

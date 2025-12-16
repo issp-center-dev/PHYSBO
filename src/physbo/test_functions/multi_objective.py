@@ -266,7 +266,7 @@ class Viennet(MultiTestFunction):
 
         References
         ==========
-        Viennet, R., et al. "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Joumal of Systems Science 27(2), 255-260 (1996).
+        Viennet, R., et al. "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Journal of Systems Science 27(2), 255-260 (1996).
 
         """
         super().__init__(
@@ -320,9 +320,9 @@ class BinhKorn(MultiTestFunction):
 
         Arguments
         =========
-        min_X : np.ndarray | list[float] | float, default=-20.0
+        min_X : np.ndarray | list[float] | float, default=np.array([0.0, 0.0])
             Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=20.0
+        max_X : np.ndarray | list[float] | float, default=np.array([5.0, 3.0])
             Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
         test_maximizer : bool, default=True
             If True, the test function is negated for testing a maximization problem solver.
@@ -486,7 +486,7 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
         g1 = 6.5 - x1 / 6.0 - x2 >= 0.0
         g2 = 7.5 - 0.5 * x1 - x2 >= 0.0
         g3 = 30.0 - 5 * x1 - x2 >= 0.0
-        return np.logical_and(g1, g2, g3)
+        return np.logical_and(np.logical_and(g1, g2), g3)
 
     def _ref_min(self) -> np.ndarray:
         return np.array([-4.0, -7.0])
@@ -563,7 +563,7 @@ class Binh5(MultiTestFunction):
         max_X : np.ndarray | list[float] | float, default=1.0
             Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
         test_maximizer : bool, default=True
-            If True, the test function is negated for testing the minimization problem.
+            If True, the test function is negated for testing a maximization problem solver.
 
         References
         ==========
@@ -623,7 +623,7 @@ class Binh6(MultiTestFunction):
         max_X : np.ndarray | list[float] | float, default=5.0
             Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
         test_maximizer : bool, default=True
-            If True, the test function is negated for testing the minimization problem.
+            If True, the test function is negated for testing a maximization problem solver.
 
         References
         ==========

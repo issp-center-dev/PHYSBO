@@ -381,7 +381,7 @@ class Himmelblau(SingleTestFunction):
         .. math::
 
             \text{Minimize}\quad
-            f(\boldsymbol{x}) = (x_1^2 + y_1 - 11)^2 + (x_1 + y_1^2 - 7)^2
+            f(\boldsymbol{x}) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2
 
         Global minimum: :math:`f(3, 2) = f(-2.805118, 3.131312) = f(-3.779310, -3.283186) = f(3.584428, -1.848126) = 0`.
 
