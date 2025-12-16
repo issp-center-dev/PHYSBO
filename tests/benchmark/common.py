@@ -34,7 +34,7 @@ def benchmark(
     max_X = fn.max_X
 
     if fn.dim <= 3:
-        X = physbo.misc.make_grid(min_X, max_X, N)
+        X = physbo.search.utility.make_grid(min_X, max_X, N)
     else:
         np.random.seed(seed)
         X = np.random.uniform(min_X, max_X, size=(N * N * N, fn.dim))
