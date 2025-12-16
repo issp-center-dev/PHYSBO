@@ -186,7 +186,7 @@ class Gaussian(MultiTestFunction):
         return -self._amplitudes * np.exp(self._coeffs * r)
 
     def _ref_min(self) -> np.ndarray:
-        return 1.0 - self._amplitudes.reshape(-1)
+        return -1.0 * self._amplitudes.reshape(-1)
 
     def _ref_max(self) -> np.ndarray:
         return np.zeros(self.nobj)
@@ -360,7 +360,7 @@ class BinhKorn(MultiTestFunction):
     def constraint(self, x: np.ndarray) -> np.ndarray:
         x1 = x[:, 0]
         x2 = x[:, 1]
-        g1 = (x1 - 5) ** 2 + x2**2 < 25.0
+        g1 = (x1 - 5) ** 2 + x2**2 <= 25.0
         g2 = (x1 - 8) ** 2 + (x2 + 3) ** 2 >= 7.7
         return np.logical_and(g1, g2)
 
@@ -1222,7 +1222,7 @@ class ZDT4(MultiTestFunction):
 
             \text{where}
             \begin{cases}
-            g(\boldsymbol{x}) = 91 + \sum_{i=2}^{N} \left(x_i^2 - 10 \cos(4 \pi x_i)\right) \\
+            g(\boldsymbol{x}) = 1 + 10 (N - 1) + \sum_{i=2}^{N} \left(x_i^2 - 10 \cos(4 \pi x_i)\right) \\
             h(\boldsymbol{x}) = 1 - \sqrt{\frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})}}
             \end{cases}
 
@@ -1260,7 +1260,7 @@ class ZDT4(MultiTestFunction):
 
     def f(self, x: np.ndarray) -> np.ndarray:
         f1 = x[:, 0]
-        g = 91.0 + np.sum(x[:, 1:] ** 2 - 10.0 * np.cos(4.0 * np.pi * x[:, 1:]), axis=1)
+        g = 1.0 + 10.0 * (self.dim - 1) + np.sum(x[:, 1:] ** 2 - 10.0 * np.cos(4.0 * np.pi * x[:, 1:]), axis=1)
         f2 = g - np.sqrt(f1 * g)
 
         return np.c_[f1, f2]
