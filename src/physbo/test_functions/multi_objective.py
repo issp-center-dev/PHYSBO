@@ -171,7 +171,18 @@ class Gaussian(MultiTestFunction):
         )
 
     def f(self, x: np.ndarray) -> np.ndarray:
-        r = np.sum((x - self._centers) ** 2, axis=1).reshape(-1, self.nobj)
+        # Ensure x is at least 2D: (n, dim)
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+
+        # Reshape for broadcasting: x (n, 1, dim), centers (1, nobj, dim)
+        # Result: (n, nobj, dim)
+        x_expanded = x[:, np.newaxis, :]  # (n, 1, dim)
+        centers_expanded = self._centers[np.newaxis, :, :]  # (1, nobj, dim)
+
+        # Compute squared distances: (n, nobj, dim) -> (n, nobj)
+        r = np.sum((x_expanded - centers_expanded) ** 2, axis=2)
+
         return -self._amplitudes * np.exp(self._coeffs * r)
 
     def _ref_min(self) -> np.ndarray:
@@ -539,7 +550,7 @@ To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
 class Binh5(MultiTestFunction):
     def __init__(
         self,
-        min_X: np.ndarray | list[float] | float = [-0.1, 0.0],
+        min_X: np.ndarray | list[float] | float = [0.1, 0.0],
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
@@ -591,10 +602,10 @@ class Binh5(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.1, -2000.0])
+        return np.array([0.1, 0.7])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([1.0, 200.0])
+        return np.array([1.0, 20.0])
 
 
 class Binh6(MultiTestFunction):
