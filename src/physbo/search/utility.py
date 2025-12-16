@@ -7,6 +7,7 @@
 
 import numpy as np
 
+
 class Simulator:
     """Simulator class wrapping the test function for discrete search space.
 
@@ -69,11 +70,10 @@ def plot_pareto_front(
         if dominated_marker is None:
             dominated_marker = "o"
 
-
     front, front_num = history.export_pareto_front()
     min_fx = np.full(2, np.inf)
     max_fx = np.full(2, -np.inf)
-    
+
     undominated = []
     dominated = []
     if steps_end is None:
@@ -108,6 +108,7 @@ def plot_pareto_front(
     ylim = [min_fx[1], max_fx[1]]
     return xlim, ylim
 
+
 def plot_pareto_front_all(
     history,
     steps_begin=0,
@@ -132,8 +133,8 @@ def plot_pareto_front_all(
             sharex="col",
             sharey="row",
         )
-    if nobj == 2:
-        ax = np.array([ax]).reshape(1, 1)
+    if not isinstance(ax, np.ndarray):
+        ax = np.array([[ax]])
     for col in range(nmatrix):
         for row in range(nmatrix):
             i = col
@@ -155,7 +156,7 @@ def plot_pareto_front_all(
                 pareto_front_marker=pareto_front_marker,
                 dominated_marker=dominated_marker,
             )
-    
+
     # Remove redundant labels
     for row in range(nmatrix):
         for col in range(nmatrix):
@@ -164,8 +165,6 @@ def plot_pareto_front_all(
             if col > 0:
                 ax[row, col].set_ylabel(None)
     return ax
-
-
 
 
 def show_search_results(history, N):

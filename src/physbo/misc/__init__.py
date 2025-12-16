@@ -8,6 +8,7 @@
 from ._centering import centering as centering
 from ._gauss_elim import gauss_elim as gauss_elim
 from ._set_config import SetConfig as SetConfig
+from ._make_grid import make_grid as make_grid
 
 from ._cholesky import cholupdate as cholupdate
 from ._matrix import diagAB as diagAB

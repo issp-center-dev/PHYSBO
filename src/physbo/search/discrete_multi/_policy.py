@@ -195,6 +195,7 @@ class Policy(discrete.Policy):
         score="HVPI",
         interval=0,
         num_rand_basis=0,
+        optimizer=None, # not used
     ):
         if self.mpirank != 0:
             is_disp = False
