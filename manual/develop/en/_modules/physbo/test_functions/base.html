@@ -93,6 +93,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">..search</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span> <span class="k">as</span> <span class="n">search_utility</span>
+
 
 <div class="viewcode-block" id="TestFunction">
 <a class="viewcode-back" href="../../../api/physbo.test_functions.base.html#physbo.test_functions.base.TestFunction">[docs]</a>
@@ -270,8 +272,26 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># default implementation is that all points are valid</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span></div>
-</div>
 
+
+<div class="viewcode-block" id="TestFunction.make_grid">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.base.html#physbo.test_functions.base.TestFunction.make_grid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_X</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a grid of points in the search space.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        num_X: int | list[int] | np.ndarray</span>
+<span class="sd">            Number of points in each dimension.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The grid of points in the search space.</span>
+<span class="sd">            The output is a numpy array of shape (N, d), where N is the number of points and d is the dimension of the search space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">search_utility</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="n">num_X</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">)</span></div>
+</div>
 
 </pre></div>
 
