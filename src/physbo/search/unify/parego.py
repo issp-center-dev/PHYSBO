@@ -14,14 +14,6 @@ import numpy as np
 from ...misc import min_max_scaling
 
 class ParEGO:
-    """
-    ParEGO unified objective function
-
-    The unified objective function of original objectives t is defined as:
-    t_unified = weight_max * max(weights * t) + weight_sum * sum(weights * t)
-
-    Before calculating the unified objective function, the original objectives are normalized to 0 and 1 using min-max scaling.
-    """
 
     num_objectives: int
     """Number of objectives"""
@@ -38,15 +30,23 @@ class ParEGO:
     If None, random weights are used for each call.
     """
 
+    weights_discrete: int
+    """Number of discrete points to generate random weights"""
+
     def __init__(
         self,
         num_objectives: int,
-        weight_sum: float = 0.05,
-        weight_max: float = 1.0,
+        weight_sum: float = 0.5,
+        weight_max: float = 0.5,
         weights: Optional[np.ndarray] = None,
+        weights_discrete: int = 0,
     ):
-        """
-        Initialize ParEGO unified objective function
+        r""" ParEGO unified objective function
+
+        The unified objective function of original objectives t is defined as:
+        t_unified = weight_max * max(weights * t) + weight_sum * sum(weights * t)
+
+        Before calculating the unified objective function, the original objectives are normalized to 0 and 1 using min-max scaling.
 
         Parameters
         ----------
@@ -60,6 +60,15 @@ class ParEGO:
             Weights for the objectives.
             Weights are automatically normalized to sum to 1.
             If None (default), random weights are used for each call.
+        weights_discrete: int
+            Number of discrete points :math:`s` to generate random weights.
+            The weights are generated as :math:`w_i = \frac{a_i}{s}`, where :math:`a_i` is random integer in :math:`[0, s)` such that :math:`\sum_{i=1}^{num_objectives} a_i = s`.
+            (See Equation (1) in [1] for details.)
+            If 0 (default), each weight is generated randomly from :math:`[0, 1)` and normalized to sum to 1.
+
+        References
+        ----------
+        [1] J. Knowles, ParEGO: a hybrid algorithm with on-line landscape approximation for expensive multiobjective optimization problems, IEEE Trans. Evol. Comput. 10, 50 (2006) (doi:10.1109/tevc.2005.851274).
         """
         self.num_objectives = num_objectives
         self.weight_sum = weight_sum
@@ -69,6 +78,7 @@ class ParEGO:
             self.weights = weights / np.sum(weights)
         else:
             self.weights = None
+        self.weights_discrete = weights_discrete
 
     def __call__(self, t: np.ndarray) -> np.ndarray:
         """
@@ -86,11 +96,12 @@ class ParEGO:
             Values of the unified objective function
             Shape: (N, 1)
         """
-        s = 10
         if self.weights is None:
-            weights = sample_weights(self.num_objectives, s)
-            # weights = np.random.rand(self.num_objectives)
-            # weights /= np.sum(weights)
+            if self.weights_discrete > 0:
+                weights = sample_weights(self.num_objectives, self.weights_discrete)
+            else:
+                weights = np.random.rand(self.num_objectives)
+                weights /= np.sum(weights)
         else:
             weights = self.weights
 

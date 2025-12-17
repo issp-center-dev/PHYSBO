@@ -53,7 +53,6 @@ if header:
     sys.stdout.write("score num_bayes volume elapsed_time\n")
     sys.exit(0)
 
-score = args.score
 unify_method_name = args.unify_method
 num_random_search = args.num_random_search
 num_bayes_search = args.num_bayes_search
@@ -67,13 +66,14 @@ parameters = common.set_parameters(
     use_range=use_range,
     fn=fn,
     N=N,
-    score=score,
+    score=args.score,
     nrand_basis_TS=nrand_basis_TS,
     unify_method_name=unify_method_name,
 )
 optimizer = parameters["optimizer"]
 nrand_basis = parameters["nrand_basis"]
 unify_method = parameters["unify_method"]
+score = parameters["score"]
 score_name = parameters["score_name"]
 
 pdffilename_prefix = f"solutions_{test_name}_{score_name}"

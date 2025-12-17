@@ -45,7 +45,6 @@ nobj = args.nobj
 centers = common.gen_centers(nobj, dim)
 fn = physbo.test_functions.multi_objective.Gaussian(centers=centers)
 
-score = args.score
 num_random_search = args.num_random_search
 num_bayes_search = args.num_bayes_search
 num_bayes_search_set = 1
@@ -64,6 +63,7 @@ parameters = common.set_parameters(
 optimizer = parameters["optimizer"]
 nrand_basis = parameters["nrand_basis"]
 unify_method = parameters["unify_method"]
+score = parameters["score"]
 score_name = parameters["score_name"]
 
 pdffilename_prefix = f"solutions_nobj_{nobj}_dim_{dim}_{score_name}"

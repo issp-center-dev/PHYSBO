@@ -162,5 +162,6 @@ def set_parameters(
         "optimizer": optimizer,
         "nrand_basis": nrand_basis,
         "unify_method": unify_method,
+        "score": score,
         "score_name": score_name,
     }

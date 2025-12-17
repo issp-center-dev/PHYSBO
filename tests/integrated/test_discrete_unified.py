@@ -54,14 +54,14 @@ class TestDiscreteUnify:
 
         self.vid_ref = {
             ("PI", "ParEGO", 0): 0.10003702093436417,
-            ("EI", "ParEGO", 0): 0.08608343705975985,
-            ("TS", "ParEGO", 0): 0.08400891973743863,
+            ("EI", "ParEGO", 0): 0.10003702093436417,
+            ("TS", "ParEGO", 0): 0.10204727026444038,
             ("PI", "NDS", 0): 0.18343541849063327,
             ("EI", "NDS", 0): 0.18343541849063327,
             ("TS", "NDS", 0): 0.2163315871396495,
-            ("PI", "ParEGO", 10): 0.14710521168216195,
-            ("EI", "ParEGO", 10): 0.18378443188055693,
-            ("TS", "ParEGO", 10): 0.20155428823928256,
+            ("PI", "ParEGO", 10): 0.08712717490793076,
+            ("EI", "ParEGO", 10): 0.12956442096199472,
+            ("TS", "ParEGO", 10): 0.13042353460033285,
             ("PI", "NDS", 10): 0.1954734380647939,
             ("EI", "NDS", 10): 0.16112209109885733,
             ("TS", "NDS", 10): 0.09917790729602605,
@@ -80,8 +80,10 @@ class TestDiscreteUnify:
             unify_method=self.unify_method[unify_method],
             interval=self.interval,
             num_rand_basis=num_rand_basis,
+            is_disp=False,
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+        print(vid)
         assert vid == pytest.approx(vid_ref, rel=1e-3)
         # test to run without error
         self.policy.get_score(score, xs=self.sim.X)
