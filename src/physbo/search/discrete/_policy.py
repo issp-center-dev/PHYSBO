@@ -309,6 +309,7 @@ class Policy:
         score="TS",
         interval=0,
         num_rand_basis=0,
+        optimizer=None,
     ):
         """
         Performing Bayesian optimization.
@@ -338,6 +339,9 @@ class Policy:
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
         num_rand_basis: int
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+        optimizer: optimizer object, optional
+            This is for compatibility with the range-based Policies.
+            This is not used.
 
         Returns
         -------

@@ -41,8 +41,8 @@ class ParEGO:
     def __init__(
         self,
         num_objectives: int,
-        weight_sum: float = 0.5,
-        weight_max: float = 0.5,
+        weight_sum: float = 0.05,
+        weight_max: float = 1.0,
         weights: Optional[np.ndarray] = None,
     ):
         """
@@ -53,9 +53,9 @@ class ParEGO:
         num_objectives: int
             Number of objectives
         weight_sum: float
-            Weight of the sum of objectives, default is 0.5
+            Weight of the sum of objectives, default is 0.05
         weight_max: float
-            Weight of the max of objectives, default is 0.5
+            Weight of the max of objectives, default is 1.0
         weights: np.ndarray
             Weights for the objectives.
             Weights are automatically normalized to sum to 1.
@@ -86,9 +86,11 @@ class ParEGO:
             Values of the unified objective function
             Shape: (N, 1)
         """
+        s = 10
         if self.weights is None:
-            weights = np.random.rand(self.num_objectives)
-            weights /= np.sum(weights)
+            weights = sample_weights(self.num_objectives, s)
+            # weights = np.random.rand(self.num_objectives)
+            # weights /= np.sum(weights)
         else:
             weights = self.weights
 
@@ -97,8 +99,32 @@ class ParEGO:
 
         assert t.shape[1] == self.num_objectives, f"The number of objectives in t ({t.shape[1]}) must be the same as the number of objectives in the ParEGO ({self.num_objectives})"
 
-        t_weighted = min_max_scaling(t) * weights.reshape(1, -1)
+        t_weighted = min_max_scaling(t, low=-1.0, high=0.0) * weights.reshape(1, -1)
         t_sum = np.sum(t_weighted, axis=1)
         t_max = np.max(t_weighted, axis=1)
         t_unified = self.weight_max * t_max + self.weight_sum * t_sum
         return t_unified.reshape(-1, 1)
+
+
+
+def sample_weights(num_objectives: int, s: int) -> np.ndarray:
+    """
+    Sample weights for the objectives
+
+    Parameters
+    ----------
+    num_objectives: int
+        Number of objectives
+    number_of_discrete_points: int
+        Number of discrete points to sample weights
+    """
+
+    ls = np.zeros(num_objectives, dtype=int)
+    for d in range(num_objectives - 1):
+        ls[d] = np.random.randint(s + 1)
+        s -= ls[d]
+    ls[num_objectives - 1] = s
+
+    return ls / np.sum(ls)
+
+

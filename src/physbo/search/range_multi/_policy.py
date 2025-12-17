@@ -201,7 +201,48 @@ class Policy(range_single.Policy):
         interval=0,
         num_rand_basis=0,
         optimizer=None,
+        unify_method=None,
     ):
+        """
+        Performing Bayesian optimization by using multi objective function
+
+        Parameters
+        ----------
+        training_list: list of physbo.Variable, optional
+            The training datasets.
+        max_num_probes: int, optional
+            The maximum number of searching process by Bayesian optimization.
+        num_search_each_probe: int, optional
+            The number of searching by Bayesian optimization at each process.
+        predictor_list: list of predictor objects, optional
+            The predictor objects.
+        is_disp: bool, optional
+            If true, process messages are outputted.
+        disp_pareto_set: bool, optional
+            If true, Pareto set is displayed.
+        simulator: callable, optional
+            The simulator function.
+        score: str, optional
+            The type of aquisition funciton.
+            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        interval: int, optional
+            The interval number of learning the hyper parameter.
+            If you set the negative value to interval, the hyper parameter learning is not performed.
+            If you set zero to interval, the hyper parameter learning is performed only at the first step.
+        num_rand_basis: int, optional
+            The number of basis function. If you choose 0, ordinary Gaussian process run.
+        optimizer: Optimizer object, optional
+            Optimizer object for optimizing the acquisition function.
+            If None, the default optimizer is used.
+        unify_method: callable, optional
+            This is for compatibility with the unified-optimization Policies.
+            This is not used.
+
+        Returns
+        -------
+        history: history object (physbo.search.range_multi.results.history)
+        """
+
         if self.mpirank != 0:
             is_disp = False
 

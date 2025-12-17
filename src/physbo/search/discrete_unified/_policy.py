@@ -199,9 +199,10 @@ class Policy(discrete.Policy):
         disp_pareto_set=False,
         simulator=None,
         score="EI",
-        unify_method=None,
         interval=0,
         num_rand_basis=0,
+        unify_method=None,
+        optimizer=None,
     ):
         """
         Performing Bayesian optimization by using unified objective function
@@ -225,15 +226,18 @@ class Policy(discrete.Policy):
         score: str, optional
             The type of aquisition funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-        unify_method: callable
-            The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
-            See physbo.search.unify for examples.
         interval: int, optional
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+        unify_method: callable
+            The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
+            See physbo.search.unify for examples.
+        optimizer: Optimizer object, optional
+            This is for compatibility with the range-based Policies.
+            This is not used.
 
         Returns
         -------
