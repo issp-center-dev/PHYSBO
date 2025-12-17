@@ -12,6 +12,8 @@ import copy
 
 import numpy as np
 
+from ..search import utility as search_utility
+
 
 class TestFunction(ABC):
     """Abstract class for test functions.
@@ -183,3 +185,18 @@ class TestFunction(ABC):
         # default implementation is that all points are valid
         return np.ones(x.shape[0], dtype=bool)
 
+    def make_grid(self, num_X: int | list[int] | np.ndarray) -> np.ndarray:
+        """Make a grid of points in the search space.
+
+        Arguments
+        =========
+        num_X: int | list[int] | np.ndarray
+            Number of points in each dimension.
+
+        Returns
+        =======
+        np.ndarray
+            The grid of points in the search space.
+            The output is a numpy array of shape (N, d), where N is the number of points and d is the dimension of the search space.
+        """
+        return search_utility.make_grid(self.min_X, self.max_X, num_X, constraint=self.constraint)

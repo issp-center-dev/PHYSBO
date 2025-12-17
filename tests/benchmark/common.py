@@ -34,12 +34,13 @@ def benchmark(
     max_X = fn.max_X
 
     if fn.dim <= 3:
-        X = physbo.search.utility.make_grid(min_X, max_X, N)
+        X = physbo.search.utility.make_grid(min_X, max_X, N, constraint=fn.constraint)
     else:
         np.random.seed(seed)
         X = np.random.uniform(min_X, max_X, size=(N * N * N, fn.dim))
         X[0, :] = min_X
         X[-1, :] = max_X
+        X = X[fn.constraint(X).reshape(-1)]
 
     use_range = optimizer is not None
 

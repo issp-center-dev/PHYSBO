@@ -41,6 +41,7 @@ def make_grid(
     min_X: list[float] | np.ndarray,
     max_X: list[float] | np.ndarray,
     num_X: int | list[int] | np.ndarray,
+    constraint=None,
 ) -> np.ndarray:
     """Make a grid of points in the search space.
 
@@ -101,14 +102,22 @@ def make_grid(
             f"ERROR: num_X must have the same number of dimensions as min_X and max_X, but got {num_X.shape[0]} and {d}"
         )
 
+    if constraint is None:
+        def constraint(x):
+            return True
+
     ls = [np.linspace(min_X[i], max_X[i], num_X[i]) for i in range(d)]
 
-    N = np.prod(num_X)
-    X = np.zeros((N, d))
+    # N = np.prod(num_X)
+    # X = np.zeros((N, d))
+    X_list = []
     for i, x in enumerate(itertools.product(*ls)):
-        X[i, :] = x
+        # X[i, :] = x
+        x_arr = np.array(x).reshape(1, -1)
+        if constraint(x_arr):
+            X_list.append(x)
 
-    return X
+    return np.array(X_list)
 
 
 def plot_pareto_front(
