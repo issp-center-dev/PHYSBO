@@ -132,14 +132,14 @@ class Pareto(object):
         else:
             return v_all - v_non_dom
 
-    def divide_non_dominated_region(self, force_binary_search=False):
+    def divide_non_dominated_region(self, force_binary_search=False, debug=False):
         # clear rectangles
         self.cells = Rectangles(self.num_objectives, int)
 
         if self.num_objectives == 2 and not force_binary_search:
             self.__divide_2d()
         else:
-            self.__divide_using_binary_search()
+            self.__divide_using_binary_search(debug=debug)
 
     def __divide_2d(self):
         """
@@ -161,7 +161,7 @@ class Pareto(object):
             np.any(self.front <= p, axis=1)
         )  # revised on 2025/03/25, vectorized with np.any
 
-    def __divide_using_binary_search(self):
+    def __divide_using_binary_search(self, debug=False):
         front = np.r_[
             np.full((1, self.num_objectives), -np.inf),
             self.front,
@@ -175,7 +175,8 @@ class Pareto(object):
             np.full((1, self.num_objectives), self.front.shape[0] + 1, dtype=int),
         ]
 
-        print("front_idx shape", front_idx.shape)
+        if debug:
+            print("front_idx shape", front_idx.shape)
 
         rect_candidates = [[np.copy(front_idx[0]), np.copy(front_idx[-1])]]
 
@@ -225,6 +226,6 @@ class Pareto(object):
 
         end_time = time.time()
 
-        print("Execution time:", end_time - start_time)
-
-        print("call_time", call_time)
+        if debug:
+            print("Execution time:", end_time - start_time, "seconds")
+            print(f"call times: {call_time} times")

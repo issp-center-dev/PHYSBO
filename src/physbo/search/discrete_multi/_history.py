@@ -97,7 +97,7 @@ class History(object):
 
     def export_pareto_front(self):
         return self.pareto.export_front()
-
+    
     def save(self, filename):
         N = self.total_num_search
         M = self.num_runs
