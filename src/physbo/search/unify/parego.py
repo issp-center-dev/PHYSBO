@@ -36,8 +36,8 @@ class ParEGO:
     def __init__(
         self,
         num_objectives: int,
-        weight_sum: float = 0.5,
-        weight_max: float = 0.5,
+        weight_sum: float = 0.05,
+        weight_max: float = 1.0,
         weights: Optional[np.ndarray] = None,
         weights_discrete: int = 0,
     ):

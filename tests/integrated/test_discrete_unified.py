@@ -83,7 +83,6 @@ class TestDiscreteUnify:
             is_disp=False,
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-        print(vid)
         assert vid == pytest.approx(vid_ref, rel=1e-3)
         # test to run without error
         self.policy.get_score(score, xs=self.sim.X)
