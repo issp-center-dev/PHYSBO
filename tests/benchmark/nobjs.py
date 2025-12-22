@@ -28,6 +28,7 @@ parser.add_argument("--use_range", action="store_true")
 parser.add_argument("--seed", type=int, default=12345)
 parser.add_argument("--output_dir", type=str, default="output_nobjs")
 parser.add_argument("--header", action="store_true")
+parser.add_argument("--savefig", action="store_true")
 args = parser.parse_args()
 
 dim = args.dim
@@ -66,7 +67,11 @@ unify_method = parameters["unify_method"]
 score = parameters["score"]
 score_name = parameters["score_name"]
 
-pdffilename_prefix = f"solutions_nobj_{nobj}_dim_{dim}_{score_name}"
+if args.savefig:
+    pdffilename_prefix = f"solutions_nobj_{nobj}_dim_{dim}_{score_name}"
+else:
+    pdffilename_prefix = None
+
 with open(filename, "w") as f:
     vid, elapsed_time, num_bayes = common.benchmark(
         fn=fn,

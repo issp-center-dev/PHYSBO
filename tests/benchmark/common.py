@@ -27,7 +27,7 @@ def benchmark(
     N: int,
     seed: int,
     output_dir: str,
-    pdffilename_prefix: str,
+    pdffilename_prefix: str | None = None,
     optimizer: physbo.search.optimize.random.Optimizer | None = None,
     unify_method=None,
 ):
@@ -80,26 +80,37 @@ def benchmark(
         res.append(r)
 
     nobj = fn.nobj
-    fig, ax = plt.subplots(nobj - 1, nobj - 1, figsize=(5 * (nobj - 1), 5 * (nobj - 1)), sharex="col", sharey="row")
+    if pdffilename_prefix is not None:
+        fig, ax = plt.subplots(nobj - 1, nobj - 1, figsize=(5 * (nobj - 1), 5 * (nobj - 1)), sharex="col", sharey="row")
+    else:
+        fig = None
+        ax = None
 
     vid = []
+    vid_times = []
     num_bayes = []
+    time_start = time.time()
     for i in range(num_bayes_search_set):
         num_bayes.append((i + 1) * num_bayes_search)
-        v = res[i].pareto.volume_in_dominance(fn.reference_min, fn.reference_max)
+        # v = res[i].pareto.volume_in_dominance(fn.reference_min, fn.reference_max)
+        v = 0.0
+        etime = time.time() - time_start
+        # vid_times.append(etime)
         vid.append(v)
-        physbo.search.utility.plot_pareto_front_all(
-            res[i], steps_end=num_random_search, marker="+", ax=ax
-        )
-        physbo.search.utility.plot_pareto_front_all(
-            res[i], steps_begin=num_random_search, marker="o", ax=ax
-        )
-        filename = os.path.join(
-            output_dir,
-            f"{pdffilename_prefix}_{(i + 1) * num_bayes_search}.pdf",
-        )
-        fig.savefig(filename)
-    plt.close(fig)
+        if fig is not None:
+            physbo.search.utility.plot_pareto_front_all(
+                res[i], steps_end=num_random_search, marker="+", ax=ax
+            )
+            physbo.search.utility.plot_pareto_front_all(
+                res[i], steps_begin=num_random_search, marker="o", ax=ax
+            )
+            filename = os.path.join(
+                output_dir,
+                f"{pdffilename_prefix}_{(i + 1) * num_bayes_search}.pdf",
+            )
+            fig.savefig(filename)
+    if fig is not None:
+        plt.close(fig)
     return vid, elapsed_time, num_bayes
 
 
