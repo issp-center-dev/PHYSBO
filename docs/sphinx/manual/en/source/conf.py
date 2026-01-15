@@ -20,11 +20,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import sys
+# import sys
 import os
 from importlib.util import find_spec
 
-sys.path.insert(0, os.path.abspath("../../../../../physbo"))
+# sys.path.insert(0, os.path.abspath("../../../../../physbo"))
 
 # -- Project information -----------------------------------------------------
 
@@ -130,7 +130,7 @@ for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = [".rst", ".md"]
+# source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"

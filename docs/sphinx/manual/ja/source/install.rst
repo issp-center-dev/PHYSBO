@@ -137,7 +137,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
   - ``fbest, best_action = res.export_all_sequence_best_fx()``: simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
   - ``res.total_num_search``: simulator のトータル評価数。
 
-  また、ベイズ最適化後の ``policy`` は ``save`` メソッドにより外部ファイルに保存でき、 ``load`` メソッドを用いてファイルからロード・再開することができます。使用方法の詳細はチュートリアルの `「インタラクティブに実行する」<notebook/tutorial_interactive_mode.html>`_ をご覧ください。
+  また、ベイズ最適化後の ``policy`` は ``save`` メソッドにより外部ファイルに保存でき、 ``load`` メソッドを用いてファイルからロード・再開することができます。使用方法の詳細はチュートリアルの `「インタラクティブに実行する」 <notebook/tutorial_interactive_mode.html>`_ をご覧ください。
 
   PHYSBOではほかにも、多目的最適化や連続的な探索空間に対する最適化など、様々な最適化手法が実装されています。詳しくはチュートリアルの `「多目的最適化」 <notebook/tutorial_multi_objective.html>`_ および `「連続空間での最適化」 <notebook/tutorial_range.html>`_ の項目を参照してください。
 
