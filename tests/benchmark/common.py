@@ -30,6 +30,7 @@ def benchmark(
     pdffilename_prefix: str | None = None,
     optimizer: physbo.search.optimize.random.Optimizer | None = None,
     unify_method=None,
+    skip_volume_calculation=False,
 ):
     min_X = fn.min_X
     max_X = fn.max_X
@@ -92,10 +93,12 @@ def benchmark(
     time_start = time.time()
     for i in range(num_bayes_search_set):
         num_bayes.append((i + 1) * num_bayes_search)
-        # v = res[i].pareto.volume_in_dominance(fn.reference_min, fn.reference_max)
-        v = 0.0
+        if not skip_volume_calculation:
+            v = res[i].pareto.volume_in_dominance(fn.reference_min, fn.reference_max)
+        else:
+            v = -1.0
         etime = time.time() - time_start
-        # vid_times.append(etime)
+        vid_times.append(etime)
         vid.append(v)
         if fig is not None:
             physbo.search.utility.plot_pareto_front_all(

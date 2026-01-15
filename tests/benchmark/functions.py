@@ -78,9 +78,6 @@ score_name = parameters["score_name"]
 
 pdffilename_prefix = f"solutions_{test_name}_{score_name}"
 with open(filename, "a") as f:
-    if header:
-        f.write("score num_bayes volume elapsed_time\n")
-
     vid, elapsed_time, num_bayes = common.benchmark(
         fn=fn,
         score=score,

@@ -14,7 +14,6 @@ import physbo
 import common
 
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--nobj", type=int, default=2)
 parser.add_argument("--dim", type=int, default=2)
@@ -72,7 +71,7 @@ if args.savefig:
 else:
     pdffilename_prefix = None
 
-with open(filename, "w") as f:
+with open(filename, "a") as f:
     vid, elapsed_time, num_bayes = common.benchmark(
         fn=fn,
         score=score,
