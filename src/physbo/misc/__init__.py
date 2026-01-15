@@ -6,6 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from ._centering import centering as centering
+from ._centering import min_max_scaling as min_max_scaling
 from ._gauss_elim import gauss_elim as gauss_elim
 from ._set_config import SetConfig as SetConfig
 

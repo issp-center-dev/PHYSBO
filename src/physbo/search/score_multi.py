@@ -59,6 +59,9 @@ def HVPI(fmean, fstd, pareto):
         score of the candidate
     """
 
+    if pareto.cells is None:
+        pareto.divide_non_dominated_region()
+
     N = fmean.shape[0]
     n_obj = pareto.num_objectives
 
@@ -122,6 +125,9 @@ def EHVI(fmean, fstd, pareto):
     score: numpy.ndarray
         score of the candidate
     """
+
+    if pareto.cells is None:
+        pareto.divide_non_dominated_region()
 
     N = fmean.shape[0]
     n_obj = pareto.num_objectives

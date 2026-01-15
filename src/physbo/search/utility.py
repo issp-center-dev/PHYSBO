@@ -167,13 +167,13 @@ def plot_pareto_front(
     Note
     ====
     - colors:
-        - If both color and *_color are provided, *_color is used.
+        - If both color and \*_color are provided, \*_color is used.
         - If only color is provided, the color is used for both the Pareto front and the dominated points.
-        - If neither color nor *_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
+        - If neither color nor \*_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
     - markers:
-        - If both marker and *_marker are provided, *_marker is used.
+        - If both marker and \*_marker are provided, \*_marker is used.
         - If only marker is provided, the marker is used for both the Pareto front and the dominated points.
-        - If neither marker nor *_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
+        - If neither marker nor \*_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
 
     """
     import matplotlib.pyplot as plt
@@ -281,13 +281,13 @@ def plot_pareto_front_all(
     Note
     ====
     - colors:
-        - If both color and *_color are provided, *_color is used.
+        - If both color and \*_color are provided, \*_color is used.
         - If only color is provided, the color is used for both the Pareto front and the dominated points.
-        - If neither color nor *_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
+        - If neither color nor \*_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
     - markers:
-        - If both marker and *_marker are provided, *_marker is used.
+        - If both marker and \*_marker are provided, \*_marker is used.
         - If only marker is provided, the marker is used for both the Pareto front and the dominated points.
-        - If neither marker nor *_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
+        - If neither marker nor \*_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
 
     """
     import matplotlib.pyplot as plt

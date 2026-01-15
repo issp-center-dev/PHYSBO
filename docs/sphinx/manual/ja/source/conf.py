@@ -75,7 +75,7 @@ for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
         exclude_patterns.append("api")
 
 # The suffix of source filenames.
-source_suffix = [".rst"]
+# source_suffix = [".rst", ".ipynb"]
 
 # from recommonmark.parser import CommonMarkParser
 

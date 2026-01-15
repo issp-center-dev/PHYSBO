@@ -54,6 +54,10 @@ def update_stats(blm, x, t, psi=None):
     psi:
         feature map (default: blm.lik.get_basis(X))
 
+    Notes
+    =====
+    Only one sample is supported.
+
     Returns
     =======
     (U, b, alpha): Tuple
@@ -63,8 +67,11 @@ def update_stats(blm, x, t, psi=None):
     =====
     ``blm.stats[0]`` (U) will be mutated while the others not.
     """
+    assert x.ndim == 1 or x.shape[0] == 1, "Only one sample is supported."
+
     if psi is None:
-        psi = blm.lik.get_basis(x)
+        psi = blm.lik.get_basis(x).reshape(-1)
+
     U = blm.stats[0]
     b = blm.stats[1] + (t - blm.lik.linear.bias) * psi
     misc.cholupdate(U, psi * np.sqrt(blm.lik.cov.prec))
