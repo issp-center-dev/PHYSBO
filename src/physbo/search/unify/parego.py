@@ -126,7 +126,7 @@ def sample_weights(num_objectives: int, s: int) -> np.ndarray:
     ----------
     num_objectives: int
         Number of objectives
-    number_of_discrete_points: int
+    s: int
         Number of discrete points to sample weights
     """
 

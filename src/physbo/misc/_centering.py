@@ -47,11 +47,11 @@ def min_max_scaling(X, low=0.0, high=1.0):
     X_normalized: numpy array
         Normalized N x d dimensional matrix.
     """
-    min, max = np.min(X, 0), np.max(X, 0)
-    diff = max - min
+    min_vals, max_vals = np.min(X, 0), np.max(X, 0)
+    diff = max_vals - min_vals
     d = high - low
     center = 0.5 * (low + high)
     index = np.where(diff != 0)
     res = np.ones_like(X) * center
-    res[:, index] = (X[:, index] - min[index]) / diff[index] * d + low
-    return  res
+    res[:, index] = (X[:, index] - min_vals[index]) / diff[index] * d + low
+    return res

@@ -218,7 +218,7 @@ class Policy(discrete.Policy):
         simulator: callable, optional
             The simulator function.
         score: str, optional
-            The type of aquisition funciton.
+            The type of acquisition function.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
         interval: int, optional
             The interval number of learning the hyper parameter.
