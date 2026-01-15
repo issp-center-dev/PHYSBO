@@ -224,7 +224,7 @@ class Policy(discrete.Policy):
         simulator: callable, optional
             The simulator function.
         score: str, optional
-            The type of aquisition funciton.
+            The type of acquisition funciton.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
         interval: int, optional
             The interval number of learning the hyper parameter.
@@ -412,12 +412,12 @@ class Policy(discrete.Policy):
         alpha=1,
     ):
         """
-        Calcualte score (acquisition function)
+        Calculate score (acquisition function)
 
         Parameters
         ----------
         mode: str
-            The type of aquisition funciton. TS, EI and PI are available.
+            The type of acquisition funciton. TS, EI and PI are available.
             These functions are defined in score.py.
         actions: array of int
             actions to calculate score
@@ -515,7 +515,7 @@ class Policy(discrete.Policy):
         """
 
         if self.predictor is None:
-            self._warn_no_predictor("get_post_fmean()")
+            self._warn_no_predictor("get_permutation_importance()")
             predictor = gp_predictor(self.config)
             predictor.fit(self.training_unified, 0)
             predictor.prepare(self.training_unified)
@@ -541,7 +541,7 @@ class Policy(discrete.Policy):
         Parameters
         ----------
         mode: str
-            The type of aquision funciton.
+            The type of acquisition function.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
         chosen_actions: numpy.ndarray

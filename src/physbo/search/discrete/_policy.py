@@ -310,6 +310,7 @@ class Policy:
         interval=0,
         num_rand_basis=0,
         optimizer=None,
+        unify_method=None,
     ):
         """
         Performing Bayesian optimization.

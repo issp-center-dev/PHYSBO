@@ -305,66 +305,6 @@ class Policy(range_single.Policy):
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
-    def __argmax_score(self, mode, predictors, training, virtual_trainings, optimizer):
-        """
-        Get the action that maximizes the score.
-
-        Arguments
-        ----------
-        mode: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        predictors: list[Predictor]
-            List of predictors.
-        training: Variable
-            Training data.
-        virtual_trainings: list[Variable]
-            List of extra training data.
-        optimizer: Function or Optimizer object
-            Optimizer object for optimizing the acquisition function.
-        """
-
-        K = len(virtual_trainings)
-        if K == 0:
-            for i, predictor in enumerate(predictors):
-                predictor.prepare(training, objective_index=i)
-
-            def fn(x):
-                return self.get_score(
-                    mode,
-                    xs=x.reshape(1, -1),
-                    predictor_list=predictors,
-                    training_list=training,
-                    parallel=False,
-                )[0]
-        else:  # marginal score
-            trains_k = [copy.deepcopy(training) for _ in range(K)]
-            predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-            for predictor, training, virtual_training in zip(
-                predictors_k, trains_k, virtual_trainings
-            ):
-                training.add(
-                    X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
-                )
-                for i in range(self.num_objectives):
-                    predictor[i].update(training, virtual_training, objective_index=i)
-
-            def fn(x):
-                f = np.zeros(K)
-                for k in range(K):
-                    f[k] = self.get_score(
-                        mode,
-                        xs=x.reshape(1, -1),
-                        predictor_list=predictors_k[k],
-                        training_list=trains_k[k],
-                        parallel=False,
-                    )[0]
-                return np.mean(f)
-
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
-
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         """
         Getting next candidates
@@ -372,7 +312,7 @@ class Policy(range_single.Policy):
         Parameters
         ----------
         mode: str
-            The type of aquisition funciton.
+            The type of acquisition function.
             TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
             These functions are defined in score.py.
         N: int
@@ -440,7 +380,7 @@ class Policy(range_single.Policy):
             predictor.fit(
                 self.training_unified, 0, comm=self.mpicomm, objective_index=0
             )
-            predictor.prepare(self.training, objective_index=0)
+            predictor.prepare(self.training_unified, objective_index=0)
             return predictor.get_post_fmean(self.training_unified, X, objective_index=0)
         else:
             self._update_predictor()
@@ -500,6 +440,9 @@ class Policy(range_single.Policy):
         if pareto is None:
             pareto = self.history.pareto
 
+        # `pareto` is currently unused in scoring but kept for API compatibility.
+        # This dummy read prevents it from being flagged as an unused variable.
+        _ = pareto
         if training.X is None or training.X.shape[0] == 0:
             msg = "ERROR: No training data is registered."
             raise RuntimeError(msg)
@@ -598,7 +541,6 @@ class Policy(range_single.Policy):
         if file_predictor is not None:
             self.load_predictor(file_predictor)
 
-        N = self.history.total_num_search
 
     def save_predictor(self, file_name):
         with open(file_name, "wb") as f:
