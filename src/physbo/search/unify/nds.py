@@ -153,7 +153,7 @@ def _pareto_front_max(solutions, remains) -> tuple[list[int], list[int]]:
                 break
         if dominated:
             new_remains.append(i)
-        if not dominated:
+        else:
             pareto.append(i)
     return pareto, new_remains
 
