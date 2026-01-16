@@ -7,15 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>physbo.blm.inf.exact &mdash; PHYSBO 3.2-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../../../_static/documentation_options.js?v=a379834a"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -140,6 +140,10 @@
 <span class="sd">    psi:</span>
 <span class="sd">        feature map (default: blm.lik.get_basis(X))</span>
 
+<span class="sd">    Notes</span>
+<span class="sd">    =====</span>
+<span class="sd">    Only one sample is supported.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    =======</span>
 <span class="sd">    (U, b, alpha): Tuple</span>
@@ -149,8 +153,11 @@
 <span class="sd">    =====</span>
 <span class="sd">    ``blm.stats[0]`` (U) will be mutated while the others not.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only one sample is supported.&quot;</span>
+
     <span class="k">if</span> <span class="n">psi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">psi</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">psi</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
     <span class="n">U</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span> <span class="o">*</span> <span class="n">psi</span>
     <span class="n">misc</span><span class="o">.</span><span class="n">cholupdate</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">prec</span><span class="p">))</span>

@@ -7,15 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>physbo.search.range_multi._policy &mdash; PHYSBO 3.2-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../../../_static/documentation_options.js?v=a379834a"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -292,7 +292,48 @@
         <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performing Bayesian optimization by using multi objective function</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        training_list: list of physbo.Variable, optional</span>
+<span class="sd">            The training datasets.</span>
+<span class="sd">        max_num_probes: int, optional</span>
+<span class="sd">            The maximum number of searching process by Bayesian optimization.</span>
+<span class="sd">        num_search_each_probe: int, optional</span>
+<span class="sd">            The number of searching by Bayesian optimization at each process.</span>
+<span class="sd">        predictor_list: list of predictor objects, optional</span>
+<span class="sd">            The predictor objects.</span>
+<span class="sd">        is_disp: bool, optional</span>
+<span class="sd">            If true, process messages are outputted.</span>
+<span class="sd">        disp_pareto_set: bool, optional</span>
+<span class="sd">            If true, Pareto set is displayed.</span>
+<span class="sd">        simulator: callable, optional</span>
+<span class="sd">            The simulator function.</span>
+<span class="sd">        score: str, optional</span>
+<span class="sd">            The type of acquisition funciton.</span>
+<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
+<span class="sd">        interval: int, optional</span>
+<span class="sd">            The interval number of learning the hyper parameter.</span>
+<span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
+<span class="sd">            If you set zero to interval, the hyper parameter learning is performed only at the first step.</span>
+<span class="sd">        num_rand_basis: int, optional</span>
+<span class="sd">            The number of basis function. If you choose 0, ordinary Gaussian process run.</span>
+<span class="sd">        optimizer: Optimizer object, optional</span>
+<span class="sd">            Optimizer object for optimizing the acquisition function.</span>
+<span class="sd">            If None, the default optimizer is used.</span>
+<span class="sd">        unify_method: callable, optional</span>
+<span class="sd">            This is for compatibility with the unified-optimization Policies.</span>
+<span class="sd">            This is not used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        history: history object (physbo.search.range_multi.results.history)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
 

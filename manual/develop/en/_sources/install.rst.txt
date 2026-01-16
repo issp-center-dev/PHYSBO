@@ -38,7 +38,7 @@ Uninstall
 
 #. Execute the following command. ::
 
-  $ python3 -m pip uninstall physbo
+    $ python3 -m pip uninstall physbo
 
 
 Basic structures

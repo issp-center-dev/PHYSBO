@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>連続空間での最適化 &mdash; PHYSBO 3.2-dev ドキュメント</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
 
@@ -16,17 +16,17 @@
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=3a6338e4"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/translations.js?v=4755f45a"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="索引" href="../genindex.html" />
     <link rel="search" title="検索" href="../search.html" />
     <link rel="next" title="アルゴリズム" href="../algorithm.html" />
-    <link rel="prev" title="多目的最適化" href="tutorial_multi_objective.html" /> 
+    <link rel="prev" title="多目的最適化の高速計算" href="tutorial_multi_unified.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -59,6 +59,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_unified.html">多目的最適化の高速計算</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">連続空間での最適化</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#基本的な使い方">基本的な使い方</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#獲得関数の最適化アルゴリズム">獲得関数の最適化アルゴリズム</a></li>
@@ -203,7 +204,7 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;physbo.search.range._history.History at 0x10ab79f90&gt;
+&lt;physbo.search.range._history.History at 0x113454d10&gt;
 </pre></div></div>
 </div>
 <p>次に、 <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> でベイズ最適化を実行します。</p>
@@ -227,14 +228,14 @@ Start the hyper parameter learning ...
 0 -th epoch marginal likelihood 14.586042968393608
 50 -th epoch marginal likelihood 14.234874815492589
 100 -th epoch marginal likelihood 14.063504009485191
-150 -th epoch marginal likelihood 13.916750623078872
-200 -th epoch marginal likelihood 13.772691286779533
-250 -th epoch marginal likelihood 13.633003306706154
-300 -th epoch marginal likelihood 13.499200854053448
-350 -th epoch marginal likelihood 13.371932369305028
-400 -th epoch marginal likelihood 13.251396114620245
-450 -th epoch marginal likelihood 13.137551699926508
-500 -th epoch marginal likelihood 13.030228562473354
+150 -th epoch marginal likelihood 13.916750623078888
+200 -th epoch marginal likelihood 13.772691286779498
+250 -th epoch marginal likelihood 13.633003306706119
+300 -th epoch marginal likelihood 13.499200854053457
+350 -th epoch marginal likelihood 13.371932369305044
+400 -th epoch marginal likelihood 13.251396114620233
+450 -th epoch marginal likelihood 13.137551699926473
+500 -th epoch marginal likelihood 13.03022856247334
 Done
 
 0011-th step: f(x) = -5.026362 (action=[-1.03592362  1.98827161])
@@ -286,7 +287,7 @@ Done
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x10af52d50&gt;]
+[&lt;matplotlib.lines.Line2D at 0x1134eac10&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -360,14 +361,14 @@ Start the hyper parameter learning ...
 0 -th epoch marginal likelihood 14.586042968393608
 50 -th epoch marginal likelihood 14.234874815492589
 100 -th epoch marginal likelihood 14.063504009485191
-150 -th epoch marginal likelihood 13.916750623078872
-200 -th epoch marginal likelihood 13.772691286779533
-250 -th epoch marginal likelihood 13.633003306706154
-300 -th epoch marginal likelihood 13.499200854053448
-350 -th epoch marginal likelihood 13.371932369305028
-400 -th epoch marginal likelihood 13.251396114620245
-450 -th epoch marginal likelihood 13.137551699926508
-500 -th epoch marginal likelihood 13.030228562473354
+150 -th epoch marginal likelihood 13.916750623078888
+200 -th epoch marginal likelihood 13.772691286779498
+250 -th epoch marginal likelihood 13.633003306706119
+300 -th epoch marginal likelihood 13.499200854053457
+350 -th epoch marginal likelihood 13.371932369305044
+400 -th epoch marginal likelihood 13.251396114620233
+450 -th epoch marginal likelihood 13.137551699926473
+500 -th epoch marginal likelihood 13.03022856247334
 Done
 
 0011-th step: f(x) = -3.969688 (action=[-0.55371092  1.91392061])
@@ -408,7 +409,7 @@ Done
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x10ba4fd90&gt;]
+[&lt;matplotlib.lines.Line2D at 0x113615a90&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -521,14 +522,14 @@ Start the hyper parameter learning ...
 0 -th epoch marginal likelihood 14.586042968393608
 50 -th epoch marginal likelihood 14.234874815492589
 100 -th epoch marginal likelihood 14.063504009485191
-150 -th epoch marginal likelihood 13.916750623078872
-200 -th epoch marginal likelihood 13.772691286779533
-250 -th epoch marginal likelihood 13.633003306706154
-300 -th epoch marginal likelihood 13.499200854053448
-350 -th epoch marginal likelihood 13.371932369305028
-400 -th epoch marginal likelihood 13.251396114620245
-450 -th epoch marginal likelihood 13.137551699926508
-500 -th epoch marginal likelihood 13.030228562473354
+150 -th epoch marginal likelihood 13.916750623078888
+200 -th epoch marginal likelihood 13.772691286779498
+250 -th epoch marginal likelihood 13.633003306706119
+300 -th epoch marginal likelihood 13.499200854053457
+350 -th epoch marginal likelihood 13.371932369305044
+400 -th epoch marginal likelihood 13.251396114620233
+450 -th epoch marginal likelihood 13.137551699926473
+500 -th epoch marginal likelihood 13.03022856247334
 Done
 
 name            : exchange
@@ -549,7 +550,7 @@ Best Result:
   rank = 0
   step = 592
   walker = 7
-  fx = -0.08724730012318738
+  fx = -0.08724730012318252
   x1 = -0.6632394188413887
   x2 = 1.2992687470140636
 0011-th step: f(x) = -2.127986 (action=[-0.66323942  1.29926875])
@@ -573,7 +574,7 @@ Best Result:
   rank = 0
   step = 3
   walker = 2
-  fx = -0.15122627226282423
+  fx = -0.15122627226281737
   x1 = 0.21383031999250043
   x2 = 0.3254993696726256
 0012-th step: f(x) = -0.151673 (action=[0.21383032 0.32549937])
@@ -597,7 +598,7 @@ Best Result:
   rank = 0
   step = 792
   walker = 4
-  fx = -0.045043047258201775
+  fx = -0.04504304725820115
   x1 = 0.2884566379550175
   x2 = 0.24852525678914614
 0013-th step: f(x) = -0.144972 (action=[0.28845664 0.24852526])
@@ -621,7 +622,7 @@ Best Result:
   rank = 0
   step = 9
   walker = 2
-  fx = -0.02392460498257011
+  fx = -0.02392460498258052
   x1 = 0.24246152789117092
   x2 = 0.31119117438511995
 0014-th step: f(x) = -0.155628 (action=[0.24246153 0.31119117])
@@ -645,7 +646,7 @@ Best Result:
   rank = 0
   step = 9
   walker = 2
-  fx = -0.020446511277702712
+  fx = -0.020446511277704194
   x1 = 0.24246152789117092
   x2 = 0.31119117438511995
 0015-th step: f(x) = -0.155628 (action=[0.24246153 0.31119117])
@@ -669,7 +670,7 @@ Best Result:
   rank = 0
   step = 552
   walker = 2
-  fx = -0.07481182997481856
+  fx = -0.07481182997481572
   x1 = 0.13244261916217667
   x2 = 0.06615306139761785
 0016-th step: f(x) = -0.021917 (action=[0.13244262 0.06615306])
@@ -693,7 +694,7 @@ Best Result:
   rank = 0
   step = 369
   walker = 7
-  fx = -0.02747368281669843
+  fx = -0.02747368281669992
   x1 = 0.08963724279512796
   x2 = -0.04990899825183725
 0017-th step: f(x) = -0.010526 (action=[ 0.08963724 -0.049909  ])
@@ -717,7 +718,7 @@ Best Result:
   rank = 0
   step = 870
   walker = 3
-  fx = -0.025961091903193047
+  fx = -0.0259610919031921
   x1 = 0.14544088137927852
   x2 = 0.043151524528747376
 0018-th step: f(x) = -0.023015 (action=[0.14544088 0.04315152])
@@ -741,7 +742,7 @@ Best Result:
   rank = 0
   step = 808
   walker = 1
-  fx = -0.009096193960224805
+  fx = -0.009096193960228163
   x1 = -0.1277048769917059
   x2 = -0.01838854551819171
 0019-th step: f(x) = -0.016647 (action=[-0.12770488 -0.01838855])
@@ -789,7 +790,7 @@ Best Result:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x10ba6ca50&gt;]
+[&lt;matplotlib.lines.Line2D at 0x1138dd150&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -814,7 +815,7 @@ Best Result:
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="tutorial_multi_objective.html" class="btn btn-neutral float-left" title="多目的最適化" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_multi_unified.html" class="btn btn-neutral float-left" title="多目的最適化の高速計算" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../algorithm.html" class="btn btn-neutral float-right" title="アルゴリズム" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
