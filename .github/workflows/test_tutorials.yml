@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: Test ${{ matrix.lang }} tutorials with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,4 +34,7 @@ jobs:
     - name: Test tutorials
       run: |
         cd docs/sphinx/manual/${{ matrix.lang }}/source/notebook
-        parallel -j 4 uv run -m jupyter execute ::: *.ipynb
+        # parallel -j 2 uv run -m jupyter execute ::: *.ipynb
+        for notebook in *.ipynb; do
+          time uv run -m jupyter execute "$notebook"
+        done
