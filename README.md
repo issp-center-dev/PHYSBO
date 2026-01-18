@@ -75,7 +75,7 @@ A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery
 
 ### Run tests
 
-When using UV, the command `uv sync --dev` will install the dependencies to run tests like `pytest`.
+When using UV, the command `uv sync --extra tests` will install the dependencies to run tests like `pytest`.
 Test files are in `tests/` directory, and use `pytest` to run tests.
 
 ``` bash
