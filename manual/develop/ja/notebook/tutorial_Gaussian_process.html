@@ -59,6 +59,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#学習データの定義">学習データの定義</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ガウス過程の学習と予測">ガウス過程の学習と予測</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#訓練済みモデルによる予測">訓練済みモデルによる予測</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#注意事項">注意事項</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
@@ -108,22 +109,25 @@
 <p>PHYSBOではガウス過程回帰を実行しながらベイズ最適化を行なっています。</p>
 <p>そのため、学習データが与えられた際にガウス過程回帰を実行することもでき、学習済みモデルを利用したテストデータの予測も行うことができます。</p>
 <p>ここでは、その手順について紹介します。</p>
-<section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
-<p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
-<p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
+</pre></div>
+</div>
+</div>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>本チュートリアルでは例として、Cuの安定した界面構造の探索問題を扱います。 目的関数の評価にあたる構造緩和計算には、実際には1回あたり数時間といったオーダーの時間を要しますが、本チュートリアルでは既に評価済みの値を使用します。問題設定については、以下の文献を参照してください。 S. Kiyohara, H. Oda, K. Tsuda and T. Mizoguchi, “Acceleration of stable interface structure searching using a kriging approach”, Jpn. J. Appl. Phys. 55, 045502 (2016).</p>
+<p>データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
@@ -131,20 +135,30 @@
 
 <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
-
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(17982, 3)
+</pre></div></div>
 </div>
 </section>
 <section id="学習データの定義">
 <h2>学習データの定義<a class="headerlink" href="#学習データの定義" title="Link to this heading"></a></h2>
 <p>対象データのうち、ランダムに選んだ1割をトレーニングデータとして利用し、別のランダムに選んだ1割をテストデータとして利用します。</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 <span class="n">Ntrain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="n">Ntest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">N</span><span class="o">-</span><span class="n">Ntrain</span><span class="p">)</span>
 
@@ -183,7 +197,7 @@ Ntest = 1798
 </ol>
 <p>共分散の定義(ガウシアン)</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
@@ -192,7 +206,7 @@ Ntest = 1798
 </div>
 <p>平均の定義</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
@@ -201,7 +215,7 @@ Ntest = 1798
 </div>
 <p>尤度関数の定義(ガウシアン)</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
@@ -209,29 +223,18 @@ Ntest = 1798
 </div>
 </div>
 <p>ガウス過程モデルの生成</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
-<span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">set_config</span><span class="p">()</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">SetConfig</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
---------------------------------------------------------------------------------
-WARNING: physbo.set_config is deprecated and will be removed in the future.
-         Use physbo.SetConfig instead.
---------------------------------------------------------------------------------
-</pre></div></div>
-</div>
 <p>ガウス過程モデルを学習</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
@@ -247,24 +250,24 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 16183.326658360289
-50 -th epoch marginal likelihood 3766.7342499254646
-100 -th epoch marginal likelihood 1450.3500890285277
-150 -th epoch marginal likelihood 127.98987541458246
-200 -th epoch marginal likelihood -665.7141798300481
-250 -th epoch marginal likelihood -1132.4472253356123
-300 -th epoch marginal likelihood -1340.5546244777759
-350 -th epoch marginal likelihood -1438.3983041110039
-400 -th epoch marginal likelihood -1464.5751633473944
+0 -th epoch marginal likelihood 16183.326658360042
+50 -th epoch marginal likelihood 3766.734249925179
+100 -th epoch marginal likelihood 1450.3500890285495
+150 -th epoch marginal likelihood 127.98987541463339
+200 -th epoch marginal likelihood -665.714179830029
+250 -th epoch marginal likelihood -1132.4472253356018
+300 -th epoch marginal likelihood -1340.5546244777697
+350 -th epoch marginal likelihood -1438.398304111003
+400 -th epoch marginal likelihood -1464.575163347392
 450 -th epoch marginal likelihood -1478.4817552781674
-500 -th epoch marginal likelihood -1485.7013807794144
+500 -th epoch marginal likelihood -1485.7013807794137
 Done
 
 </pre></div></div>
 </div>
 <p>学習されたガウス過程におけるパラメタを出力</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">print_params</span><span class="p">()</span>
@@ -287,7 +290,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 <p>テストデータの平均値（予測値）および分散を計算</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
@@ -298,7 +301,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 <p>予測の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -306,7 +309,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -317,7 +320,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 <p>分散の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -325,7 +328,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -336,7 +339,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 <p>予測値の平均二乗誤差の出力</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -344,17 +347,17 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-np.float64(0.006925305425496943)
+np.float64(0.006925305425496946)
 </pre></div></div>
 </div>
 <p>得られた回帰モデルについて、どの特徴量がどのくらい重要なのかを調べるための簡単な指標として permutation importance (PI)があります。 PHYSBOでは <code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数で計算できます。</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
@@ -362,7 +365,7 @@ np.float64(0.006925305425496943)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
@@ -385,7 +388,7 @@ np.float64(0.006925305425496943)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_Gaussian_process_26_0.png" src="../_images/notebook_tutorial_Gaussian_process_26_0.png" />
+<img alt="../_images/notebook_tutorial_Gaussian_process_28_0.png" src="../_images/notebook_tutorial_Gaussian_process_28_0.png" />
 </div>
 </div>
 <p>このグラフにおいて、棒グラフはPIの平均値を、線分は標準偏差を示しており、0番の特徴量と比べて1,2番の特徴量のほうが重要そうだ、ということが読み取れます。</p>
@@ -397,7 +400,7 @@ np.float64(0.006925305425496943)
 <p>gp_paramsおよび学習データ(X_train, t_train)を記憶しておくことで、訓練済みモデルによる予測が可能となります。</p>
 <p>学習されたパラメタを準備(学習の直後に行う必要あり)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習したパラメタを１次元配列として準備</span>
@@ -408,7 +411,7 @@ np.float64(0.006925305425496943)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -418,7 +421,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>学習に利用したモデルと同様のモデルをgpとして準備</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#共分散の定義 (ガウシアン)</span>
@@ -437,7 +440,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>学習済みのパラメタをモデルに入力し予測を実行</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習済みのパラメタをガウス過程に入力</span>
@@ -453,7 +456,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>予測の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -461,7 +464,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -472,7 +475,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 <p>分散の結果</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -480,7 +483,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -491,7 +494,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 <p>予測値の平均二乗誤差の出力</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -499,16 +502,20 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-np.float64(0.006925305425496943)
+np.float64(0.006925305425496946)
 </pre></div></div>
 </div>
-<p>(注) 上の例では事前に登録されているXと同じものを利用して予測を行いました。 学習済みのモデルを利用してXに含まれていないパラメータ X_new に対して予測をしたい場合には、 学習モデルで使用したデータXの平均(X_{mean})と標準偏差(X_{std})を求めていただいたうえで、 X_{new} = (X_{new} - X_{mean}) / X_{std} の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、X_{new}が一つのデータの場合には事前に変換する必要があります。
-例えば、X_{new}が実数である場合には、 X_new = np.array(X_new).reshape(1) などとして変換する必要があります。</p>
+</section>
+<section id="注意事項">
+<h2>注意事項<a class="headerlink" href="#注意事項" title="Link to this heading"></a></h2>
+<p>今回のチュートリアルでは、事前に登録されている<span class="math notranslate nohighlight">\(X\)</span> と同じものを利用して予測を行いました。 学習済みのモデルを利用して <span class="math notranslate nohighlight">\(X\)</span> に含まれていないパラメータ <span class="math notranslate nohighlight">\(X_\text{new}\)</span> に対して予測をしたい場合には、 学習モデルで使用したデータ <span class="math notranslate nohighlight">\(X\)</span> の平均(<span class="math notranslate nohighlight">\(X_\text{mean}\)</span>)と標準偏差(<span class="math notranslate nohighlight">\(X_\text{std}\)</span> )を求めていただいたうえで、</p>
+<p><span class="math notranslate nohighlight">\(X_\text{new} = (X_\text{new} - X_\text{mean}) / X_\text{std}\)</span></p>
+<p>の変形を行うことで予測を行うことができます。 また、渡す際のデータ形式はndarray形式になっています。 そのため、<span class="math notranslate nohighlight">\(X_\text{new}\)</span>が一つのデータの場合には事前に変換する必要があります。 例えば、<span class="math notranslate nohighlight">\(X_\text{new}\)</span>が実数である場合には、 <code class="docutils literal notranslate"><span class="pre">X_new</span> <span class="pre">=</span> <span class="pre">np.array(X_new).reshape(1)</span></code> などとして変換する必要があります。</p>
 </section>
 </section>
 

@@ -58,6 +58,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Defining-training-data">Defining training data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Learning-and-Prediction-of-Gaussian-Processes">Learning and Prediction of Gaussian Processes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Prediction-by-trained-models">Prediction by trained models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Notes">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">Running PHYSBO interactively</a></li>
@@ -107,6 +108,16 @@
 <p>PHYSBO performs Bayesian optimization while running Gaussian process regression.</p>
 <p>Therefore, it is possible to run Gaussian process regression given training data, and to predict test data using the trained model.</p>
 <p>In this section, the procedure is introduced.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+</pre></div>
+</div>
+</div>
 <section id="Preparation-of-search-candidate-data">
 <h2>Preparation of search candidate data<a class="headerlink" href="#Preparation-of-search-candidate-data" title="Link to this heading"></a></h2>
 <p>In this tutorial, the problem of finding a stable interface structure for Cu is used as an example. The values that have already been evaluated are used, although the evaluation of the objective function, i.e., the structural relaxation calculation, actually takes on the order of several hours per calculation. For more information on the problem setup, please refer to the following references</p>
@@ -118,15 +129,10 @@
 </ul>
 <p>Save the dataset file <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> and load dataset from this file as the following:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
@@ -134,8 +140,6 @@
 
 <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
-
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -144,10 +148,11 @@
 <h2>Defining training data<a class="headerlink" href="#Defining-training-data" title="Link to this heading"></a></h2>
 <p>A randomly selected 10% of the target data will be used as training data, and another randomly selected 10% will be used as test data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 <span class="n">Ntrain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="n">Ntest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">N</span><span class="o">-</span><span class="n">Ntrain</span><span class="p">)</span>
 
@@ -186,7 +191,7 @@ Ntest = 1798
 </ol>
 <p>Definition of covariance (Gaussian)</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
@@ -195,7 +200,7 @@ Ntest = 1798
 </div>
 <p>Definition of mean value</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
@@ -204,7 +209,7 @@ Ntest = 1798
 </div>
 <p>Definition of likelihood function (Gaussian)</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
@@ -213,7 +218,7 @@ Ntest = 1798
 </div>
 <p>Generation of a Gaussian Process Model</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
@@ -223,7 +228,7 @@ Ntest = 1798
 </div>
 <p>Learning a Gaussian process model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
@@ -239,24 +244,24 @@ Start the initial hyper parameter searching ...
 Done
 
 Start the hyper parameter learning ...
-0 -th epoch marginal likelihood 16183.326658360289
-50 -th epoch marginal likelihood 3766.7342499254646
-100 -th epoch marginal likelihood 1450.3500890285277
-150 -th epoch marginal likelihood 127.98987541458246
-200 -th epoch marginal likelihood -665.7141798300481
-250 -th epoch marginal likelihood -1132.4472253356123
-300 -th epoch marginal likelihood -1340.5546244777759
-350 -th epoch marginal likelihood -1438.3983041110039
-400 -th epoch marginal likelihood -1464.5751633473944
+0 -th epoch marginal likelihood 16183.326658360042
+50 -th epoch marginal likelihood 3766.734249925179
+100 -th epoch marginal likelihood 1450.3500890285495
+150 -th epoch marginal likelihood 127.98987541463339
+200 -th epoch marginal likelihood -665.714179830029
+250 -th epoch marginal likelihood -1132.4472253356018
+300 -th epoch marginal likelihood -1340.5546244777697
+350 -th epoch marginal likelihood -1438.398304111003
+400 -th epoch marginal likelihood -1464.575163347392
 450 -th epoch marginal likelihood -1478.4817552781674
-500 -th epoch marginal likelihood -1485.7013807794144
+500 -th epoch marginal likelihood -1485.7013807794137
 Done
 
 </pre></div></div>
 </div>
 <p>Output the parameters in the learned Gaussian process.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">print_params</span><span class="p">()</span>
@@ -279,7 +284,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 <p>Calculating the mean (predicted value) and variance of the test data</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
@@ -290,7 +295,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 <p>Results of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -298,7 +303,7 @@ covariance parameter in GP prior:  [-0.64183368 -2.49190006]
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -309,7 +314,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 <p>Results of covariance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -317,7 +322,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -328,7 +333,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 <p>Output mean square error of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -336,17 +341,17 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-np.float64(0.006925305425496943)
+np.float64(0.006925305425496946)
 </pre></div></div>
 </div>
 <p>A simple metric to investigate how important each feature is in the obtained regression model is permutation importance (PI). In PHYSBO, this can be calculated using the get_permutation_importance function.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
@@ -354,7 +359,7 @@ np.float64(0.006925305425496943)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
@@ -379,7 +384,7 @@ np.float64(0.006925305425496943)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_Gaussian_process_26_0.png" src="../_images/notebook_tutorial_Gaussian_process_26_0.png" />
+<img alt="../_images/notebook_tutorial_Gaussian_process_28_0.png" src="../_images/notebook_tutorial_Gaussian_process_28_0.png" />
 </div>
 </div>
 <p>In this graph, the bar chart represents the mean value of the permutation importance (PI), while the line segments indicate the standard deviation. From this, we can interpret that features 1 and 2 appear to be more important compared to feature 0.</p>
@@ -391,7 +396,7 @@ np.float64(0.006925305425496943)
 <p>By storing gp_params and training data (X_train, t_train), prediction by the trained model is possible.</p>
 <p>Prepare the learned parameters (must be done immediately after learning)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Prepare the learned parameters as a 1D array</span>
@@ -402,7 +407,7 @@ np.float64(0.006925305425496943)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -412,7 +417,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Definition of covariance (Gaussian)</span>
@@ -431,7 +436,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>Prepare a model similar to the one used for training as gp</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Input learned parameters into the Gaussian process.</span>
@@ -447,7 +452,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 <p>Results of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmean</span>
@@ -455,7 +460,7 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -466,7 +471,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 <p>Results of covariance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fcov</span>
@@ -474,7 +479,7 @@ array([-1.04749842, -0.99756623, -1.09935748, ..., -1.07561436,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -485,7 +490,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 <p>Output mean square error of prediction</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -493,16 +498,20 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-np.float64(0.006925305425496943)
+np.float64(0.006925305425496946)
 </pre></div></div>
 </div>
-<p>Note: In the example above, we used the same pre-registered X to make predictions. If you want to make predictions for parameters X_new that is not included in X using the trained model, you first obtain the mean (X_{mean}) and standard deviation (X_{std}) of the data X and then normalize X_{new} by (X_{new} - X_{mean}) / X_{std}. Also, the data format for X is ndarray format. Therefore, if X_{new} is a single data, it must be transformed to ndarray format. For example, if X_{new} is a
-real number, you should replace X_new as X_new = np.array(X_new).reshape(1)</p>
+</section>
+<section id="Notes">
+<h2>Notes<a class="headerlink" href="#Notes" title="Link to this heading"></a></h2>
+<p>In this tutorial, we made predictions using the same <span class="math notranslate nohighlight">\(X\)</span> values that were registered beforehand. If you wish to make predictions for new parameters <span class="math notranslate nohighlight">\(X_\text{new}\)</span> that are not included in <span class="math notranslate nohighlight">\(X\)</span> using the trained model, you should first compute the mean (<span class="math notranslate nohighlight">\(X_\text{mean}\)</span>) and standard deviation (<span class="math notranslate nohighlight">\(X_\text{std}\)</span>) of the training data <span class="math notranslate nohighlight">\(X\)</span>, and then transform your new data as follows:</p>
+<p><span class="math notranslate nohighlight">\(X_\text{new} = (X_\text{new} - X_\text{mean}) / X_\text{std}\)</span></p>
+<p>This transformation allows your model to make accurate predictions for <span class="math notranslate nohighlight">\(X_\text{new}\)</span>. Also, note that the data you pass should be in the form of an ndarray. Therefore, if <span class="math notranslate nohighlight">\(X_\text{new}\)</span> is a single data point, it needs to be converted beforehand. For example, if <span class="math notranslate nohighlight">\(X_\text{new}\)</span> is a scalar value, you should convert it as: <code class="docutils literal notranslate"><span class="pre">X_new</span> <span class="pre">=</span> <span class="pre">np.array(X_new).reshape(1)</span></code> or in a similar way before passing it to the model.</p>
 </section>
 </section>
 

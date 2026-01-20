@@ -103,9 +103,11 @@
 <span class="sd">        The test points. Each row is a candidate.</span>
 <span class="sd">    test_function: physbo.test_functions.base.TestFunction</span>
 <span class="sd">        The test function.</span>
+<span class="sd">    negate: bool, default=False</span>
+<span class="sd">        If True, the test function value is negated before returning.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">test_function</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">test_function</span><span class="p">,</span> <span class="n">negate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;ERROR: test_X must be a 2D array, but got </span><span class="si">{</span><span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
@@ -114,10 +116,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">test_X</span> <span class="o">=</span> <span class="n">test_X</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">test_function</span> <span class="o">=</span> <span class="n">test_function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sign</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">negate</span> <span class="k">else</span> <span class="mf">1.0</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_X</span><span class="p">[</span><span class="n">action</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_function</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_function</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign</span> <span class="o">*</span> <span class="n">f</span></div>
 
 
 
@@ -216,14 +220,14 @@
     <span class="n">steps_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">pareto_front_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dominated_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">pareto_front_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dominated_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">style_pareto_front</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">style_dominated</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -240,54 +244,27 @@
 <span class="sd">        If None, plot until the end.</span>
 <span class="sd">    ax: matplotlib.axes.Axes, optional</span>
 <span class="sd">        The axes to plot on. If None, a new figure is created.</span>
-<span class="sd">    color: str, optional</span>
-<span class="sd">        The color of the points.</span>
-<span class="sd">    pareto_front_color: str, optional</span>
-<span class="sd">        The color of the Pareto front.</span>
-<span class="sd">    dominated_color: str, optional</span>
-<span class="sd">        The color of the dominated points.</span>
-<span class="sd">    marker: str, optional</span>
-<span class="sd">        The marker of the points.</span>
-<span class="sd">    pareto_front_marker: str, optional</span>
-<span class="sd">        The marker of the Pareto front.</span>
-<span class="sd">    dominated_marker: str, optional</span>
-<span class="sd">        The marker of the dominated points.</span>
+<span class="sd">    xlim: tuple, optional</span>
+<span class="sd">        The x-axis limits. If None, the limits are determined automatically.</span>
+<span class="sd">    ylim: tuple, optional</span>
+<span class="sd">        The y-axis limits. If None, the limits are determined automatically.</span>
+<span class="sd">    grid: bool, default=True</span>
+<span class="sd">        Whether to plot the grid.</span>
+<span class="sd">    style_common: dict, optional</span>
+<span class="sd">        The common setting for plotting the points.</span>
+<span class="sd">    style_pareto_front: dict, optional</span>
+<span class="sd">        The setting for plotting the Pareto front.</span>
+<span class="sd">    style_dominated: dict, optional</span>
+<span class="sd">        The setting for plotting the dominated points.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ====</span>
-<span class="sd">    - colors:</span>
-<span class="sd">        - If both color and \*_color are provided, \*_color is used.</span>
-<span class="sd">        - If only color is provided, the color is used for both the Pareto front and the dominated points.</span>
-<span class="sd">        - If neither color nor \*_color is provided, the color is set to &quot;red&quot; for the Pareto front and &quot;blue&quot; for the dominated points.</span>
-<span class="sd">    - markers:</span>
-<span class="sd">        - If both marker and \*_marker are provided, \*_marker is used.</span>
-<span class="sd">        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.</span>
-<span class="sd">        - If neither marker nor \*_marker is provided, the marker is set to &quot;o&quot; for the Pareto front and &quot;o&quot; for the dominated points.</span>
-
+<span class="sd">    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.</span>
+<span class="sd">    - For each item, style_pareto_front and style_dominated are higher priority than style_common.</span>
+<span class="sd">    - By default, the marker is &quot;o&quot;.</span>
+<span class="sd">    - By default, the color is &quot;blue&quot; for dominated points and &quot;red&quot; for Pareto front.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-
-    <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">pareto_front_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pareto_front_color</span> <span class="o">=</span> <span class="n">color</span>
-        <span class="k">if</span> <span class="n">dominated_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dominated_color</span> <span class="o">=</span> <span class="n">color</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">pareto_front_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pareto_front_color</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
-        <span class="k">if</span> <span class="n">dominated_color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dominated_color</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span>
-
-    <span class="k">if</span> <span class="n">marker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">pareto_front_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pareto_front_marker</span> <span class="o">=</span> <span class="n">marker</span>
-        <span class="k">if</span> <span class="n">dominated_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dominated_marker</span> <span class="o">=</span> <span class="n">marker</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">pareto_front_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pareto_front_marker</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span>
-        <span class="k">if</span> <span class="n">dominated_marker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dominated_marker</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span>
 
     <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
     <span class="n">min_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
@@ -308,24 +285,35 @@
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">}</span>
+    <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_common</span><span class="p">)</span>
+    <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_dominated</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
         <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span>
         <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-        <span class="n">c</span><span class="o">=</span><span class="n">dominated_color</span><span class="p">,</span>
-        <span class="n">marker</span><span class="o">=</span><span class="n">dominated_marker</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">style</span><span class="p">,</span>
     <span class="p">)</span>
+
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">}</span>
+    <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_common</span><span class="p">)</span>
+    <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_pareto_front</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
         <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">undominated</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span>
         <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">undominated</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-        <span class="n">c</span><span class="o">=</span><span class="n">pareto_front_color</span><span class="p">,</span>
-        <span class="n">marker</span><span class="o">=</span><span class="n">pareto_front_marker</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">style</span><span class="p">,</span>
     <span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_axisbelow</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">xlim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ylim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">xlim</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_fx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_fx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-    <span class="n">ylim</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_fx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">max_fx</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-    <span class="k">return</span> <span class="n">xlim</span><span class="p">,</span> <span class="n">ylim</span></div>
+    <span class="k">return</span> <span class="n">ax</span></div>
 
 
 
@@ -336,12 +324,12 @@
     <span class="n">steps_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">pareto_front_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dominated_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">pareto_front_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">dominated_marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">style_pareto_front</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">style_dominated</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history for all pairs of objectives.</span>
 
@@ -357,30 +345,25 @@
 <span class="sd">        If None, plot until the end.</span>
 <span class="sd">    ax: matplotlib.axes.Axes, optional</span>
 <span class="sd">        The axes to plot on. If None, a new figure is created.</span>
-<span class="sd">    color: str, optional</span>
-<span class="sd">        The color of the points.</span>
-<span class="sd">    pareto_front_color: str, optional</span>
-<span class="sd">        The color of the Pareto front.</span>
-<span class="sd">    dominated_color: str, optional</span>
-<span class="sd">        The color of the dominated points.</span>
-<span class="sd">    marker: str, optional</span>
-<span class="sd">        The marker of the points.</span>
-<span class="sd">    pareto_front_marker: str, optional</span>
-<span class="sd">        The marker of the Pareto front.</span>
-<span class="sd">    dominated_marker: str, optional</span>
-<span class="sd">        The marker of the dominated points.</span>
+<span class="sd">    xlim: tuple, optional</span>
+<span class="sd">        The x-axis limits. If None, the limits are determined automatically.</span>
+<span class="sd">    ylim: tuple, optional</span>
+<span class="sd">        The y-axis limits. If None, the limits are determined automatically.</span>
+<span class="sd">    grid: bool, default=True</span>
+<span class="sd">        Whether to plot the grid.</span>
+<span class="sd">    style_common: dict, optional</span>
+<span class="sd">        The common setting for plotting the points.</span>
+<span class="sd">    style_pareto_front: dict, optional</span>
+<span class="sd">        The setting for plotting the Pareto front.</span>
+<span class="sd">    style_dominated: dict, optional</span>
+<span class="sd">        The setting for plotting the dominated points.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ====</span>
-<span class="sd">    - colors:</span>
-<span class="sd">        - If both color and \*_color are provided, \*_color is used.</span>
-<span class="sd">        - If only color is provided, the color is used for both the Pareto front and the dominated points.</span>
-<span class="sd">        - If neither color nor \*_color is provided, the color is set to &quot;red&quot; for the Pareto front and &quot;blue&quot; for the dominated points.</span>
-<span class="sd">    - markers:</span>
-<span class="sd">        - If both marker and \*_marker are provided, \*_marker is used.</span>
-<span class="sd">        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.</span>
-<span class="sd">        - If neither marker nor \*_marker is provided, the marker is set to &quot;o&quot; for the Pareto front and &quot;o&quot; for the dominated points.</span>
-
+<span class="sd">    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.</span>
+<span class="sd">    - For each item, style_pareto_front and style_dominated are higher priority than style_common.</span>
+<span class="sd">    - By default, the marker is &quot;o&quot;.</span>
+<span class="sd">    - By default, the color is &quot;blue&quot; for dominated points and &quot;red&quot; for Pareto front.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
@@ -410,12 +393,12 @@
                 <span class="n">steps_begin</span><span class="o">=</span><span class="n">steps_begin</span><span class="p">,</span>
                 <span class="n">steps_end</span><span class="o">=</span><span class="n">steps_end</span><span class="p">,</span>
                 <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">],</span>
-                <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
-                <span class="n">pareto_front_color</span><span class="o">=</span><span class="n">pareto_front_color</span><span class="p">,</span>
-                <span class="n">dominated_color</span><span class="o">=</span><span class="n">dominated_color</span><span class="p">,</span>
-                <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span>
-                <span class="n">pareto_front_marker</span><span class="o">=</span><span class="n">pareto_front_marker</span><span class="p">,</span>
-                <span class="n">dominated_marker</span><span class="o">=</span><span class="n">dominated_marker</span><span class="p">,</span>
+                <span class="n">xlim</span><span class="o">=</span><span class="n">xlim</span><span class="p">,</span>
+                <span class="n">ylim</span><span class="o">=</span><span class="n">ylim</span><span class="p">,</span>
+                <span class="n">grid</span><span class="o">=</span><span class="n">grid</span><span class="p">,</span>
+                <span class="n">style_common</span><span class="o">=</span><span class="n">style_common</span><span class="p">,</span>
+                <span class="n">style_pareto_front</span><span class="o">=</span><span class="n">style_pareto_front</span><span class="p">,</span>
+                <span class="n">style_dominated</span><span class="o">=</span><span class="n">style_dominated</span><span class="p">,</span>
             <span class="p">)</span>
 
     <span class="c1"># Remove redundant labels</span>
@@ -432,14 +415,16 @@
 <div class="viewcode-block" id="show_search_results">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">N</span><span class="p">)</span></div>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
+    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="show_search_results_mo">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results_mo">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results_mo</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">)</span></div>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
+    <span class="n">history</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">)</span></div>
 
 
 

@@ -106,21 +106,24 @@
 <section id="複数候補を一度に探索する">
 <h1>複数候補を一度に探索する<a class="headerlink" href="#複数候補を一度に探索する" title="Link to this heading"></a></h1>
 <p>1回の探索ステップで、2つ以上の候補を一度に評価する場合のチュートリアルです。</p>
-<section id="探索候補データの準備">
-<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
-<p>これまでのチュートリアルと同様、データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+</pre></div>
+</div>
+</div>
+<section id="探索候補データの準備">
+<h2>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h2>
+<p>これまでのチュートリアルと同様、データセットファイル <a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a> を保存し、次のように読み出します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
@@ -134,31 +137,21 @@
 </section>
 <section id="simulator-の定義">
 <h2>simulator の定義<a class="headerlink" href="#simulator-の定義" title="Link to this heading"></a></h2>
-<div class="line-block">
-<div class="line">後述の <code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span></code> を2以上にした場合、action には action ID の array が入力されます。</div>
-<div class="line">各 action ID に対応した評価値のリストを返すように定義してください。</div>
-</div>
-<p>基本チュートリアルと simulator の定義は同じですが、 t は numpy.array であり、action に array が入力されると <code class="docutils literal notranslate"><span class="pre">self.t[action]</span></code> も array になる点に留意してください。</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-<p>simulator の実行例</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">()</span>
-<span class="n">sim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">123</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">t</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">action</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c1"># 実行例</span>
+<span class="n">simulator</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">123</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -197,10 +190,18 @@ array([-1.01487066, -1.22884748, -1.05572838])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span>
+<span class="p">)</span>
 
-<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">Simulator</span><span class="p">(),</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span>
-                                                  <span class="n">interval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">num_search_each_probe</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EI&quot;</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -244,15 +245,15 @@ Done
 
 Start the hyper parameter learning ...
 0 -th epoch marginal likelihood -22.83973847978998
-50 -th epoch marginal likelihood -24.177617139908286
-100 -th epoch marginal likelihood -24.83101828582186
-150 -th epoch marginal likelihood -25.154161486523748
-200 -th epoch marginal likelihood -25.334465627988656
+50 -th epoch marginal likelihood -24.17761713990829
+100 -th epoch marginal likelihood -24.831018285821855
+150 -th epoch marginal likelihood -25.15416148652374
+200 -th epoch marginal likelihood -25.33446562798866
 250 -th epoch marginal likelihood -25.455155010625035
-300 -th epoch marginal likelihood -25.550091453614577
-350 -th epoch marginal likelihood -25.631301279338548
-400 -th epoch marginal likelihood -25.702387457449042
-450 -th epoch marginal likelihood -25.76434767734443
+300 -th epoch marginal likelihood -25.550091453614574
+350 -th epoch marginal likelihood -25.63130127933855
+400 -th epoch marginal likelihood -25.70238745744905
+450 -th epoch marginal likelihood -25.764347677344432
 500 -th epoch marginal likelihood -25.817697844806304
 Done
 
@@ -299,7 +300,7 @@ Start the hyper parameter learning ...
 300 -th epoch marginal likelihood -11.56593442759742
 350 -th epoch marginal likelihood -12.890764162978456
 400 -th epoch marginal likelihood -13.902281570598056
-450 -th epoch marginal likelihood -14.693902339866362
+450 -th epoch marginal likelihood -14.693902339866337
 500 -th epoch marginal likelihood -15.329257712391108
 Done
 
@@ -387,14 +388,14 @@ Start the hyper parameter learning ...
 0 -th epoch marginal likelihood 70.33429991441128
 50 -th epoch marginal likelihood 28.7644910600593
 100 -th epoch marginal likelihood 0.4848519552564312
-150 -th epoch marginal likelihood -18.23655804378565
+150 -th epoch marginal likelihood -18.236558043785692
 200 -th epoch marginal likelihood -32.06535289863197
 250 -th epoch marginal likelihood -42.7681819466728
-300 -th epoch marginal likelihood -51.46052158149939
-350 -th epoch marginal likelihood -56.68771433973657
+300 -th epoch marginal likelihood -51.46052158149965
+350 -th epoch marginal likelihood -56.687714339736516
 400 -th epoch marginal likelihood -61.70347758865685
 450 -th epoch marginal likelihood -65.19178853027779
-500 -th epoch marginal likelihood -68.05551755259069
+500 -th epoch marginal likelihood -68.0555175525907
 Done
 
 0009-th multiple probe search (EI)
@@ -446,7 +447,7 @@ f(x)=-0.990559 (action = 1554)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x127575590&gt;]
+[&lt;matplotlib.lines.Line2D at 0x114d58590&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -471,7 +472,7 @@ f(x)=-0.990559 (action = 1554)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x12797c0d0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x114daa590&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -501,7 +502,7 @@ f(x)=-0.990559 (action = 1554)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x1279c50d0&gt;]
+[&lt;matplotlib.lines.Line2D at 0x1151008d0&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
