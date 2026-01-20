@@ -20,9 +20,11 @@ class Simulator:
         The test points. Each row is a candidate.
     test_function: physbo.test_functions.base.TestFunction
         The test function.
+    negate: bool, default=False
+        If True, the test function value is negated before returning.
     """
 
-    def __init__(self, test_X, test_function):
+    def __init__(self, test_X, test_function, negate=False):
         if test_X.ndim != 2:
             raise ValueError(
                 f"ERROR: test_X must be a 2D array, but got {test_X.ndim}D array"
@@ -31,10 +33,12 @@ class Simulator:
         self.test_X = test_X
         self.test_function = test_function
         self.dim = test_X.shape[1]
+        self.sign = -1.0 if negate else 1.0
 
     def __call__(self, action):
         X = self.test_X[action, :].reshape(-1, self.dim)
-        return self.test_function(X)
+        f = self.test_function(X)
+        return self.sign * f
 
 
 def make_grid(
@@ -127,14 +131,14 @@ def plot_pareto_front(
     steps_begin=0,
     steps_end=None,
     ax=None,
-    color=None,
-    pareto_front_color=None,
-    dominated_color=None,
-    marker=None,
-    pareto_front_marker=None,
-    dominated_marker=None,
+    xlim=None,
+    ylim=None,
+    grid=True,
+    style_common: dict={},
+    style_pareto_front: dict={},
+    style_dominated: dict={},
 ):
-    """Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).
+    r"""Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).
 
     Arguments
     =========
@@ -151,54 +155,27 @@ def plot_pareto_front(
         If None, plot until the end.
     ax: matplotlib.axes.Axes, optional
         The axes to plot on. If None, a new figure is created.
-    color: str, optional
-        The color of the points.
-    pareto_front_color: str, optional
-        The color of the Pareto front.
-    dominated_color: str, optional
-        The color of the dominated points.
-    marker: str, optional
-        The marker of the points.
-    pareto_front_marker: str, optional
-        The marker of the Pareto front.
-    dominated_marker: str, optional
-        The marker of the dominated points.
+    xlim: tuple, optional
+        The x-axis limits. If None, the limits are determined automatically.
+    ylim: tuple, optional
+        The y-axis limits. If None, the limits are determined automatically.
+    grid: bool, default=True
+        Whether to plot the grid.
+    style_common: dict, optional
+        The common setting for plotting the points.
+    style_pareto_front: dict, optional
+        The setting for plotting the Pareto front.
+    style_dominated: dict, optional
+        The setting for plotting the dominated points.
 
     Note
     ====
-    - colors:
-        - If both color and \*_color are provided, \*_color is used.
-        - If only color is provided, the color is used for both the Pareto front and the dominated points.
-        - If neither color nor \*_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
-    - markers:
-        - If both marker and \*_marker are provided, \*_marker is used.
-        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.
-        - If neither marker nor \*_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
-
+    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.
+    - For each item, style_pareto_front and style_dominated are higher priority than style_common.
+    - By default, the marker is "o".
+    - By default, the color is "blue" for dominated points and "red" for Pareto front.
     """
     import matplotlib.pyplot as plt
-
-    if color is not None:
-        if pareto_front_color is None:
-            pareto_front_color = color
-        if dominated_color is None:
-            dominated_color = color
-    else:
-        if pareto_front_color is None:
-            pareto_front_color = "red"
-        if dominated_color is None:
-            dominated_color = "blue"
-
-    if marker is not None:
-        if pareto_front_marker is None:
-            pareto_front_marker = marker
-        if dominated_marker is None:
-            dominated_marker = marker
-    else:
-        if pareto_front_marker is None:
-            pareto_front_marker = "o"
-        if dominated_marker is None:
-            dominated_marker = "o"
 
     front, front_num = history.export_pareto_front()
     min_fx = np.full(2, np.inf)
@@ -219,24 +196,35 @@ def plot_pareto_front(
     if ax is None:
         _, ax = plt.subplots()
 
+    style = {"color": "blue", "marker": "o"}
+    style.update(style_common)
+    style.update(style_dominated)
     ax.scatter(
         history.fx[dominated, x],
         history.fx[dominated, y],
-        c=dominated_color,
-        marker=dominated_marker,
+        **style,
     )
+
+    style = {"color": "red", "marker": "o"}
+    style.update(style_common)
+    style.update(style_pareto_front)
     ax.scatter(
         history.fx[undominated, x],
         history.fx[undominated, y],
-        c=pareto_front_color,
-        marker=pareto_front_marker,
+        **style,
     )
+
+    ax.grid(grid, alpha=0.3, linestyle="--", linewidth=0.5)
+    ax.set_axisbelow(True)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
     ax.set_xlabel(f"Objective {x + 1}")
     ax.set_ylabel(f"Objective {y + 1}")
 
-    xlim = [min_fx[0], max_fx[0]]
-    ylim = [min_fx[1], max_fx[1]]
-    return xlim, ylim
+    return ax
 
 
 def plot_pareto_front_all(
@@ -244,12 +232,12 @@ def plot_pareto_front_all(
     steps_begin=0,
     steps_end=None,
     ax=None,
-    color=None,
-    pareto_front_color=None,
-    dominated_color=None,
-    marker=None,
-    pareto_front_marker=None,
-    dominated_marker=None,
+    xlim=None,
+    ylim=None,
+    grid=True,
+    style_common: dict={},
+    style_pareto_front: dict={},
+    style_dominated: dict={},
 ):
     """Plot the Pareto front of the history for all pairs of objectives.
 
@@ -265,30 +253,25 @@ def plot_pareto_front_all(
         If None, plot until the end.
     ax: matplotlib.axes.Axes, optional
         The axes to plot on. If None, a new figure is created.
-    color: str, optional
-        The color of the points.
-    pareto_front_color: str, optional
-        The color of the Pareto front.
-    dominated_color: str, optional
-        The color of the dominated points.
-    marker: str, optional
-        The marker of the points.
-    pareto_front_marker: str, optional
-        The marker of the Pareto front.
-    dominated_marker: str, optional
-        The marker of the dominated points.
+    xlim: tuple, optional
+        The x-axis limits. If None, the limits are determined automatically.
+    ylim: tuple, optional
+        The y-axis limits. If None, the limits are determined automatically.
+    grid: bool, default=True
+        Whether to plot the grid.
+    style_common: dict, optional
+        The common setting for plotting the points.
+    style_pareto_front: dict, optional
+        The setting for plotting the Pareto front.
+    style_dominated: dict, optional
+        The setting for plotting the dominated points.
 
     Note
     ====
-    - colors:
-        - If both color and \*_color are provided, \*_color is used.
-        - If only color is provided, the color is used for both the Pareto front and the dominated points.
-        - If neither color nor \*_color is provided, the color is set to "red" for the Pareto front and "blue" for the dominated points.
-    - markers:
-        - If both marker and \*_marker are provided, \*_marker is used.
-        - If only marker is provided, the marker is used for both the Pareto front and the dominated points.
-        - If neither marker nor \*_marker is provided, the marker is set to "o" for the Pareto front and "o" for the dominated points.
-
+    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.
+    - For each item, style_pareto_front and style_dominated are higher priority than style_common.
+    - By default, the marker is "o".
+    - By default, the color is "blue" for dominated points and "red" for Pareto front.
     """
     import matplotlib.pyplot as plt
 
@@ -318,12 +301,12 @@ def plot_pareto_front_all(
                 steps_begin=steps_begin,
                 steps_end=steps_end,
                 ax=ax[row, col],
-                color=color,
-                pareto_front_color=pareto_front_color,
-                dominated_color=dominated_color,
-                marker=marker,
-                pareto_front_marker=pareto_front_marker,
-                dominated_marker=dominated_marker,
+                xlim=xlim,
+                ylim=ylim,
+                grid=grid,
+                style_common=style_common,
+                style_pareto_front=style_pareto_front,
+                style_dominated=style_dominated,
             )
 
     # Remove redundant labels
@@ -337,11 +320,13 @@ def plot_pareto_front_all(
 
 
 def show_search_results(history, N):
-    history.show_search_results(N)
+    n = min(N, history.total_num_search)
+    history.show_search_results(n)
 
 
 def show_search_results_mo(history, N, disp_pareto_set=False):
-    history.show_search_results_mo(N, disp_pareto_set)
+    n = min(N, history.total_num_search)
+    history.show_search_results_mo(n, disp_pareto_set)
 
 
 def show_start_message_multi_search(N, score=None):

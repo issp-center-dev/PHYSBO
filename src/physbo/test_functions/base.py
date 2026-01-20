@@ -32,6 +32,7 @@ class TestFunction(ABC):
         min_X: np.ndarray | list[float] | float,
         max_X: np.ndarray | list[float] | float,
         test_maximizer: bool = True,
+        name: str | None = None,
     ):
         """Initialize the test function.
 
@@ -51,6 +52,7 @@ class TestFunction(ABC):
         self._nobj = nobj
         self._dim = dim
         self._test_maximizer = test_maximizer
+        self._name = name
 
         if isinstance(min_X, float):
             self._min_X = np.full(dim, min_X)
@@ -200,3 +202,28 @@ class TestFunction(ABC):
             The output is a numpy array of shape (N, d), where N is the number of points and d is the dimension of the search space.
         """
         return search_utility.make_grid(self.min_X, self.max_X, num_X, constraint=self.constraint)
+
+    
+    def set_name(self, name: str):
+        """Set the name of the test function.
+
+        Arguments
+        =========
+        name: str
+            The name of the test function.
+        """
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        """Get the name of the test function.
+
+        Returns
+        =======
+        str
+            The name of the test function.
+        """
+        if self._name is None:
+            return self.__class__.__name__
+        else:
+            return self._name

@@ -506,45 +506,58 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
         return np.array([56.0, 9.5])
 
 
-Binh1 = BinhKorn
-"""Binh's first function.
+def Binh1(*args, **kwargs):
+    """Binh's first function.
 
-This is an alias of :class:`BinhKorn`.
+    This is an alias of :class:`BinhKorn`.
 
-References
-==========
-To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
-"""
+    References
+    ==========
+    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
+    """
+    fn = BinhKorn(*args, **kwargs)
+    fn.set_name("Binh1")
+    return fn
 
-Binh2 = ChankongHaimes
-"""Binh's second function.
+def Binh2(*args, **kwargs):
+    r"""Binh's second function.
 
-This is an alias of :class:`ChankongHaimes`.
+    This is an alias of :class:`ChankongHaimes`.
 
-References
-==========
-To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
-"""
+    References
+    ==========
+    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
+    """
+    fn = ChankongHaimes(*args, **kwargs)
+    fn.set_name("Binh2")
+    return fn
 
-Binh3 = FonsecaFleming
-"""Binh's third function.
 
-This is an alias of :class:`FonsecaFleming`.
+def Binh3(*args, **kwargs):
+    """Binh's third function.
 
-References
-==========
-To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
-"""
+    This is an alias of :class:`FonsecaFleming`.
 
-Binh4 = KitaYabumotoMoriNishikawa
-"""Binh's fourth function.
+    References
+    ==========
+    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
+    """
+    fn = FonsecaFleming(*args, **kwargs)
+    fn.set_name("Binh3")
+    return fn
 
-This is an alias of :class:`KitaYabumotoMoriNishikawa`.
+def Binh4(*args, **kwargs):
+    """Binh's fourth function.
 
-References
-==========
-To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
-"""
+    This is an alias of :class:`KitaYabumotoMoriNishikawa`.
+
+    References
+    ==========
+    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm The Study Cases.
+    """
+    fn = KitaYabumotoMoriNishikawa(*args, **kwargs)
+    fn.set_name("Binh4")
+    return fn
 
 
 class Binh5(MultiTestFunction):
@@ -1485,33 +1498,45 @@ class ConstrEX(MultiTestFunction):
         return np.array([1.0, 60.0])
 
 
-VLMOP1 = Schaffer1
-"""VL's first function (so-called VLMOP1).
+# VLMOP1 = Schaffer1
+def VLMOP1(*args, **kwargs):
+    r"""VL's first function (so-called VLMOP1).
 
-This is an alias of :class:`Schaffer1`.
+    This is an alias of :class:`Schaffer1`.
 
-References
-==========
-David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
-"""
+    References
+    ==========
+    David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
+    """
+    fn = Schaffer1(*args, **kwargs)
+    fn.set_name("VLMOP1")
+    return fn
 
 
-VLMOP2 = FonsecaFleming
-r"""VL's second function (so-called VLMOP2).
+def VLMOP2(*args, **kwargs):
+    r"""VL's second function (so-called VLMOP2).
 
-This is an alias of :class:`FonsecaFleming`.
+    This is an alias of :class:`FonsecaFleming`.
 
-References
-==========
-David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
-"""
+    References
+    ==========
+    David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
+    """
+    fn = FonsecaFleming(*args, **kwargs)
+    fn.set_name("VLMOP2")
+    return fn
 
-VLMOP3 = Viennet
-"""VL's third function (so-called VLMOP3).
 
-This is an alias of :class:`Viennet`.
+def VLMOP3(*args, **kwargs):
+    r"""VL's third function (so-called VLMOP3).
 
-References
-==========
-David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
-"""
+    This is an alias of :class:`Viennet`.
+
+    References
+    ==========
+    David A. van Veldhuizen and Gary B. Lamont. 1999. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing (SAC '99). Association for Computing Machinery, New York, NY, USA, 351-357. https://doi.org/10.1145/298151.298382
+    """
+    fn = Viennet(*args, **kwargs)
+    fn.set_name("VLMOP3")
+    return fn
+
