@@ -27,7 +27,7 @@ def variable(*args, **kwargs):
     return Variable(*args, **kwargs)
 
 
-__version__ = "3.2.0"
+__version__ = "3.3-dev"
 
 # __all__ is used to specify the public API of the package
 # and is used by sphinx to generate the API documentation
