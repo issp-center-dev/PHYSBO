@@ -1,0 +1,893 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physbo.test_functions.single_objective &mdash; PHYSBO 3.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=4f6ddb47"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebook/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">physbo.test_functions.single_objective</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for physbo.test_functions.single_objective</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: MPL-2.0</span>
+<span class="c1"># Copyright (C) 2020- The University of Tokyo</span>
+<span class="c1">#</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestFunction</span>
+
+
+<div class="viewcode-block" id="SingleTestFunction">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.SingleTestFunction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleTestFunction</span><span class="p">(</span><span class="n">TestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">nobj</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="SingleTestFunction.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.SingleTestFunction.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Sphere">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Sphere">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sphere</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sphere function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = \sum_{i=1}^d x_i^2</span>
+
+<span class="sd">        Global minimum: :math:`f(\boldsymbol{0}) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        dim: int, default=2</span>
+<span class="sd">            Number of dimensions.</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Sphere.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Sphere.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sphere.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Sphere.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Rastrigin">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rastrigin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Rastrigin</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">A</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.12</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.12</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Rastrigin function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = A n + \sum_{i=1}^n (x_i^2 - A \cos(2 \pi x_i))</span>
+
+<span class="sd">        Global minimum: :math:`f(\boldsymbol{0}) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        dim: int, default=2</span>
+<span class="sd">            Number of dimensions :math:`n`.</span>
+<span class="sd">        A: float, default=10.0</span>
+<span class="sd">            Amplitude parameter.</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-5.12</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=5.12</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ==========</span>
+<span class="sd">        Rastrigin, L. A. &quot;Systems of extremal control.&quot; Mir, Moscow (1974).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_A</span> <span class="o">=</span> <span class="n">A</span>
+
+<div class="viewcode-block" id="Rastrigin.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rastrigin.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_A</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dim</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_A</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rastrigin.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rastrigin.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Ackley">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Ackley">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Ackley</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
+        <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">32.768</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">32.768</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Ackley function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = -a \exp \left( -b \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2} \right) - \exp \left( \frac{1}{n} \sum_{i=1}^n \cos(c x_i) \right) + a + \exp(1)</span>
+
+<span class="sd">        Global minimum: :math:`f(\boldsymbol{0}) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        dim: int, default=2</span>
+<span class="sd">            Number of dimensions :math:`n`.</span>
+<span class="sd">        a: float, default=20.0</span>
+<span class="sd">            First parameter.</span>
+<span class="sd">        b: float, default=0.2</span>
+<span class="sd">            Second parameter.</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-32.768</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=32.768</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ==========</span>
+<span class="sd">        Ackley, D. H. (1987) &quot;A connectionist machine for genetic hillclimbing&quot;, Kluwer Academic Publishers, Boston MA. p. 13-14.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_a</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_b</span> <span class="o">=</span> <span class="n">b</span>
+
+<div class="viewcode-block" id="Ackley.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Ackley.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">mean_sq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">mean_cos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_b</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_sq</span><span class="p">))</span>
+            <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mean_cos</span><span class="p">)</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_a</span>
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ackley.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Ackley.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Rosenbrock">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rosenbrock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Rosenbrock</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Rosenbrock function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = \sum_{i=1}^{n-1} \left( a (x_{i+1} - x_i^2)^2 + (1 - x_i)^2 \right)</span>
+
+<span class="sd">        Global minimum: :math:`f(1, \dots, 1) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        dim: int, default=2</span>
+<span class="sd">            Number of dimensions :math:`n`. Must be &gt;= 2.</span>
+<span class="sd">        a: float, default=100.0</span>
+<span class="sd">            Amplitude parameter.</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-5.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=10.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        References</span>
+<span class="sd">        ==========</span>
+<span class="sd">        Rosenbrock, H.H. (1960). &quot;An automatic method for finding the greatest or least value of a function&quot;. The Computer Journal. 3 (3): 175-184.  https://doi.org/10.1093/comjnl/3.3.175</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ERROR: dimension must be &gt;= 2: dim = </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_a</span> <span class="o">=</span> <span class="n">a</span>
+
+<div class="viewcode-block" id="Rosenbrock.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rosenbrock.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_a</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rosenbrock.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rosenbrock.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Beale">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Beale">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Beale</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.5</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.5</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Beale function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = (1.5 - x_1 + x_1 x_2)^2 + (2.25 - x_1 + x_1 x_2^2)^2 + (2.625 - x_1 + x_1 x_2^3)^2</span>
+
+<span class="sd">        Global minimum: :math:`f(3, 0.5) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-4.5</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=4.5</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Beale.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Beale.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">xy</span> <span class="o">=</span> <span class="n">x_vals</span> <span class="o">*</span> <span class="n">y_vals</span>
+        <span class="n">xy2</span> <span class="o">=</span> <span class="n">xy</span> <span class="o">*</span> <span class="n">y_vals</span>
+        <span class="n">xy3</span> <span class="o">=</span> <span class="n">xy</span> <span class="o">*</span> <span class="n">y_vals</span> <span class="o">*</span> <span class="n">y_vals</span>
+        <span class="n">term1</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.5</span> <span class="o">-</span> <span class="n">x_vals</span> <span class="o">+</span> <span class="n">xy</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">term2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.25</span> <span class="o">-</span> <span class="n">x_vals</span> <span class="o">+</span> <span class="n">xy2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">term3</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.625</span> <span class="o">-</span> <span class="n">x_vals</span> <span class="o">+</span> <span class="n">xy3</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Beale.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Beale.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Booth">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Booth">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Booth</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Booth function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = (x_1 + 2 x_2 - 7)^2 + (2 x_1 + x_2 - 5)^2</span>
+
+<span class="sd">        Global minimum: :math:`f(1, 3) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-10.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=10.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Booth.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Booth.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">term1</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_vals</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">y_vals</span> <span class="o">-</span> <span class="mf">7.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">term2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">x_vals</span> <span class="o">+</span> <span class="n">y_vals</span> <span class="o">-</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Booth.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Booth.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Matyas">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Matyas">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Matyas</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Matyas function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = 0.26 (x_1^2 + x_2^2) - 0.48 x_1 x_2</span>
+
+<span class="sd">        Global minimum: :math:`f(0, 0) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-10.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=10.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Matyas.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Matyas.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">0.26</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_vals</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y_vals</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.48</span> <span class="o">*</span> <span class="n">x_vals</span> <span class="o">*</span> <span class="n">y_vals</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Matyas.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Matyas.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Himmelblau">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Himmelblau">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Himmelblau</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Himmelblau&#39;s function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2</span>
+
+<span class="sd">        Global minimum: :math:`f(3, 2) = f(-2.805118, 3.131312) = f(-3.779310, -3.283186) = f(3.584428, -1.848126) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-5.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=5.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        </span>
+<span class="sd">        References</span>
+<span class="sd">        ==========</span>
+<span class="sd">        Himmelblau, D. (1972). Applied Nonlinear Programming. McGraw-Hill.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Himmelblau.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Himmelblau.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">term1</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_vals</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y_vals</span> <span class="o">-</span> <span class="mf">11.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">term2</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_vals</span> <span class="o">+</span> <span class="n">y_vals</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">7.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Himmelblau.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Himmelblau.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span>
+                <span class="p">[</span><span class="o">-</span><span class="mf">2.805118</span><span class="p">,</span> <span class="mf">3.131312</span><span class="p">],</span>
+                <span class="p">[</span><span class="o">-</span><span class="mf">3.779310</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.283186</span><span class="p">],</span>
+                <span class="p">[</span><span class="mf">3.584428</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.848126</span><span class="p">],</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ThreeHumpCamel">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.ThreeHumpCamel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ThreeHumpCamel</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Three-hump camel function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = 2 x_1^2 - 1.05 x_1^4 + x_1^6 / 6 + x_1 x_2 + x_2^2</span>
+
+<span class="sd">        Global minimum: :math:`f(0, 0) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-5.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=5.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ThreeHumpCamel.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.ThreeHumpCamel.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">x_vals</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">x4</span> <span class="o">=</span> <span class="n">x2</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">x6</span> <span class="o">=</span> <span class="n">x4</span> <span class="o">*</span> <span class="n">x2</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">x2</span> <span class="o">-</span> <span class="mf">1.05</span> <span class="o">*</span> <span class="n">x4</span> <span class="o">+</span> <span class="n">x6</span> <span class="o">/</span> <span class="mf">6.0</span> <span class="o">+</span> <span class="n">x_vals</span> <span class="o">*</span> <span class="n">y_vals</span> <span class="o">+</span> <span class="n">y_vals</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ThreeHumpCamel.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.ThreeHumpCamel.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Easom">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Easom">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Easom</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Easom function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = -\cos(x_1) \cos(x_2) \exp \left( -((x_1 - \pi)^2 + (x_2 - \pi)^2) \right) + 1</span>
+
+<span class="sd">        Global minimum: :math:`f(\pi, \pi) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-100.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=100.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Easom.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Easom.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">y_vals</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x_vals</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y_vals</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Easom.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Easom.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StyblinskiTang">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.StyblinskiTang">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StyblinskiTang</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Styblinski-Tang function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = \sum_{i=1}^n \left( \frac{x_i^4 - 16 x_i^2 + 5 x_i}{2} \right)</span>
+
+<span class="sd">        Global minimum: :math:`f(-2.903534, \dots, -2.903534) \approx -39.16617 n`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        dim: int, default=2</span>
+<span class="sd">            Number of dimensions.</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-5.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=5.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="StyblinskiTang.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.StyblinskiTang.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span> <span class="o">-</span> <span class="mf">16.0</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">5.0</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StyblinskiTang.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.StyblinskiTang.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># Approximately -2.903534 for each dimension</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="o">-</span><span class="mf">2.903534</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Schaffer2">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Schaffer2">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Schaffer2</span><span class="p">(</span><span class="n">SingleTestFunction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Schaffer&#39;s second function.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \text{Minimize}\quad</span>
+<span class="sd">            f(\boldsymbol{x}) = 0.5 + \frac{\sin^2(x_1^2 - x_2^2) - 0.5}{(1 + 0.001 (x_1^2 + x_2^2))^2}</span>
+
+<span class="sd">        Global minimum: :math:`f(0, 0) = 0`.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        =========</span>
+<span class="sd">        min_X: np.ndarray | list[float] | float, default=-100.0</span>
+<span class="sd">            Minimum value of search space for each dimension.</span>
+<span class="sd">        max_X: np.ndarray | list[float] | float, default=100.0</span>
+<span class="sd">            Maximum value of search space for each dimension.</span>
+<span class="sd">        test_maximizer: bool, default=True</span>
+<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">test_maximizer</span><span class="o">=</span><span class="n">test_maximizer</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="Schaffer2.f">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Schaffer2.f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_vals</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_vals</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y_vals</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.001</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_vals</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y_vals</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Schaffer2.global_minimum_point">
+<a class="viewcode-back" href="../../../api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Schaffer2.global_minimum_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_minimum_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.2.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../3.2.0/en/_modules/physbo/test_functions/single_objective.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../3.2.0/ja/_modules/physbo/test_functions/single_objective.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../../../develop/en/_modules/physbo/test_functions/single_objective.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../../../master/en/_modules/physbo/test_functions/single_objective.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../3.2.0/en/_modules/physbo/test_functions/single_objective.html">3.2.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../../../v3.2.0/en/_modules/physbo/test_functions/single_objective.html">v3.2.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

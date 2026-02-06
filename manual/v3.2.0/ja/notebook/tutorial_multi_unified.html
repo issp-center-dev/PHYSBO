@@ -1,0 +1,944 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多目的最適化の高速計算 &mdash; PHYSBO 3.2.0 ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d67760e9"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="連続空間での最適化" href="tutorial_range.html" />
+    <link rel="prev" title="多目的最適化" href="tutorial_multi_objective.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">基本的な使用方法</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">チュートリアル</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">PHYSBO の基本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">ガウス過程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">インタラクティブに実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">既存の計算結果を読み込んで実行する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">複数候補を一度に探索する</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">多目的最適化</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">多目的最適化の高速計算</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#多目的最適化の統合">多目的最適化の統合</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#非優越ソート法">非優越ソート法</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ParEGO-法">ParEGO 法</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#チュートリアル">チュートリアル</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#前準備">前準備</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ベイズ最適化">ベイズ最適化</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#非優越ソート">非優越ソート</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ParEGO">ParEGO</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#比較">比較</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#別のベンチマーク関数">別のベンチマーク関数</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">連続空間での最適化</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">チュートリアル</a></li>
+      <li class="breadcrumb-item active">多目的最適化の高速計算</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_multi_unified.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>この jupyter notebook ファイルは <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/develop/data/tutorial">ISSP Data Repository</a> (develop branch) から入手できます。</p>
+<section id="多目的最適化の高速計算">
+<h1>多目的最適化の高速計算<a class="headerlink" href="#多目的最適化の高速計算" title="Link to this heading"></a></h1>
+<p><a class="reference internal" href="tutorial_multi_objective.html"><span class="doc">前回のチュートリアル</span></a> では、各目的関数を独立にガウス過程回帰し、パレート超体積を直接最大化していました。この方法は、目的関数の数が多い場合に計算時間が膨大になります。</p>
+<p>本チュートリアルでは、複数の目的関数を一つの目的関数に統合し、それをベイズ最適化することで、多目的最適化を高速に行う方法を学びます。</p>
+<section id="多目的最適化の統合">
+<h2>多目的最適化の統合<a class="headerlink" href="#多目的最適化の統合" title="Link to this heading"></a></h2>
+<p><span class="math notranslate nohighlight">\(i\)</span> 番目のデータ点（特徴量）を <span class="math notranslate nohighlight">\(\vec{x}_i\)</span> とし、その点での目的関数の値を <span class="math notranslate nohighlight">\(\vec{y}_i = (y_{i,1}, y_{i,2}, \dots, y_{i,p})\)</span> とします。 <span class="math notranslate nohighlight">\(\vec{y}_i\)</span> から新たな目的関数 <span class="math notranslate nohighlight">\(z_i\)</span> を作り、 <span class="math notranslate nohighlight">\(\vec{x}_i\)</span> から <span class="math notranslate nohighlight">\(z_i\)</span> への関数 <span class="math notranslate nohighlight">\(z_i = g(\vec{x}_i)\)</span> をガウス過程回帰でモデリングし、ベイズ最適化を行います。</p>
+<p>現在の PHYSBO では、 <span class="math notranslate nohighlight">\(\vec{y}_i\)</span> から <span class="math notranslate nohighlight">\(z_i\)</span> を作る方法として、非優越ソート法とParEGO法が提供されています。</p>
+<section id="非優越ソート法">
+<h3>非優越ソート法<a class="headerlink" href="#非優越ソート法" title="Link to this heading"></a></h3>
+<section id="定義">
+<h4>定義<a class="headerlink" href="#定義" title="Link to this heading"></a></h4>
+<p>非優越ソート法 (Non-dominated Sorting; NDS) は、学習データ <span class="math notranslate nohighlight">\(\vec{y}_i\)</span> について非優越ソートによるランク付けを行い、そのランクに基づいた目的関数を新たに作る手法です。ランクは以下のように再帰的に定義されます。</p>
+<ol class="arabic simple">
+<li><p>学習データ全体のパレート解となる点のランクは <span class="math notranslate nohighlight">\(r_i = 1\)</span> である。</p></li>
+<li><p>学習データからランク <span class="math notranslate nohighlight">\(r_i = 1\)</span> となる点を除いた残りのデータのパレート解となる点のランクは <span class="math notranslate nohighlight">\(r_i = 2\)</span> である。</p></li>
+<li><p>同様に、学習データからランク <span class="math notranslate nohighlight">\(r_i = 1,2,\dots,k-1\)</span> となる点を除いた残りのデータのパレート解となる点のランクは <span class="math notranslate nohighlight">\(r_i = k\)</span> である。</p></li>
+<li><p>最大ランク <span class="math notranslate nohighlight">\(r_\text{max}\)</span> に達するまで、同様の操作を繰り返す。残った点は <span class="math notranslate nohighlight">\(r_i = \infty\)</span> となる。</p></li>
+</ol>
+<p>ランク <span class="math notranslate nohighlight">\(r_i\)</span> に基づいて、新たな目的関数 <span class="math notranslate nohighlight">\(z_i\)</span> を以下のように定義し、最大化します。</p>
+<div class="math notranslate nohighlight">
+\[z_i = \frac{1}{r_i}\]</div>
+</section>
+<section id="PHYSBOでの使い方">
+<h4>PHYSBOでの使い方<a class="headerlink" href="#PHYSBOでの使い方" title="Link to this heading"></a></h4>
+<p>PHYSBOでは、 <code class="docutils literal notranslate"><span class="pre">physbo.search.unify.NDS</span></code> クラスとして NDS 法を実装しています。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">NDS</span><span class="p">(</span><span class="n">rank_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">rank_max</span></code> はランクの最大値です。 これ以上のランクを持つ点については、 <span class="math notranslate nohighlight">\(z_i = 0\)</span> として処理されます。</p>
+</section>
+</section>
+<section id="ParEGO-法">
+<h3>ParEGO 法<a class="headerlink" href="#ParEGO-法" title="Link to this heading"></a></h3>
+<section id="id5">
+<h4>定義<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<p>ParEGO法は、目的関数の値について重み付き和と重み付き最大値をとることで、多目的最適化を単目的最適化に帰着させる方法です。 目的関数の重みを <span class="math notranslate nohighlight">\(\vec{w} = (w_1, w_2, \dots, w_p)\)</span> とし、和と最大値の重みをそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{max}\)</span> とすると、新たな目的関数は</p>
+<div class="math notranslate nohighlight">
+\[z_i = \rho_\text{sum} \sum_{j} w_j y_{i,j} + \rho_\text{max} \max_{j} w_j y_{i,j}\]</div>
+<p>となります。</p>
+</section>
+<section id="PHYSBO-での使い方">
+<h4>PHYSBO での使い方<a class="headerlink" href="#PHYSBO-での使い方" title="Link to this heading"></a></h4>
+<p>PHYSBOでは、 <code class="docutils literal notranslate"><span class="pre">physbo.search.unify.ParEGO</span></code> クラスとして ParEGO 法を実装しています。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">ParEGO</span><span class="p">(</span><span class="n">weight_sum</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">weight_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_discrete</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">weight_sum</span></code> と <code class="docutils literal notranslate"><span class="pre">weight_max</span></code> はそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{max}\)</span> に対応します。 <code class="docutils literal notranslate"><span class="pre">weights</span></code> には重み <span class="math notranslate nohighlight">\(\vec{w}\)</span> を指定します。</p>
+<ul class="simple">
+<li><p>重み <span class="math notranslate nohighlight">\(\vec{w}\)</span> は <span class="math notranslate nohighlight">\(\sum_{j} w_j = 1\)</span> として自動的に規格化されます。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">weights</span> <span class="pre">=</span> <span class="pre">None</span></code> とすると、ベイズ最適化のステップごとに重みを乱数で生成します。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">weights_discrete</span></code> に整数 <span class="math notranslate nohighlight">\(s&gt;0\)</span> を指定すると、それぞれの重みが <span class="math notranslate nohighlight">\(w_j = \frac{a_j}{s}\)</span> となるように生成されます。</p>
+<ul>
+<li><p>ここで、 <span class="math notranslate nohighlight">\(a_j\)</span> は <span class="math notranslate nohighlight">\(0, 1, \dots, s\)</span> で、なおかつ <span class="math notranslate nohighlight">\(\sum_{j} a_j = s\)</span> です。</p></li>
+</ul>
+</li>
+<li><p><span class="math notranslate nohighlight">\(s=0\)</span> の場合は、 <span class="math notranslate nohighlight">\([0,1)\)</span> の範囲で一様ランダムに重みを生成し、和が1になるように規格化されます。</p></li>
+</ul>
+</li>
+</ul>
+<p>また、 <span class="math notranslate nohighlight">\(y_{i,j}\)</span> は目的関数 <span class="math notranslate nohighlight">\(j\)</span> ごとに、学習データの最小値と最大値を用いて <span class="math notranslate nohighlight">\([-1, 0]\)</span> の範囲に正規化されます。</p>
+</section>
+</section>
+</section>
+<section id="チュートリアル">
+<h2>チュートリアル<a class="headerlink" href="#チュートリアル" title="Link to this heading"></a></h2>
+<section id="前準備">
+<h3>前準備<a class="headerlink" href="#前準備" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">12345</span>
+<span class="n">num_random_search</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_bayes_search</span> <span class="o">=</span> <span class="mi">40</span>
+</pre></div>
+</div>
+</div>
+<section id="テスト関数">
+<h4>テスト関数<a class="headerlink" href="#テスト関数" title="Link to this heading"></a></h4>
+<p>本チュートリアルでは引き続き、多目的最適化のベンチマーク関数である VLMOP2 を利用します。 なお、PHYSBO では <code class="docutils literal notranslate"><span class="pre">physbo.test_functions.multi_objective</span></code> に、VLMOP2を含めたいくつかの多目的最適化のベンチマーク関数が用意されています。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim_fn</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">test_functions</span><span class="o">.</span><span class="n">multi_objective</span><span class="o">.</span><span class="n">VLMOP2</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="探索候補データの準備">
+<h4>探索候補データの準備<a class="headerlink" href="#探索候補データの準備" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">sim_fn</span></code> は探索空間の最小値と最大値を <code class="docutils literal notranslate"><span class="pre">min_X</span></code> と <code class="docutils literal notranslate"><span class="pre">max_X</span></code> に持ちます。 これらを用いて、 <code class="docutils literal notranslate"><span class="pre">physbo.search.utility.make_grid</span></code> で探索候補点のグリッドを生成します。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">sim_fn</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">sim_fn</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="n">num_X</span><span class="o">=</span><span class="mi">101</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="simulator-の定義">
+<h4>simulator の定義<a class="headerlink" href="#simulator-の定義" title="Link to this heading"></a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simu</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">Simulator</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">test_function</span><span class="o">=</span><span class="n">sim_fn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="HVPI">
+<h4>HVPI<a class="headerlink" href="#HVPI" title="Link to this heading"></a></h4>
+<p>比較対象として、HVPIを用いたベイズ最適化を行います。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_HVPI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">time_HVPI</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+4.208933115005493
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;HVPI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;HVPI&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_13_1.png" src="../_images/notebook_tutorial_multi_unified_13_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_HVPI</span> <span class="o">=</span> <span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_HVPI</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+np.float64(0.3285497837573861)
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="ベイズ最適化">
+<h3>ベイズ最適化<a class="headerlink" href="#ベイズ最適化" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Policy</span></code> クラスは <code class="docutils literal notranslate"><span class="pre">physbo.search.discrete_unified.Policy</span></code> を利用します。</p>
+<p>他の <code class="docutils literal notranslate"><span class="pre">Policy</span></code> と同じく、 <code class="docutils literal notranslate"><span class="pre">random_search</span></code> などで初期データを作成し、 <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> メソッドでベイズ最適化を行います。 他の <code class="docutils literal notranslate"><span class="pre">Policy</span></code> との違いは以下の通りです。</p>
+<section id="目的関数の単一化">
+<h4>目的関数の単一化<a class="headerlink" href="#目的関数の単一化" title="Link to this heading"></a></h4>
+<p>単一化に使うアルゴリズムは <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> の <code class="docutils literal notranslate"><span class="pre">unify_method</span></code> 引数で指定します。 PHYSBO では <code class="docutils literal notranslate"><span class="pre">physbo.search.unify.ParEGO</span></code> と <code class="docutils literal notranslate"><span class="pre">physbo.search.unify.NDS</span></code> が用意されています。</p>
+</section>
+<section id="獲得関数">
+<h4>獲得関数<a class="headerlink" href="#獲得関数" title="Link to this heading"></a></h4>
+<p>獲得関数は単目的最適化のものと同じです。</p>
+<ul class="simple">
+<li><p>PI (Probability of Improvement)</p></li>
+<li><p>EI (Expected Improvement)</p></li>
+<li><p>TS (Thompson Sampling)</p></li>
+</ul>
+</section>
+</section>
+<section id="非優越ソート">
+<h3>非優越ソート<a class="headerlink" href="#非優越ソート" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_unified</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">NDS</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_NDS</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">time_NDS</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.7659821510314941
+</pre></div></div>
+</div>
+<section id="パレート解のプロット">
+<h4>パレート解のプロット<a class="headerlink" href="#パレート解のプロット" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_NDS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_NDS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;NDS&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;NDS&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_19_1.png" src="../_images/notebook_tutorial_multi_unified_19_1.png" />
+</div>
+</div>
+</section>
+<section id="劣解領域体積">
+<h4>劣解領域体積<a class="headerlink" href="#劣解領域体積" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_NDS</span> <span class="o">=</span> <span class="n">res_NDS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_NDS</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+np.float64(0.30923409715730354)
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="ParEGO">
+<h3>ParEGO<a class="headerlink" href="#ParEGO" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_unified</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">ParEGO</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_ParEGO</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">time_ParEGO</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.7743690013885498
+</pre></div></div>
+</div>
+<section id="id18">
+<h4>パレート解のプロット<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_ParEGO</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_ParEGO</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;ParEGO&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;ParEGO&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_25_1.png" src="../_images/notebook_tutorial_multi_unified_25_1.png" />
+</div>
+</div>
+</section>
+<section id="id19">
+<h4>劣解領域体積<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_ParEGO</span> <span class="o">=</span> <span class="n">res_ParEGO</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_ParEGO</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+np.float64(0.18004551161609372)
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="比較">
+<h3>比較<a class="headerlink" href="#比較" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># make table</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;アルゴリズム&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NDS&quot;</span><span class="p">,</span> <span class="s2">&quot;ParEGO&quot;</span><span class="p">,</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;計算時間&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">time_NDS</span><span class="p">,</span> <span class="n">time_ParEGO</span><span class="p">,</span> <span class="n">time_HVPI</span><span class="p">],</span>
+    <span class="s2">&quot;劣解領域体積&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_NDS</span><span class="p">,</span> <span class="n">VID_ParEGO</span><span class="p">,</span> <span class="n">VID_HVPI</span><span class="p">]</span>
+<span class="p">})</span>
+<span class="n">df</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>アルゴリズム</th>
+      <th>計算時間</th>
+      <th>劣解領域体積</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NDS</td>
+      <td>1.765982</td>
+      <td>0.309234</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ParEGO</td>
+      <td>1.774369</td>
+      <td>0.180046</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>HVPI</td>
+      <td>4.208933</td>
+      <td>0.328550</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>NDS は HVPI と比較しても遜色ない結果（劣解領域体積）を、より短い計算時間で得ることができています。</p>
+<p>一方のParEGOは、計算時間こそ短いですが、劣解領域体積が小さくなっています。</p>
+<p>最適化問題によって、どのアルゴリズムがよい結果を出すかは変わります。</p>
+</section>
+<section id="別のベンチマーク関数">
+<h3>別のベンチマーク関数<a class="headerlink" href="#別のベンチマーク関数" title="Link to this heading"></a></h3>
+<p>Kita-Yabumoto-Mori-Nishikawa 関数を用いたベイズ最適化を行います。</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{cases}
+f_1(x, y) = -x^2 + y^2 \\
+f_2(x, y) = 0.5x + y + 1 \\
+\end{cases}\end{split}\]</div>
+<p>の2つの目的関数を最大化する問題です。</p>
+<p>また、 <span class="math notranslate nohighlight">\(x\)</span> と <span class="math notranslate nohighlight">\(y\)</span> には</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{cases}
+g_1(x, y) = 6.5 - x/6 - y \ge 0 \\
+g_2(x, y) = 7.5 - x/2 - y \ge 0 \\
+g_3(x, y) = 30 - 5x - y \ge 0 \\
+\end{cases}\end{split}\]</div>
+<p>という制約条件があります。</p>
+<p>Kita, H., Yabumoto, Y., Mori, N., Nishikawa, Y. (1996). Multi-objective optimization by means of the thermodynamical genetic algorithm. In: Voigt, HM., Ebeling, W., Rechenberg, I., Schwefel, HP. (eds) Parallel Problem Solving from Nature — PPSN IV. PPSN 1996. Lecture Notes in Computer Science, vol 1141. Springer, Berlin, Heidelberg. <a class="reference external" href="https://doi.org/10.1007/3-540-61723-X_1014">https://doi.org/10.1007/3-540-61723-X_1014</a></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fn_KYMN</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">test_functions</span><span class="o">.</span><span class="n">multi_objective</span><span class="o">.</span><span class="n">KitaYabumotoMoriNishikawa</span><span class="p">()</span>
+<span class="n">test_X_KYMN</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="n">num_X</span><span class="o">=</span><span class="mi">101</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">constraint</span><span class="p">)</span>
+<span class="n">simu_KYMN</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">Simulator</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_KYMN</span><span class="p">,</span> <span class="n">test_function</span><span class="o">=</span><span class="n">fn_KYMN</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="id22">
+<h4>HVPI<a class="headerlink" href="#id22" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_KYMN</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_KYMN_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_KYMN_HVPI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">VID_KYMN_HVPI</span> <span class="o">=</span> <span class="n">res_KYMN_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
+<span class="n">VID_KYMN_HVPI</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;HVPI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;HVPI&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_34_1.png" src="../_images/notebook_tutorial_multi_unified_34_1.png" />
+</div>
+</div>
+</section>
+<section id="id23">
+<h4>ParEGO<a class="headerlink" href="#id23" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_unified</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_KYMN</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">ParEGO</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">VID_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">res_KYMN_ParEGO</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
+<span class="n">VID_KYMN_ParEGO</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_ParEGO</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_ParEGO</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;ParEGO&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;ParEGO&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_36_1.png" src="../_images/notebook_tutorial_multi_unified_36_1.png" />
+</div>
+</div>
+</section>
+<section id="NDS">
+<h4>NDS<a class="headerlink" href="#NDS" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_unified</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_KYMN</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">NDS</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_KYMN_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_KYMN_NDS</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="n">VID_KYMN_NDS</span> <span class="o">=</span> <span class="n">res_KYMN_NDS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
+<span class="n">VID_KYMN_NDS</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_NDS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_KYMN_NDS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;NDS&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;NDS&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_unified_38_1.png" src="../_images/notebook_tutorial_multi_unified_38_1.png" />
+</div>
+</div>
+</section>
+<section id="id24">
+<h4>比較<a class="headerlink" href="#id24" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;アルゴリズム&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NDS&quot;</span><span class="p">,</span> <span class="s2">&quot;ParEGO&quot;</span><span class="p">,</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;計算時間&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">time_KYMN_NDS</span><span class="p">,</span> <span class="n">time_KYMN_ParEGO</span><span class="p">,</span> <span class="n">time_KYMN_HVPI</span><span class="p">],</span>
+    <span class="s2">&quot;劣解領域体積&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_KYMN_NDS</span><span class="p">,</span> <span class="n">VID_KYMN_ParEGO</span><span class="p">,</span> <span class="n">VID_KYMN_HVPI</span><span class="p">]</span>
+<span class="p">})</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>アルゴリズム</th>
+      <th>計算時間</th>
+      <th>劣解領域体積</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NDS</td>
+      <td>1.762965</td>
+      <td>970.781427</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ParEGO</td>
+      <td>1.748870</td>
+      <td>975.909589</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>HVPI</td>
+      <td>3.898581</td>
+      <td>932.139351</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>この最適化問題では、 ParEGOがよい結果を出しています。</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_multi_objective.html" class="btn btn-neutral float-left" title="多目的最適化" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_range.html" class="btn btn-neutral float-right" title="連続空間での最適化" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.2.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../3.2.0/en/notebook/tutorial_multi_unified.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../3.2.0/ja/notebook/tutorial_multi_unified.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/ja/notebook/tutorial_multi_unified.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/ja/notebook/tutorial_multi_unified.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../3.2.0/ja/notebook/tutorial_multi_unified.html">3.2.0</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+        
+        <dd>
+        
+        <a href="../../../v3.2.0/ja/notebook/tutorial_multi_unified.html">v3.2.0</a>
+        
+        </dd>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
