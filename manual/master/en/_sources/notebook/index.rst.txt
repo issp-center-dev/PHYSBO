@@ -2,6 +2,7 @@ Tutorials
 ==================================
 Here, the usage of PHYSBO is introduced through tutorials.
 
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -12,4 +13,5 @@ Here, the usage of PHYSBO is introduced through tutorials.
    tutorial_once_mode
    tutorial_multi_probe
    tutorial_multi_objective
+   tutorial_multi_unified
    tutorial_range

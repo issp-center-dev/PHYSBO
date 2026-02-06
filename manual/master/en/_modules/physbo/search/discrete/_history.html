@@ -5,17 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.search.discrete._history &mdash; PHYSBO 3.1.1 documentation</title>
+  <title>physbo.search.discrete._history &mdash; PHYSBO 3.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=796a81b5"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/documentation_options.js?v=4f6ddb47"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -161,12 +161,18 @@
 <span class="sd">        -------</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">length_vector</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">length_vector</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
         <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
         <span class="n">en</span> <span class="o">=</span> <span class="n">st</span> <span class="o">+</span> <span class="n">N</span>
 
+        <span class="n">t_shape</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">t_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">N</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of actions and t must be the same: </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">t_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t.shape[1] must be 1: </span><span class="si">{</span><span class="n">t_shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span> <span class="o">=</span> <span class="n">en</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">+=</span> <span class="n">N</span>
@@ -347,7 +353,7 @@
 <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     <span class="fa fa-book"> Read the Docs</span>
-    v: master
+    v: 3.2.0
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
@@ -357,14 +363,14 @@
         
         <dd>
         <strong>
-          <a href="../../../../../../master/en/_modules/physbo/search/discrete/_history.html">en</a>
+          <a href="../../../../../../3.2.0/en/_modules/physbo/search/discrete/_history.html">en</a>
         </strong>
         </dd>
       
         
         <dd>
         
-          <a href="../../../../../../master/ja/_modules/physbo/search/discrete/_history.html">ja</a>
+          <a href="../../../../../../3.2.0/ja/_modules/physbo/search/discrete/_history.html">ja</a>
         
         </dd>
       
@@ -380,97 +386,20 @@
       
         
         <dd>
-        <strong>
+        
           <a href="../../../../../../master/en/_modules/physbo/search/discrete/_history.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../../../../3.2.0/en/_modules/physbo/search/discrete/_history.html">3.2.0</a>
         </strong>
         </dd>
       
 
       <dt>Tags</dt>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v3.1.1/en/_modules/physbo/search/discrete/_history.html">v3.1.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v3.1.0/en/_modules/physbo/search/discrete/_history.html">v3.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v3.0.0/en/_modules/physbo/search/discrete/_history.html">v3.0.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v2.2.0/en/_modules/physbo/search/discrete/_history.html">v2.2.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v2.1.0/en/_modules/physbo/search/discrete/_history.html">v2.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v2.0.2/en/_modules/physbo/search/discrete/_history.html">v2.0.2</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v2.0.1/en/_modules/physbo/search/discrete/_history.html">v2.0.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v2.0.0/en/_modules/physbo/search/discrete/_history.html">v2.0.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v1.1.1/en/_modules/physbo/search/discrete/_history.html">v1.1.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v1.1.0/en/_modules/physbo/search/discrete/_history.html">v1.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v1.0.1/en/_modules/physbo/search/discrete/_history.html">v1.0.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../../../../v1.0.0/en/_modules/physbo/search/discrete/_history.html">v1.0.0</a>
-        
-        </dd>
       
 
     </dl>

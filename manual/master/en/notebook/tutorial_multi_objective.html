@@ -6,25 +6,25 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multi-objective optimization &mdash; PHYSBO 3.1.1 documentation</title>
+  <title>Multi-objective optimization &mdash; PHYSBO 3.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=796a81b5"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/documentation_options.js?v=4f6ddb47"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Optimization in Continuous Space" href="tutorial_range.html" />
+    <link rel="next" title="Fast Computation for Multi-objective Optimization" href="tutorial_multi_unified.html" />
     <link rel="prev" title="Search multiple candidates at once" href="tutorial_multi_probe.html" /> 
 </head>
 
@@ -76,11 +76,13 @@
 <li class="toctree-l4"><a class="reference internal" href="#HVPI-(HyperVolume-based-Probability-of-Improvement)">HVPI (HyperVolume-based Probability of Improvement)</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#EHVI-(Expected-Hyper-Volume-Improvement)">EHVI (Expected Hyper-Volume Improvement)</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#TS-(Thompson-Sampling)">TS (Thompson Sampling)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Comparison">Comparison</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Appendix:-Full-search">Appendix: Full search</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_unified.html">Fast Computation for Multi-objective Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">Optimization in Continuous Space</a></li>
 </ul>
 </li>
@@ -132,24 +134,21 @@
 <div class="line">When there is a trade-off between objective functions, there are multiple Pareto solutions, and the numerical task is to find them efficiently.</div>
 </div>
 <p>PHYSBO implements a Bayesian optimization method to find Pareto solutions efficiently.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">12345</span>
+<span class="n">num_random_search</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_bayes_search</span> <span class="o">=</span> <span class="mi">40</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Cythonized version of physbo is used
-</pre></div></div>
 </div>
 <section id="Test-functions">
 <h2>Test functions<a class="headerlink" href="#Test-functions" title="Link to this heading"></a></h2>
@@ -192,9 +191,10 @@ Cythonized version of physbo is used
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
-<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
-<span class="n">test_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">])</span>
+<span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+
+<span class="n">test_X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">num_X</span><span class="o">=</span><span class="mi">101</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -218,7 +218,7 @@ array([[-2.  , -2.  ],
        ...,
        [ 2.  ,  1.92],
        [ 2.  ,  1.96],
-       [ 2.  ,  2.  ]])
+       [ 2.  ,  2.  ]], shape=(10201, 2))
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -328,21 +328,24 @@ array([[-2.  , -2.  ],
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>As with the usual usage of <code class="docutils literal notranslate"><span class="pre">physbo.search.discrete.Policy</span></code> (with one objective function), optimization is done by calling the <code class="docutils literal notranslate"><span class="pre">random_search</span></code> or <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> methods. The basic API and usage are roughly the same as <code class="docutils literal notranslate"><span class="pre">discrete.policy</span></code>.</p>
 <section id="Random-search">
 <h3>Random search<a class="headerlink" href="#Random-search" title="Link to this heading"></a></h3>
+<p>In this tutorial, we will perform 10 (<code class="docutils literal notranslate"><span class="pre">num_random_search</span></code>) random sampling steps and 40 (<code class="docutils literal notranslate"><span class="pre">num_bayes_search</span></code>) Bayesian optimization steps. For comparison, we will also carry out 50 (<code class="docutils literal notranslate"><span class="pre">num_random_search</span> <span class="pre">+</span> <span class="pre">num_bayes_search</span></code>) random sampling steps.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span> <span class="o">+</span> <span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -351,98 +354,107 @@ array([[-2.  , -2.  ],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+0001-th step: f(x) = [-0.99017418 -0.09267839] (action = 2560)
    Pareto set updated.
    the number of Pareto frontiers = 1
 
-0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+0002-th step: f(x) = [-0.63368874 -0.93288369] (action = 4415)
    Pareto set updated.
    the number of Pareto frontiers = 2
 
-0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
-   Pareto set updated.
-   the number of Pareto frontiers = 1
-
-0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
-   Pareto set updated.
-   the number of Pareto frontiers = 1
-
-0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+0003-th step: f(x) = [-0.89500547 -0.99942328] (action = 10046)
+0004-th step: f(x) = [-0.52496048 -0.73019147] (action = 5205)
    Pareto set updated.
    the number of Pareto frontiers = 2
 
-0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
-   Pareto set updated.
-   the number of Pareto frontiers = 2
-
-0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
-0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
-0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
-0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
-0011-th step: f(x) = [-0.99700074 -0.99847873] (action = 1406)
-0012-th step: f(x) = [-0.9992592  -0.93891121] (action = 6061)
-0013-th step: f(x) = [-0.19963873 -0.93357674] (action = 5722)
-   Pareto set updated.
-   the number of Pareto frontiers = 2
-
-0014-th step: f(x) = [-0.98046765 -0.99294428] (action = 2309)
-0015-th step: f(x) = [-0.99602549 -0.98620358] (action = 7989)
-0016-th step: f(x) = [-0.99957128 -0.9973798 ] (action = 8484)
-0017-th step: f(x) = [-0.52191048 -0.72845916] (action = 5405)
+0005-th step: f(x) = [-0.06210869 -0.9918999 ] (action = 7542)
    Pareto set updated.
    the number of Pareto frontiers = 3
 
-0018-th step: f(x) = [-0.99916441 -0.40869572] (action = 2742)
-0019-th step: f(x) = [-0.99480122 -0.7565076 ] (action = 1266)
-0020-th step: f(x) = [-0.63329589 -0.63329589] (action = 5200)
+0006-th step: f(x) = [-0.78149934 -0.9714881 ] (action = 4018)
+0007-th step: f(x) = [-0.99988434 -0.7158834 ] (action = 2631)
+0008-th step: f(x) = [-0.46814364 -0.99957312] (action = 8063)
+0009-th step: f(x) = [-0.58802709 -0.95199271] (action = 7519)
+0010-th step: f(x) = [-0.64563383 -0.99949924] (action = 9458)
+0011-th step: f(x) = [-0.85901111 -0.77832121] (action = 3396)
+0012-th step: f(x) = [-0.6258165  -0.91403294] (action = 4413)
+0013-th step: f(x) = [-0.96339156 -0.50605126] (action = 2577)
    Pareto set updated.
    the number of Pareto frontiers = 4
 
-0021-th step: f(x) = [-0.95437918 -0.80142908] (action = 2487)
-0022-th step: f(x) = [-0.99899466 -0.96646532] (action = 269)
-0023-th step: f(x) = [-0.19473522 -0.99445365] (action = 8044)
+0014-th step: f(x) = [-0.99433124 -0.07837382] (action = 2955)
    Pareto set updated.
    the number of Pareto frontiers = 5
 
-0024-th step: f(x) = [-0.99969529 -0.52395588] (action = 2135)
-0025-th step: f(x) = [-0.59106078 -0.79258035] (action = 6206)
-0026-th step: f(x) = [-0.78231041 -0.99997141] (action = 9079)
-0027-th step: f(x) = [-0.99955573 -0.99930147] (action = 396)
-0028-th step: f(x) = [-0.99825097 -0.99875436] (action = 9403)
-0029-th step: f(x) = [-0.65387719 -0.99938669] (action = 9456)
-0030-th step: f(x) = [-0.26132949 -0.87913689] (action = 5816)
+0015-th step: f(x) = [-0.77709331 -0.99991896] (action = 7370)
+0016-th step: f(x) = [-0.44837296 -0.80073444] (action = 5909)
    Pareto set updated.
    the number of Pareto frontiers = 6
 
-0031-th step: f(x) = [-0.74523952 -0.7724917 ] (action = 6301)
-0032-th step: f(x) = [-0.33644513 -0.97772424] (action = 5530)
-0033-th step: f(x) = [-0.99777557 -0.93373833] (action = 6470)
-0034-th step: f(x) = [-0.9725524 -0.6296562] (action = 2277)
-0035-th step: f(x) = [-0.99924826 -0.84674905] (action = 353)
-0036-th step: f(x) = [-0.99743705 -0.17848438] (action = 2549)
-   Pareto set updated.
-   the number of Pareto frontiers = 7
-
-0037-th step: f(x) = [-0.99994916 -0.78013199] (action = 326)
-0038-th step: f(x) = [-0.99887174 -0.86936149] (action = 5458)
-0039-th step: f(x) = [-0.99362699 -0.99769786] (action = 9309)
-0040-th step: f(x) = [-0.84889217 -0.99973225] (action = 10156)
-0041-th step: f(x) = [-0.95713719 -0.09067194] (action = 4073)
-   Pareto set updated.
-   the number of Pareto frontiers = 7
-
-0042-th step: f(x) = [-0.17190645 -0.91382463] (action = 6120)
+0017-th step: f(x) = [-0.86544619 -0.41433595] (action = 3787)
    Pareto set updated.
    the number of Pareto frontiers = 6
 
-0043-th step: f(x) = [-0.98406208 -0.94467587] (action = 7289)
-0044-th step: f(x) = [-0.93974303 -0.92444262] (action = 2698)
-0045-th step: f(x) = [-0.98414342 -0.84762781] (action = 1780)
-0046-th step: f(x) = [-0.99699986 -0.98166426] (action = 7684)
-0047-th step: f(x) = [-0.3868143  -0.99930896] (action = 8060)
-0048-th step: f(x) = [-0.97964062 -0.65554315] (action = 2075)
-0049-th step: f(x) = [-0.99907307 -0.73466786] (action = 4450)
-0050-th step: f(x) = [-0.99720717 -0.85352507] (action = 865)
+0018-th step: f(x) = [-0.56161131 -0.97933576] (action = 8027)
+0019-th step: f(x) = [-0.99973799 -0.54162892] (action = 2034)
+0020-th step: f(x) = [-0.99984173 -0.61123124] (action = 1231)
+0021-th step: f(x) = [-0.97820847 -0.8330008 ] (action = 6382)
+0022-th step: f(x) = [-0.99526434 -0.9637083 ] (action = 7282)
+0023-th step: f(x) = [-0.97787893 -0.26212082] (action = 2569)
+   Pareto set updated.
+   the number of Pareto frontiers = 7
+
+0024-th step: f(x) = [-0.24330703 -0.9118224 ] (action = 5619)
+   Pareto set updated.
+   the number of Pareto frontiers = 8
+
+0025-th step: f(x) = [-0.24153475 -0.99178622] (action = 8040)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0026-th step: f(x) = [-0.84190968 -0.91981439] (action = 3506)
+0027-th step: f(x) = [-0.99796446 -0.34753927] (action = 3349)
+0028-th step: f(x) = [-0.99708276 -0.9919242 ] (action = 8291)
+0029-th step: f(x) = [-0.99920018 -0.98099933] (action = 172)
+0030-th step: f(x) = [-0.99665356 -0.14456179] (action = 2751)
+0031-th step: f(x) = [-0.81366367 -0.99993226] (action = 7170)
+0032-th step: f(x) = [-0.54951231 -0.9993634 ] (action = 9158)
+0033-th step: f(x) = [-0.19615996 -0.94679724] (action = 6924)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0034-th step: f(x) = [-0.99950572 -0.99575833] (action = 81)
+0035-th step: f(x) = [-0.79425482 -0.43043543] (action = 4491)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0036-th step: f(x) = [-0.94523115 -0.58027949] (action = 2782)
+0037-th step: f(x) = [-0.9930067  -0.93998722] (action = 6981)
+0038-th step: f(x) = [-0.99560251 -0.10351929] (action = 2653)
+0039-th step: f(x) = [-0.97602834 -0.99134066] (action = 2409)
+0040-th step: f(x) = [-0.05507465 -0.95545924] (action = 6527)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0041-th step: f(x) = [-0.54838423 -0.96652902] (action = 7723)
+0042-th step: f(x) = [-0.97560369 -0.9981919 ] (action = 9623)
+0043-th step: f(x) = [-0.8884927  -0.23687603] (action = 4183)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
+0044-th step: f(x) = [-0.97621647 -0.0052244 ] (action = 3367)
+   Pareto set updated.
+   the number of Pareto frontiers = 9
+
+0045-th step: f(x) = [-0.5974142  -0.99778865] (action = 9046)
+0046-th step: f(x) = [-0.69847999 -0.99969655] (action = 9661)
+0047-th step: f(x) = [-0.99999523 -0.89945685] (action = 1112)
+0048-th step: f(x) = [-0.99988103 -0.67274056] (action = 2230)
+0049-th step: f(x) = [-0.67089612 -0.99973586] (action = 7063)
+0050-th step: f(x) = [-0.44743129 -0.8578429 ] (action = 6412)
+   Pareto set updated.
+   the number of Pareto frontiers = 10
+
 </pre></div></div>
 </div>
 <div class="line-block">
@@ -458,8 +470,12 @@ array([[-2.  , -2.  ],
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span> <span class="o">+</span> <span class="n">num_bayes_search</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span>
+    <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -468,146 +484,272 @@ array([[-2.  , -2.  ],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0001-th step: f(x) = [-0.99973003 -0.62334035] (action = 836)
+0001-th step: f(x) = [-0.99017418 -0.09267839] (action = 2560)
    Pareto set updated.
-   current Pareto set = [[-0.99973003 -0.62334035]] (steps = [1])
+   current Pareto set = [[-0.99017418 -0.09267839]] (steps = [1])
 
-0002-th step: f(x) = [-0.99789981 -0.99866427] (action = 9404)
+0002-th step: f(x) = [-0.63368874 -0.93288369] (action = 4415)
    Pareto set updated.
-   current Pareto set = [[-0.99973003 -0.62334035]
- [-0.99789981 -0.99866427]] (steps = [1 2])
+   current Pareto set = [[-0.99017418 -0.09267839]
+ [-0.63368874 -0.93288369]] (steps = [1 2])
 
-0003-th step: f(x) = [-0.99090897 -0.46609239] (action = 4664)
+0003-th step: f(x) = [-0.89500547 -0.99942328] (action = 10046)
+0004-th step: f(x) = [-0.52496048 -0.73019147] (action = 5205)
    Pareto set updated.
-   current Pareto set = [[-0.99090897 -0.46609239]] (steps = [3])
+   current Pareto set = [[-0.99017418 -0.09267839]
+ [-0.52496048 -0.73019147]] (steps = [1 4])
 
-0004-th step: f(x) = [-0.92633083 -0.29208351] (action = 4780)
+0005-th step: f(x) = [-0.06210869 -0.9918999 ] (action = 7542)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]] (steps = [4])
+   current Pareto set = [[-0.99017418 -0.09267839]
+ [-0.52496048 -0.73019147]
+ [-0.06210869 -0.9918999 ]] (steps = [1 4 5])
 
-0005-th step: f(x) = [-0.67969326 -0.99981691] (action = 9566)
+0006-th step: f(x) = [-0.78149934 -0.9714881 ] (action = 4018)
+0007-th step: f(x) = [-0.99988434 -0.7158834 ] (action = 2631)
+0008-th step: f(x) = [-0.46814364 -0.99957312] (action = 8063)
+0009-th step: f(x) = [-0.58802709 -0.95199271] (action = 7519)
+0010-th step: f(x) = [-0.64563383 -0.99949924] (action = 9458)
+0011-th step: f(x) = [-0.85901111 -0.77832121] (action = 3396)
+0012-th step: f(x) = [-0.6258165  -0.91403294] (action = 4413)
+0013-th step: f(x) = [-0.96339156 -0.50605126] (action = 2577)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.67969326 -0.99981691]] (steps = [4 5])
+   current Pareto set = [[-0.99017418 -0.09267839]
+ [-0.96339156 -0.50605126]
+ [-0.52496048 -0.73019147]
+ [-0.06210869 -0.9918999 ]] (steps = [ 1 13  4  5])
 
-0006-th step: f(x) = [-0.45601619 -0.99848443] (action = 8852)
+0014-th step: f(x) = [-0.99433124 -0.07837382] (action = 2955)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.45601619 -0.99848443]] (steps = [4 6])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.96339156 -0.50605126]
+ [-0.52496048 -0.73019147]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 13  4  5])
 
-0007-th step: f(x) = [-0.92670204 -0.71508873] (action = 6088)
-0008-th step: f(x) = [-0.58233995 -0.99952931] (action = 7060)
-0009-th step: f(x) = [-0.99848229 -0.96780195] (action = 473)
-0010-th step: f(x) = [-0.80479332 -0.99994946] (action = 7573)
-0011-th step: f(x) = [-0.99700074 -0.99847873] (action = 1406)
-0012-th step: f(x) = [-0.9992592  -0.93891121] (action = 6061)
-0013-th step: f(x) = [-0.19963873 -0.93357674] (action = 5722)
+0015-th step: f(x) = [-0.77709331 -0.99991896] (action = 7370)
+0016-th step: f(x) = [-0.44837296 -0.80073444] (action = 5909)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.19963873 -0.93357674]] (steps = [ 4 13])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.96339156 -0.50605126]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 13  4 16  5])
 
-0014-th step: f(x) = [-0.98046765 -0.99294428] (action = 2309)
-0015-th step: f(x) = [-0.99602549 -0.98620358] (action = 7989)
-0016-th step: f(x) = [-0.99957128 -0.9973798 ] (action = 8484)
-0017-th step: f(x) = [-0.52191048 -0.72845916] (action = 5405)
+0017-th step: f(x) = [-0.86544619 -0.41433595] (action = 3787)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.52191048 -0.72845916]
- [-0.19963873 -0.93357674]] (steps = [ 4 17 13])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.86544619 -0.41433595]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 17  4 16  5])
 
-0018-th step: f(x) = [-0.99916441 -0.40869572] (action = 2742)
-0019-th step: f(x) = [-0.99480122 -0.7565076 ] (action = 1266)
-0020-th step: f(x) = [-0.63329589 -0.63329589] (action = 5200)
+0018-th step: f(x) = [-0.56161131 -0.97933576] (action = 8027)
+0019-th step: f(x) = [-0.99973799 -0.54162892] (action = 2034)
+0020-th step: f(x) = [-0.99984173 -0.61123124] (action = 1231)
+0021-th step: f(x) = [-0.97820847 -0.8330008 ] (action = 6382)
+0022-th step: f(x) = [-0.99526434 -0.9637083 ] (action = 7282)
+0023-th step: f(x) = [-0.97787893 -0.26212082] (action = 2569)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.19963873 -0.93357674]] (steps = [ 4 20 17 13])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 23 17  4 16  5])
 
-0021-th step: f(x) = [-0.95437918 -0.80142908] (action = 2487)
-0022-th step: f(x) = [-0.99899466 -0.96646532] (action = 269)
-0023-th step: f(x) = [-0.19473522 -0.99445365] (action = 8044)
+0024-th step: f(x) = [-0.24330703 -0.9118224 ] (action = 5619)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.19963873 -0.93357674]
- [-0.19473522 -0.99445365]] (steps = [ 4 20 17 13 23])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 23 17  4 16 24  5])
 
-0024-th step: f(x) = [-0.99969529 -0.52395588] (action = 2135)
-0025-th step: f(x) = [-0.59106078 -0.79258035] (action = 6206)
-0026-th step: f(x) = [-0.78231041 -0.99997141] (action = 9079)
-0027-th step: f(x) = [-0.99955573 -0.99930147] (action = 396)
-0028-th step: f(x) = [-0.99825097 -0.99875436] (action = 9403)
-0029-th step: f(x) = [-0.65387719 -0.99938669] (action = 9456)
-0030-th step: f(x) = [-0.26132949 -0.87913689] (action = 5816)
+0025-th step: f(x) = [-0.24153475 -0.99178622] (action = 8040)
    Pareto set updated.
-   current Pareto set = [[-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.26132949 -0.87913689]
- [-0.19963873 -0.93357674]
- [-0.19473522 -0.99445365]] (steps = [ 4 20 17 30 13 23])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.24153475 -0.99178622]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 23 17  4 16 24 25  5])
 
-0031-th step: f(x) = [-0.74523952 -0.7724917 ] (action = 6301)
-0032-th step: f(x) = [-0.33644513 -0.97772424] (action = 5530)
-0033-th step: f(x) = [-0.99777557 -0.93373833] (action = 6470)
-0034-th step: f(x) = [-0.9725524 -0.6296562] (action = 2277)
-0035-th step: f(x) = [-0.99924826 -0.84674905] (action = 353)
-0036-th step: f(x) = [-0.99743705 -0.17848438] (action = 2549)
+0026-th step: f(x) = [-0.84190968 -0.91981439] (action = 3506)
+0027-th step: f(x) = [-0.99796446 -0.34753927] (action = 3349)
+0028-th step: f(x) = [-0.99708276 -0.9919242 ] (action = 8291)
+0029-th step: f(x) = [-0.99920018 -0.98099933] (action = 172)
+0030-th step: f(x) = [-0.99665356 -0.14456179] (action = 2751)
+0031-th step: f(x) = [-0.81366367 -0.99993226] (action = 7170)
+0032-th step: f(x) = [-0.54951231 -0.9993634 ] (action = 9158)
+0033-th step: f(x) = [-0.19615996 -0.94679724] (action = 6924)
    Pareto set updated.
-   current Pareto set = [[-0.99743705 -0.17848438]
- [-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.26132949 -0.87913689]
- [-0.19963873 -0.93357674]
- [-0.19473522 -0.99445365]] (steps = [36  4 20 17 30 13 23])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 23 17  4 16 24 33  5])
 
-0037-th step: f(x) = [-0.99994916 -0.78013199] (action = 326)
-0038-th step: f(x) = [-0.99887174 -0.86936149] (action = 5458)
-0039-th step: f(x) = [-0.99362699 -0.99769786] (action = 9309)
-0040-th step: f(x) = [-0.84889217 -0.99973225] (action = 10156)
-0041-th step: f(x) = [-0.95713719 -0.09067194] (action = 4073)
+0034-th step: f(x) = [-0.99950572 -0.99575833] (action = 81)
+0035-th step: f(x) = [-0.79425482 -0.43043543] (action = 4491)
    Pareto set updated.
-   current Pareto set = [[-0.95713719 -0.09067194]
- [-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.26132949 -0.87913689]
- [-0.19963873 -0.93357674]
- [-0.19473522 -0.99445365]] (steps = [41  4 20 17 30 13 23])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.79425482 -0.43043543]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.06210869 -0.9918999 ]] (steps = [14  1 23 17 35  4 16 24 33  5])
 
-0042-th step: f(x) = [-0.17190645 -0.91382463] (action = 6120)
+0036-th step: f(x) = [-0.94523115 -0.58027949] (action = 2782)
+0037-th step: f(x) = [-0.9930067  -0.93998722] (action = 6981)
+0038-th step: f(x) = [-0.99560251 -0.10351929] (action = 2653)
+0039-th step: f(x) = [-0.97602834 -0.99134066] (action = 2409)
+0040-th step: f(x) = [-0.05507465 -0.95545924] (action = 6527)
    Pareto set updated.
-   current Pareto set = [[-0.95713719 -0.09067194]
- [-0.92633083 -0.29208351]
- [-0.63329589 -0.63329589]
- [-0.52191048 -0.72845916]
- [-0.26132949 -0.87913689]
- [-0.17190645 -0.91382463]] (steps = [41  4 20 17 30 42])
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.97787893 -0.26212082]
+ [-0.86544619 -0.41433595]
+ [-0.79425482 -0.43043543]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.05507465 -0.95545924]] (steps = [14  1 23 17 35  4 16 24 33 40])
 
-0043-th step: f(x) = [-0.98406208 -0.94467587] (action = 7289)
-0044-th step: f(x) = [-0.93974303 -0.92444262] (action = 2698)
-0045-th step: f(x) = [-0.98414342 -0.84762781] (action = 1780)
-0046-th step: f(x) = [-0.99699986 -0.98166426] (action = 7684)
-0047-th step: f(x) = [-0.3868143  -0.99930896] (action = 8060)
-0048-th step: f(x) = [-0.97964062 -0.65554315] (action = 2075)
-0049-th step: f(x) = [-0.99907307 -0.73466786] (action = 4450)
-0050-th step: f(x) = [-0.99720717 -0.85352507] (action = 865)
+0041-th step: f(x) = [-0.54838423 -0.96652902] (action = 7723)
+0042-th step: f(x) = [-0.97560369 -0.9981919 ] (action = 9623)
+0043-th step: f(x) = [-0.8884927  -0.23687603] (action = 4183)
+   Pareto set updated.
+   current Pareto set = [[-0.99433124 -0.07837382]
+ [-0.99017418 -0.09267839]
+ [-0.8884927  -0.23687603]
+ [-0.86544619 -0.41433595]
+ [-0.79425482 -0.43043543]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.05507465 -0.95545924]] (steps = [14  1 43 17 35  4 16 24 33 40])
+
+0044-th step: f(x) = [-0.97621647 -0.0052244 ] (action = 3367)
+   Pareto set updated.
+   current Pareto set = [[-0.97621647 -0.0052244 ]
+ [-0.8884927  -0.23687603]
+ [-0.86544619 -0.41433595]
+ [-0.79425482 -0.43043543]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.05507465 -0.95545924]] (steps = [44 43 17 35  4 16 24 33 40])
+
+0045-th step: f(x) = [-0.5974142  -0.99778865] (action = 9046)
+0046-th step: f(x) = [-0.69847999 -0.99969655] (action = 9661)
+0047-th step: f(x) = [-0.99999523 -0.89945685] (action = 1112)
+0048-th step: f(x) = [-0.99988103 -0.67274056] (action = 2230)
+0049-th step: f(x) = [-0.67089612 -0.99973586] (action = 7063)
+0050-th step: f(x) = [-0.44743129 -0.8578429 ] (action = 6412)
+   Pareto set updated.
+   current Pareto set = [[-0.97621647 -0.0052244 ]
+ [-0.8884927  -0.23687603]
+ [-0.86544619 -0.41433595]
+ [-0.79425482 -0.43043543]
+ [-0.52496048 -0.73019147]
+ [-0.44837296 -0.80073444]
+ [-0.44743129 -0.8578429 ]
+ [-0.24330703 -0.9118224 ]
+ [-0.19615996 -0.94679724]
+ [-0.05507465 -0.95545924]] (steps = [44 43 17 35  4 16 50 24 33 40])
+
 </pre></div></div>
 </div>
 </section>
 <section id="Checking-results">
 <h3>Checking results<a class="headerlink" href="#Checking-results" title="Link to this heading"></a></h3>
 <p>#### History of evaluation values</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">res_random</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-0.99017418, -0.09267839],
+       [-0.63368874, -0.93288369],
+       [-0.89500547, -0.99942328],
+       [-0.52496048, -0.73019147],
+       [-0.06210869, -0.9918999 ],
+       [-0.78149934, -0.9714881 ],
+       [-0.99988434, -0.7158834 ],
+       [-0.46814364, -0.99957312],
+       [-0.58802709, -0.95199271],
+       [-0.64563383, -0.99949924],
+       [-0.85901111, -0.77832121],
+       [-0.6258165 , -0.91403294],
+       [-0.96339156, -0.50605126],
+       [-0.99433124, -0.07837382],
+       [-0.77709331, -0.99991896],
+       [-0.44837296, -0.80073444],
+       [-0.86544619, -0.41433595],
+       [-0.56161131, -0.97933576],
+       [-0.99973799, -0.54162892],
+       [-0.99984173, -0.61123124],
+       [-0.97820847, -0.8330008 ],
+       [-0.99526434, -0.9637083 ],
+       [-0.97787893, -0.26212082],
+       [-0.24330703, -0.9118224 ],
+       [-0.24153475, -0.99178622],
+       [-0.84190968, -0.91981439],
+       [-0.99796446, -0.34753927],
+       [-0.99708276, -0.9919242 ],
+       [-0.99920018, -0.98099933],
+       [-0.99665356, -0.14456179],
+       [-0.81366367, -0.99993226],
+       [-0.54951231, -0.9993634 ],
+       [-0.19615996, -0.94679724],
+       [-0.99950572, -0.99575833],
+       [-0.79425482, -0.43043543],
+       [-0.94523115, -0.58027949],
+       [-0.9930067 , -0.93998722],
+       [-0.99560251, -0.10351929],
+       [-0.97602834, -0.99134066],
+       [-0.05507465, -0.95545924],
+       [-0.54838423, -0.96652902],
+       [-0.97560369, -0.9981919 ],
+       [-0.8884927 , -0.23687603],
+       [-0.97621647, -0.0052244 ],
+       [-0.5974142 , -0.99778865],
+       [-0.69847999, -0.99969655],
+       [-0.99999523, -0.89945685],
+       [-0.99988103, -0.67274056],
+       [-0.67089612, -0.99973586],
+       [-0.44743129, -0.8578429 ]])
+</pre></div></div>
 </div>
 <section id="Obtaining-the-Pareto-solution">
 <h4>Obtaining the Pareto solution<a class="headerlink" href="#Obtaining-the-Pareto-solution" title="Link to this heading"></a></h4>
@@ -626,13 +768,17 @@ array([[-2.  , -2.  ],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(array([[-0.95713719, -0.09067194],
-        [-0.92633083, -0.29208351],
-        [-0.63329589, -0.63329589],
-        [-0.52191048, -0.72845916],
-        [-0.26132949, -0.87913689],
-        [-0.17190645, -0.91382463]]),
- array([40,  3, 19, 16, 29, 41]))
+(array([[-0.97621647, -0.0052244 ],
+        [-0.8884927 , -0.23687603],
+        [-0.86544619, -0.41433595],
+        [-0.79425482, -0.43043543],
+        [-0.52496048, -0.73019147],
+        [-0.44837296, -0.80073444],
+        [-0.44743129, -0.8578429 ],
+        [-0.24330703, -0.9118224 ],
+        [-0.19615996, -0.94679724],
+        [-0.05507465, -0.95545924]]),
+ array([43, 42, 16, 34,  3, 15, 49, 23, 32, 39]))
 </pre></div></div>
 </div>
 </section>
@@ -640,39 +786,32 @@ array([[-2.  , -2.  ],
 <h4>Plotting the solution (evaluated value)<a class="headerlink" href="#Plotting-the-solution-(evaluated-value)" title="Link to this heading"></a></h4>
 <p>Note again that the space to be plotted is <span class="math notranslate nohighlight">\(y = (y_1, y_2)\)</span> and not <span class="math notranslate nohighlight">\(x = (x_1, x_2)\)</span>.</p>
 <p>The red plot is the Pareto solution.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_pareto_front</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
-    <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
-    <span class="n">dominated</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">num_runs</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">]</span>
-    <span class="n">points</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span> <span class="p">:]</span>
-
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">dominated</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">front</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">front</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Pareto front&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Objective 1&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Objective 2&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span><span class="n">res_random</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;random search&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_random</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;random search&#39;)
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_multi_objective_28_0.png" src="../_images/notebook_tutorial_multi_objective_28_0.png" />
+<img alt="../_images/notebook_tutorial_multi_objective_27_1.png" src="../_images/notebook_tutorial_multi_objective_27_1.png" />
 </div>
 </div>
 </section>
@@ -681,20 +820,21 @@ array([[-2.  , -2.  ],
 <p>A solution that is not a Pareto solution, i.e., a solution <span class="math notranslate nohighlight">\(y\)</span> for which there exists a solution <span class="math notranslate nohighlight">\(y'\)</span> that is better than itself, is called a inferior solution (<span class="math notranslate nohighlight">\(\exists y' y\prec y'\)</span>). The volume of the inferior solution region, which is the space occupied by inferior solutions in the solution space (a subspace of the solution space), is one of the indicators of the results of multi-objective optimization. The larger this value is, the more good Pareto solutions are
 obtained.<code class="docutils literal notranslate"><span class="pre">res_random.pareto.volume_in_dominance(ref_min,</span> <span class="pre">ref_max)</span></code> calculates the volume of the inferior solution region in the hyper-rectangle specified by <code class="docutils literal notranslate"><span class="pre">ref_min</span></code> and <code class="docutils literal notranslate"><span class="pre">ref_max</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_random</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_random</span> <span class="o">=</span> <span class="n">res_random</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_random</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.2376881844865093
+np.float64(0.2594935993652323)
 </pre></div></div>
 </div>
 </section>
@@ -719,26 +859,24 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 </ul>
 </li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<section id="Plotting-the-Pareto-solution">
-<h4>Plotting the Pareto solution<a class="headerlink" href="#Plotting-the-Pareto-solution" title="Link to this heading"></a></h4>
-<p>We can see that more Pareto solutions are obtained compared to random sampling.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_HVPI</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="s2">&quot;HVPI&quot;</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">time_HVPI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elapsed time: </span><span class="si">{</span><span class="n">time_HVPI</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -746,27 +884,72 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_multi_objective_35_0.png" src="../_images/notebook_tutorial_multi_objective_35_0.png" />
+<div class="highlight"><pre>
+Elapsed time: 4.175775051116943 seconds
+</pre></div></div>
+</div>
+<section id="Plotting-the-Pareto-solution">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#Plotting-the-Pareto-solution" title="Link to this heading"></a></h4>
+<p>By specifying <code class="docutils literal notranslate"><span class="pre">steps_end</span></code> and <code class="docutils literal notranslate"><span class="pre">steps_begin</span></code> in <code class="docutils literal notranslate"><span class="pre">physbo.search.utility.plot_pareto_front_all</span></code>, you can set the range of steps to be plotted. The appearance of the plot can be customized using <code class="docutils literal notranslate"><span class="pre">style_common</span></code>. Additionally, you can individually adjust the appearance of dominated and Pareto points using <code class="docutils literal notranslate"><span class="pre">style_dominated</span></code> and <code class="docutils literal notranslate"><span class="pre">style_pareto_front</span></code>, respectively. In the following, we plot the results of the initial random sampling with <code class="docutils literal notranslate"><span class="pre">marker=&quot;+&quot;</span></code>, and the subsequent Bayesian
+optimization results with <code class="docutils literal notranslate"><span class="pre">marker=&quot;o&quot;</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_HVPI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;HVPI&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;HVPI&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_34_1.png" src="../_images/notebook_tutorial_multi_objective_34_1.png" />
 </div>
 </div>
 </section>
 <section id="Volume-of-dominated-region">
 <h4>Volume of dominated region<a class="headerlink" href="#Volume-of-dominated-region" title="Link to this heading"></a></h4>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_HVPI</span> <span class="o">=</span> <span class="n">res_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_HVPI</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.32877907991633726
+np.float64(0.3285497837573861)
 </pre></div></div>
 </div>
 </section>
@@ -781,25 +964,24 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 </ul>
 </li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_EHVI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EHVI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<section id="id1">
-<h4>Plotting the Pareto solution<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_EHVI</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_EHVI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="s2">&quot;EHVI&quot;</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">time_EHVI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elapsed time: </span><span class="si">{</span><span class="n">time_EHVI</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -807,27 +989,70 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_multi_objective_41_0.png" src="../_images/notebook_tutorial_multi_objective_41_0.png" />
+<div class="highlight"><pre>
+Elapsed time: 33.60298776626587 seconds
+</pre></div></div>
+</div>
+<section id="id1">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_EHVI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_EHVI</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;EHVI&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;EHVI&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_40_1.png" src="../_images/notebook_tutorial_multi_objective_40_1.png" />
 </div>
 </div>
 </section>
 <section id="id2">
 <h4>Volume of dominated region<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_EHVI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_EHVI</span> <span class="o">=</span> <span class="n">res_EHVI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_EHVI</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.3200467412741881
+np.float64(0.32220853509132785)
 </pre></div></div>
 </div>
 </section>
@@ -842,25 +1067,25 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 </ul>
 </li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">)</span>
-<span class="n">res_TS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;TS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<section id="id3">
-<h4>Plotting the Pareto solution<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_TS</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res_TS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="s2">&quot;TS&quot;</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">time_TS</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elapsed time: </span><span class="si">{</span><span class="n">time_TS</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -868,17 +1093,88 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_multi_objective_47_0.png" src="../_images/notebook_tutorial_multi_objective_47_0.png" />
+<div class="highlight"><pre>
+Elapsed time: 13.409739017486572 seconds
+</pre></div></div>
+</div>
+<section id="id3">
+<h4>Plotting the Pareto solution<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_TS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
+    <span class="n">res_TS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;TS&quot;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0.5, 1.0, &#39;TS&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_multi_objective_46_1.png" src="../_images/notebook_tutorial_multi_objective_46_1.png" />
 </div>
 </div>
 </section>
 <section id="id4">
 <h4>Volume of dominated region<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
 <div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VID_TS</span> <span class="o">=</span> <span class="n">res_TS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">VID_TS</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+np.float64(0.3061697389817548)
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Comparison">
+<h3>Comparison<a class="headerlink" href="#Comparison" title="Link to this heading"></a></h3>
+<p>Let’s compare the results of the previous results.</p>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_TS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">&quot;Algorithm&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;HVPI&quot;</span><span class="p">,</span> <span class="s2">&quot;EHVI&quot;</span><span class="p">,</span> <span class="s2">&quot;TS&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;Time&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">time_HVPI</span><span class="p">,</span> <span class="n">time_EHVI</span><span class="p">,</span> <span class="n">time_TS</span><span class="p">],</span>
+    <span class="s2">&quot;Volume of dominated region&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_HVPI</span><span class="p">,</span> <span class="n">VID_EHVI</span><span class="p">,</span> <span class="n">VID_TS</span><span class="p">]</span>
+<span class="p">})</span>
 </pre></div>
 </div>
 </div>
@@ -886,12 +1182,53 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-0.23103794208330097
-</pre></div></div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Algorithm</th>
+      <th>Time</th>
+      <th>Volume of dominated region</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>HVPI</td>
+      <td>4.175775</td>
+      <td>0.328550</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>EHVI</td>
+      <td>33.602988</td>
+      <td>0.322209</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>TS</td>
+      <td>13.409739</td>
+      <td>0.306170</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
 </div>
-</section>
 </section>
 <section id="Appendix:-Full-search">
 <h3>Appendix: Full search<a class="headerlink" href="#Appendix:-Full-search" title="Link to this heading"></a></h3>
@@ -900,17 +1237,17 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="line">Since it takes time to evaluate all data, reduce the number of data in advance.</div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X_sparse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
-<span class="n">simu_sparse</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">(</span><span class="n">test_X_sparse</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_X_sparse</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span> <span class="n">num_X</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+<span class="n">simu_sparse</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">Simulator</span><span class="p">(</span><span class="n">test_X_sparse</span><span class="p">,</span> <span class="n">vlmop2_minus</span><span class="p">)</span>
 
 <span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete_multi</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">test_X_sparse</span><span class="p">,</span> <span class="n">num_objectives</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="n">N</span> <span class="o">=</span> <span class="n">test_X_sparse</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">res_all</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_sparse</span><span class="p">)</span>
+<span class="n">res_all</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_sparse</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -920,15 +1257,25 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_pareto_front</span><span class="p">(</span><span class="n">res_all</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span><span class="n">res_all</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[&lt;Axes: xlabel=&#39;Objective 1&#39;, ylabel=&#39;Objective 2&#39;&gt;]], dtype=object)
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebook_tutorial_multi_objective_53_0.png" src="../_images/notebook_tutorial_multi_objective_53_0.png" />
+<img alt="../_images/notebook_tutorial_multi_objective_54_1.png" src="../_images/notebook_tutorial_multi_objective_54_1.png" />
 </div>
 </div>
 </section>
@@ -948,7 +1295,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.30051687493437484
+np.float64(0.30051687493437484)
 </pre></div></div>
 </div>
 </section>
@@ -961,7 +1308,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="tutorial_multi_probe.html" class="btn btn-neutral float-left" title="Search multiple candidates at once" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="tutorial_range.html" class="btn btn-neutral float-right" title="Optimization in Continuous Space" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tutorial_multi_unified.html" class="btn btn-neutral float-right" title="Fast Computation for Multi-objective Optimization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
@@ -988,7 +1335,7 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
 <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     <span class="fa fa-book"> Read the Docs</span>
-    v: master
+    v: 3.2.0
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
@@ -998,14 +1345,14 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
         
         <dd>
         <strong>
-          <a href="../../../master/en/notebook/tutorial_multi_objective.html">en</a>
+          <a href="../../../3.2.0/en/notebook/tutorial_multi_objective.html">en</a>
         </strong>
         </dd>
       
         
         <dd>
         
-          <a href="../../../master/ja/notebook/tutorial_multi_objective.html">ja</a>
+          <a href="../../../3.2.0/ja/notebook/tutorial_multi_objective.html">ja</a>
         
         </dd>
       
@@ -1021,97 +1368,20 @@ obtained.<code class="docutils literal notranslate"><span class="pre">res_random
       
         
         <dd>
-        <strong>
+        
           <a href="../../../master/en/notebook/tutorial_multi_objective.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../3.2.0/en/notebook/tutorial_multi_objective.html">3.2.0</a>
         </strong>
         </dd>
       
 
       <dt>Tags</dt>
-      
-        
-        <dd>
-        
-        <a href="../../../v3.1.1/en/notebook/tutorial_multi_objective.html">v3.1.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v3.1.0/en/notebook/tutorial_multi_objective.html">v3.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v3.0.0/en/notebook/tutorial_multi_objective.html">v3.0.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v2.2.0/en/notebook/tutorial_multi_objective.html">v2.2.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v2.1.0/en/notebook/tutorial_multi_objective.html">v2.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v2.0.2/en/notebook/tutorial_multi_objective.html">v2.0.2</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v2.0.1/en/notebook/tutorial_multi_objective.html">v2.0.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v2.0.0/en/notebook/tutorial_multi_objective.html">v2.0.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v1.1.1/en/notebook/tutorial_multi_objective.html">v1.1.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v1.1.0/en/notebook/tutorial_multi_objective.html">v1.1.0</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v1.0.1/en/notebook/tutorial_multi_objective.html">v1.0.1</a>
-        
-        </dd>
-      
-        
-        <dd>
-        
-        <a href="../../../v1.0.0/en/notebook/tutorial_multi_objective.html">v1.0.0</a>
-        
-        </dd>
       
 
     </dl>
