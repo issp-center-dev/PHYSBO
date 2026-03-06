@@ -202,6 +202,7 @@ class Policy(range_single.Policy):
         num_rand_basis=0,
         optimizer=None,
         unify_method=None,
+        ard=False,
     ):
         """
         Performing Bayesian optimization by using multi objective function
@@ -237,6 +238,9 @@ class Policy(range_single.Policy):
         unify_method: callable, optional
             This is for compatibility with the unified-optimization Policies.
             This is not used.
+        ard: bool, optional
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Only applies when using GP predictor (num_rand_basis=0). Default is False.
 
         Returns
         -------
@@ -254,6 +258,7 @@ class Policy(range_single.Policy):
             simulator = None
 
         is_rand_expans = False if num_rand_basis == 0 else True
+        self.ard = ard
 
         if training_list is not None:
             self.training = training_list
@@ -265,7 +270,7 @@ class Policy(range_single.Policy):
                 ]
             else:
                 self.predictor_list = [
-                    gp_predictor(self.config) for i in range(self.num_objectives)
+                    self._make_gp_predictor() for i in range(self.num_objectives)
                 ]
         else:
             self.predictor_list = predictor_list
@@ -436,7 +441,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
@@ -472,7 +477,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fcov()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
@@ -518,7 +523,7 @@ class Policy(range_single.Policy):
                 self._warn_no_predictor("get_score()")
                 predictor_list = []
                 for i in range(self.num_objectives):
-                    predictor = gp_predictor(self.config)
+                    predictor = self._make_gp_predictor()
                     predictor.fit(training, 0, comm=self.mpicomm, objective_index=i)
                     predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
@@ -574,7 +579,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, objective_index=i)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)

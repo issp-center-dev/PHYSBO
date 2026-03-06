@@ -14,6 +14,7 @@ from ._history import History
 from .. import utility
 from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
+from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
@@ -244,6 +245,7 @@ class Policy:
         interval=0,
         num_rand_basis=0,
         optimizer=None,
+        ard=False,
     ):
         """
         Performing Bayesian optimization.
@@ -276,6 +278,9 @@ class Policy:
         optimizer: Optimizer object
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
+        ard: bool
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Only applies when using GP predictor (num_rand_basis=0). Default is False.
 
         Returns
         -------
@@ -293,6 +298,7 @@ class Policy:
             simulator = None
 
         is_rand_expans = num_rand_basis != 0
+        self.ard = ard
 
         if training is not None:
             self.training = training
@@ -384,7 +390,7 @@ class Policy:
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
             predictor.prepare(self.training, objective_index=0)
             return predictor.get_post_fmean(self.training, X, objective_index=0)
@@ -413,7 +419,7 @@ class Policy:
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
             predictor.prepare(self.training, objective_index=0)
             return predictor.get_post_fcov(self.training, X, diag, objective_index=0)
@@ -475,7 +481,7 @@ class Policy:
         if predictor is None:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(training, 0, comm=self.mpicomm, objective_index=0)
                 predictor.prepare(training, objective_index=0)
             else:
@@ -711,7 +717,34 @@ class Policy:
         if is_rand_expans:
             self.predictor = blm_predictor(self.config)
         else:
-            self.predictor = gp_predictor(self.config)
+            num_dim = None
+            if self.training.X is not None and self.training.X.shape[0] > 0:
+                num_dim = self.training.X.shape[1]
+            self.predictor = self._make_gp_predictor(num_dim=num_dim)
+
+    def _make_gp_predictor(self, num_dim=None):
+        """Create a GP predictor, with ARD if self.ard is True."""
+        ard = getattr(self, "ard", False)
+        if ard:
+            if (
+                num_dim is None
+                and self.training.X is not None
+                and self.training.X.shape[0] > 0
+            ):
+                num_dim = self.training.X.shape[1]
+            if num_dim is None:
+                raise ValueError(
+                    "ard=True requires input dimension. "
+                    "Provide training data (e.g. by random_search) before bayes_search."
+                )
+            model = gp.core.Model(
+                cov=gp.cov.Gauss(num_dim=num_dim, ard=True),
+                mean=gp.mean.Const(),
+                lik=gp.lik.Gauss(),
+            )
+            return gp_predictor(self.config, model=model)
+        else:
+            return gp_predictor(self.config)
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(

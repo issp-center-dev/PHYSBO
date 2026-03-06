@@ -97,6 +97,16 @@ def test_bayes_search(policy, mocker):
     assert get_actions_spy.call_count == N
 
 
+def test_bayes_search_ard(policy, mocker):
+    """Test that ard=True creates a predictor with ARD kernel."""
+    simulator = mocker.MagicMock(side_effect=lambda x: x)
+    N = 2
+    policy.random_search(N, simulator=simulator)
+    policy.bayes_search(max_num_probes=N, simulator=simulator, score="TS", ard=True)
+    assert policy.predictor is not None
+    assert policy.predictor.model.prior.cov.ard is True
+
+
 def test_saveload(policy, X):
     simulator = lambda x: x
 
