@@ -455,6 +455,35 @@ class Policy(range_single.Policy):
         ]
         return np.array(fmean).T
 
+    def get_kernel_length_scale(self):
+        """
+        Return the Gaussian kernel length scale(s) for each objective.
+
+        Returns
+        -------
+        list of numpy.ndarray or None
+            List of length num_objectives; each element is the length scale(s)
+            for that objective's GP, or None if not available.
+        """
+        if self.predictor_list is None or all(p is None for p in self.predictor_list):
+            return None
+        self._update_predictor()
+        result = []
+        for predictor in self.predictor_list:
+            if predictor is None:
+                result.append(None)
+                continue
+            try:
+                cov = predictor.model.prior.cov
+            except AttributeError:
+                result.append(None)
+                continue
+            if not hasattr(cov, "width"):
+                result.append(None)
+                continue
+            result.append(np.atleast_1d(np.asarray(cov.width).flatten()))
+        return result
+
     def get_post_fcov(self, xs, diag=True):
         """
         Calculate covariance of predictors (post distribution)

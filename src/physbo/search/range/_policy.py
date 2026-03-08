@@ -429,6 +429,30 @@ class Policy:
                 self.training, X, diag, objective_index=0
             )
 
+    def get_kernel_length_scale(self):
+        """
+        Return the Gaussian kernel length scale(s) (width) of the GP predictor.
+
+        Only available when using GP predictor (num_rand_basis=0). With ARD,
+        returns one length scale per input dimension; otherwise a single value.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.
+            None if the predictor is not set or not a GP with Gaussian kernel.
+        """
+        if self.predictor is None:
+            return None
+        self._update_predictor()
+        try:
+            cov = self.predictor.model.prior.cov
+        except AttributeError:
+            return None
+        if not hasattr(cov, "width"):
+            return None
+        return np.atleast_1d(np.asarray(cov.width).flatten())
+
     def get_score(
         self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
     ):

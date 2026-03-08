@@ -107,6 +107,22 @@ def test_bayes_search_ard(policy, mocker):
     assert policy.predictor.model.prior.cov.ard is True
 
 
+def test_get_kernel_length_scale(policy, mocker):
+    """Test get_kernel_length_scale returns None before fit and array after."""
+    assert policy.get_kernel_length_scale() is None
+
+    simulator = mocker.MagicMock(side_effect=lambda x: x)
+    policy.random_search(2, simulator=simulator)
+    policy.bayes_search(max_num_probes=2, simulator=simulator, score="TS", ard=True)
+
+    length_scale = policy.get_kernel_length_scale()
+    assert length_scale is not None
+    assert length_scale.ndim == 1
+    # X has 3 dimensions (see fixture)
+    assert len(length_scale) == 3
+    assert np.all(length_scale > 0)
+
+
 def test_saveload(policy, X):
     simulator = lambda x: x
 
