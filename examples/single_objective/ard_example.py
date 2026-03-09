@@ -22,44 +22,45 @@ and compare best values, kernel length scales, and permutation importance.
 import numpy as np
 import physbo
 
-# 6D parameter space; only the first 2 dimensions affect the objective
-D = 6
+weights = np.array([5.0, 1.0, 0.0, 0.0])
+D = len(weights)
 N = 1000
-np.random.seed(42)
+np.random.seed(137)
 test_X = np.random.randn(N, D)
-test_X[0, 0] = 0.0
-test_X[0, 1] = 0.0
+test_X[0, :] = 0.0
 
 
 def simulator(actions: np.ndarray) -> np.ndarray:
-    """Objective that depends only on x_0 and x_1: f = -(x_0^2 + x_1^2)."""
-    X = test_X[actions, :]
-    return -(X[:, 0] ** 2 + X[:, 1] ** 2)
+    """Objective that depends only on x_0 and x_1: f = -Σ_i w_i x_i^2."""
+    X2 = test_X[actions, :] ** 2
+    return -np.einsum("ai,i -> a", X2, weights)
 
-
-n_initial = 15
-n_bayes = 40
-n_perm = 20
-seed = 12345
 
 # ---------- Run with ARD=True ----------
+n_initial = 20
+n_bayes = 30
+n_perm = 20
+score = "EI"
+seed = 31415
+
 print("=" * 60)
 print("Running with ard=True")
 print("=" * 60)
 policy_ard = physbo.search.discrete.Policy(test_X)
 policy_ard.set_seed(seed)
-policy_ard.random_search(max_num_probes=n_initial, simulator=simulator)
+policy_ard.random_search(max_num_probes=n_initial, simulator=simulator, is_disp=False)
 policy_ard.bayes_search(
     max_num_probes=n_bayes,
     simulator=simulator,
-    score="EI",
+    score=score,
     ard=True,
+    is_disp=False,
 )
 
 best_fx_ard, best_actions_ard = policy_ard.history.export_sequence_best_fx()
 best_x_ard = test_X[best_actions_ard[-1], :]
 print("\nBest value (ard=True):", best_fx_ard[-1])
-print("Best point (first 2 dims):", best_x_ard[:2])
+print("Best point:", best_x_ard)
 
 # ---------- Run with ARD=False ----------
 print("\n" + "=" * 60)
@@ -67,18 +68,19 @@ print("Running with ard=False")
 print("=" * 60)
 policy_noard = physbo.search.discrete.Policy(test_X)
 policy_noard.set_seed(seed)
-policy_noard.random_search(max_num_probes=n_initial, simulator=simulator)
+policy_noard.random_search(max_num_probes=n_initial, simulator=simulator, is_disp=False)
 policy_noard.bayes_search(
     max_num_probes=n_bayes,
     simulator=simulator,
-    score="EI",
+    score=score,
     ard=False,
+    is_disp=False,
 )
 
 best_fx_noard, best_actions_noard = policy_noard.history.export_sequence_best_fx()
 best_x_noard = test_X[best_actions_noard[-1], :]
 print("\nBest value (ard=False):", best_fx_noard[-1])
-print("Best point (first 2 dims):", best_x_noard[:2])
+print("Best point:", best_x_noard)
 
 # ---------- Compare best values ----------
 print("\n" + "=" * 60)
