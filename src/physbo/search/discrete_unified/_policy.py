@@ -682,18 +682,7 @@ class Policy(discrete.Policy):
 
     def _initialize_predictor(self, is_rand_expans):
         if is_rand_expans:
-            ard = getattr(self, "ard", False)
-            if ard:
-                num_dim = None
-                if (
-                    self.training.X is not None
-                    and self.training.X.shape[0] > 0
-                ):
-                    num_dim = self.training.X.shape[1]
-                model = gp.core.Model.create_default(ard=True, num_dim=num_dim)
-                self.predictor = blm_predictor(self.config, model=model)
-            else:
-                self.predictor = blm_predictor(self.config)
+            self.predictor = self._make_blm_predictor()
         else:
             self.predictor = self._make_gp_predictor()
 

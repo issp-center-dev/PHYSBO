@@ -101,6 +101,7 @@ class Policy:
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = History()
+        self.ard = False
         if config is None:
             self.config = SetConfig()
         else:
@@ -945,26 +946,24 @@ class Policy:
             If true, physbo.blm.predictor is selected.
             If false, physbo.gp.Predictor is selected.
         """
-        num_dim = None
-        if self.training.X is not None and self.training.X.shape[0] > 0:
-            num_dim = self.training.X.shape[1]
         if is_rand_expans:
-            ard = getattr(self, "ard", False)
-            if ard:
-                model = gp.core.Model.create_default(ard=True, num_dim=num_dim)
-                self.predictor = blm_predictor(self.config, model=model)
-            else:
-                self.predictor = blm_predictor(self.config)
+            self.predictor = self._make_blm_predictor()
         else:
-            self.predictor = self._make_gp_predictor(num_dim=num_dim)
+            self.predictor = self._make_gp_predictor()
 
-    def _make_gp_predictor(self, num_dim=None):
+    def _make_gp_predictor(self):
         """Create a GP predictor, with ARD if self.ard is True."""
-        ard = getattr(self, "ard", False)
-        return gp_predictor(
-            self.config,
-            model=gp.core.Model.create_default(ard=ard, num_dim=num_dim),
-        )
+        ard = self.ard
+        num_dim = self.get_num_dim()
+        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
+        return gp_predictor(self.config, model=model)
+
+    def _make_blm_predictor(self):
+        """Create a BLM predictor, with ARD if self.ard is True."""
+        ard = self.ard
+        num_dim = self.get_num_dim()
+        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
+        return blm_predictor(self.config, model=model)
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)

@@ -14,9 +14,6 @@ from ._history import History
 from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
-from ... import gp
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 
@@ -258,28 +255,9 @@ class Policy(discrete.Policy):
 
         if predictor_list is None:
             if is_rand_expans:
-                ard = getattr(self, "ard", False)
-                if ard:
-                    num_dim = None
-                    if (
-                        self.training.X is not None
-                        and self.training.X.shape[0] > 0
-                    ):
-                        num_dim = self.training.X.shape[1]
-                    self.predictor_list = [
-                        blm_predictor(
-                            self.config,
-                            model=gp.core.Model.create_default(
-                                ard=True, num_dim=num_dim
-                            ),
-                        )
-                        for i in range(self.num_objectives)
-                    ]
-                else:
-                    self.predictor_list = [
-                        blm_predictor(self.config)
-                        for i in range(self.num_objectives)
-                    ]
+                self.predictor_list = [
+                    self._make_blm_predictor() for i in range(self.num_objectives)
+                ]
             else:
                 self.predictor_list = [
                     self._make_gp_predictor() for i in range(self.num_objectives)
