@@ -14,6 +14,7 @@ from ._history import History
 from .. import discrete
 from .. import utility
 from .. import score as search_score
+from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
@@ -689,7 +690,7 @@ class Policy(discrete.Policy):
                     and self.training.X.shape[0] > 0
                 ):
                     num_dim = self.training.X.shape[1]
-                model = self._make_gp_model(num_dim)
+                model = gp.core.Model.create_default(ard=True, num_dim=num_dim)
                 self.predictor = blm_predictor(self.config, model=model)
             else:
                 self.predictor = blm_predictor(self.config)

@@ -13,8 +13,8 @@ input dimensions. The GP kernel learns a separate length scale per dimension;
 relevant dimensions get smaller length scales, irrelevant ones get larger
 (and are effectively down-weighted).
 
-This example uses a 6D input space where the objective depends only on
-the first 2 dimensions: f(x) = -(x_0^2 + x_1^2). Dimensions 2--5 are
+This example uses a 4D input space where the objective depends only on
+the first 2 dimensions: f(x) = -Σ_i w_i x_i^2. Dimensions 2--4 are
 irrelevant. We run the same optimization with ard=True and ard=False
 and compare best values, kernel length scales, and permutation importance.
 """
@@ -25,6 +25,7 @@ import physbo
 weights = np.array([5.0, 1.0, 0.0, 0.0])
 D = len(weights)
 N = 1000
+M = 0
 np.random.seed(137)
 test_X = np.random.randn(N, D)
 test_X[0, :] = 0.0
@@ -55,6 +56,7 @@ policy_ard.bayes_search(
     score=score,
     ard=True,
     is_disp=False,
+    num_rand_basis=M,
 )
 
 best_fx_ard, best_actions_ard = policy_ard.history.export_sequence_best_fx()

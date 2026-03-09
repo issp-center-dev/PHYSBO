@@ -15,6 +15,7 @@ from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
+from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
@@ -276,7 +277,9 @@ class Policy(range_single.Policy):
                     self.predictor_list = [
                         blm_predictor(
                             self.config,
-                            model=self._make_gp_model(num_dim),
+                            model=gp.core.Model.create_default(
+                                ard=True, num_dim=num_dim
+                            ),
                         )
                         for i in range(self.num_objectives)
                     ]

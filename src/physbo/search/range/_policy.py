@@ -452,6 +452,17 @@ class Policy:
             return None
         return np.atleast_1d(np.asarray(cov.width).flatten())
 
+    def get_num_dim(self):
+        """
+        Return the input dimension (number of features) of the search space.
+
+        Returns
+        -------
+        int
+            The number of dimensions (from min_X / max_X).
+        """
+        return self.dim
+
     def get_score(
         self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
     ):
@@ -743,42 +754,20 @@ class Policy:
         if is_rand_expans:
             ard = getattr(self, "ard", False)
             if ard:
-                model = self._make_gp_model(num_dim)
+                model = gp.core.Model.create_default(ard=True, num_dim=num_dim)
                 self.predictor = blm_predictor(self.config, model=model)
             else:
                 self.predictor = blm_predictor(self.config)
         else:
             self.predictor = self._make_gp_predictor(num_dim=num_dim)
 
-    def _make_gp_model(self, num_dim=None):
-        """Create a GP model, with ARD kernel if self.ard is True. Used by GP and BLM predictors."""
-        ard = getattr(self, "ard", False)
-        if ard:
-            if (
-                num_dim is None
-                and self.training.X is not None
-                and self.training.X.shape[0] > 0
-            ):
-                num_dim = self.training.X.shape[1]
-            if num_dim is None:
-                raise ValueError(
-                    "ard=True requires input dimension. "
-                    "Provide training data (e.g. by random_search) before bayes_search."
-                )
-            return gp.core.Model(
-                cov=gp.cov.Gauss(num_dim=num_dim, ard=True),
-                mean=gp.mean.Const(),
-                lik=gp.lik.Gauss(),
-            )
-        return gp.core.Model(
-            cov=gp.cov.Gauss(num_dim=None, ard=False),
-            mean=gp.mean.Const(),
-            lik=gp.lik.Gauss(),
-        )
-
     def _make_gp_predictor(self, num_dim=None):
         """Create a GP predictor, with ARD if self.ard is True."""
-        return gp_predictor(self.config, model=self._make_gp_model(num_dim))
+        ard = getattr(self, "ard", False)
+        return gp_predictor(
+            self.config,
+            model=gp.core.Model.create_default(ard=ard, num_dim=num_dim),
+        )
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
