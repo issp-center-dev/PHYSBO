@@ -90,7 +90,7 @@ print("Comparison: ard=True vs ard=False")
 print("=" * 60)
 print(f"  Best value (ard=True):  {best_fx_ard[-1]:.6f}")
 print(f"  Best value (ard=False): {best_fx_noard[-1]:.6f}")
-print("  (Higher is better; objective is f = -(x_0^2 + x_1^2).)")
+print("  (Higher is better; objective is f = -(5*x_0^2 + x_1^2).)")
 
 # ---------- Compare kernel length scales ----------
 print("\n--- Kernel length scale ---")
