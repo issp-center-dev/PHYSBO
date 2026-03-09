@@ -215,7 +215,18 @@ class Policy(range_single.Policy):
 
         if predictor is None:
             if is_rand_expans:
-                self.predictor = blm_predictor(self.config)
+                ard = getattr(self, "ard", False)
+                if ard:
+                    num_dim = None
+                    if (
+                        self.training.X is not None
+                        and self.training.X.shape[0] > 0
+                    ):
+                        num_dim = self.training.X.shape[1]
+                    model = self._make_gp_model(num_dim)
+                    self.predictor = blm_predictor(self.config, model=model)
+                else:
+                    self.predictor = blm_predictor(self.config)
             else:
                 self.predictor = self._make_gp_predictor()
         else:

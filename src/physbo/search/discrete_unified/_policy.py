@@ -241,7 +241,7 @@ class Policy(discrete.Policy):
             This is not used.
         ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Only applies when using GP predictor (num_rand_basis=0). Default is False.
+            Default is False.
 
         Returns
         -------
@@ -681,7 +681,18 @@ class Policy(discrete.Policy):
 
     def _initialize_predictor(self, is_rand_expans):
         if is_rand_expans:
-            self.predictor = blm_predictor(self.config)
+            ard = getattr(self, "ard", False)
+            if ard:
+                num_dim = None
+                if (
+                    self.training.X is not None
+                    and self.training.X.shape[0] > 0
+                ):
+                    num_dim = self.training.X.shape[1]
+                model = self._make_gp_model(num_dim)
+                self.predictor = blm_predictor(self.config, model=model)
+            else:
+                self.predictor = blm_predictor(self.config)
         else:
             self.predictor = self._make_gp_predictor()
 

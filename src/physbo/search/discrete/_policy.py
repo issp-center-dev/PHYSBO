@@ -347,7 +347,7 @@ class Policy:
             This is not used.
         ard: bool
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Only applies when using GP predictor (num_rand_basis=0). Default is False.
+            Default is False.
 
         Returns
         -------
@@ -495,10 +495,9 @@ class Policy:
 
     def get_kernel_length_scale(self):
         """
-        Return the Gaussian kernel length scale(s) (width) of the GP predictor.
+        Return the Gaussian kernel length scale(s) (width) of the predictor.
 
-        Only available when using GP predictor (num_rand_basis=0). With ARD,
-        returns one length scale per input dimension; otherwise a single value.
+        With ARD, returns one length scale per input dimension; otherwise a single value.
 
         Returns
         -------
@@ -928,16 +927,21 @@ class Policy:
             If true, physbo.blm.predictor is selected.
             If false, physbo.gp.Predictor is selected.
         """
+        num_dim = None
+        if self.training.X is not None and self.training.X.shape[0] > 0:
+            num_dim = self.training.X.shape[1]
         if is_rand_expans:
-            self.predictor = blm_predictor(self.config)
+            ard = getattr(self, "ard", False)
+            if ard:
+                model = self._make_gp_model(num_dim)
+                self.predictor = blm_predictor(self.config, model=model)
+            else:
+                self.predictor = blm_predictor(self.config)
         else:
-            num_dim = None
-            if self.training.X is not None and self.training.X.shape[0] > 0:
-                num_dim = self.training.X.shape[1]
             self.predictor = self._make_gp_predictor(num_dim=num_dim)
 
-    def _make_gp_predictor(self, num_dim=None):
-        """Create a GP predictor, with ARD if self.ard is True."""
+    def _make_gp_model(self, num_dim=None):
+        """Create a GP model, with ARD kernel if self.ard is True. Used by GP and BLM predictors."""
         ard = getattr(self, "ard", False)
         if ard:
             if (
@@ -951,14 +955,20 @@ class Policy:
                     "ard=True requires input dimension. "
                     "Provide training data (e.g. by random_search) before bayes_search."
                 )
-            model = gp.core.Model(
+            return gp.core.Model(
                 cov=gp.cov.Gauss(num_dim=num_dim, ard=True),
                 mean=gp.mean.Const(),
                 lik=gp.lik.Gauss(),
             )
-            return gp_predictor(self.config, model=model)
-        else:
-            return gp_predictor(self.config)
+        return gp.core.Model(
+            cov=gp.cov.Gauss(num_dim=None, ard=False),
+            mean=gp.mean.Const(),
+            lik=gp.lik.Gauss(),
+        )
+
+    def _make_gp_predictor(self, num_dim=None):
+        """Create a GP predictor, with ARD if self.ard is True."""
+        return gp_predictor(self.config, model=self._make_gp_model(num_dim))
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
