@@ -14,9 +14,6 @@ from ._history import History
 from .. import discrete
 from .. import utility
 from .. import score as search_score
-from ... import gp
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 
@@ -57,6 +54,8 @@ class Policy(discrete.Policy):
             self.config = SetConfig()
         else:
             self.config = config
+        
+        self.ard = False
 
         if initial_data is not None:
             if len(initial_data) != 2:

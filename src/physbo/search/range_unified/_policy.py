@@ -52,6 +52,7 @@ class Policy(range_single.Policy):
         else:
             self.config = config
 
+        self.ard = False
         if initial_data is not None:
             if len(initial_data) != 2:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"

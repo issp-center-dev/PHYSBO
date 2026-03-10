@@ -101,12 +101,12 @@ class Policy:
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
         self.history = History()
-        self.ard = False
         if config is None:
             self.config = SetConfig()
         else:
             self.config = config
 
+        self.ard = False
         if initial_data is not None:
             if len(initial_data) != 2:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"

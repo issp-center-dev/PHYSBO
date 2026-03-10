@@ -12,11 +12,6 @@ ARD is effective when the objective function depends on only a subset of
 input dimensions. The GP kernel learns a separate length scale per dimension;
 relevant dimensions get smaller length scales, irrelevant ones get larger
 (and are effectively down-weighted).
-
-This example uses a 4D input space where the objective depends only on
-the first 2 dimensions: f(x) = -Σ_i w_i x_i^2. Dimensions 2--4 are
-irrelevant. We run the same optimization with ard=True and ard=False
-and compare best values, kernel length scales, and permutation importance.
 """
 
 import numpy as np
@@ -32,7 +27,7 @@ test_X[0, :] = 0.0
 
 
 def simulator(actions: np.ndarray) -> np.ndarray:
-    """Objective that depends only on x_0 and x_1: f = -Σ_i w_i x_i^2."""
+    """Objective function: f = -Σ_i w_i x_i^2."""
     X2 = test_X[actions, :] ** 2
     return -np.einsum("ai,i -> a", X2, weights)
 
@@ -90,7 +85,7 @@ print("Comparison: ard=True vs ard=False")
 print("=" * 60)
 print(f"  Best value (ard=True):  {best_fx_ard[-1]:.6f}")
 print(f"  Best value (ard=False): {best_fx_noard[-1]:.6f}")
-print("  (Higher is better; objective is f = -(5*x_0^2 + x_1^2).)")
+print(f"  (Higher is better; weights are {weights}).")
 
 # ---------- Compare kernel length scales ----------
 print("\n--- Kernel length scale ---")
