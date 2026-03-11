@@ -10,7 +10,7 @@ import numpy as np
 
 # TODO: move to base_model after base_model is implemented
 def get_permutation_importance(
-    model, X, t, n_perm: int, comm=None, split_features_parallel=False
+    model, X, t, n_perm: int, comm=None, split_features_parallel=False, query_only=False
 ):
     """
     Calculating permutation importance of model
@@ -25,6 +25,10 @@ def get_permutation_importance(
         number of permutations
     comm: MPI.Comm
         MPI communicator
+    query_only: bool
+        If True, call model.get_post_fmean with a single argument (query points only),
+        for models like BLM where training is already set by prepare(). If False, use
+        two arguments (training, query) as in GP. Default is False.
 
     Returns
     =======
@@ -41,7 +45,10 @@ def get_permutation_importance(
         return np.zeros(n_features), np.zeros(n_features)
 
     model.prepare(X, t)
-    fmean = model.get_post_fmean(X, X)
+    if query_only:
+        fmean = model.get_post_fmean(X)
+    else:
+        fmean = model.get_post_fmean(X, X)
     MSE_base = np.mean((fmean - t) ** 2)
 
     if comm is None:
@@ -63,7 +70,10 @@ def get_permutation_importance(
         X_perm = X.copy()
         for i_perm in range(n_perm):
             X_perm[:, i_feature] = np.random.permutation(X_perm[:, i_feature])
-            fmean = model.get_post_fmean(X, X_perm)
+            if query_only:
+                fmean = model.get_post_fmean(X_perm)
+            else:
+                fmean = model.get_post_fmean(X, X_perm)
             s = np.mean((fmean - t) ** 2) - MSE_base
             scores[i_feature] += s
             scores_2[i_feature] += s**2

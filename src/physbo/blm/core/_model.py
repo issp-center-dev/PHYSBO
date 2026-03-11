@@ -264,6 +264,7 @@ class Model:
             n_perm,
             comm=comm,
             split_features_parallel=split_features_parallel,
+            query_only=True,
         )
 
     def _set_options(self, options):
