@@ -196,7 +196,7 @@ class Model:
         numpy.ndarray (N x len(Xtest))
         """
         if Xtest.shape[0] == 0:
-            return np.zeros((0, N))
+            return np.zeros((N, 0))
         fmean = self.post_sampling(Xtest, Psi, N=N)
         if fmean.ndim == 1:
             fmean = fmean.reshape(-1, 1)
