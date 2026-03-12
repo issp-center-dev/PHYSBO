@@ -16,25 +16,38 @@ Please see `this reference <https://github.com/tsudalab/combo/blob/master/docs/c
 Citation
 ----------------------
 
-When citing PHYSBO, please cite the following reference:
+When citing PHYSBO, please cite the following references
 
-Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda,
-Bayesian optimization package: PHYSBO,
-Computer Physics Communications Volume 278, September 2022, 108405. Available from https://www.sciencedirect.com/science/article/pii/S0010465522001242?via%3Dihub (open access).
+- `Bayesian optimization package: PHYSBO <https://doi.org/10.1016/j.cpc.2022.108405>`_, Yuichi Motoyama, Ryo Tamura, Kazuyoshi Yoshimi, Kei Terayama, Tsuyoshi Ueno, Koji Tsuda, Computer Physics Communications Volume 278, September 2022, 108405.
 
-Bibtex is given as follows: ::
+  Bibtex::
 
-  @misc{@article{MOTOYAMA2022108405,
-  title = {Bayesian optimization package: PHYSBO},
-  journal = {Computer Physics Communications},
-  volume = {278},
-  pages = {108405},
-  year = {2022},
-  issn = {0010-4655},
-  doi = {https://doi.org/10.1016/j.cpc.2022.108405},
-  author = {Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
-  keywords = {Bayesian optimization, Multi-objective optimization, Materials screening, Effective model estimation}
-  }  
+    @article{PHYSBO-paper2022,
+      title = {Bayesian optimization package: PHYSBO},
+      journal = {Computer Physics Communications},
+      volume = {278},
+      pages = {108405},
+      year = {2022},
+      issn = {0010-4655},
+      doi = {https://doi.org/10.1016/j.cpc.2022.108405},
+      author = {Yuichi Motoyama and Ryo Tamura and Kazuyoshi Yoshimi and Kei Terayama and Tsuyoshi Ueno and Koji Tsuda},
+      keywords = {Bayesian optimization, Multi-objective optimization, Materials screening, Effective model estimation}
+    }
+
+- `Update of PHYSBO: Improving Usability and Portability of Bayesian Optimization for Physics and Materials Research <https://arxiv.org/abs/2603.01349>`_, Yuichi Motoyama, Kazuyoshi Yoshimi, Tatsumi Aoyama, Kei Terayama, Koji Tsuda, and Ryo Tamura, arXiv:2603.01349
+
+  Bibtex::
+
+    @misc{PHYSBO-paper2026,
+      doi = {10.48550/ARXIV.2603.01349},
+      url = {https://arxiv.org/abs/2603.01349},
+      author = {Motoyama,  Yuichi and Yoshimi,  Kazuyoshi and Aoyama,  Tatsumi and Terayama,  Kei and Tsuda,  Koji and Tamura,  Ryo},
+      keywords = {Computational Physics (physics.comp-ph),  Materials Science (cond-mat.mtrl-sci),  FOS: Physical sciences,  FOS: Physical sciences},
+      title = {Update of PHYSBO: Improving Usability and Portability of Bayesian Optimization for Physics and Materials Research},
+      publisher = {arXiv},
+      year = {2026},
+      copyright = {arXiv.org perpetual,  non-exclusive license}
+    }
 
 Main Developers
 ----------------------
