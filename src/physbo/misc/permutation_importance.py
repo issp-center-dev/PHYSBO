@@ -61,10 +61,10 @@ def get_permutation_importance(
     features = np.arange(n_features)
     if split_features_parallel:
         features = np.array_split(features, mpisize)[mpirank]
-    n_features_local = len(features)
 
-    scores = np.zeros(n_features_local)
-    scores_2 = np.zeros(n_features_local)
+    # Full-length arrays so we can index by global i_feature and Allreduce correctly
+    scores = np.zeros(n_features)
+    scores_2 = np.zeros(n_features)
 
     for i_feature in features:
         X_perm = X.copy()
@@ -79,8 +79,8 @@ def get_permutation_importance(
             scores_2[i_feature] += s**2
 
     if comm is not None and mpisize > 1:
-        res = np.zeros(n_features_local)
-        res_2 = np.zeros(n_features_local)
+        res = np.zeros(n_features)
+        res_2 = np.zeros(n_features)
         comm.Allreduce(scores, res)  # default of op is MPI.SUM
         comm.Allreduce(scores_2, res_2)
         scores[:] = res
