@@ -193,13 +193,16 @@ class Model:
 
         Returns
         =======
-        numpy.ndarray
+        numpy.ndarray (N x len(Xtest))
         """
         if Xtest.shape[0] == 0:
             return np.zeros((0, N))
         fmean = self.post_sampling(Xtest, Psi, N=N)
+        if fmean.ndim == 1:
+            fmean = fmean.reshape(-1, 1)
         A = np.random.randn(Xtest.shape[0], N)
-        return fmean + np.sqrt(self.lik.cov.sigma2) * A
+        res = fmean + np.sqrt(self.lik.cov.sigma2) * A
+        return res.transpose()
 
     def get_post_fcov(self, X, Psi=None, diag=True):
         """

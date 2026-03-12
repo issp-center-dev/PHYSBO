@@ -336,7 +336,7 @@ class Model:
 
         Returns
         -------
-        numpy.ndarray
+        numpy.ndarray (N x len(Z))
 
         """
         if params is None:
@@ -350,7 +350,8 @@ class Model:
             ndata
         )
 
-        return np.random.multivariate_normal(fmean, fcov, N)
+        res = np.random.multivariate_normal(fmean, fcov, N)
+        return res
 
     def print_params(self):
         """
