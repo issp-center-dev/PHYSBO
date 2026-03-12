@@ -59,6 +59,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#学習データの定義">学習データの定義</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ガウス過程の学習と予測">ガウス過程の学習と予測</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#訓練済みモデルによる予測">訓練済みモデルによる予測</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ランダム特徴量写像によるベイズ線形回帰">ランダム特徴量写像によるベイズ線形回帰</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#注意事項">注意事項</a></li>
 </ul>
 </li>
@@ -128,13 +129,14 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;s5-210.csv&#39;</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-    <span class="n">t</span>  <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s2">&quot;s5-210.csv&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="o">-</span><span class="n">A</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span>
 
+
 <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span> <span class="n">X</span> <span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">centering</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 </div>
@@ -159,12 +161,12 @@
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
 
 <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="n">Ntrain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span>
-<span class="n">Ntest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">*</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">N</span><span class="o">-</span><span class="n">Ntrain</span><span class="p">)</span>
+<span class="n">Ntrain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="n">Ntest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">N</span> <span class="o">-</span> <span class="n">Ntrain</span><span class="p">)</span>
 
-<span class="n">id_all</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">id_train</span>  <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ntrain</span><span class="p">]</span>
-<span class="n">id_test</span> <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="n">Ntrain</span><span class="p">:</span><span class="n">Ntrain</span><span class="o">+</span><span class="n">Ntest</span><span class="p">]</span>
+<span class="n">id_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">id_train</span> <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ntrain</span><span class="p">]</span>
+<span class="n">id_test</span> <span class="o">=</span> <span class="n">id_all</span><span class="p">[</span><span class="n">Ntrain</span> <span class="p">:</span> <span class="n">Ntrain</span> <span class="o">+</span> <span class="n">Ntest</span><span class="p">]</span>
 
 <span class="n">X_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">id_train</span><span class="p">]</span>
 <span class="n">X_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">id_test</span><span class="p">]</span>
@@ -200,7 +202,7 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -227,7 +229,7 @@ Ntest = 1798
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
 <span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">SetConfig</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -342,7 +344,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -379,7 +381,7 @@ np.float64(0.006925305425496946)
 <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Features&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Feature&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -403,8 +405,10 @@ np.float64(0.006925305425496946)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習したパラメタを１次元配列として準備</span>
-<span class="n">gp_params</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 学習したパラメタを１次元配列として準備</span>
+<span class="n">gp_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">params</span>
+<span class="p">)</span>
 
 <span class="n">gp_params</span>
 </pre></div>
@@ -424,17 +428,17 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#共分散の定義 (ガウシアン)</span>
-<span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 共分散の定義 (ガウシアン)</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="c1">#平均の定義</span>
+<span class="c1"># 平均の定義</span>
 <span class="n">mean</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">Const</span><span class="p">()</span>
 
-<span class="c1">#尤度関数の定義 (ガウシアン)</span>
+<span class="c1"># 尤度関数の定義 (ガウシアン)</span>
 <span class="n">lik</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">()</span>
 
-<span class="c1">#ガウス過程モデルの生成</span>
-<span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span><span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
+<span class="c1"># ガウス過程モデルの生成</span>
+<span class="n">gp</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">lik</span><span class="o">=</span><span class="n">lik</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">)</span>
 <br/></pre></div>
 </div>
 </div>
@@ -443,11 +447,11 @@ array([-2.44630277, -1.06536273, -0.64183368, -2.49190006])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#学習済みのパラメタをガウス過程に入力</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 学習済みのパラメタをガウス過程に入力</span>
 <span class="n">gp</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">gp_params</span><span class="p">)</span>
 
 
-<span class="c1">#テストデータの平均値（予測値）および分散を計算</span>
+<span class="c1"># テストデータの平均値（予測値）および分散を計算</span>
 <span class="n">gp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
 <span class="n">fmean</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
 <span class="n">fcov</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
@@ -497,7 +501,7 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span><span class="o">-</span><span class="n">t_test</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -509,6 +513,162 @@ array([0.0006267 , 0.00053271, 0.00095938, ..., 0.00067901, 0.00066522,
 <div class="highlight"><pre>
 np.float64(0.006925305425496946)
 </pre></div></div>
+</div>
+</section>
+<section id="ランダム特徴量写像によるベイズ線形回帰">
+<h2>ランダム特徴量写像によるベイズ線形回帰<a class="headerlink" href="#ランダム特徴量写像によるベイズ線形回帰" title="Link to this heading"></a></h2>
+<p>PHYSBO では予測の高速化のため、ランダム特徴量写像を用いたベイズ線形モデルも提供しています（詳細は <a class="reference external" href="../algorithm.html">アルゴリズム</a> を参照）。 学習済みガウス過程モデル <code class="docutils literal notranslate"><span class="pre">gp</span></code> からベイズ線形モデル <code class="docutils literal notranslate"><span class="pre">blm</span></code> を構築すると便利です。</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># random feature mapの次元</span>
+<span class="n">M</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># gp から blm モデルを定義</span>
+<span class="n">blm</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">export_blm</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+<span class="c1"># 最初の学習データでモデルを初期化</span>
+<span class="n">blm</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>重みの事後平均を計算</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_params_mean</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>モデル（関数）の事後平均を計算</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-1.00281987, -1.021285  , -1.05703224, ..., -1.03903166,
+       -1.05308985, -1.0886392 ], shape=(1798,))
+</pre></div></div>
+</div>
+<p>重みのサンプルを抽出</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">blm</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([17982.25182061, 17982.02571459, 17981.80194809, 17982.25510674,
+       17981.66362023, 17981.94995566, 17981.64584662, 17981.6419771 ,
+       17982.60806258, 17982.35413272, 17981.80628787, 17981.86662535,
+       17981.7296249 , 17982.36710795, 17982.0886057 , 17982.35419747,
+       17981.62999812, 17981.84312661, 17981.99848416, 17981.89540307,
+       17982.11222119, 17983.94507764, 17982.5092398 , 17982.24701584,
+       17982.32421083, 17982.13933822, 17982.02862381, 17982.20436152,
+       17981.96314564, 17981.20549811, 17981.89276456, 17981.90269375,
+       17982.19008124, 17982.3800117 , 17981.66267877, 17982.97578728,
+       17981.75381325, 17981.6304626 , 17982.98456174, 17981.95586776,
+       17982.09232995, 17981.79500226, 17981.16359087, 17981.92477529,
+       17982.41587154, 17982.37029713, 17981.98737483, 17982.08471758,
+       17982.10916536, 17981.61480804, 17981.52740076, 17981.503297  ,
+       17982.2895881 , 17982.05691979, 17982.33931683, 17981.76721548,
+       17982.3620971 , 17982.5609712 , 17982.35823842, 17981.90810384,
+       17981.9280631 , 17982.15268503, 17981.98441024, 17981.65256567,
+       17981.56620624, 17981.73128853, 17981.82886044, 17982.77982802,
+       17980.24044025, 17982.2722357 , 17981.61547109, 17982.33799225,
+       17981.56915725, 17981.90126661, 17982.9278042 , 17982.05524349,
+       17982.37014053, 17982.19934487, 17982.00357933, 17982.1214092 ,
+       17981.90573108, 17982.08097159, 17981.20791008, 17982.38033984,
+       17981.68701063, 17981.73791397, 17981.35117105, 17982.45506255,
+       17982.12698395, 17981.41256826, 17981.38139235, 17981.99369549,
+       17981.85706449, 17982.11788584, 17981.8681819 , 17981.98174068,
+       17981.60341704, 17982.26672048, 17980.97479345, 17981.95121096])
+</pre></div></div>
+</div>
+<p>モデルからサンプルを抽出</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">blm</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-1.08420802, -1.04279261, -1.08889251, ..., -1.16072789,
+        -1.00383682, -1.05860927]], shape=(1, 1798))
+</pre></div></div>
+</div>
+<p>モデルの事後共分散を計算</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([0.00027617, 0.00024492, 0.00041572, ..., 0.000287  , 0.00032018,
+       0.000251  ], shape=(1798,))
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">get_permutation_importance</span></code> 関数を用いて permutation importance を計算する。</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pi_mean</span><span class="p">,</span> <span class="n">pi_std</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">,</span> <span class="n">n_perm</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pi_mean</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">pi_mean</span><span class="p">,</span>
+    <span class="n">xerr</span><span class="o">=</span><span class="n">pi_std</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Permutation Importance&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Feature&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_Gaussian_process_56_0.png" src="../_images/notebook_tutorial_Gaussian_process_56_0.png" />
+</div>
 </div>
 </section>
 <section id="注意事項">

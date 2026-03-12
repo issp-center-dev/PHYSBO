@@ -94,7 +94,7 @@
 <div class="viewcode-block" id="get_permutation_importance">
 <a class="viewcode-back" href="../../../api/physbo.misc.permutation_importance.html#physbo.misc.permutation_importance.get_permutation_importance">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">query_only</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculating permutation importance of model</span>
@@ -109,6 +109,10 @@
 <span class="sd">        number of permutations</span>
 <span class="sd">    comm: MPI.Comm</span>
 <span class="sd">        MPI communicator</span>
+<span class="sd">    query_only: bool</span>
+<span class="sd">        If True, call model.get_post_fmean with a single argument (query points only),</span>
+<span class="sd">        for models like BLM where training is already set by prepare(). If False, use</span>
+<span class="sd">        two arguments (training, query) as in GP. Default is False.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    =======</span>
@@ -125,7 +129,10 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
 
     <span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
-    <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">query_only</span><span class="p">:</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
     <span class="n">MSE_base</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -138,23 +145,26 @@
     <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">split_features_parallel</span><span class="p">:</span>
         <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">mpisize</span><span class="p">)[</span><span class="n">mpirank</span><span class="p">]</span>
-    <span class="n">n_features_local</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
 
-    <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
-    <span class="n">scores_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+    <span class="c1"># Full-length arrays so we can index by global i_feature and Allreduce correctly</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
+    <span class="n">scores_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i_feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
         <span class="n">X_perm</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i_perm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_perm</span><span class="p">):</span>
             <span class="n">X_perm</span><span class="p">[:,</span> <span class="n">i_feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">X_perm</span><span class="p">[:,</span> <span class="n">i_feature</span><span class="p">])</span>
-            <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_perm</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">query_only</span><span class="p">:</span>
+                <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X_perm</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fmean</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_perm</span><span class="p">)</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">fmean</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">MSE_base</span>
             <span class="n">scores</span><span class="p">[</span><span class="n">i_feature</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span>
             <span class="n">scores_2</span><span class="p">[</span><span class="n">i_feature</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span><span class="o">**</span><span class="mi">2</span>
 
     <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
-        <span class="n">res_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features_local</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
+        <span class="n">res_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
         <span class="n">comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>  <span class="c1"># default of op is MPI.SUM</span>
         <span class="n">comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">scores_2</span><span class="p">,</span> <span class="n">res_2</span><span class="p">)</span>
         <span class="n">scores</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">res</span>
