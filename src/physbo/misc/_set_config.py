@@ -10,7 +10,7 @@ import configparser
 
 
 class SetConfig:
-    def __init__(self, search_config=None, learning_config=None):
+    def __init__(self, search_config=None, learning_config=None, config_file=None):
         """
         Setting configuration for search and learning.
 
@@ -18,8 +18,16 @@ class SetConfig:
         ----------
         search_config: physbo.misc.Search object
         learning_config: physbo.misc.Learning object
-
+        config_file: str, optional
+            If given, load values from the configuration file.
         """
+
+        if config_file is not None:
+            if search_config is not None or learning_config is not None:
+                raise ValueError("search_config and learning_config must be None if config_file is given.")
+            self.load(config_file)
+            return
+
         if search_config is None:
             search_config = Search()
         self.search = search_config
@@ -51,45 +59,53 @@ class SetConfig:
         -------
 
         """
-        config = configparser.SafeConfigParser()
-        config.read(file_name)
+        config = configparser.ConfigParser()
+        loaded_files = config.read(file_name)
+        if not loaded_files:
+            raise FileNotFoundError(f"Configuration file is not found: {file_name}")
 
-        search_config = Search()
-        self.search = search_config
-        self.search.load(config)
+        _get_section(config, "search")
+        learning_section = _get_section(config, "learning")
+        method = learning_section.get("method", "adam").strip().lower()
 
-        temp_dict = config._sections["learning"]
-        method = temp_dict.get("method", "adam")
+        self.search = Search(config)
 
         if method == "adam":
-            learning_config = Adam()
-            self.learning = learning_config
-            self.learning.load(config)
-
-        if method in ("bfgs", "batch"):
-            learning_config = Batch()
-            self.learning = learning_config
-            self.learning.load(config)
+            self.learning = Adam(config)
+        elif method in ("bfgs", "batch"):
+            self.learning = Batch(config)
+        else:
+            raise ValueError(
+                f"Unknown learning method '{method}'. Supported methods are: adam, bfgs, batch."
+            )
 
 
 class Search:
-    def __init__(self):
+    def __init__(self, config=None):
+        """
+        Parameters
+        ----------
+        config : configparser.ConfigParser, optional
+            If given, load values from the [search] section.
+        """
         self.multi_probe_num_sampling = 20
         self.alpha = 1.0
+        if config is not None:
+            self.load(config)
 
     def load(self, config):
         """
-        Loading information of configuration from config._sectoins['search'].
+        Loading information of configuration from [search] section.
 
         Parameters
         ----------
-        config: physbo.misc.SetConfig object
+        config : configparser.ConfigParser
 
         Returns
         -------
 
         """
-        temp_dict = config._sections["search"]
+        temp_dict = _get_section(config, "search")
         self.multi_probe_num_sampling = int(
             temp_dict.get("multi_probe_num_sampling", 20)
         )
@@ -110,11 +126,19 @@ class Search:
 
 
 class Learning(object):
-    def __init__(self):
+    def __init__(self, config=None):
+        """
+        Parameters
+        ----------
+        config : configparser.ConfigParser, optional
+            If given, load values from the [learning] section.
+        """
         self.is_disp = True
         self.num_disp = 10
         self.num_init_params_search = 20
         self.method = "adam"
+        if config is not None:
+            self.load(config)
 
     def show(self):
         """
@@ -132,31 +156,39 @@ class Learning(object):
 
     def load(self, config):
         """
-        Loading information of configuration from config._sectoins['learning'].
+        Loading information of configuration from [learning] section.
 
         Parameters
         ----------
-        config: physbo.misc.SetConfig object
+        config : configparser.ConfigParser
 
 
         Returns
         -------
 
         """
-        temp_dict = config._sections["learning"]
-        self.method = temp_dict.get("method", "adam")
+        temp_dict = _get_section(config, "learning")
+        self.method = temp_dict.get("method", "adam").strip().lower()
         self.is_disp = boolean(temp_dict.get("is_disp", True))
         self.num_disp = int(temp_dict.get("num_disp", 10))
         self.num_init_params_search = int(temp_dict.get("num_init_params_search", 20))
 
 
 class Batch(Learning):
-    def __init__(self):
-        super(Batch, self).__init__()
+    def __init__(self, config=None):
+        """
+        Parameters
+        ----------
+        config : configparser.ConfigParser, optional
+            If given, load values from [learning] and [batch] sections.
+        """
+        super(Batch, self).__init__(config)
         self.method = "bfgs"
         self.max_iter = 200
         self.max_iter_init_params_search = 20
         self.batch_size = 5000
+        if config is not None:
+            self.load(config)
 
     def show(self):
         """
@@ -173,18 +205,18 @@ class Batch(Learning):
 
     def load(self, config):
         """
-        Loading information of configuration from config._sectoins['batch'].
+        Loading information of configuration from [batch] section.
 
         Parameters
         ----------
-        config: physbo.misc.SetConfig object
+        config : configparser.ConfigParser
 
         Returns
         -------
 
         """
         super(Batch, self).load(config)
-        temp_dict = config._sections["batch"]
+        temp_dict = _get_section(config, "batch")
         self.max_iter = int(temp_dict.get("max_iter", 200))
         self.max_iter_init_params_search = int(
             temp_dict.get("max_iter_init_params_search", 20)
@@ -193,12 +225,20 @@ class Batch(Learning):
 
 
 class Online(Learning):
-    def __init__(self):
-        super(Online, self).__init__()
+    def __init__(self, config=None):
+        """
+        Parameters
+        ----------
+        config : configparser.ConfigParser, optional
+            If given, load values from [learning] and [online] sections.
+        """
+        super(Online, self).__init__(config)
         self.max_epoch = 500
         self.max_epoch_init_params_search = 50
         self.batch_size = 64
         self.eval_size = 5000
+        if config is not None:
+            self.load(config)
 
     def show(self):
         """
@@ -216,11 +256,11 @@ class Online(Learning):
 
     def load(self, config):
         """
-        Loading information of configuration from config._sectoins['online'].
+        Loading information of configuration from [online] section.
 
         Parameters
         ----------
-        config: physbo.misc.SetConfig object
+        config : configparser.ConfigParser
 
 
         Returns
@@ -228,8 +268,8 @@ class Online(Learning):
 
         """
         super(Online, self).load(config)
-        temp_dict = config._sections["online"]
-        self.max_epoch = int(temp_dict.get("max_epoch", 1000))
+        temp_dict = _get_section(config, "online")
+        self.max_epoch = int(temp_dict.get("max_epoch", 500))
         self.max_epoch_init_params_search = int(
             temp_dict.get("max_epoch_init_params_search", 50)
         )
@@ -238,13 +278,21 @@ class Online(Learning):
 
 
 class Adam(Online):
-    def __init__(self):
-        super(Adam, self).__init__()
+    def __init__(self, config=None):
+        """
+        Parameters
+        ----------
+        config : configparser.ConfigParser, optional
+            If given, load values from [learning], [online], and [adam] sections.
+        """
+        super(Adam, self).__init__(config)
         self.method = "adam"
         self.alpha = 0.001
         self.beta = 0.9
         self.gamma = 0.999
         self.epsilon = 1e-6
+        if config is not None:
+            self.load(config)
 
     def show(self):
         """
@@ -263,37 +311,53 @@ class Adam(Online):
 
     def load(self, config):
         """
-        Loading information of configuration from config._sectoins['adam'].
+        Loading information of configuration from [adam] section.
 
         Parameters
         ----------
-        config: physbo.misc.SetConfig object
+        config : configparser.ConfigParser
 
         Returns
         -------
 
         """
         super(Adam, self).load(config)
-        temp_dict = config._sections["adam"]
+        temp_dict = _get_section(config, "adam")
         self.alpha = np.float64(temp_dict.get("alpha", 0.001))
         self.beta = np.float64(temp_dict.get("beta", 0.9))
-        self.gamma = np.float64(temp_dict.get("gamma", 0.9999))
+        self.gamma = np.float64(temp_dict.get("gamma", 0.999))
         self.epsilon = np.float64(temp_dict.get("epsilon", 1e-6))
 
 
-def boolean(str):
+def _get_section(config, section_name):
+    if not config.has_section(section_name):
+        raise ValueError(f"Missing required section [{section_name}] in configuration.")
+    return config[section_name]
+
+
+def boolean(value):
     """
     Return boolean.
 
     Parameters
     ----------
-    str: str or boolean
+    value: str or boolean
 
     Returns
     -------
     True or False
     """
-    if str == "True" or str is True:
-        return True
-    else:
-        return False
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("true", "1", "yes", "on"):
+            return True
+        if normalized in ("false", "0", "no", "off"):
+            return False
+
+    if value in (0, 1):
+        return bool(value)
+
+    raise ValueError(f"Cannot parse boolean value: {value!r}")
