@@ -1,0 +1,488 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARD (Automatic Relevance Determination) Tutorial &mdash; PHYSBO 3.3-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5e09bc0c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running PHYSBO interactively" href="tutorial_interactive_mode.html" />
+    <link rel="prev" title="Gaussian process" href="tutorial_Gaussian_process.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Basic usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basic.html">Basic usage of PHYSBO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_Gaussian_process.html">Gaussian process</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ARD (Automatic Relevance Determination) Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Import-packages">Import packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Problem-setup-for-this-tutorial">Problem setup for this tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Common-parameters">Common parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Case:-ard=True">Case: ard=True</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Case:-ard=False">Case: ard=False</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Comparing-best-values">Comparing best values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Comparing-length-scales">Comparing length scales</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Comparing-permutation-importance">Comparing permutation importance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_interactive_mode.html">Running PHYSBO interactively</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_once_mode.html">Restart calculations by reading existing calculation results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_probe.html">Search multiple candidates at once</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_multi_unified.html">Fast Computation for Multi-objective Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_range.html">Optimization in Continuous Space</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">ARD (Automatic Relevance Determination) Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebook/tutorial_ard.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>This jupyter notebook file is available at <a class="reference external" href="https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery/-/tree/develop/data/tutorial">ISSP Data Repository</a> (develop branch).</p>
+<section id="ARD-(Automatic-Relevance-Determination)-Tutorial">
+<h1>ARD (Automatic Relevance Determination) Tutorial<a class="headerlink" href="#ARD-(Automatic-Relevance-Determination)-Tutorial" title="Link to this heading"></a></h1>
+<p>PHYSBO uses a Gaussian process (GP) as the surrogate model with a Gaussian kernel:</p>
+<div class="math notranslate nohighlight">
+\[k(\vec{x}, \vec{x}') = \lambda^2 \exp\left[ -\frac{1}{2} \frac{\|\vec{x} - \vec{x}'\|^2}{\eta^2} \right]\]</div>
+<p>Here <span class="math notranslate nohighlight">\(\lambda\)</span> and <span class="math notranslate nohighlight">\(\eta\)</span> are hyperparameters representing the kernel scale and the input length scale, respectively.</p>
+<p>With the <strong>ARD</strong> kernel, a separate length scale <span class="math notranslate nohighlight">\(\eta_i\)</span> is assigned to each input dimension <span class="math notranslate nohighlight">\(i\)</span>. Learning these independently allows the model to automatically identify which dimensions matter for the objective and to optimize more efficiently.</p>
+<div class="math notranslate nohighlight">
+\[k(\vec{x}, \vec{x}') = \lambda^2 \exp\left[ -\frac{1}{2} \sum_i \frac{(x_i - x_i')^2}{\eta_i^2} \right]\]</div>
+<p>In PHYSBO, you can enable the ARD kernel by passing the keyword argument <code class="docutils literal notranslate"><span class="pre">ard=True</span></code> to <code class="docutils literal notranslate"><span class="pre">policy.bayes_search</span></code> when running Bayesian optimization.</p>
+<p>In this tutorial, we compare runs with and without ARD on a problem where only some dimensions affect the objective.</p>
+<section id="Import-packages">
+<h2>Import packages<a class="headerlink" href="#Import-packages" title="Link to this heading"></a></h2>
+<p>Import the packages used in this tutorial.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Problem-setup-for-this-tutorial">
+<h2>Problem setup for this tutorial<a class="headerlink" href="#Problem-setup-for-this-tutorial" title="Link to this heading"></a></h2>
+<p>We take as the objective the weighted sum of squared inputs:</p>
+<div class="math notranslate nohighlight">
+\[f(\vec{x}; \vec{w}) = - \sum_i w_i x_i^2\]</div>
+<p>With weight vector <span class="math notranslate nohighlight">\(\vec{w} = [5, 1, 0, 0]\)</span>, the search space has <span class="math notranslate nohighlight">\(D=4\)</span> dimensions: <span class="math notranslate nohighlight">\(x_0\)</span> contributes most to the objective, then <span class="math notranslate nohighlight">\(x_1\)</span>, while <span class="math notranslate nohighlight">\(x_2\)</span> and <span class="math notranslate nohighlight">\(x_3\)</span> do not contribute at all.</p>
+<p>We prepare the candidate set as the point that attains the maximum, <span class="math notranslate nohighlight">\(\vec{x} = \vec{0}\)</span>, plus <span class="math notranslate nohighlight">\(N-1 = 999\)</span> points drawn from a <span class="math notranslate nohighlight">\(D\)</span>-dimensional normal distribution.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">D</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">137</span><span class="p">)</span>
+<span class="n">test_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+<span class="n">test_X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">X2</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">actions</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ai,i -&gt; a&quot;</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Search space shape:&quot;</span><span class="p">,</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Search space shape: (1000, 4)
+</pre></div></div>
+</div>
+</section>
+<section id="Common-parameters">
+<h2>Common parameters<a class="headerlink" href="#Common-parameters" title="Link to this heading"></a></h2>
+<p>We set the same seed and the same number of steps for both runs so that the effect of ARD can be compared fairly.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_initial</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">n_bayes</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">n_perm</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">score</span> <span class="o">=</span> <span class="s2">&quot;EI&quot;</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">31415</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Case:-ard=True">
+<h2>Case: ard=True<a class="headerlink" href="#Case:-ard=True" title="Link to this heading"></a></h2>
+<p>First, we run Bayesian optimization with <code class="docutils literal notranslate"><span class="pre">ard=True</span></code>. Because a length scale is learned per dimension, relevant and irrelevant dimensions can be distinguished more easily.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running with ard=True&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">policy_ard</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
+<span class="n">policy_ard</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">policy_ard</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">policy_ard</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_bayes</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+    <span class="n">ard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">best_fx_ard</span><span class="p">,</span> <span class="n">best_actions_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+<span class="n">best_x_ard</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">best_actions_ard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best value (ard=True):&quot;</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best point:&quot;</span><span class="p">,</span> <span class="n">best_x_ard</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+============================================================
+Running with ard=True
+============================================================
+
+Best value (ard=True): -0.0
+Best point: [0. 0. 0. 0.]
+</pre></div></div>
+</div>
+</section>
+<section id="Case:-ard=False">
+<h2>Case: ard=False<a class="headerlink" href="#Case:-ard=False" title="Link to this heading"></a></h2>
+<p>Next, we run Bayesian optimization with the same settings but <code class="docutils literal notranslate"><span class="pre">ard=False</span></code>. The isotropic kernel (a single length scale for all dimensions) gives equal weight to irrelevant dimensions as well.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running with ard=False&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">policy_noard</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
+<span class="n">policy_noard</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">policy_noard</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">policy_noard</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_bayes</span><span class="p">,</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+    <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">best_fx_noard</span><span class="p">,</span> <span class="n">best_actions_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
+<span class="n">best_x_noard</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">best_actions_noard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best value (ard=False):&quot;</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best point:&quot;</span><span class="p">,</span> <span class="n">best_x_noard</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+============================================================
+Running with ard=False
+============================================================
+
+Best value (ard=False): -0.011203757603284015
+Best point: [-0.04345543 -0.04197482 -0.72416357 -0.13521863]
+</pre></div></div>
+</div>
+</section>
+<section id="Comparing-best-values">
+<h2>Comparing best values<a class="headerlink" href="#Comparing-best-values" title="Link to this heading"></a></h2>
+<p>PHYSBO seeks the point that <strong>maximizes</strong> the objective. For this problem the maximum is 0, so the closer the best value found is to 0, the better the search has performed.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">st</span> <span class="o">=</span> <span class="n">n_initial</span>
+<span class="n">en</span> <span class="o">=</span> <span class="n">n_initial</span> <span class="o">+</span> <span class="n">n_bayes</span>
+<span class="n">steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ARD&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;no ARD&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x1119c16d0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebook_tutorial_ard_12_1.png" src="../_images/notebook_tutorial_ard_12_1.png" />
+</div>
+</div>
+</section>
+<section id="Comparing-length-scales">
+<h2>Comparing length scales<a class="headerlink" href="#Comparing-length-scales" title="Link to this heading"></a></h2>
+<p>You can obtain the learned length scale(s) using the Policy method <code class="docutils literal notranslate"><span class="pre">get_kernel_length_scale()</span></code>.</p>
+<ul class="simple">
+<li><p><strong>ard=True</strong>: Returns one value per dimension. A smaller value indicates that the dimension is more relevant (more sensitive to the objective).</p></li>
+<li><p><strong>ard=False</strong>: Returns a single scalar (isotropic kernel).</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ls_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">get_kernel_length_scale</span><span class="p">()</span>
+<span class="n">ls_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">get_kernel_length_scale</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Kernel length scale ---&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">ls_ard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:  per-dimension (smaller = more relevant)&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ls_ard</span><span class="p">)):</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">ls_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:  (not available)&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">ls_noard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False: single (isotropic):&quot;</span><span class="p">,</span> <span class="n">ls_noard</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False: (not available)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+--- Kernel length scale ---
+ard=True:  per-dimension (smaller = more relevant)
+  dim 0 (relevant): 2.5764
+  dim 1 (relevant): 4.2119
+  dim 2 (irrelevant): 5.9329
+  dim 3 (irrelevant): 6.0144
+ard=False: single (isotropic): 2.200175177775015
+</pre></div></div>
+</div>
+</section>
+<section id="Comparing-permutation-importance">
+<h2>Comparing permutation importance<a class="headerlink" href="#Comparing-permutation-importance" title="Link to this heading"></a></h2>
+<p>Permutation importance measures how much the prediction MSE increases when each dimension’s values are shuffled; that reflects the “importance” of that dimension. A larger value means the dimension has a stronger effect on the prediction. The pattern of importance depends on whether ARD is used or not.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">imp_mean_ard</span><span class="p">,</span> <span class="n">imp_std_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">n_perm</span><span class="o">=</span><span class="n">n_perm</span><span class="p">)</span>
+<span class="n">imp_mean_noard</span><span class="p">,</span> <span class="n">imp_std_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">n_perm</span><span class="o">=</span><span class="n">n_perm</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Permutation importance ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">D</span><span class="p">):</span>
+    <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">D</span><span class="p">):</span>
+    <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(Higher mean =&gt; more important.)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+--- Permutation importance ---
+ard=True:
+  dim 0 (relevant): mean = 83.1582, std = 22.8684
+  dim 1 (relevant): mean = 1.4901, std = 0.3866
+  dim 2 (irrelevant): mean = 0.1697, std = 0.2088
+  dim 3 (irrelevant): mean = 0.2912, std = 0.1730
+ard=False:
+  dim 0 (relevant): mean = 67.0282, std = 18.2652
+  dim 1 (relevant): mean = 16.3441, std = 4.8668
+  dim 2 (irrelevant): mean = 7.3731, std = 3.3190
+  dim 3 (irrelevant): mean = 6.2181, std = 2.3696
+(Higher mean =&gt; more important.)
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial_Gaussian_process.html" class="btn btn-neutral float-left" title="Gaussian process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial_interactive_mode.html" class="btn btn-neutral float-right" title="Running PHYSBO interactively" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../3.3-dev/en/notebook/tutorial_ard.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../3.3-dev/ja/notebook/tutorial_ard.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../../develop/en/notebook/tutorial_ard.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../../master/en/notebook/tutorial_ard.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../../3.3-dev/en/notebook/tutorial_ard.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

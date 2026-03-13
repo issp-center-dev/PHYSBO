@@ -96,8 +96,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score_multi</span> <span class="k">as</span> <span class="n">search_score</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..optimize.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optimizer</span> <span class="k">as</span> <span class="n">RandomOptimizer</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">gp_predictor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...blm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">blm_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span>
 
@@ -138,6 +136,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TS_candidate_num</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">initial_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: initial_data should be 2-elements tuple or list (actions and objectives)&quot;</span>
@@ -293,6 +292,7 @@
         <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performing Bayesian optimization by using multi objective function</span>
@@ -328,6 +328,9 @@
 <span class="sd">        unify_method: callable, optional</span>
 <span class="sd">            This is for compatibility with the unified-optimization Policies.</span>
 <span class="sd">            This is not used.</span>
+<span class="sd">        ard: bool, optional</span>
+<span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
+<span class="sd">            Default is False.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -345,6 +348,7 @@
             <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">is_rand_expans</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">num_rand_basis</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">ard</span>
 
         <span class="k">if</span> <span class="n">training_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">training_list</span>
@@ -352,11 +356,12 @@
         <span class="k">if</span> <span class="n">predictor_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">is_rand_expans</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_make_blm_predictor</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
                 <span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
                 <span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="n">predictor_list</span>
@@ -530,7 +535,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
@@ -543,6 +548,38 @@
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fmean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
+
+
+<div class="viewcode-block" id="Policy.get_kernel_length_scale">
+<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.get_kernel_length_scale">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_kernel_length_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the Gaussian kernel length scale(s) for each objective.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of numpy.ndarray or None</span>
+<span class="sd">            List of length num_objectives; each element is the length scale(s)</span>
+<span class="sd">            for that objective&#39;s GP, or None if not available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cov</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
 
 <div class="viewcode-block" id="Policy.get_post_fcov">
@@ -569,7 +606,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fcov()&quot;</span><span class="p">)</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
@@ -618,7 +655,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_score()&quot;</span><span class="p">)</span>
                 <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                    <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                    <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
                     <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                     <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                     <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
@@ -677,7 +714,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
             <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>

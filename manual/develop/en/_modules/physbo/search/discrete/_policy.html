@@ -96,6 +96,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">History</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score</span> <span class="k">as</span> <span class="n">search_score</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">gp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">gp_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...blm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">blm_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
@@ -188,6 +189,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">initial_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: initial_data should be 2-elements tuple or list (actions and objectives)&quot;</span>
@@ -405,6 +407,7 @@
         <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performing Bayesian optimization.</span>
@@ -421,7 +424,7 @@
 <span class="sd">            Base class is defined in physbo.predictor.</span>
 <span class="sd">            If None, blm_predictor is defined.</span>
 <span class="sd">        is_disp: bool</span>
-<span class="sd">             If true, process messages are outputted.</span>
+<span class="sd">            If true, process messages are outputted.</span>
 <span class="sd">        simulator: callable</span>
 <span class="sd">            Callable (function or object with ``__call__``)</span>
 <span class="sd">            Here, action is an integer which represents the index of the candidate.</span>
@@ -437,6 +440,9 @@
 <span class="sd">        optimizer: optimizer object, optional</span>
 <span class="sd">            This is for compatibility with the range-based Policies.</span>
 <span class="sd">            This is not used.</span>
+<span class="sd">        ard: bool</span>
+<span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
+<span class="sd">            Default is False.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -454,6 +460,7 @@
             <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">is_rand_expans</span> <span class="o">=</span> <span class="n">num_rand_basis</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">ard</span>
 
         <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">training</span>
@@ -547,7 +554,7 @@
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
-            <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
@@ -579,13 +586,60 @@
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fcov()&quot;</span><span class="p">)</span>
-            <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Policy.get_kernel_length_scale">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.get_kernel_length_scale">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_kernel_length_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the Gaussian kernel length scale(s) (width) of the predictor.</span>
+
+<span class="sd">        With ARD, returns one length scale per input dimension; otherwise a single value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray or None</span>
+<span class="sd">            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.</span>
+<span class="sd">            None if the predictor is not set or not a GP with Gaussian kernel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="Policy.get_num_dim">
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.get_num_dim">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_num_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the input dimension (number of features) of the search space.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int or None</span>
+<span class="sd">            The number of dimensions. None if neither training nor test data is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="Policy.get_permutation_importance">
@@ -611,7 +665,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_post_fmean()&quot;</span><span class="p">)</span>
-            <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span>
@@ -694,7 +748,7 @@
         <span class="k">if</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">&quot;get_score()&quot;</span><span class="p">)</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1021,9 +1075,23 @@
 <span class="sd">            If false, physbo.gp.Predictor is selected.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">is_rand_expans</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_blm_predictor</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a GP predictor, with ARD if self.ard is True.&quot;&quot;&quot;</span>
+        <span class="n">ard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span>
+        <span class="n">num_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_dim</span><span class="p">()</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Model</span><span class="o">.</span><span class="n">create_default</span><span class="p">(</span><span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span> <span class="n">num_dim</span><span class="o">=</span><span class="n">num_dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a BLM predictor, with ARD if self.ard is True.&quot;&quot;&quot;</span>
+        <span class="n">ard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span>
+        <span class="n">num_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_dim</span><span class="p">()</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Model</span><span class="o">.</span><span class="n">create_default</span><span class="p">(</span><span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span> <span class="n">num_dim</span><span class="o">=</span><span class="n">num_dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_learn_hyperparameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
