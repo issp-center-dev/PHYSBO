@@ -111,13 +111,13 @@ is_disp = yes
 num_disp = 7
 num_init_params_search = 3
 
-[online]
+[learning.online]
 max_epoch = 123
 max_epoch_init_params_search = 9
 batch_size = 32
 eval_size = 456
 
-[adam]
+[learning.adam]
 alpha = 0.01
 beta = 0.8
 gamma = 0.95
@@ -154,7 +154,7 @@ is_disp = false
 num_disp = 10
 num_init_params_search = 20
 
-[batch]
+[learning.batch]
 max_iter = 111
 max_iter_init_params_search = 22
 batch_size = 333
@@ -171,13 +171,93 @@ batch_size = 333
     assert config.learning.batch_size == 333
 
 
+def test_setconfig_load_adam_deprecated_old_sections(tmp_path):
+    """Loading with [online] and [adam] (old names) issues DeprecationWarning but succeeds."""
+    config_path = _write_config(
+        tmp_path,
+        """
+[search]
+multi_probe_num_sampling = 11
+alpha = 0.5
+
+[learning]
+method = adam
+is_disp = yes
+num_disp = 7
+num_init_params_search = 3
+
+[online]
+max_epoch = 123
+max_epoch_init_params_search = 9
+batch_size = 32
+eval_size = 456
+
+[adam]
+alpha = 0.01
+beta = 0.8
+gamma = 0.95
+epsilon = 1e-7
+""",
+    )
+
+    with pytest.warns(DeprecationWarning) as record:
+        config = physbo.misc.SetConfig()
+        config.load(str(config_path))
+
+    section_warnings = [
+        w for w in record
+        if "Use [learning." in str(w.message) and " instead." in str(w.message)
+    ]
+    assert len(section_warnings) >= 2
+    messages = [str(w.message) for w in section_warnings]
+    assert any("[online]" in m and "learning.online" in m for m in messages)
+    assert any("[adam]" in m and "learning.adam" in m for m in messages)
+    assert config.learning.method == "adam"
+    assert config.learning.max_epoch == 123
+    assert config.learning.batch_size == 32
+    assert config.learning.alpha == pytest.approx(0.01)
+    assert config.learning.gamma == pytest.approx(0.95)
+
+
+def test_setconfig_load_batch_deprecated_old_section(tmp_path):
+    """Loading with [batch] (old name) issues DeprecationWarning but succeeds."""
+    config_path = _write_config(
+        tmp_path,
+        """
+[search]
+multi_probe_num_sampling = 20
+alpha = 1.0
+
+[learning]
+method = batch
+is_disp = false
+num_disp = 10
+num_init_params_search = 20
+
+[batch]
+max_iter = 111
+max_iter_init_params_search = 22
+batch_size = 333
+""",
+    )
+
+    with pytest.warns(DeprecationWarning, match=r"\[batch\].*Use \[learning\.batch\]"):
+        config = physbo.misc.SetConfig()
+        config.load(str(config_path))
+
+    assert config.learning.method == "batch"
+    assert config.learning.max_iter == 111
+    assert config.learning.batch_size == 333
+
+
 def test_setconfig_load_missing_file():
     config = physbo.misc.SetConfig()
     with pytest.raises(FileNotFoundError):
         config.load("definitely_missing_file.ini")
 
 
-def test_setconfig_load_missing_required_section(tmp_path):
+def test_setconfig_load_optional_sections_use_defaults(tmp_path):
+    """When [learning] is missing, defaults are used (method=adam, etc.)."""
     config_path = _write_config(
         tmp_path,
         """
@@ -188,8 +268,14 @@ alpha = 1.0
     )
 
     config = physbo.misc.SetConfig()
-    with pytest.raises(ValueError, match=r"\[learning\]"):
-        config.load(str(config_path))
+    config.load(str(config_path))
+
+    assert config.search.multi_probe_num_sampling == 20
+    assert config.search.alpha == pytest.approx(1.0)
+    assert config.learning.method == "adam"
+    # Adam defaults
+    assert config.learning.alpha == pytest.approx(0.001)
+    assert config.learning.max_epoch == 500
 
 
 def test_setconfig_load_unknown_method(tmp_path):

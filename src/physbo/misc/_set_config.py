@@ -5,6 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
+
 import numpy as np
 import configparser
 
@@ -64,9 +66,11 @@ class SetConfig:
         if not loaded_files:
             raise FileNotFoundError(f"Configuration file is not found: {file_name}")
 
-        _get_section(config, "search")
         learning_section = _get_section(config, "learning")
-        method = learning_section.get("method", "adam").strip().lower()
+        if learning_section is not None:
+            method = learning_section.get("method", "adam").strip().lower()
+        else:
+            method = "adam"
 
         self.search = Search(config)
 
@@ -106,10 +110,12 @@ class Search:
 
         """
         temp_dict = _get_section(config, "search")
+        if temp_dict is None:
+            return
         self.multi_probe_num_sampling = int(
-            temp_dict.get("multi_probe_num_sampling", 20)
+            temp_dict.get("multi_probe_num_sampling", self.multi_probe_num_sampling)
         )
-        self.alpha = np.float64(temp_dict.get("alpha", 1.0))
+        self.alpha = np.float64(temp_dict.get("alpha", self.alpha))
 
     def show(self):
         """
@@ -136,7 +142,8 @@ class Learning(object):
         self.is_disp = True
         self.num_disp = 10
         self.num_init_params_search = 20
-        self.method = "adam"
+        if not hasattr(self, "method"):
+            self.method = "adam"
         if config is not None:
             self.load(config)
 
@@ -168,10 +175,14 @@ class Learning(object):
 
         """
         temp_dict = _get_section(config, "learning")
-        self.method = temp_dict.get("method", "adam").strip().lower()
-        self.is_disp = boolean(temp_dict.get("is_disp", True))
-        self.num_disp = int(temp_dict.get("num_disp", 10))
-        self.num_init_params_search = int(temp_dict.get("num_init_params_search", 20))
+        if temp_dict is None:
+            return
+        self.method = temp_dict.get("method", self.method).strip().lower()
+        self.is_disp = boolean(temp_dict.get("is_disp", self.is_disp))
+        self.num_disp = int(temp_dict.get("num_disp", self.num_disp))
+        self.num_init_params_search = int(
+            temp_dict.get("num_init_params_search", self.num_init_params_search)
+        )
 
 
 class Batch(Learning):
@@ -180,15 +191,13 @@ class Batch(Learning):
         Parameters
         ----------
         config : configparser.ConfigParser, optional
-            If given, load values from [learning] and [batch] sections.
+            If given, load values from [learning] and [learning.batch] sections.
         """
-        super(Batch, self).__init__(config)
         self.method = "bfgs"
         self.max_iter = 200
         self.max_iter_init_params_search = 20
         self.batch_size = 5000
-        if config is not None:
-            self.load(config)
+        super(Batch, self).__init__(config)
 
     def show(self):
         """
@@ -205,7 +214,7 @@ class Batch(Learning):
 
     def load(self, config):
         """
-        Loading information of configuration from [batch] section.
+        Loading information of configuration from [learning.batch] section.
 
         Parameters
         ----------
@@ -216,12 +225,14 @@ class Batch(Learning):
 
         """
         super(Batch, self).load(config)
-        temp_dict = _get_section(config, "batch")
-        self.max_iter = int(temp_dict.get("max_iter", 200))
+        temp_dict = _get_learning_section(config, "batch")
+        if temp_dict is None:
+            return
+        self.max_iter = int(temp_dict.get("max_iter", self.max_iter))
         self.max_iter_init_params_search = int(
-            temp_dict.get("max_iter_init_params_search", 20)
+            temp_dict.get("max_iter_init_params_search", self.max_iter_init_params_search)
         )
-        self.batch_size = int(temp_dict.get("batch_size", 5000))
+        self.batch_size = int(temp_dict.get("batch_size", self.batch_size))
 
 
 class Online(Learning):
@@ -230,15 +241,13 @@ class Online(Learning):
         Parameters
         ----------
         config : configparser.ConfigParser, optional
-            If given, load values from [learning] and [online] sections.
+            If given, load values from [learning] and [learning.online] sections.
         """
-        super(Online, self).__init__(config)
         self.max_epoch = 500
         self.max_epoch_init_params_search = 50
         self.batch_size = 64
         self.eval_size = 5000
-        if config is not None:
-            self.load(config)
+        super(Online, self).__init__(config)
 
     def show(self):
         """
@@ -256,7 +265,7 @@ class Online(Learning):
 
     def load(self, config):
         """
-        Loading information of configuration from [online] section.
+        Loading information of configuration from [learning.online] section.
 
         Parameters
         ----------
@@ -268,13 +277,15 @@ class Online(Learning):
 
         """
         super(Online, self).load(config)
-        temp_dict = _get_section(config, "online")
-        self.max_epoch = int(temp_dict.get("max_epoch", 500))
+        temp_dict = _get_learning_section(config, "online")
+        if temp_dict is None:
+            return
+        self.max_epoch = int(temp_dict.get("max_epoch", self.max_epoch))
         self.max_epoch_init_params_search = int(
-            temp_dict.get("max_epoch_init_params_search", 50)
+            temp_dict.get("max_epoch_init_params_search", self.max_epoch_init_params_search)
         )
-        self.batch_size = int(temp_dict.get("batch_size", 64))
-        self.eval_size = int(temp_dict.get("eval_size", 5000))
+        self.batch_size = int(temp_dict.get("batch_size", self.batch_size))
+        self.eval_size = int(temp_dict.get("eval_size", self.eval_size))
 
 
 class Adam(Online):
@@ -283,16 +294,14 @@ class Adam(Online):
         Parameters
         ----------
         config : configparser.ConfigParser, optional
-            If given, load values from [learning], [online], and [adam] sections.
+            If given, load values from [learning], [learning.online], and [learning.adam] sections.
         """
-        super(Adam, self).__init__(config)
         self.method = "adam"
         self.alpha = 0.001
         self.beta = 0.9
         self.gamma = 0.999
         self.epsilon = 1e-6
-        if config is not None:
-            self.load(config)
+        super(Adam, self).__init__(config)
 
     def show(self):
         """
@@ -311,7 +320,7 @@ class Adam(Online):
 
     def load(self, config):
         """
-        Loading information of configuration from [adam] section.
+        Loading information of configuration from [learning.adam] section.
 
         Parameters
         ----------
@@ -322,17 +331,41 @@ class Adam(Online):
 
         """
         super(Adam, self).load(config)
-        temp_dict = _get_section(config, "adam")
-        self.alpha = np.float64(temp_dict.get("alpha", 0.001))
-        self.beta = np.float64(temp_dict.get("beta", 0.9))
-        self.gamma = np.float64(temp_dict.get("gamma", 0.999))
-        self.epsilon = np.float64(temp_dict.get("epsilon", 1e-6))
+        temp_dict = _get_learning_section(config, "adam")
+        if temp_dict is None:
+            return
+        self.alpha = np.float64(temp_dict.get("alpha", self.alpha))
+        self.beta = np.float64(temp_dict.get("beta", self.beta))
+        self.gamma = np.float64(temp_dict.get("gamma", self.gamma))
+        self.epsilon = np.float64(temp_dict.get("epsilon", self.epsilon))
 
 
 def _get_section(config, section_name):
+    """Return section dict if present, else None. Missing sections are skipped (defaults used)."""
     if not config.has_section(section_name):
-        raise ValueError(f"Missing required section [{section_name}] in configuration.")
+        return None
     return config[section_name]
+
+
+def _get_learning_section(config, name):
+    """
+    Get a learning sub-section by name (batch, online, or adam).
+    Prefer [learning.name]; fall back to [name] with deprecation warning.
+    Return None if neither section exists (defaults will be used).
+    """
+    new_name = f"learning.{name}"
+    old_name = name
+    if config.has_section(new_name):
+        return config[new_name]
+    if config.has_section(old_name):
+        warnings.warn(
+            f"Section [{old_name}] is deprecated and will be removed in a future version. "
+            f"Use [{new_name}] instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return config[old_name]
+    return None
 
 
 def boolean(value):

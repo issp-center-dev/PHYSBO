@@ -23,7 +23,7 @@ For example, create an INI file like the following:
 
 .. code-block:: ini
 
-   [adam]
+   [learning.adam]
    alpha = 0.01
 
 
@@ -32,7 +32,7 @@ Configurable Parameters
 
 The INI file has a hierarchical structure of sections and keys.
 Accordingly, ``SetConfig`` also has a hierarchical structure.
-For example, the ``alpha`` key in the ``[adam]`` section corresponds to the ``config.adam.alpha`` member variable.
+For example, the ``alpha`` key in the ``[learning.adam]`` section corresponds to the ``config.learning.alpha`` member variable.
 
 Details of sections and parameters are as follows.
 
@@ -52,7 +52,7 @@ Adam is for online learning; bfgs and batch are for batch learning.
    ``num_disp``, int, 10, Display interval (how many iterations between displays)
    ``num_init_params_search``, int, 20, Number of iterations for initial hyperparameter search
 
-``[online]`` -- Common online learning settings
+``[learning.online]`` -- Common online learning settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Common settings for online learning.
@@ -67,7 +67,7 @@ Used when ``method=adam``.
    ``batch_size``, int, 64, Batch size
    ``eval_size``, int, 5000, Number of samples for evaluation
 
-``[adam]`` -- Adam learning
+``[learning.adam]`` -- Adam learning
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Adam settings.
@@ -82,7 +82,7 @@ Used when ``method=adam``.
    ``gamma``, float, 0.999, Decay rate for second moment
    ``epsilon``, float, 1e-6, Small constant for numerical stability
 
-``[batch]`` -- Batch / BFGS learning
+``[learning.batch]`` -- Batch / BFGS learning
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Settings for bfgs and batch.

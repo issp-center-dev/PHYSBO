@@ -23,7 +23,7 @@ PHYSBOではガウス過程のハイパーパラメータ学習 ("learning") を
 
 .. code-block:: ini
 
-   [adam]
+   [learning.adam]
    alpha = 0.01
 
 
@@ -32,7 +32,7 @@ PHYSBOではガウス過程のハイパーパラメータ学習 ("learning") を
 
 INIファイルはセクションとキーの階層構造になっています。
 これに対応して、 ``SetConfig`` も階層構造を持っています。
-例えば ``[adam]`` セクションの ``alpha`` キーは、 ``config.adam.alpha`` メンバ変数に対応します。
+例えば ``[learning.adam]`` セクションの ``alpha`` キーは、 ``config.learning.alpha`` メンバ変数に対応します。
 
 セクションやパラメータについて詳しくは以下のとおりです。
 
@@ -52,7 +52,7 @@ adamはオンライン学習で、bfgsとbatchはバッチ学習です。
    ``num_disp``, int, 10, 表示間隔（何反復ごとに表示するか）
    ``num_init_params_search``, int, 20, 初期ハイパーパラメータ探索の反復数
 
-``[online]`` -- オンライン学習の共通設定
+``[learning.online]`` -- オンライン学習の共通設定
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 オンライン学習の共通設定です。
@@ -67,7 +67,7 @@ adamはオンライン学習で、bfgsとbatchはバッチ学習です。
    ``batch_size``, int, 64, バッチサイズ
    ``eval_size``, int, 5000, 評価用サンプル数
 
-``[adam]`` -- adam 学習
+``[learning.adam]`` -- adam 学習
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 adamの設定です。
@@ -82,7 +82,7 @@ adamの設定です。
    ``gamma``, float, 0.999, 二次モーメントの減衰率
    ``epsilon``, float, 1e-6, 数値計算を安定化させるための微小量
 
-``[batch]`` -- batch / BFGS 学習
+``[learning.batch]`` -- batch / BFGS 学習
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 bfgsとbatchの設定です。
