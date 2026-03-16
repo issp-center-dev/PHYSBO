@@ -2,20 +2,20 @@ Detailed Settings for Learning
 ===============================
 
 PHYSBO performs hyperparameter learning ("learning") for the Gaussian process, but the learning method itself has hyperparameters such as the learning rate for Adam.
-Use ``physbo.SetConfig`` to change these hyperparameters.
+Use ``physbo.misc.SetConfig`` to change these hyperparameters.
 In most cases, you do not need to change the default values.
 
 Usage of ``SetConfig``
 ----------------------
 
-First, create an instance with ``config = physbo.SetConfig()``. All parameters have default values, so modify only the parameters you want to change.
+First, create an instance with ``config = physbo.misc.SetConfig()``. All parameters have default values, so modify only the parameters you want to change.
 Pass the created ``config`` to the ``config`` argument of the ``Policy`` constructor.
 For example, to set Adam's learning rate to 0.01:
 
 .. code-block:: python
 
-   config = physbo.SetConfig()
-   config.adam.alpha = 0.01
+   config = physbo.misc.SetConfig()
+   config.learning.alpha = 0.01
    policy = physbo.search.discrete.Policy(test_X, config=config)
 
 You can also save parameters to an INI file and load them with ``config.load("config.ini")``.
@@ -32,7 +32,7 @@ Configurable Parameters
 
 The INI file has a hierarchical structure of sections and keys.
 Accordingly, ``SetConfig`` also has a hierarchical structure.
-For example, the ``alpha`` key in the ``[learning.adam]`` section corresponds to the ``config.learning.alpha`` member variable.
+For example, the ``alpha`` key in the ``[learning.adam]`` section corresponds to the ``config.learning.alpha`` member variable (note that the variable name is ``learning`` rather than ``learning.adam``).
 
 Details of sections and parameters are as follows.
 
@@ -53,7 +53,7 @@ Adam is for online learning; bfgs and batch are for batch learning.
    ``num_init_params_search``, int, 20, Number of iterations for initial hyperparameter search
 
 ``[learning.online]`` -- Common online learning settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Common settings for online learning.
 Used when ``method=adam``.
@@ -68,7 +68,7 @@ Used when ``method=adam``.
    ``eval_size``, int, 5000, Number of samples for evaluation
 
 ``[learning.adam]`` -- Adam learning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Adam settings.
 Used when ``method=adam``.
@@ -83,7 +83,7 @@ Used when ``method=adam``.
    ``epsilon``, float, 1e-6, Small constant for numerical stability
 
 ``[learning.batch]`` -- Batch / BFGS learning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Settings for bfgs and batch.
 Used when ``method=bfgs`` or ``method=batch``.
@@ -98,7 +98,7 @@ Used when ``method=bfgs`` or ``method=batch``.
 
 
 ``[search]`` -- Parameters used in Bayesian optimization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. csv-table::
    :header: Key, Type, Default, Description

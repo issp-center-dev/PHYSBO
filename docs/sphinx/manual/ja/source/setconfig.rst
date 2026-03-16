@@ -2,20 +2,20 @@
 ======================
 
 PHYSBOではガウス過程のハイパーパラメータ学習 ("learning") を行いますが、学習手法自体にも例えばadamの学習率など、ハイパーパラメータが存在します。
-これらのハイパーパラメータを変更する場合には ``physbo.SetConfig`` を使用します。
+これらのハイパーパラメータを変更する場合には ``physbo.misc.SetConfig`` を使用します。
 なお、基本的には既定値から変更する必要はありません。
 
 ``SetConfig`` の使い方
 ----------------------
 
-まずは ``config = physbo.SetConfig()`` としてインスタンスを作成します。すべてのパラメータに既定値が設定されているので、変更したいパラメータを直接変更します。
+まずは ``config = physbo.misc.SetConfig()`` としてインスタンスを作成します。すべてのパラメータに既定値が設定されているので、変更したいパラメータを直接変更します。
 作成した ``config`` を、 ``Policy`` のコンストラクタの ``config`` 引数に渡します。
 例えばadamの学習率を0.01に変更する場合は、以下のようになります。
 
 .. code-block:: python
 
-   config = physbo.SetConfig()
-   config.adam.alpha = 0.01
+   config = physbo.misc.SetConfig()
+   config.learning.alpha = 0.01
    policy = physbo.search.discrete.Policy(test_X, config=config)
 
 パラメータをINIファイルに保存し、 ``config.load("config.ini")`` で読み込むこともできます。
@@ -32,7 +32,7 @@ PHYSBOではガウス過程のハイパーパラメータ学習 ("learning") を
 
 INIファイルはセクションとキーの階層構造になっています。
 これに対応して、 ``SetConfig`` も階層構造を持っています。
-例えば ``[learning.adam]`` セクションの ``alpha`` キーは、 ``config.learning.alpha`` メンバ変数に対応します。
+例えば ``[learning.adam]`` セクションの ``alpha`` キーは、 ``config.learning.alpha`` メンバ変数に対応します（メンバ変数の方は ``learning.adam`` ではなく ``learning`` であることに注意）。
 
 セクションやパラメータについて詳しくは以下のとおりです。
 
