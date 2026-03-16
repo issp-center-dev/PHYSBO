@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Settings for Learning &mdash; PHYSBO 3.3-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5e09bc0c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Algorithm" href="algorithm.html" />
+    <link rel="prev" title="Optimization in Continuous Space" href="notebook/tutorial_range.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Detailed Settings for Learning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage-of-setconfig">Usage of <code class="docutils literal notranslate"><span class="pre">SetConfig</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configurable-parameters">Configurable Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#learning-common-learning-settings"><code class="docutils literal notranslate"><span class="pre">[learning]</span></code> – Common learning settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#learning-online-common-online-learning-settings"><code class="docutils literal notranslate"><span class="pre">[learning.online]</span></code> – Common online learning settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#learning-adam-adam-learning"><code class="docutils literal notranslate"><span class="pre">[learning.adam]</span></code> – Adam learning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#learning-batch-batch-bfgs-learning"><code class="docutils literal notranslate"><span class="pre">[learning.batch]</span></code> – Batch / BFGS learning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#search-parameters-used-in-bayesian-optimization"><code class="docutils literal notranslate"><span class="pre">[search]</span></code> – Parameters used in Bayesian optimization</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">Algorithm</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Detailed Settings for Learning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/setconfig.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="detailed-settings-for-learning">
+<h1>Detailed Settings for Learning<a class="headerlink" href="#detailed-settings-for-learning" title="Link to this heading"></a></h1>
+<p>PHYSBO performs hyperparameter learning (“learning”) for the Gaussian process, but the learning method itself has hyperparameters such as the learning rate for Adam.
+Use <code class="docutils literal notranslate"><span class="pre">physbo.misc.SetConfig</span></code> to change these hyperparameters.
+In most cases, you do not need to change the default values.</p>
+<section id="usage-of-setconfig">
+<h2>Usage of <code class="docutils literal notranslate"><span class="pre">SetConfig</span></code><a class="headerlink" href="#usage-of-setconfig" title="Link to this heading"></a></h2>
+<p>First, create an instance with <code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">=</span> <span class="pre">physbo.misc.SetConfig()</span></code>. All parameters have default values, so modify only the parameters you want to change.
+Pass the created <code class="docutils literal notranslate"><span class="pre">config</span></code> to the <code class="docutils literal notranslate"><span class="pre">config</span></code> argument of the <code class="docutils literal notranslate"><span class="pre">Policy</span></code> constructor.
+For example, to set Adam’s learning rate to 0.01:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">SetConfig</span><span class="p">()</span>
+<span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also save parameters to an INI file and load them with <code class="docutils literal notranslate"><span class="pre">config.load(&quot;config.ini&quot;)</span></code>.
+For example, create an INI file like the following:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[learning.adam]</span>
+<span class="na">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.01</span>
+</pre></div>
+</div>
+</section>
+<section id="configurable-parameters">
+<h2>Configurable Parameters<a class="headerlink" href="#configurable-parameters" title="Link to this heading"></a></h2>
+<p>The INI file has a hierarchical structure of sections and keys.
+Accordingly, <code class="docutils literal notranslate"><span class="pre">SetConfig</span></code> also has a hierarchical structure.
+For example, the <code class="docutils literal notranslate"><span class="pre">alpha</span></code> key in the <code class="docutils literal notranslate"><span class="pre">[learning.adam]</span></code> section corresponds to the <code class="docutils literal notranslate"><span class="pre">config.learning.alpha</span></code> member variable (note that the variable name is <code class="docutils literal notranslate"><span class="pre">learning</span></code> rather than <code class="docutils literal notranslate"><span class="pre">learning.adam</span></code>).</p>
+<p>Details of sections and parameters are as follows.</p>
+<section id="learning-common-learning-settings">
+<h3><code class="docutils literal notranslate"><span class="pre">[learning]</span></code> – Common learning settings<a class="headerlink" href="#learning-common-learning-settings" title="Link to this heading"></a></h3>
+<p>Common settings for Gaussian process regression model learning.
+Currently, the learning method <code class="docutils literal notranslate"><span class="pre">method</span></code> supports three types: adam, bfgs, and batch.
+Adam is for online learning; bfgs and batch are for batch learning.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 24.5%" />
+<col style="width: 7.5%" />
+<col style="width: 11.3%" />
+<col style="width: 56.6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">method</span></code></p></td>
+<td><p>str</p></td>
+<td><p>adam</p></td>
+<td><p>Learning method. One of <code class="docutils literal notranslate"><span class="pre">adam</span></code>, <code class="docutils literal notranslate"><span class="pre">bfgs</span></code>, <code class="docutils literal notranslate"><span class="pre">batch</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_disp</span></code></p></td>
+<td><p>bool</p></td>
+<td><p>True</p></td>
+<td><p>Whether to display during learning. One of <code class="docutils literal notranslate"><span class="pre">true</span></code>, <code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">num_disp</span></code></p></td>
+<td><p>int</p></td>
+<td><p>10</p></td>
+<td><p>Display interval (how many iterations between displays)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">num_init_params_search</span></code></p></td>
+<td><p>int</p></td>
+<td><p>20</p></td>
+<td><p>Number of iterations for initial hyperparameter search</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="learning-online-common-online-learning-settings">
+<h3><code class="docutils literal notranslate"><span class="pre">[learning.online]</span></code> – Common online learning settings<a class="headerlink" href="#learning-online-common-online-learning-settings" title="Link to this heading"></a></h3>
+<p>Common settings for online learning.
+Used when <code class="docutils literal notranslate"><span class="pre">method=adam</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34.8%" />
+<col style="width: 8.7%" />
+<col style="width: 10.9%" />
+<col style="width: 45.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_epoch</span></code></p></td>
+<td><p>int</p></td>
+<td><p>500</p></td>
+<td><p>Maximum number of epochs</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">max_epoch_init_params_search</span></code></p></td>
+<td><p>int</p></td>
+<td><p>50</p></td>
+<td><p>Maximum number of epochs for initial hyperparameter search</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p></td>
+<td><p>int</p></td>
+<td><p>64</p></td>
+<td><p>Batch size</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eval_size</span></code></p></td>
+<td><p>int</p></td>
+<td><p>5000</p></td>
+<td><p>Number of samples for evaluation</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="learning-adam-adam-learning">
+<h3><code class="docutils literal notranslate"><span class="pre">[learning.adam]</span></code> – Adam learning<a class="headerlink" href="#learning-adam-adam-learning" title="Link to this heading"></a></h3>
+<p>Adam settings.
+Used when <code class="docutils literal notranslate"><span class="pre">method=adam</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 16.7%" />
+<col style="width: 11.1%" />
+<col style="width: 13.9%" />
+<col style="width: 58.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<td><p>float</p></td>
+<td><p>0.001</p></td>
+<td><p>Learning rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">beta</span></code></p></td>
+<td><p>float</p></td>
+<td><p>0.9</p></td>
+<td><p>Decay rate for first moment</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>0.999</p></td>
+<td><p>Decay rate for second moment</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">epsilon</span></code></p></td>
+<td><p>float</p></td>
+<td><p>1e-6</p></td>
+<td><p>Small constant for numerical stability</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="learning-batch-batch-bfgs-learning">
+<h3><code class="docutils literal notranslate"><span class="pre">[learning.batch]</span></code> – Batch / BFGS learning<a class="headerlink" href="#learning-batch-batch-bfgs-learning" title="Link to this heading"></a></h3>
+<p>Settings for bfgs and batch.
+Used when <code class="docutils literal notranslate"><span class="pre">method=bfgs</span></code> or <code class="docutils literal notranslate"><span class="pre">method=batch</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34.8%" />
+<col style="width: 8.7%" />
+<col style="width: 10.9%" />
+<col style="width: 45.7%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_iter</span></code></p></td>
+<td><p>int</p></td>
+<td><p>200</p></td>
+<td><p>Maximum number of iterations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">max_iter_init_params_search</span></code></p></td>
+<td><p>int</p></td>
+<td><p>20</p></td>
+<td><p>Maximum number of iterations for initial hyperparameter search</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p></td>
+<td><p>int</p></td>
+<td><p>5000</p></td>
+<td><p>Batch size</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="search-parameters-used-in-bayesian-optimization">
+<h3><code class="docutils literal notranslate"><span class="pre">[search]</span></code> – Parameters used in Bayesian optimization<a class="headerlink" href="#search-parameters-used-in-bayesian-optimization" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26.4%" />
+<col style="width: 7.5%" />
+<col style="width: 9.4%" />
+<col style="width: 56.6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">multi_probe_num_sampling</span></code></p></td>
+<td><p>int</p></td>
+<td><p>20</p></td>
+<td><p>Used when <code class="docutils literal notranslate"><span class="pre">num_search_each_probe&gt;1</span></code>. Number of samples for computing unevaluated objective function values</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<td><p>float</p></td>
+<td><p>1.0</p></td>
+<td><p>Thompson Sampling hyperparameter. Coefficient to rescale the standard deviation of the posterior distribution during sampling</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="notebook/tutorial_range.html" class="btn btn-neutral float-left" title="Optimization in Continuous Space" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="algorithm.html" class="btn btn-neutral float-right" title="Algorithm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/setconfig.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../3.3-dev/ja/setconfig.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/en/setconfig.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/en/setconfig.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/setconfig.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
