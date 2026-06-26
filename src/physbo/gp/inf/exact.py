@@ -84,7 +84,11 @@ def get_grad_marlik(gp, X, t, params=None):
     U = scipy.linalg.cholesky(A, check_finite=False)
     res = t - fmu
     alpha = misc.gauss_elim(U, res)
-    invA = scipy.linalg.inv(A, check_finite=False)
+    # Reuse the Cholesky factor U (A = U^T U, upper) instead of recomputing a
+    # full LU-based inverse with scipy.linalg.inv.
+    invA = scipy.linalg.cho_solve(
+        (U, False), np.identity(ndata), check_finite=False
+    )
 
     grad_marlik = np.zeros(gp.num_params)
 
