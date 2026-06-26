@@ -247,6 +247,7 @@ class Policy:
         num_rand_basis=0,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization.
@@ -336,7 +337,13 @@ class Policy:
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
             action = self._get_actions(
-                score, N, K, alpha, optimizer, num_rand_basis=num_rand_basis
+                score,
+                N,
+                K,
+                alpha,
+                optimizer,
+                num_rand_basis=num_rand_basis,
+                ucb_beta=ucb_beta,
             )
             time_get_action = time.time() - time_get_action
 
@@ -465,7 +472,15 @@ class Policy:
         return self.dim
 
     def get_score(
-        self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
+        self,
+        mode,
+        *,
+        xs=None,
+        predictor=None,
+        training=None,
+        parallel=True,
+        alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calcualte score (acquisition function)
@@ -532,21 +547,32 @@ class Policy:
             raise RuntimeError("ERROR: xs is not given")
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            ucb_beta=ucb_beta,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
+    def _argmax_score(
+        self, mode, predictor, training, extra_trainings, optimizer, ucb_beta=1.0
+    ):
         K = len(extra_trainings)
         if K == 0:
             predictor.prepare(training, objective_index=0)
 
             def fn(x):
                 return self.get_score(
-                    mode, xs=x.reshape(1, -1), predictor=predictor, parallel=False
+                    mode,
+                    xs=x.reshape(1, -1),
+                    predictor=predictor,
+                    ucb_beta=ucb_beta,
+                    parallel=False,
                 )[0]
         else:  # marginal score
             trains = [copy.deepcopy(training) for _ in range(K)]
@@ -567,6 +593,7 @@ class Policy:
                         xs=x.reshape(1, -1),
                         predictor=predictors[k],
                         training=trains[k],
+                        ucb_beta=ucb_beta,
                         parallel=False,
                     )[0]
                 return np.mean(f)
@@ -574,7 +601,9 @@ class Policy:
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
-    def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
+    def _get_actions(
+        self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
+    ):
         """
         Getting next candidates
 
@@ -604,7 +633,7 @@ class Policy:
         predictor = copy.deepcopy(self.predictor)
         predictor.config.is_disp = False
         X[0, :] = self._argmax_score(
-            mode, predictor, self.training, [], optimizer=optimizer
+            mode, predictor, self.training, [], optimizer=optimizer, ucb_beta=ucb_beta
         )
 
         for n in range(1, N):
@@ -618,7 +647,12 @@ class Policy:
                 t_normalized = normalize_t(t[k, :], k=1)
                 extra_trainings[k].t = t_normalized
             X[n, :] = self._argmax_score(
-                mode, predictor, self.training, extra_trainings, optimizer=optimizer
+                mode,
+                predictor,
+                self.training,
+                extra_trainings,
+                optimizer=optimizer,
+                ucb_beta=ucb_beta,
             )
 
         return X
