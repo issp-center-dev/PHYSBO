@@ -5,7 +5,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/physbo/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/physbo.svg"></a>
-  <a href="https://pypi.org/project/physbo/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/physbo.svg"></a>
+  <a href="https://pypi.org/project/physbo/"><img alt="Python versions" src="https://img.shields.io/badge/python-3.9%2B-blue.svg"></a>
   <a href="https://mozilla.org/MPL/2.0/"><img alt="License: MPL-2.0" src="https://img.shields.io/badge/license-MPL--2.0-brightgreen.svg"></a>
   <a href="https://github.com/issp-center-dev/PHYSBO/actions/workflows/python_package.yml"><img alt="Test python package" src="https://github.com/issp-center-dev/PHYSBO/actions/workflows/python_package.yml/badge.svg"></a>
   <a href="https://issp-center-dev.github.io/PHYSBO/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue.svg"></a>
