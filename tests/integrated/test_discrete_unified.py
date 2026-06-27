@@ -86,3 +86,37 @@ class TestDiscreteUnify:
         assert vid == pytest.approx(vid_ref, rel=1e-3)
         # test to run without error
         self.policy.get_score(score, xs=self.sim.X)
+
+    # Seeded reference hypervolumes for score="UCB" (ucb_beta=2.0), matching
+    # the deterministic-reference style used in test_multi_objective. These
+    # differ from the PI/EI/TS references above, confirming UCB drives a
+    # distinct search path through the unified policy.
+    vid_ref_ucb = {
+        "ParEGO": 0.14004688145381594,
+        "NDS": 0.16368641865433553,
+    }
+
+    @pytest.mark.parametrize("unify_method", ["ParEGO", "NDS"])
+    def test_ucb(self, unify_method):
+        # Verify score="UCB" is correctly threaded through the unified
+        # single-objective policy by pinning the seeded hypervolume, then check
+        # the ucb_beta monotonicity invariant on get_score as a secondary check.
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        res = self.policy.bayes_search(
+            max_num_probes=self.nsearch,
+            simulator=self.sim,
+            score="UCB",
+            ucb_beta=2.0,
+            unify_method=self.unify_method[unify_method],
+            interval=self.interval,
+            is_disp=False,
+        )
+        vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
+        assert vid == pytest.approx(self.vid_ref_ucb[unify_method], rel=1e-3)
+        # ucb_beta adds the (non-negative) std to the mean, so a larger beta
+        # never decreases the score of any candidate.
+        f_low = self.policy.get_score("UCB", xs=self.sim.X, ucb_beta=0.0)
+        f_high = self.policy.get_score("UCB", xs=self.sim.X, ucb_beta=5.0)
+        assert np.all(np.isfinite(f_low)) and np.all(np.isfinite(f_high))
+        assert np.all(f_high >= f_low - 1e-8)
+        assert not np.allclose(f_low, f_high)
