@@ -107,6 +107,16 @@
              
   <section id="module-physbo.search.utility">
 <span id="physbo-search-utility-module"></span><h1>physbo.search.utility module<a class="headerlink" href="#module-physbo.search.utility" title="Link to this heading"></a></h1>
+<p>Utility helpers for the search module.</p>
+<p>This module collects helpers used across the search policies:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#physbo.search.utility.Simulator" title="physbo.search.utility.Simulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulator</span></code></a> wraps a test function so it can be called by action index.</p></li>
+<li><p><a class="reference internal" href="#physbo.search.utility.make_grid" title="physbo.search.utility.make_grid"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_grid()</span></code></a> builds a grid of candidate points for a discrete search.</p></li>
+<li><p><a class="reference internal" href="#physbo.search.utility.plot_pareto_front" title="physbo.search.utility.plot_pareto_front"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_pareto_front()</span></code></a> and <a class="reference internal" href="#physbo.search.utility.plot_pareto_front_all" title="physbo.search.utility.plot_pareto_front_all"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_pareto_front_all()</span></code></a> visualize the
+Pareto front stored in a multi-objective history.</p></li>
+<li><p>the remaining <code class="docutils literal notranslate"><span class="pre">show_*</span></code> / <code class="docutils literal notranslate"><span class="pre">is_learning</span></code> helpers format progress messages
+and drive the search loop.</p></li>
+</ul>
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.search.utility.Simulator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">Simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">negate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#Simulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.Simulator" title="Link to this definition"></a></dt>
@@ -126,12 +136,45 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.is_learning">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">is_learning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#is_learning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.is_learning" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Decide whether to (re)learn the hyperparameters at search step <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) – Zero-based index of the current search step.</p></li>
+<li><p><strong>interval</strong> (<em>int</em>) – <p>Hyperparameter learning interval.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval</span> <span class="pre">==</span> <span class="pre">0</span></code>: learn only at the first step (<code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">==</span> <span class="pre">0</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>: learn every <code class="docutils literal notranslate"><span class="pre">interval</span></code> steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>: never learn.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if hyperparameters should be learned at this step.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.length_vector">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">length_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#length_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.length_vector" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Return the number of elements of <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>array-like</em><em> or </em><em>scalar</em>) – Input object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">len(t)</span></code> if <code class="docutils literal notranslate"><span class="pre">t</span></code> is sized, otherwise 1 (treating <code class="docutils literal notranslate"><span class="pre">t</span></code> as a scalar).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.make_grid">
@@ -229,22 +272,64 @@ If None, plot until the end.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.show_interactive_mode">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">show_interactive_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#show_interactive_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.show_interactive_mode" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Print a message when an interactive search session starts.</p>
+<p>The message is shown only at the very first step (empty history) of an
+interactive run, i.e. when no simulator is provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulator</strong> (<em>callable</em><em> or </em><em>None</em>) – The simulator, or None for interactive mode.</p></li>
+<li><p><strong>history</strong> (<a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.History" title="physbo.search.discrete.History"><em>History</em></a>) – The search history.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.show_search_results">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">show_search_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#show_search_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.show_search_results" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Print a summary of the last <code class="docutils literal notranslate"><span class="pre">N</span></code> single-objective search steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>history</strong> (<a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.History" title="physbo.search.discrete.History"><em>History</em></a>) – The search history.</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Number of most recent steps to display. Capped at the total number of
+searches performed so far.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.show_search_results_mo">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">show_search_results_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disp_pareto_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#show_search_results_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.show_search_results_mo" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Print a summary of the last <code class="docutils literal notranslate"><span class="pre">N</span></code> multi-objective search steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>history</strong> (<a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.History" title="physbo.search.discrete.History"><em>History</em></a>) – The multi-objective search history.</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Number of most recent steps to display. Capped at the total number of
+searches performed so far.</p></li>
+<li><p><strong>disp_pareto_set</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, also display the current Pareto set.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.show_start_message_multi_search">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">show_start_message_multi_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#show_start_message_multi_search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.utility.show_start_message_multi_search" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Print the header announcing a multiple-probe search step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>N</strong> (<em>int</em>) – Zero-based index of the current search round; the printed index is
+<code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">+</span> <span class="pre">1</span></code>.</p></li>
+<li><p><strong>score</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the acquisition function. If None, <code class="docutils literal notranslate"><span class="pre">&quot;random&quot;</span></code> is shown.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

@@ -92,6 +92,8 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
+<span class="sd">&quot;&quot;&quot;Adam stochastic optimizer used for hyperparameter learning.&quot;&quot;&quot;</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 
@@ -126,8 +128,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ==========</span>
-<span class="sd">        params:</span>
-<span class="sd">        grad:</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            Initial input vector ``x``.</span>
+<span class="sd">        grad: callable</span>
+<span class="sd">            Gradient function ``g(x) = f&#39;(x)``; called as ``grad(params, *args, **kwargs)``.</span>
 <span class="sd">        options: dict</span>
 <span class="sd">            Hyperparameters for the adam method</span>
 
@@ -148,6 +152,13 @@
 <div class="viewcode-block" id="Adam.set_params">
 <a class="viewcode-back" href="../../../api/physbo.opt.html#physbo.opt.Adam.set_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the current input vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        params: numpy.ndarray</span>
+<span class="sd">            New input vector ``x``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span></div>
 
 
@@ -183,6 +194,13 @@
 <div class="viewcode-block" id="Adam.run">
 <a class="viewcode-back" href="../../../api/physbo.opt.html#physbo.opt.Adam.run">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run ``max_epoch`` update steps in place on ``self.params``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        args, kwargs:</span>
+<span class="sd">            Passed through to ``self.grad`` at each step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_epoch</span><span class="p">):</span>
             <span class="n">update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>

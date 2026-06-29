@@ -92,6 +92,18 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
+<span class="sd">&quot;&quot;&quot;Utility helpers for the search module.</span>
+
+<span class="sd">This module collects helpers used across the search policies:</span>
+
+<span class="sd">* :class:`Simulator` wraps a test function so it can be called by action index.</span>
+<span class="sd">* :func:`make_grid` builds a grid of candidate points for a discrete search.</span>
+<span class="sd">* :func:`plot_pareto_front` and :func:`plot_pareto_front_all` visualize the</span>
+<span class="sd">  Pareto front stored in a multi-objective history.</span>
+<span class="sd">* the remaining ``show_*`` / ``is_learning`` helpers format progress messages</span>
+<span class="sd">  and drive the search loop.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
@@ -421,6 +433,16 @@
 <div class="viewcode-block" id="show_search_results">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a summary of the last ``N`` single-objective search steps.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    history: History</span>
+<span class="sd">        The search history.</span>
+<span class="sd">    N: int</span>
+<span class="sd">        Number of most recent steps to display. Capped at the total number of</span>
+<span class="sd">        searches performed so far.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
     <span class="n">history</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
 
@@ -429,6 +451,18 @@
 <div class="viewcode-block" id="show_search_results_mo">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results_mo">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results_mo</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a summary of the last ``N`` multi-objective search steps.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    history: History</span>
+<span class="sd">        The multi-objective search history.</span>
+<span class="sd">    N: int</span>
+<span class="sd">        Number of most recent steps to display. Capped at the total number of</span>
+<span class="sd">        searches performed so far.</span>
+<span class="sd">    disp_pareto_set: bool, default=False</span>
+<span class="sd">        If True, also display the current Pareto set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
     <span class="n">history</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">)</span></div>
 
@@ -437,6 +471,16 @@
 <div class="viewcode-block" id="show_start_message_multi_search">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_start_message_multi_search">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_start_message_multi_search</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print the header announcing a multiple-probe search step.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    N: int</span>
+<span class="sd">        Zero-based index of the current search round; the printed index is</span>
+<span class="sd">        ``N + 1``.</span>
+<span class="sd">    score: str, optional</span>
+<span class="sd">        Name of the acquisition function. If None, ``&quot;random&quot;`` is shown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">score</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">score</span> <span class="o">=</span> <span class="s2">&quot;random&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">:</span><span class="s2">04</span><span class="si">}</span><span class="s2">-th multiple probe search (</span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
@@ -446,6 +490,18 @@
 <div class="viewcode-block" id="show_interactive_mode">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_interactive_mode">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_interactive_mode</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">history</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a message when an interactive search session starts.</span>
+
+<span class="sd">    The message is shown only at the very first step (empty history) of an</span>
+<span class="sd">    interactive run, i.e. when no simulator is provided.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    simulator: callable or None</span>
+<span class="sd">        The simulator, or None for interactive mode.</span>
+<span class="sd">    history: History</span>
+<span class="sd">        The search history.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;interactive mode starts ... </span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">)</span></div>
 
@@ -454,6 +510,18 @@
 <div class="viewcode-block" id="length_vector">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.length_vector">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">length_vector</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the number of elements of ``t``.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    t: array-like or scalar</span>
+<span class="sd">        Input object.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    =======</span>
+<span class="sd">    int</span>
+<span class="sd">        ``len(t)`` if ``t`` is sized, otherwise 1 (treating ``t`` as a scalar).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">N</span></div>
 
@@ -462,6 +530,24 @@
 <div class="viewcode-block" id="is_learning">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.is_learning">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_learning</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decide whether to (re)learn the hyperparameters at search step ``n``.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    n: int</span>
+<span class="sd">        Zero-based index of the current search step.</span>
+<span class="sd">    interval: int</span>
+<span class="sd">        Hyperparameter learning interval.</span>
+
+<span class="sd">        * ``interval == 0``: learn only at the first step (``n == 0``).</span>
+<span class="sd">        * ``interval &gt; 0``: learn every ``interval`` steps.</span>
+<span class="sd">        * ``interval &lt; 0``: never learn.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    =======</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if hyperparameters should be learned at this step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="k">elif</span> <span class="n">interval</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
