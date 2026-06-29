@@ -5,6 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Adam stochastic optimizer used for hyperparameter learning."""
+
 import numpy as np
 
 
@@ -37,8 +39,10 @@ class Adam:
 
         Parameters
         ==========
-        params:
-        grad:
+        params: numpy.ndarray
+            Initial input vector ``x``.
+        grad: callable
+            Gradient function ``g(x) = f'(x)``; called as ``grad(params, *args, **kwargs)``.
         options: dict
             Hyperparameters for the adam method
 
@@ -57,6 +61,13 @@ class Adam:
         self.epoch = 0
 
     def set_params(self, params):
+        """Set the current input vector.
+
+        Parameters
+        ==========
+        params: numpy.ndarray
+            New input vector ``x``.
+        """
         self.params = params
 
     def update(self, params, *args, **kwargs):
@@ -86,6 +97,13 @@ class Adam:
         return -self.alpha * hat_m / (np.sqrt(hat_v) + self.epsilon)
 
     def run(self, *args, **kwargs):
+        """Run ``max_epoch`` update steps in place on ``self.params``.
+
+        Parameters
+        ==========
+        args, kwargs:
+            Passed through to ``self.grad`` at each step.
+        """
         params = self.params
         for epoch in range(self.max_epoch):
             update = self.update(params, *args, **kwargs)
