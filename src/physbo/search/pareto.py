@@ -37,6 +37,9 @@ class Rectangles(object):
 
 def dominate(t1, t2):
     """domination rule for maximization problem"""
+    # coerce to ndarray: plain lists would be compared lexicographically
+    t1 = np.asarray(t1)
+    t2 = np.asarray(t2)
     return np.all(t1 >= t2) and np.any(t1 > t2)
 
 
