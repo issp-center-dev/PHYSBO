@@ -27,9 +27,10 @@ def draw_multivariate_normal(mean, cov, N=1):
         mean vector (ndata)
     cov: numpy.ndarray
         covariance matrix (ndata x ndata).
-        NOTE: this matrix is broken after calling this function
-        because a jitter term is added to the diagonal elements in place
-        to keep the matrix positive definite.
+        NOTE: this matrix is destroyed after calling this function
+        because it is used as workspace of the in-place Cholesky
+        decomposition (with a jitter term added to the diagonal elements
+        to keep the matrix positive definite).
     N: int
         number of samples
         (default: 1)
@@ -45,20 +46,31 @@ def draw_multivariate_normal(mean, cov, N=1):
     # The covariance matrix is often numerically not positive definite,
     # and hence a jitter term is added to the diagonal elements.
     # When the Cholesky decomposition fails, the jitter term is increased.
-    scale = np.mean(np.diag(cov))
+    #
+    # The decomposition is performed in place (cov is used as workspace)
+    # to avoid allocating another (ndata x ndata) matrix.
+    # A failed decomposition destroys the lower triangle and the diagonal
+    # but keeps the strict upper triangle intact, so that the matrix can be
+    # restored from the upper triangle and the saved diagonal for retrying.
+    diag = np.diag_indices_from(cov)
+    diag_cov = cov[diag].copy()
+    scale = np.mean(diag_cov)
     if not scale > 0:
         scale = 1.0
     jitter = 1e-10 * scale
     max_jitter = 1e-3 * scale
-    diag = np.diag_indices_from(cov)
     while True:
-        cov[diag] += jitter
+        cov[diag] = diag_cov + jitter
         try:
-            L = scipy.linalg.cholesky(cov, lower=True, check_finite=False)
+            L = scipy.linalg.cholesky(
+                cov, lower=True, overwrite_a=True, check_finite=False
+            )
             break
         except np.linalg.LinAlgError:
             if jitter > max_jitter:
                 raise
+            for i in range(1, ndata):
+                cov[i, :i] = cov[:i, i]
             jitter *= 100
     z = np.random.standard_normal((N, ndata))
     return mean + z @ L.T
