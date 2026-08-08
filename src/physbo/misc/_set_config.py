@@ -51,7 +51,9 @@ class SetConfig:
         -------
 
         """
-        config = configparser.SafeConfigParser()
+        # SafeConfigParser was removed in Python 3.12; ConfigParser is its
+        # direct replacement (they have been identical since Python 3.2)
+        config = configparser.ConfigParser()
         config.read(file_name)
 
         search_config = Search()
