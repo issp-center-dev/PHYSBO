@@ -6,6 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import scipy.linalg
 
 from ... import blm
 from .. import inf
@@ -13,6 +14,54 @@ from . import learning
 from ._prior import Prior
 
 from physbo.misc.permutation_importance import get_permutation_importance
+
+
+def draw_multivariate_normal(mean, cov, N=1):
+    """
+    Draw samples from a multivariate normal distribution
+    by using the Cholesky decomposition.
+
+    Parameters
+    ----------
+    mean: numpy.ndarray
+        mean vector (ndata)
+    cov: numpy.ndarray
+        covariance matrix (ndata x ndata).
+        NOTE: this matrix is broken after calling this function
+        because a jitter term is added to the diagonal elements in place
+        to keep the matrix positive definite.
+    N: int
+        number of samples
+        (default: 1)
+
+    Returns
+    -------
+    numpy.ndarray (N x ndata)
+    """
+    ndata = mean.shape[0]
+    if ndata == 0:
+        return np.zeros((N, 0))
+
+    # The covariance matrix is often numerically not positive definite,
+    # and hence a jitter term is added to the diagonal elements.
+    # When the Cholesky decomposition fails, the jitter term is increased.
+    scale = np.mean(np.diag(cov))
+    if not scale > 0:
+        scale = 1.0
+    jitter = 1e-10 * scale
+    max_jitter = 1e-3 * scale
+    diag = np.diag_indices_from(cov)
+    while True:
+        cov[diag] += jitter
+        try:
+            L = scipy.linalg.cholesky(cov, lower=True, check_finite=False)
+            break
+        except np.linalg.LinAlgError:
+            if jitter > max_jitter:
+                raise
+            jitter *= 100
+    z = np.random.standard_normal((N, ndata))
+    return mean + z @ L.T
 
 
 class Model:
@@ -317,7 +366,9 @@ class Model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        if alpha != 1:
+            fcov *= alpha**2
+        return draw_multivariate_normal(fmean, fcov, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """
@@ -346,11 +397,12 @@ class Model:
         if ndata == 0:
             return np.zeros((N, 0))
         fmean = self.get_post_fmean(X, Z, params=None)
-        fcov = self.get_post_fcov(X, Z, params=None, diag=False) + self.lik.get_cov(
-            ndata
-        )
+        fcov = self.get_post_fcov(X, Z, params=None, diag=False)
+        # add the noise variance to the diagonal elements in place
+        # instead of adding the dense matrix self.lik.get_cov(ndata)
+        fcov[np.diag_indices_from(fcov)] += self.lik.trans_params() ** 2
 
-        return np.random.multivariate_normal(fmean, fcov, N)
+        return draw_multivariate_normal(fmean, fcov, N)
 
     def print_params(self):
         """
