@@ -21,9 +21,10 @@ from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
 from ..._rng import get_rng, make_rng, LegacyRNG
+from .._checkpoint import CheckpointMixin
 
 
-class Policy:
+class Policy(CheckpointMixin):
     """Single objective Bayesian optimization with discrete search space"""
 
     predictor: Optional[Any]
@@ -822,6 +823,12 @@ class Policy:
 
         Saving history, training and predictor into the corresponding files.
 
+        This persists the search *results* in a portable form (the files
+        can be loaded by runs with a different number of MPI processes).
+        To suspend and later resume an execution bit-exactly (including
+        the random number generator state), use ``save_checkpoint`` /
+        ``load_checkpoint`` instead.
+
         Parameters
         ----------
         file_history: str
@@ -849,6 +856,9 @@ class Policy:
         """
 
         Loading files about history, training and predictor.
+
+        See ``save`` for the difference from the checkpoint API
+        (``save_checkpoint`` / ``load_checkpoint``).
 
         Parameters
         ----------

@@ -19,9 +19,10 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 from ..._rng import make_rng, LegacyRNG
+from .._checkpoint import CheckpointMixin
 
 
-class Policy:
+class Policy(CheckpointMixin):
     """Single objective Bayesian optimization with continuous search space"""
 
     def __init__(
