@@ -205,7 +205,7 @@ class BasePredictor(object):
         raise NotImplementedError
 
     def get_permutation_importance(
-        self, training, num_permutations=10, comm=None, split_features_parallel=False, objective_index=0
+        self, training, num_permutations=10, comm=None, split_features_parallel=False, objective_index=0, rng=None
     ):
         """
         Calculate permutation importance of the predictor.
@@ -240,6 +240,7 @@ class BasePredictor(object):
             num_permutations,
             comm=comm,
             split_features_parallel=split_features_parallel,
+            rng=rng,
         )
 
     def update(self, *args, **kwds):

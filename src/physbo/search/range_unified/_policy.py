@@ -19,6 +19,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
+from ..._rng import get_rng
 
 
 class Policy(range_single.Policy):
@@ -44,6 +45,7 @@ class Policy(range_single.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
 
+        self.rng = get_rng()
         self.training = Variable()
         self.training_unified = None
         self.predictor = None
@@ -224,7 +226,7 @@ class Policy(range_single.Policy):
 
         if optimizer is None:
             optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000
+                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
             )
 
         N = int(num_search_each_probe)
@@ -341,7 +343,8 @@ class Policy(range_single.Policy):
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
             t = self.predictor.get_predict_samples(
-                self.training_unified, extra_training, K, objective_index=0
+                self.training_unified, extra_training, K, objective_index=0,
+                rng=self.rng,
             )
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
@@ -378,7 +381,11 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
             predictor.fit(
-                self.training_unified, 0, comm=self.mpicomm, objective_index=0
+                self.training_unified,
+                0,
+                comm=self.mpicomm,
+                objective_index=0,
+                rng=self.rng,
             )
             predictor.prepare(self.training_unified, objective_index=0)
             return predictor.get_post_fmean(self.training_unified, X, objective_index=0)
@@ -411,7 +418,11 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
             predictor.fit(
-                self.training_unified, 0, comm=self.mpicomm, objective_index=0
+                self.training_unified,
+                0,
+                comm=self.mpicomm,
+                objective_index=0,
+                rng=self.rng,
             )
             predictor.prepare(self.training_unified, objective_index=0)
             return predictor.get_post_fcov(
@@ -451,7 +462,7 @@ class Policy(range_single.Policy):
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = gp_predictor(self.config)
-                predictor.fit(training, 0, comm=self.mpicomm, objective_index=0)
+                predictor.fit(training, 0, comm=self.mpicomm, objective_index=0, rng=self.rng)
                 predictor.prepare(training, objective_index=0)
             else:
                 self._update_predictor()
@@ -474,6 +485,7 @@ class Policy(range_single.Policy):
             training=training,
             test=test,
             alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -502,13 +514,14 @@ class Policy(range_single.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training_unified, 0)
+            predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(
                 self.training_unified,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
         else:
             self._update_predictor()
@@ -517,6 +530,7 @@ class Policy(range_single.Policy):
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
 
     def save(self, file_history, file_training=None, file_predictor=None):
@@ -575,7 +589,7 @@ class Policy(range_single.Policy):
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.training_unified = self._unify_training(self.training)
-        self.predictor.fit(self.training_unified, num_rand_basis, comm=self.mpicomm)
+        self.predictor.fit(self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng)
         self.predictor.prepare(self.training_unified)
         Z = self.predictor.get_basis(self.training_unified.X)
         if Z is not None:

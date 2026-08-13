@@ -7,6 +7,8 @@
 
 import numpy as np
 
+from ..._rng import get_rng
+
 
 class Gauss:
     """Gaussian likelihood function"""
@@ -162,18 +164,21 @@ class Gauss:
         return np.log(np.std(t) / 10)
 
     # [TODO] Check: This function seems not to be used.
-    def sampling(self, fmean):
+    def sampling(self, fmean, rng=None):
         """
         Sampling by adding noise
 
         Parameters
         ----------
         fmean: numpy.ndarray
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
 
         Returns
         -------
 
         """
+        rng = get_rng(rng)
         num_data = fmean.shape[0]
-        eps = self.std * np.random.randn(num_data)
+        eps = self.std * rng.standard_normal(num_data)
         return fmean + eps

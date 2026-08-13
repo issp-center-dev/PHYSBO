@@ -41,6 +41,10 @@ def score(mode, predictor, test, training=None, **kwargs):
         noise for sampling source (default: 1.0)
         Used only for mode == "TS"
 
+    rng: rng object
+        random number generator (default: global numpy.random state)
+        Used only for mode == "TS"
+
     Returns
     -------
     score: numpy.ndarray
@@ -62,7 +66,8 @@ def score(mode, predictor, test, training=None, **kwargs):
         return PI(predictor, training, test, fmax)
     elif mode == "TS":
         alpha = kwargs.get("alpha", 1.0)
-        return TS(predictor, training, test, alpha)
+        rng = kwargs.get("rng", None)
+        return TS(predictor, training, test, alpha, rng=rng)
     else:
         raise NotImplementedError("ERROR: mode must be EI, PI or TS.")
 
@@ -132,7 +137,7 @@ def PI(predictor, training, test, fmax=None):
     return score
 
 
-def TS(predictor, training, test, alpha=1):
+def TS(predictor, training, test, alpha=1, rng=None):
     """
     Thompson sampling (See Sec. 2.1 in Materials Discovery Volume 4, June 2016, Pages 18-21)
 
@@ -148,8 +153,12 @@ def TS(predictor, training, test, alpha=1):
     alpha: float
         noise for sampling source
         (default: 1.0)
+    rng: rng object, optional
+        random number generator (default: global numpy.random state)
     Returns
     -------
     score: numpy.ndarray
     """
-    return (predictor.get_post_samples(training, test, alpha=alpha)).flatten()
+    return (
+        predictor.get_post_samples(training, test, alpha=alpha, rng=rng)
+    ).flatten()

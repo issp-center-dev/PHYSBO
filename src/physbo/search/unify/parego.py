@@ -12,6 +12,7 @@ from typing import Optional
 import numpy as np
 
 from ...misc import min_max_scaling
+from ..._rng import get_rng
 
 class ParEGO:
 
@@ -40,6 +41,7 @@ class ParEGO:
         weight_max: float = 1.0,
         weights: Optional[np.ndarray] = None,
         weights_discrete: int = 0,
+        rng=None,
     ):
         r""" ParEGO unified objective function
 
@@ -73,6 +75,7 @@ class ParEGO:
         self.num_objectives = num_objectives
         self.weight_sum = weight_sum
         self.weight_max = weight_max
+        self.rng = get_rng(rng)
         if weights is not None:
             weights = np.array(weights)
             self.weights = weights / np.sum(weights)
@@ -98,9 +101,11 @@ class ParEGO:
         """
         if self.weights is None:
             if self.weights_discrete > 0:
-                weights = sample_weights(self.num_objectives, self.weights_discrete)
+                weights = sample_weights(
+                    self.num_objectives, self.weights_discrete, rng=self.rng
+                )
             else:
-                weights = np.random.rand(self.num_objectives)
+                weights = self.rng.random(self.num_objectives)
                 weights /= np.sum(weights)
         else:
             weights = self.weights
@@ -118,7 +123,7 @@ class ParEGO:
 
 
 
-def sample_weights(num_objectives: int, s: int) -> np.ndarray:
+def sample_weights(num_objectives: int, s: int, rng=None) -> np.ndarray:
     """
     Sample weights for the objectives
 
@@ -128,11 +133,14 @@ def sample_weights(num_objectives: int, s: int) -> np.ndarray:
         Number of objectives
     s: int
         Number of discrete points to sample weights
+    rng: rng object, optional
+        random number generator (default: global numpy.random state)
     """
 
+    rng = get_rng(rng)
     ls = np.zeros(num_objectives, dtype=int)
     for d in range(num_objectives - 1):
-        ls[d] = np.random.randint(s + 1)
+        ls[d] = rng.integers(s + 1)
         s -= ls[d]
     ls[num_objectives - 1] = s
 

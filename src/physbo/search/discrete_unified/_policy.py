@@ -18,6 +18,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
+from ..._rng import get_rng
 
 
 class Policy(discrete.Policy):
@@ -45,6 +46,7 @@ class Policy(discrete.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
+        self.rng = get_rng()
         self.training = Variable()
         self.training_unified = None
         self.predictor = None
@@ -363,7 +365,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fmean(self.training_unified, X)
         else:
@@ -392,7 +394,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fcov(self.training_unified, X, diag)
         else:
@@ -463,7 +465,7 @@ class Policy(discrete.Policy):
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = gp_predictor(self.config)
-                predictor.fit(training, 0, comm=self.mpicomm)
+                predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
                 self._update_predictor()
@@ -487,7 +489,12 @@ class Policy(discrete.Policy):
             test = self.test.get_subset(actions)
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -517,13 +524,14 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training_unified, 0)
+            predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(
                 self.training_unified,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
         else:
             self._update_predictor()
@@ -532,6 +540,7 @@ class Policy(discrete.Policy):
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
@@ -561,7 +570,7 @@ class Policy(discrete.Policy):
         # draw K samples of the values of objective function of chosen actions
         new_test_local = self.test.get_subset(chosen_actions)
         virtual_t_local = self.predictor.get_predict_samples(
-            self.training_unified, new_test_local, K
+            self.training_unified, new_test_local, K, rng=self.rng
         )
         if self.mpisize == 1:
             new_test = new_test_local
@@ -666,7 +675,7 @@ class Policy(discrete.Policy):
         self.training_unified = self._unify_training(self.training)
 
         self.predictor.fit(
-            self.training_unified, num_rand_basis, comm=self.mpicomm
+            self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
         self.predictor.prepare(self.training_unified)
         Z = self.predictor.get_basis(self.training_unified.X)

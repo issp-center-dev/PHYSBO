@@ -19,6 +19,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
+from ..._rng import get_rng
 
 
 class Policy(range_single.Policy):
@@ -44,6 +45,7 @@ class Policy(range_single.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
 
+        self.rng = get_rng()
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.new_data = None
@@ -275,7 +277,7 @@ class Policy(range_single.Policy):
 
         if optimizer is None:
             optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000
+                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
             )
 
         N = int(num_search_each_probe)
@@ -401,7 +403,8 @@ class Policy(range_single.Policy):
             virtual_t = np.zeros((K, n, self.num_objectives))
             for i in range(self.num_objectives):
                 virtual_t[:, :, i] = predictors[i].get_predict_samples(
-                    self.training, virtual_trainings[0], K, objective_index=i
+                    self.training, virtual_trainings[0], K, objective_index=i,
+                    rng=self.rng,
                 )
             for k in range(K):
                 virtual_trainings[k].t = virtual_t[k, :, :]
@@ -437,7 +440,7 @@ class Policy(range_single.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -473,7 +476,7 @@ class Policy(range_single.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -519,7 +522,7 @@ class Policy(range_single.Policy):
                 predictor_list = []
                 for i in range(self.num_objectives):
                     predictor = gp_predictor(self.config)
-                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i)
+                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                     predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
             else:
@@ -545,6 +548,7 @@ class Policy(range_single.Policy):
             pareto=pareto,
             reduced_candidate_num=self.TS_candidate_num,
             alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -575,7 +579,7 @@ class Policy(range_single.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, objective_index=i)
+                predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -594,6 +598,7 @@ class Policy(range_single.Policy):
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
                 objective_index=i,
+                rng=self.rng,
             )
 
         return np.array(importance_mean).T, np.array(importance_std).T
@@ -661,7 +666,11 @@ class Policy(range_single.Policy):
             predictor = self.predictor_list[i]
 
             predictor.fit(
-                training, num_rand_basis, comm=self.mpicomm, objective_index=i
+                training,
+                num_rand_basis,
+                comm=self.mpicomm,
+                objective_index=i,
+                rng=self.rng,
             )
 
             # Collect Z for training (will be combined into (k, N, n))

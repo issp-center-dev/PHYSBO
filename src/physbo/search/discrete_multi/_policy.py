@@ -18,6 +18,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
+from ..._rng import get_rng
 
 
 class Policy(discrete.Policy):
@@ -29,6 +30,7 @@ class Policy(discrete.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
+        self.rng = get_rng()
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.test = self._make_variable_X(test_X)
@@ -360,7 +362,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -396,7 +398,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -442,7 +444,7 @@ class Policy(discrete.Policy):
                 predictor_list = []
                 for i in range(self.num_objectives):
                     predictor = gp_predictor(self.config)
-                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i)
+                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                     predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
             else:
@@ -477,6 +479,7 @@ class Policy(discrete.Policy):
             pareto=pareto,
             reduced_candidate_num=self.TS_candidate_num,
             alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -507,7 +510,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = gp_predictor(self.config)
-                predictor.fit(self.training, 0, objective_index=i)
+                predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -526,6 +529,7 @@ class Policy(discrete.Policy):
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
                 objective_index=i,
+                rng=self.rng,
             )
 
         return np.array(importance_mean).T, np.array(importance_std).T
@@ -560,7 +564,7 @@ class Policy(discrete.Policy):
         virtual_t_local = np.zeros((K, N, self.num_objectives))
         for i in range(self.num_objectives):
             virtual_t_local[:, :, i] = self.predictor_list[i].get_predict_samples(
-                self.training, new_test_local, K, objective_index=i
+                self.training, new_test_local, K, objective_index=i, rng=self.rng
             )
 
         if self.mpisize == 1:
@@ -664,7 +668,11 @@ class Policy(discrete.Policy):
             predictor = self.predictor_list[i]
 
             predictor.fit(
-                self.training, num_rand_basis, comm=self.mpicomm, objective_index=i
+                self.training,
+                num_rand_basis,
+                comm=self.mpicomm,
+                objective_index=i,
+                rng=self.rng,
             )
             # Get basis for this objective
             test_Z_basis = predictor.get_basis(self.test.X)

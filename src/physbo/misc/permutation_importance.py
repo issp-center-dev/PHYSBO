@@ -7,10 +7,12 @@
 
 import numpy as np
 
+from .._rng import get_rng
+
 
 # TODO: move to base_model after base_model is implemented
 def get_permutation_importance(
-    model, X, t, n_perm: int, comm=None, split_features_parallel=False
+    model, X, t, n_perm: int, comm=None, split_features_parallel=False, rng=None
 ):
     """
     Calculating permutation importance of model
@@ -34,6 +36,7 @@ def get_permutation_importance(
         importance_std
     """
 
+    rng = get_rng(rng)
     n_features = X.shape[1]
 
     if n_perm < 1:
@@ -62,7 +65,7 @@ def get_permutation_importance(
     for i_feature in features:
         X_perm = X.copy()
         for i_perm in range(n_perm):
-            X_perm[:, i_feature] = np.random.permutation(X_perm[:, i_feature])
+            X_perm[:, i_feature] = rng.permutation(X_perm[:, i_feature])
             fmean = model.get_post_fmean(X, X_perm)
             s = np.mean((fmean - t) ** 2) - MSE_base
             scores[i_feature] += s

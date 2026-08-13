@@ -11,6 +11,7 @@ from ... import blm
 from .. import inf
 from . import learning
 from ._prior import Prior
+from ..._rng import get_rng
 
 from physbo.misc.permutation_importance import get_permutation_importance
 
@@ -86,7 +87,7 @@ class Model:
         self.lik.set_params(lik_params)
         self.prior.set_params(prior_params)
 
-    def sub_sampling(self, X, t, N):
+    def sub_sampling(self, X, t, N, rng=None):
         """
         Make subset for sampling
 
@@ -98,15 +99,18 @@ class Model:
            The negative energy of each search candidate (value of the objective function to be optimized).
         N: int
            Total number of data in subset
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         Returns
         -------
         subX: numpy.ndarray
         subt: numpy.ndarray
         """
+        rng = get_rng(rng)
         num_data = X.shape[0]
 
         if N is not None and N < num_data:
-            index = np.random.permutation(num_data)
+            index = rng.permutation(num_data)
             subX = X[index[0:N], :]
             subt = t[index[0:N]]
         else:
@@ -114,7 +118,7 @@ class Model:
             subt = t
         return subX, subt
 
-    def export_blm(self, num_basis, comm=None):
+    def export_blm(self, num_basis, comm=None, rng=None):
         """
         Exporting the blm(Baysean linear model) predictor
 
@@ -132,7 +136,7 @@ class Model:
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
 
-        basis_params = self.prior.cov.rand_expans(num_basis)
+        basis_params = self.prior.cov.rand_expans(num_basis, rng=rng)
         if comm is not None:
             basis_params = comm.bcast(basis_params, root=0)
         basis = blm.basis.Fourier(basis_params)
@@ -145,7 +149,7 @@ class Model:
 
         return blr
 
-    def eval_marlik(self, params, X, t, N=None):
+    def eval_marlik(self, params, X, t, N=None, rng=None):
         """
         Evaluating marginal likelihood.
 
@@ -165,7 +169,7 @@ class Model:
             marlik: float
             Marginal likelihood.
         """
-        subX, subt = self.sub_sampling(X, t, N)
+        subX, subt = self.sub_sampling(X, t, N, rng=rng)
         if self.inf == "exact":
             marlik = inf.exact.eval_marlik(self, subX, subt, params=params)
         else:
@@ -173,7 +177,7 @@ class Model:
 
         return marlik
 
-    def get_grad_marlik(self, params, X, t, N=None):
+    def get_grad_marlik(self, params, X, t, N=None, rng=None):
         """
         Evaluating gradiant of marginal likelihood.
 
@@ -194,7 +198,7 @@ class Model:
         grad_marlik: numpy.ndarray
             Gradiant of marginal likelihood.
         """
-        subX, subt = self.sub_sampling(X, t, N)
+        subX, subt = self.sub_sampling(X, t, N, rng=rng)
         if self.inf == "exact":
             grad_marlik = inf.exact.get_grad_marlik(self, subX, subt, params=params)
         return grad_marlik
@@ -293,7 +297,7 @@ class Model:
 
         return post_fcov
 
-    def post_sampling(self, X, Z, params=None, N=1, alpha=1):
+    def post_sampling(self, X, Z, params=None, N=1, alpha=1, rng=None):
         """
         draws samples of mean value of model
 
@@ -315,11 +319,12 @@ class Model:
         if params is None:
             params = np.copy(self.params)
 
+        rng = get_rng(rng)
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        return rng.multivariate_normal(fmean, fcov * alpha**2, N)
 
-    def predict_sampling(self, X, Z, params=None, N=1):
+    def predict_sampling(self, X, Z, params=None, N=1, rng=None):
         """
 
         Parameters
@@ -342,6 +347,7 @@ class Model:
         if params is None:
             params = np.copy(self.params)
 
+        rng = get_rng(rng)
         ndata = Z.shape[0]
         if ndata == 0:
             return np.zeros((N, 0))
@@ -350,7 +356,7 @@ class Model:
             ndata
         )
 
-        return np.random.multivariate_normal(fmean, fcov, N)
+        return rng.multivariate_normal(fmean, fcov, N)
 
     def print_params(self):
         """
@@ -366,7 +372,7 @@ class Model:
         print("covariance parameter in GP prior: ", self.prior.cov.params)
         print("\n")
 
-    def get_cand_params(self, X, t):
+    def get_cand_params(self, X, t, rng=None):
         """
         Getting candidate for parameters
 
@@ -397,11 +403,11 @@ class Model:
         temp += self.prior.mean.num_params
 
         if self.prior.cov.num_params != 0:
-            params[temp:] = self.prior.cov.get_cand_params(X, t)
+            params[temp:] = self.prior.cov.get_cand_params(X, t, rng=rng)
 
         return params
 
-    def fit(self, X, t, config, comm=None):
+    def fit(self, X, t, config, comm=None, rng=None):
         """
         Fitting function (update parameters)
 
@@ -421,11 +427,11 @@ class Model:
         method = config.learning.method
 
         if method == "adam":
-            adam = learning.Adam(self, config)
+            adam = learning.Adam(self, config, rng=rng)
             params = adam.run(X, t)
 
         if method in ("bfgs", "batch"):
-            bfgs = learning.Batch(self, config)
+            bfgs = learning.Batch(self, config, rng=rng)
             params = bfgs.run(X, t)
 
         if comm is not None:
@@ -434,7 +440,7 @@ class Model:
         self.set_params(params)
 
     def get_permutation_importance(
-        self, X, t, n_perm: int, comm=None, split_features_parallel=False
+        self, X, t, n_perm: int, comm=None, split_features_parallel=False, rng=None
     ):
         """
         Calculating permutation importance of model
@@ -465,6 +471,7 @@ class Model:
             n_perm,
             comm=comm,
             split_features_parallel=split_features_parallel,
+            rng=rng,
         )
 
 

@@ -26,7 +26,7 @@ def get_post_fcov(training, test):
     return np.ones((N, 1))
 
 
-def get_post_samples(training, test, alpha=1.0):
+def get_post_samples(training, test, alpha=1.0, rng=None):
     print(test)
     N = test.shape[0]
     return random.randn(N, 1)
@@ -112,4 +112,4 @@ def test_TS(predictor, X, Y):
     assert score.shape[0] == N
     predictor.get_post_fmean.assert_not_called()
     predictor.get_post_fcov.assert_not_called()
-    predictor.get_post_samples.assert_called_once_with(X, Y, alpha=alpha)
+    predictor.get_post_samples.assert_called_once_with(X, Y, alpha=alpha, rng=None)

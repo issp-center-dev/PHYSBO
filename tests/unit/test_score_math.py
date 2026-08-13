@@ -46,7 +46,7 @@ class FakePredictor:
     def get_post_fcov(self, training, test):
         return self.fcov
 
-    def get_post_samples(self, training, test, alpha=1.0):
+    def get_post_samples(self, training, test, alpha=1.0, rng=None):
         return self.fmean + alpha * np.sqrt(self.fcov)
 
 

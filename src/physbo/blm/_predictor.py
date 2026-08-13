@@ -34,7 +34,7 @@ class Predictor(physbo.predictor.BasePredictor):
         super(Predictor, self).__init__(config, model)
         self.blm = None
 
-    def fit(self, training, num_basis=None, comm=None, objective_index=0):
+    def fit(self, training, num_basis=None, comm=None, objective_index=0, rng=None):
         """
         fit model to training dataset
 
@@ -56,8 +56,8 @@ class Predictor(physbo.predictor.BasePredictor):
             self.model.prior.cov.num_dim = training.X.shape[1]
         # Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is
         t_fit = training.t[:, objective_index] if training.t.ndim == 2 else training.t
-        self.model.fit(training.X, t_fit, self.config, comm=comm)
-        self.blm = self.model.export_blm(num_basis, comm=comm)
+        self.model.fit(training.X, t_fit, self.config, comm=comm, rng=rng)
+        self.blm = self.model.export_blm(num_basis, comm=comm, rng=rng)
         self.delete_stats()
 
     def prepare(self, training, objective_index=0):
@@ -171,7 +171,9 @@ class Predictor(physbo.predictor.BasePredictor):
             self.prepare(training, objective_index=objective_index)
         return self.blm.get_post_params_mean()
 
-    def get_post_samples(self, training, test, N=1, alpha=1.0, objective_index=0):
+    def get_post_samples(
+        self, training, test, N=1, alpha=1.0, objective_index=0, rng=None
+    ):
         """
         draws samples of mean values of model
 
@@ -198,9 +200,9 @@ class Predictor(physbo.predictor.BasePredictor):
             self.prepare(training, objective_index=objective_index)
         # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
         Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
-        return self.blm.post_sampling(test.X, Psi=Z_test, N=N, alpha=alpha)
+        return self.blm.post_sampling(test.X, Psi=Z_test, N=N, alpha=alpha, rng=rng)
 
-    def get_predict_samples(self, training, test, N=1, objective_index=0):
+    def get_predict_samples(self, training, test, N=1, objective_index=0, rng=None):
         """
         draws samples of values of model
 
@@ -224,7 +226,7 @@ class Predictor(physbo.predictor.BasePredictor):
             self.prepare(training, objective_index=objective_index)
         # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
         Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
-        return self.blm.predict_sampling(test.X, Psi=Z_test, N=N).transpose()
+        return self.blm.predict_sampling(test.X, Psi=Z_test, N=N, rng=rng).transpose()
 
     def update(self, training, test, objective_index=0):
         """

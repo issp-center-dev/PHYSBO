@@ -20,6 +20,7 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
+from ..._rng import get_rng
 
 
 class Policy:
@@ -95,6 +96,7 @@ class Policy:
             MPI Communicator
         """
         self.predictor = None
+        self.rng = get_rng()
         self.training = Variable()
         self.new_data = None
         self.test = self._make_variable_X(test_X)
@@ -143,7 +145,7 @@ class Policy:
 
         """
         self.seed = seed
-        np.random.seed(self.seed)
+        self.rng.seed(self.seed)
 
     def write(
         self,
@@ -451,7 +453,7 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0, comm=self.mpicomm)
+            predictor.fit(self.training, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_post_fmean(self.training, X)
         else:
@@ -480,7 +482,7 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0, comm=self.mpicomm)
+            predictor.fit(self.training, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_post_fcov(self.training, X, diag)
         else:
@@ -509,13 +511,14 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = gp_predictor(self.config)
-            predictor.fit(self.training, 0)
+            predictor.fit(self.training, 0, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_permutation_importance(
                 self.training,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
         else:
             self._update_predictor()
@@ -524,6 +527,7 @@ class Policy:
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
 
     def get_score(
@@ -589,7 +593,7 @@ class Policy:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = gp_predictor(self.config)
-                predictor.fit(training, 0, comm=self.mpicomm)
+                predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
                 self._update_predictor()
@@ -613,7 +617,12 @@ class Policy:
             test = self.test.get_subset(actions)
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -647,7 +656,7 @@ class Policy:
         # draw K samples of the values of objective function of chosen actions
         new_test_local = self.test.get_subset(chosen_actions)
         virtual_t_local = self.predictor.get_predict_samples(
-            self.training, new_test_local, K
+            self.training, new_test_local, K, rng=self.rng
         )
         if self.mpisize == 1:
             new_test = new_test_local
@@ -761,7 +770,7 @@ class Policy:
             if n <= N:
                 index = np.arange(0, n)
             else:
-                index = np.random.choice(len(self.actions), N, replace=False)
+                index = self.rng.choice(len(self.actions), N, replace=False)
             action = self.actions[index]
             self.actions = self._delete_actions(index)
         else:
@@ -774,7 +783,7 @@ class Policy:
                 if hi[-1] <= N:
                     index = np.arange(0, hi[-1])
                 else:
-                    index = np.random.choice(hi[-1], N, replace=False)
+                    index = self.rng.choice(hi[-1], N, replace=False)
                 ranks = np.searchsorted(hi, index, side="right")
                 for r, i in zip(ranks, index):
                     local_indices[r].append(i - lo[r])
@@ -904,7 +913,9 @@ class Policy:
             self.predictor = gp_predictor(self.config)
 
     def _learn_hyperparameter(self, num_rand_basis):
-        self.predictor.fit(self.training, num_rand_basis, comm=self.mpicomm)
+        self.predictor.fit(
+            self.training, num_rand_basis, comm=self.mpicomm, rng=self.rng
+        )
         # Get basis and convert to (1, N, n) format for single-objective
         test_Z_basis = self.predictor.get_basis(self.test.X)
         training_Z_basis = self.predictor.get_basis(self.training.X)
