@@ -20,7 +20,7 @@ from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
-from ..._rng import get_rng
+from ..._rng import get_rng, make_rng, LegacyRNG
 
 
 class Policy:
@@ -81,7 +81,7 @@ class Policy:
     seed: Optional[int]
     """Seed parameter for np.random. Set by set_seed() method."""
 
-    def __init__(self, test_X, config=None, initial_data=None, comm=None):
+    def __init__(self, test_X, config=None, initial_data=None, comm=None, rng=None):
         """
 
         Parameters
@@ -94,9 +94,16 @@ class Policy:
             The first elements is the array of actions and the second is the array of value of objective functions
         comm: MPI.Comm, optional
             MPI Communicator
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            None or "legacy" uses the global numpy.random state and is
+            bit-compatible with the historical behavior. An int seed or a
+            Generator switches to a policy-owned generator whose state is
+            stored on the policy (and thus included when the policy is
+            pickled). Under MPI, pass the same specification on all ranks.
         """
         self.predictor = None
-        self.rng = get_rng()
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
         self.test = self._make_variable_X(test_X)
@@ -135,7 +142,12 @@ class Policy:
 
     def set_seed(self, seed):
         """
-        Setting a seed parameter for np.random.
+        Setting a seed parameter.
+
+        In the legacy RNG mode (default), this seeds the global
+        ``numpy.random`` state, as before. In the Generator mode
+        (``rng=`` given as int or Generator), the policy-owned generator
+        is re-created from the seed and the global state is not touched.
 
         Parameters
         ----------
@@ -145,7 +157,10 @@ class Policy:
 
         """
         self.seed = seed
-        self.rng.seed(self.seed)
+        if isinstance(self.rng, LegacyRNG):
+            self.rng.seed(self.seed)
+        else:
+            self.rng = np.random.default_rng(self.seed)
 
     def write(
         self,
@@ -623,6 +638,7 @@ class Policy:
             test=test,
             alpha=alpha,
             rng=self.rng,
+            comm=self.mpicomm if (parallel and self.mpisize > 1) else None,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -653,20 +669,19 @@ class Policy:
         """
         f = np.zeros((K, len(self.actions)), dtype=float)
 
-        # draw K samples of the values of objective function of chosen actions
-        new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = self.predictor.get_predict_samples(
-            self.training, new_test_local, K, rng=self.rng
-        )
-        if self.mpisize == 1:
-            new_test = new_test_local
-            virtual_t = virtual_t_local
+        # Draw K samples of the values of objective function of chosen actions.
+        # self.test is not partitioned over ranks, so the chosen points are
+        # identical on every rank; the virtual values are drawn on rank 0 and
+        # broadcast so that all ranks fantasize the same observations.
+        new_test = self.test.get_subset(chosen_actions)
+        if self.mpisize == 1 or self.mpirank == 0:
+            virtual_t = self.predictor.get_predict_samples(
+                self.training, new_test, K, rng=self.rng
+            )
         else:
-            new_test = Variable()
-            for nt in self.mpicomm.allgather(new_test_local):
-                new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            virtual_t = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
-        # virtual_t = self.predictor.get_predict_samples(self.training, new_test, K)
+            virtual_t = None
+        if self.mpisize > 1:
+            virtual_t = self.mpicomm.bcast(virtual_t, root=0)
 
         for k in range(K):
             predictor = copy.deepcopy(self.predictor)
@@ -682,8 +697,13 @@ class Policy:
 
             predictor.update(train, virtual_train)
 
-            f[k, :] = self.get_score(
-                mode, predictor=predictor, training=train, parallel=False
+            f[k, :] = search_score.score(
+                mode,
+                predictor=predictor,
+                training=train,
+                test=self.test.get_subset(self.actions),
+                rng=self.rng,
+                comm=self.mpicomm,
             )
         return np.mean(f, axis=0)
 
@@ -710,12 +730,14 @@ class Policy:
         chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
-        f = self.get_score(
+        f = search_score.score(
             mode,
             predictor=self.predictor,
             training=self.training,
+            test=self.test.get_subset(self.actions),
             alpha=alpha,
-            parallel=False,
+            rng=self.rng,
+            comm=self.mpicomm,
         )
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:

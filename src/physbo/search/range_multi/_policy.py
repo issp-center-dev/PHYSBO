@@ -19,7 +19,7 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
-from ..._rng import get_rng
+from ..._rng import make_rng
 
 
 class Policy(range_single.Policy):
@@ -34,6 +34,7 @@ class Policy(range_single.Policy):
         comm=None,
         config=None,
         initial_data=None,
+        rng=None,
     ):
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
@@ -45,7 +46,7 @@ class Policy(range_single.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
 
-        self.rng = get_rng()
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.new_data = None

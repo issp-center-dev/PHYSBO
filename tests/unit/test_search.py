@@ -38,6 +38,9 @@ def predictor(mocker):
     p.get_post_fmean = mocker.MagicMock(side_effect=get_post_fmean)
     p.get_post_fcov = mocker.MagicMock(side_effect=get_post_fcov)
     p.get_post_samples = mocker.MagicMock(side_effect=get_post_samples)
+    # a plain MagicMock auto-creates any attribute, which would make
+    # score.TS take the draw/evaluate path meant for the BLM predictor
+    del p.draw_post_sample_params
     return p
 
 

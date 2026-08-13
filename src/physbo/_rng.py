@@ -63,3 +63,35 @@ def get_rng(rng=None):
     if rng is None:
         return _default_rng
     return rng
+
+
+def make_rng(rng=None):
+    """Normalize the user-facing ``rng`` argument of the policies.
+
+    Parameters
+    ----------
+    rng: None, "legacy", int, numpy.random.SeedSequence, or rng object
+        - None or "legacy" (default): the legacy RNG backed by the global
+          ``numpy.random`` state. Fully bit-compatible with the historical
+          behavior of PHYSBO (``set_seed()`` seeds the global state).
+        - int or ``numpy.random.SeedSequence``: a new
+          ``numpy.random.Generator`` seeded with it. The random number
+          stream differs from the legacy one, and the state is stored on
+          the policy (included in pickle-based checkpoints).
+        - rng object: used as is (e.g. a ``numpy.random.Generator``).
+
+    Returns
+    -------
+    rng object
+    """
+    if rng is None:
+        return _default_rng
+    if isinstance(rng, str):
+        if rng == "legacy":
+            return _default_rng
+        raise ValueError(
+            f"Unknown rng specification: {rng!r} (only 'legacy' is allowed as str)"
+        )
+    if isinstance(rng, (int, np.integer, np.random.SeedSequence)):
+        return np.random.default_rng(rng)
+    return rng

@@ -18,14 +18,21 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
-from ..._rng import get_rng
+from ..._rng import make_rng, LegacyRNG
 
 
 class Policy:
     """Single objective Bayesian optimization with continuous search space"""
 
     def __init__(
-        self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
+        self,
+        *,
+        min_X=None,
+        max_X=None,
+        config=None,
+        initial_data=None,
+        comm=None,
+        rng=None,
     ):
         """
 
@@ -41,10 +48,13 @@ class Policy:
             The first elements is the array of inputs and the second is the array of values of objective functions
         comm: MPI.Comm, optional
             MPI Communicator
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
         """
 
         self.predictor = None
-        self.rng = get_rng()
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
 
@@ -104,7 +114,10 @@ class Policy:
 
         """
         self.seed = seed
-        self.rng.seed(self.seed)
+        if isinstance(self.rng, LegacyRNG):
+            self.rng.seed(self.seed)
+        else:
+            self.rng = np.random.default_rng(self.seed)
 
     def write(
         self,

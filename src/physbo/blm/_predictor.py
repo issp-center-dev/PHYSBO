@@ -202,6 +202,59 @@ class Predictor(physbo.predictor.BasePredictor):
         Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
         return self.blm.post_sampling(test.X, Psi=Z_test, N=N, alpha=alpha, rng=rng)
 
+    def draw_post_sample_params(self, training, alpha=1.0, objective_index=0, rng=None):
+        """
+        draws one sample of the posterior weight parameters
+
+        Together with ``evaluate_post_sample``, this splits Thompson
+        sampling into a random "draw" part and a deterministic
+        "evaluate" part. Under MPI, the sample can be drawn on rank 0,
+        broadcast, and evaluated on all ranks so that every rank scores
+        its candidates with the same posterior sample.
+
+        Parameters
+        ==========
+        training: physbo.variable
+            training dataset. If already trained, the model does not use this.
+        alpha: float
+            noise for sampling source
+            (default: 1.0)
+        objective_index: int
+            Index of objective column to use when training.t is 2D (default: 0)
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
+
+        Returns
+        =======
+        numpy.ndarray
+            sampled weight parameters (nbasis,)
+        """
+        if self.blm.stats is None:
+            self.prepare(training, objective_index=objective_index)
+        return self.blm.sampling(N=1, alpha=alpha, rng=rng)
+
+    def evaluate_post_sample(self, w_hat, test, objective_index=0):
+        """
+        evaluates a posterior weight sample at test points (deterministic)
+
+        Parameters
+        ==========
+        w_hat: numpy.ndarray
+            weight parameters drawn by ``draw_post_sample_params``
+        test: physbo.variable
+            inputs
+        objective_index: int
+            Index of objective column to use when test.Z is 3D (default: 0)
+
+        Returns
+        =======
+        numpy.ndarray
+            sampled function values at the test points
+        """
+        # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
+        Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
+        return self.blm.get_post_fmean(test.X, Psi=Z_test, w=w_hat)
+
     def get_predict_samples(self, training, test, N=1, objective_index=0, rng=None):
         """
         draws samples of values of model
