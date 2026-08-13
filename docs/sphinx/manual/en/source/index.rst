@@ -14,6 +14,7 @@ Welcome to PHYSBO's documentation!
    install
    notebook/index
    algorithm
+   checkpoint
 
 .. toctree::
    :maxdepth: 1
