@@ -52,13 +52,13 @@ class TestDiscreteMulti:
             ("TS", 0.16199314137324872),
         ],
     )
-    def test_multi_objective(self, score, vid_ref):
+    def test_multi_objective(self, score, vid_ref, assert_reference):
         self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
         res = self.policy.bayes_search(
             max_num_probes=self.nsearch, simulator=self.sim, score=score
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-        assert vid == pytest.approx(vid_ref, rel=1e-3)
+        assert_reference(vid, vid_ref, score)
         # test to run without error
         self.policy.get_score(score, xs=self.sim.X)
 
@@ -70,7 +70,7 @@ class TestDiscreteMulti:
             ("TS", 0.20394729383806942),
         ],
     )
-    def test_multi_objective_rand(self, score, vid_ref):
+    def test_multi_objective_rand(self, score, vid_ref, assert_reference):
         self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
         res = self.policy.bayes_search(
             max_num_probes=self.nsearch,
@@ -79,6 +79,6 @@ class TestDiscreteMulti:
             num_rand_basis=self.num_rand_basis,
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-        assert vid == pytest.approx(vid_ref, rel=1e-3)
+        assert_reference(vid, vid_ref, score)
         # test to run without error
         self.policy.get_score(score, xs=self.sim.X)
