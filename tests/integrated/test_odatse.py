@@ -5,11 +5,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import sys
+
 import numpy as np
 import pytest
+from packaging.version import Version
 
 physbo = pytest.importorskip("physbo")
-pytest.importorskip("odatse")
+odatse = pytest.importorskip("odatse")
 
 from physbo.search.optimize.odatse import default_alg_dict, Optimizer
 
@@ -53,6 +56,11 @@ def test_optimizer_minsearch(min_X, max_X, tmp_path, monkeypatch):
     assert np.allclose(X[0], [0.5, 0.5], atol=0.05)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32" and Version(odatse.__version__) <= Version("3.2.1"),
+    reason="ODAT-SE <= 3.2.1 removes ColorMap.txt.tmp while it is still open, "
+    "which fails on Windows (fixed in ODAT-SE main, not yet released)",
+)
 def test_optimizer_mapper(min_X, max_X, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     optimizer = Optimizer(default_alg_dict(min_X, max_X, "mapper"))
