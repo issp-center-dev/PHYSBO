@@ -10,6 +10,7 @@ import pickle
 import copy
 
 from .. import pareto
+from .. import utility
 
 MAX_SEARCH = int(30000)
 
@@ -45,6 +46,36 @@ class History(object):
     @property
     def time_run_simulator(self):
         return copy.copy(self._time_run_simulator[0 : self.num_runs])
+
+    @property
+    def valid_mask(self):
+        """
+        Mask of valid observations (True) vs failed ones (False).
+
+        An observation is failed when any of its objective values is not
+        finite (NaN or +-Inf). Failed observations are kept in the history
+        but excluded from the training data and the Pareto front.
+
+        Returns
+        -------
+        numpy.ndarray of bool, shape (total_num_search,)
+        """
+        return utility.finite_mask(self.fx[0 : self.total_num_search])
+
+    def export_valid(self):
+        """
+        Export the valid (successfully evaluated) observations.
+
+        Returns
+        -------
+        actions: numpy.ndarray
+            Indexes of the actions of the valid observations.
+        fx: numpy.ndarray
+            Objective values of the valid observations (N_valid x num_objectives).
+        """
+        N = self.total_num_search
+        mask = self.valid_mask
+        return self.chosen_actions[0:N][mask], self.fx[0:N][mask]
 
     def write(
         self,

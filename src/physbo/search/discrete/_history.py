@@ -42,6 +42,36 @@ class History:
     def time_run_simulator(self):
         return copy.copy(self.time_run_simulator_[0 : self.num_runs])
 
+    @property
+    def valid_mask(self):
+        """
+        Mask of valid observations (True) vs failed ones (False).
+
+        An observation is failed when its objective value is not finite
+        (NaN or +-Inf). Failed observations are kept in the history but
+        excluded from the training data and the best-value tracking.
+
+        Returns
+        -------
+        numpy.ndarray of bool, shape (total_num_search,)
+        """
+        return utility.finite_mask(self.fx[0 : self.total_num_search])
+
+    def export_valid(self):
+        """
+        Export the valid (successfully evaluated) observations.
+
+        Returns
+        -------
+        actions: numpy.ndarray
+            Indexes of the actions of the valid observations.
+        fx: numpy.ndarray
+            Objective values of the valid observations.
+        """
+        N = self.total_num_search
+        mask = self.valid_mask
+        return self.chosen_actions[0:N][mask], self.fx[0:N][mask]
+
     def write(
         self,
         t,
@@ -118,12 +148,13 @@ class History:
         best_fx: numpy.ndarray
         best_actions: numpy.ndarray
         """
+        all_best_fx, all_best_actions = self.export_all_sequence_best_fx()
         best_fx = np.zeros(self.num_runs, dtype=float)
         best_actions = np.zeros(self.num_runs, dtype=int)
         for n in range(self.num_runs):
-            index = np.argmax(self.fx[0 : self.terminal_num_run[n]])
-            best_actions[n] = self.chosen_actions[index]
-            best_fx[n] = self.fx[index]
+            index = self.terminal_num_run[n] - 1
+            best_fx[n] = all_best_fx[index]
+            best_actions[n] = all_best_actions[index]
 
         return best_fx, best_actions
 
@@ -137,18 +168,19 @@ class History:
         best_fx: numpy.ndarray
         best_actions: numpy.ndarray
         """
-        best_fx = np.zeros(self.total_num_search, dtype=float)
-        best_actions = np.zeros(self.total_num_search, dtype=int)
-        best_fx[0] = self.fx[0]
-        best_actions[0] = self.chosen_actions[0]
+        # Failed observations (non-finite fx) are skipped. Until the first
+        # valid observation, best_fx is NaN and best_actions is -1.
+        best_fx = np.full(self.total_num_search, np.nan, dtype=float)
+        best_actions = np.full(self.total_num_search, -1, dtype=int)
 
-        for n in range(1, self.total_num_search):
-            if best_fx[n - 1] < self.fx[n]:
-                best_fx[n] = self.fx[n]
-                best_actions[n] = self.chosen_actions[n]
-            else:
+        for n in range(self.total_num_search):
+            if n > 0:
                 best_fx[n] = best_fx[n - 1]
                 best_actions[n] = best_actions[n - 1]
+            fx = self.fx[n]
+            if np.isfinite(fx) and (np.isnan(best_fx[n]) or best_fx[n] < fx):
+                best_fx[n] = fx
+                best_actions[n] = self.chosen_actions[n]
 
         return best_fx, best_actions
 
@@ -198,22 +230,23 @@ class History:
 
     def show_search_results(self, N):
         n = self.total_num_search
-        index = np.argmax(self.fx[0:n])
+        best_fx, best_actions = self.export_all_sequence_best_fx()
+        if np.isfinite(best_fx[n - 1]):
+            best_msg = "current best f(x) = %f (best action=%d)" % (
+                best_fx[n - 1],
+                best_actions[n - 1],
+            )
+        else:
+            best_msg = "current best f(x) = (no valid observation yet)"
 
         if N == 1:
             print(
                 "%04d-th step: f(x) = %f (action=%d)"
                 % (n, self.fx[n - 1], self.chosen_actions[n - 1])
             )
-            print(
-                "   current best f(x) = %f (best action=%d) \n"
-                % (self.fx[index], self.chosen_actions[index])
-            )
+            print("   " + best_msg + " \n")
         else:
-            print(
-                "current best f(x) = %f (best action = %d) "
-                % (self.fx[index], self.chosen_actions[index])
-            )
+            print(best_msg + " ")
 
             print("list of simulation results")
             st = self.total_num_search - N
