@@ -119,16 +119,24 @@ class Policy(discrete.Policy):
         else:
             Z = None
 
-        if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=Z)
-        else:
-            self.new_data.add(X=X, t=t, Z=Z)
+        # Failed observations (any non-finite objective) are kept in the
+        # history and their actions are consumed, but they are not used
+        # for training.
+        valid = utility.finite_mask(t)
+        if np.any(valid):
+            X_ok = np.asarray(X)[valid]
+            t_ok = t[valid]
+            Z_ok = utility.mask_rows(Z, valid)
+            if self.new_data is None:
+                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
 
-        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
-        if self.training.X is None:
-            self.training = Variable(X=X, t=t, Z=Z)
-        else:
-            self.training.add(X=X, t=t, Z=Z)
+            # Add to single training Variable with full 2D t matrix and (k, N, n) Z
+            if self.training.X is None:
+                self.training = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove action from candidates if exists
         if len(self.actions) > 0:
@@ -641,9 +649,9 @@ class Policy(discrete.Policy):
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.test.X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            actions, t = self.history.export_valid()
+            X = self.test.X[actions, :]
             self.training = Variable(X=X, t=t)
         else:
             self.training = Variable()
