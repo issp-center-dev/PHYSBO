@@ -105,6 +105,8 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 
   上で定義した探索候補に対して、各探索候補の目的関数値（材料特性値など最適化したい値）を与えるsimulatorを定義します。PHYSBOでは、最適化の方向は「目的関数の最大化」になります。目的関数を最小化したい場合には、simulatorから返す値にマイナスをかけてください。
 
+  評価に失敗した場合（シミュレーションが発散した、実験が実施できなかった、など）には、simulator は目的関数値として ``NaN`` （または無限大）を返すことができます。このような評価は「失敗した観測」として扱われます。すなわち、その候補は履歴に記録され、再び提案されることはありませんが、その値はガウス過程の学習データ、ベスト値の追跡、および多目的最適化における Pareto フロントからは除外されます。多目的最適化では、いずれかの目的関数値が有限でなければ、その評価は失敗とみなされます。
+
 3. 最適化の実行
 
   最初に、最適化の policy をセットします(探索空間はこの段階で引数としてpolicyに渡されます)。最適化方法は、以下の2種類から選択します。
@@ -132,10 +134,11 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 
   探索結果 res は history クラスのオブジェクト (``physbo.search.discrete.results.History``) として返されます。以下より探索結果を参照します。
 
-  - ``res.fx`` : simulator (目的関数) の評価値の履歴。
+  - ``res.fx`` : simulator (目的関数) の評価値の履歴。失敗した観測は ``NaN`` （または simulator が返した無限大）のまま記録されます。
   - ``res.chosen_actions``: simulator を評価したときのaction ID(パラメータ)の履歴。
-  - ``fbest, best_action = res.export_all_sequence_best_fx()``: simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。
-  - ``res.total_num_search``: simulator のトータル評価数。
+  - ``fbest, best_action = res.export_all_sequence_best_fx()``: simulator を評価した全タイミングにおけるベスト値とそのaction ID(パラメータ)の履歴。失敗した観測は無視されます。最初に成功した評価までは、ベスト値は ``NaN`` 、action ID は ``-1`` になります。
+  - ``res.total_num_search``: simulator のトータル評価数（失敗した評価を含む）。
+  - ``res.valid_mask``: 成功した観測を ``True`` 、失敗した観測を ``False`` とする論理値配列。 ``actions, fx = res.export_valid()`` で成功した観測のみを取り出せます。
 
   また、ベイズ最適化後の ``policy`` は ``save`` メソッドにより外部ファイルに保存でき、 ``load`` メソッドを用いてファイルからロード・再開することができます。使用方法の詳細はチュートリアルの `「インタラクティブに実行する」 <notebook/tutorial_interactive_mode.html>`_ をご覧ください。
 
