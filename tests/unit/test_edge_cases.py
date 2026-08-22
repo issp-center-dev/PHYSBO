@@ -63,9 +63,10 @@ def test_bayes_search_with_single_training_point(X, sim):
 
 
 def test_nan_objective_value(X):
-    # current behavior: NaN objective values are stored in the history
-    # unchecked and break the subsequent GP fit; an explicit validation
-    # in write() would be an improvement
+    # a NaN objective value is a failed observation: it is recorded in the
+    # history and the candidate is consumed, but it is excluded from the
+    # training data, so the subsequent GP fit is unaffected
+    # (see test_failed_observations.py for the full contract)
     def simnan(action):
         action = np.asarray(action)
         val = -np.sum((X[action] - 0.5) ** 2, axis=1)
@@ -73,20 +74,17 @@ def test_nan_objective_value(X):
 
     policy = physbo.search.discrete.Policy(test_X=X)
     policy.set_seed(1)
-    policy.random_search(max_num_probes=len(X), simulator=simnan, is_disp=False)
-    assert np.isnan(policy.history.fx[: len(X)]).any()
+    policy.random_search(max_num_probes=len(X) - 1, simulator=simnan, is_disp=False)
+    n = policy.history.total_num_search
+    assert np.isnan(policy.history.fx[:n]).any()
+    assert not policy.history.valid_mask.all()
+    assert np.all(np.isfinite(policy.training.t))
 
-    # how the fit breaks is LAPACK-build dependent: potrf may detect the
-    # NaN and report an error (newer scipy/LAPACK builds -> LinAlgError),
-    # or "succeed" and silently poison the predictions (older builds)
-    try:
-        policy.bayes_search(
-            max_num_probes=1, simulator=simnan, score="EI", is_disp=False
-        )
-    except np.linalg.LinAlgError:
-        pass
-    else:
-        assert np.isnan(policy.get_post_fmean(X)).any()
+    res = policy.bayes_search(
+        max_num_probes=1, simulator=simnan, score="EI", is_disp=False
+    )
+    assert res.total_num_search == len(X)
+    assert np.all(np.isfinite(policy.get_post_fmean(X)))
 
 
 def test_get_score_dimension_mismatch():
