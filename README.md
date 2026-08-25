@@ -43,6 +43,11 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
   python3 -m pip install odat-se
   ```
 
+- In order to run examples/simple_time.py, matplotlib is required:
+  ``` bash
+  python3 -m pip install matplotlib
+  ```
+
 ## Install
 
 - From PyPI (recommended)
