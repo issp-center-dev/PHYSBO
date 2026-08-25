@@ -194,15 +194,17 @@ class Gauss:
             if diag:
                 G = scale2 * np.ones(X.shape[0])
             else:
-                pairwise_dists = spatial.distance.squareform(
-                    spatial.distance.pdist(X / width, "euclidean") ** 2
-                )
-                G = np.exp(-0.5 * pairwise_dists) * scale2
+                Xw = X / width
+                G = spatial.distance.cdist(Xw, Xw, "sqeuclidean")
         else:
-            pairwise_dists = (
-                spatial.distance.cdist(X / width, Z / width, "euclidean") ** 2
-            )
-            G = np.exp(-0.5 * pairwise_dists) * scale2
+            G = spatial.distance.cdist(X / width, Z / width, "sqeuclidean")
+
+        if not diag:
+            # G = exp(-0.5 * G) * scale2, computed in place
+            # to avoid allocating temporary matrices
+            G *= -0.5
+            np.exp(G, out=G)
+            G *= scale2
 
         return G
 
