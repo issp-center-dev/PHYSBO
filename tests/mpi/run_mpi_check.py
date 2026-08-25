@@ -15,7 +15,11 @@ The script exits with a non-zero status if any check fails; it is
 invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
+import os
+import pickle
+import shutil
 import sys
+import tempfile
 from itertools import product
 
 import numpy as np
@@ -151,6 +155,103 @@ def check_ts_sample_coherence():
     log("TS sample coherence: OK")
 
 
+def check_checkpoint_resume(rng, label):
+    """A checkpoint saved mid-run must resume bit-exactly: the continued
+    run after load_checkpoint must equal the uninterrupted run, in both
+    the legacy and the Generator RNG modes."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+
+    try:
+        policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=rng)
+        policy.set_seed(24680)
+        policy.random_search(max_num_probes=6, simulator=sim, is_disp=False)
+        policy.bayes_search(
+            max_num_probes=2, simulator=sim, score="TS", interval=0,
+            num_rand_basis=100, is_disp=False,
+        )
+        policy.save_checkpoint(fname)
+        comm.barrier()
+
+        def cont(p):
+            res = p.bayes_search(
+                max_num_probes=2, num_search_each_probe=2, simulator=sim,
+                score="TS", interval=0, num_rand_basis=100, is_disp=False,
+            )
+            return res.chosen_actions[: res.total_num_search]
+
+        reference = cont(policy)  # uninterrupted continuation
+
+        restored = physbo.search.discrete.Policy.load_checkpoint(fname, comm=comm)
+        resumed = cont(restored)
+
+        assert_identical_over_ranks(resumed, f"resumed chosen_actions ({label})")
+        if not np.array_equal(reference, resumed):
+            raise AssertionError(f"resumed != uninterrupted ({label})")
+
+        # a checkpoint taken with mpisize>1 must refuse to load serially
+        if comm.size > 1:
+            try:
+                physbo.search.discrete.Policy.load_checkpoint(fname, comm=None)
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError(
+                    f"load_checkpoint accepted a wrong mpisize ({label})"
+                )
+    finally:
+        comm.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    log(f"checkpoint resume ({label}): OK")
+
+
+def check_checkpoint_with_dup_comm():
+    """Policies holding a non-predefined communicator (Dup) must pickle
+    and checkpoint correctly: the communicator is excluded from the
+    state and re-attached on load."""
+    dup = comm.Dup()
+    X = make_grid()
+    sim = lambda action: f(X[action])
+
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+
+    try:
+        policy = physbo.search.discrete.Policy(test_X=X, comm=dup, rng=13579)
+        policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+
+        # plain pickle must succeed even though dup is not picklable
+        blob = pickle.dumps(policy)
+        clone = pickle.loads(blob)
+        if clone.mpicomm is not None:
+            raise AssertionError("mpicomm leaked into the pickled state")
+        clone.set_comm(dup)
+
+        policy.save_checkpoint(fname)
+        dup.barrier()
+        restored = physbo.search.discrete.Policy.load_checkpoint(fname, comm=dup)
+        res = restored.bayes_search(
+            max_num_probes=1, simulator=sim, score="EI", interval=0,
+            is_disp=False,
+        )
+        N = res.total_num_search
+        assert_identical_over_ranks(
+            res.chosen_actions[:N], "chosen_actions (dup comm)"
+        )
+    finally:
+        dup.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        dup.Free()
+    log("checkpoint with Dup() comm: OK")
+
+
 def check_random_optimizer():
     """The range random optimizer must return the same point on all ranks."""
     opt = physbo.search.optimize.random.Optimizer(
@@ -193,6 +294,9 @@ def main():
         9999, 2, "discrete TS-BLM multi-probe vs serial (generator)"
     )
     check_ts_sample_coherence()
+    check_checkpoint_resume("legacy", "legacy")
+    check_checkpoint_resume(97531, "generator")
+    check_checkpoint_with_dup_comm()
     check_random_optimizer()
     check_range()
     log("all MPI checks passed")
