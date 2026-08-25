@@ -16,17 +16,25 @@ from .. import utility
 from .. import score_multi as search_score
 from ...misc import SetConfig
 from ..._variable import Variable
+from ..._rng import make_rng
 
 
 class Policy(discrete.Policy):
     """Multi objective Bayesian optimization with discrete search space"""
 
     def __init__(
-        self, test_X, num_objectives, comm=None, config=None, initial_data=None
+        self,
+        test_X,
+        num_objectives,
+        comm=None,
+        config=None,
+        initial_data=None,
+        rng=None,
     ):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.test = self._make_variable_X(test_X)
@@ -364,7 +372,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -429,7 +437,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i)
+                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -475,7 +483,7 @@ class Policy(discrete.Policy):
                 predictor_list = []
                 for i in range(self.num_objectives):
                     predictor = self._make_gp_predictor()
-                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i)
+                    predictor.fit(training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                     predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
             else:
@@ -510,6 +518,7 @@ class Policy(discrete.Policy):
             pareto=pareto,
             reduced_candidate_num=self.TS_candidate_num,
             alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -540,7 +549,7 @@ class Policy(discrete.Policy):
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, objective_index=i)
+                predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
         else:
@@ -559,6 +568,7 @@ class Policy(discrete.Policy):
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
                 objective_index=i,
+                rng=self.rng,
             )
 
         return np.array(importance_mean).T, np.array(importance_std).T
@@ -588,24 +598,21 @@ class Policy(discrete.Policy):
         f = np.zeros((K, len(self.actions)), dtype=float)
 
         N = len(chosen_actions)
-        # draw K samples of the values of objective function of chosen actions
-        new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = np.zeros((K, N, self.num_objectives))
-        for i in range(self.num_objectives):
-            virtual_t_local[:, :, i] = self.predictor_list[i].get_predict_samples(
-                self.training, new_test_local, K, objective_index=i
-            )
-
-        if self.mpisize == 1:
-            new_test = new_test_local
-            virtual_t = virtual_t_local
+        # Draw K samples of the values of objective function of chosen actions.
+        # self.test is not partitioned over ranks, so the chosen points are
+        # identical on every rank; the virtual values are drawn on rank 0 and
+        # broadcast so that all ranks fantasize the same observations.
+        new_test = self.test.get_subset(chosen_actions)
+        if self.mpisize == 1 or self.mpirank == 0:
+            virtual_t = np.zeros((K, N, self.num_objectives))
+            for i in range(self.num_objectives):
+                virtual_t[:, :, i] = self.predictor_list[i].get_predict_samples(
+                    self.training, new_test, K, objective_index=i, rng=self.rng
+                )
         else:
-            new_test = Variable()
-            virtual_t = np.zeros((K, 0, self.num_objectives))
-            for nt in self.mpicomm.allgather(new_test_local):
-                new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            for vt in self.mpicomm.allgather(virtual_t_local):
-                virtual_t = np.concatenate((virtual_t, vt), axis=1)
+            virtual_t = None
+        if self.mpisize > 1:
+            virtual_t = self.mpicomm.bcast(virtual_t, root=0)
 
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
@@ -697,7 +704,11 @@ class Policy(discrete.Policy):
             predictor = self.predictor_list[i]
 
             predictor.fit(
-                self.training, num_rand_basis, comm=self.mpicomm, objective_index=i
+                self.training,
+                num_rand_basis,
+                comm=self.mpicomm,
+                objective_index=i,
+                rng=self.rng,
             )
             # Get basis for this objective
             test_Z_basis = predictor.get_basis(self.test.X)

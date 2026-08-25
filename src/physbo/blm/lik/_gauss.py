@@ -7,6 +7,8 @@
 
 import numpy as np
 
+from ..._rng import get_rng
+
 
 class Gauss:
     """
@@ -119,7 +121,7 @@ class Gauss:
         """
         self.linear.set_bias(bias)
 
-    def sampling(self, fmean):
+    def sampling(self, fmean, rng=None):
         """
         draws samples
 
@@ -127,11 +129,14 @@ class Gauss:
         ==========
         fmean: numpy.ndarray
             means of samples
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
 
         Returns
         =======
         samples: numpy.ndarray
         """
+        rng = get_rng(rng)
         num_data = fmean.shape[0]
-        eps = np.sqrt(self.cov.sigma2) * np.random.randn(num_data)
+        eps = np.sqrt(self.cov.sigma2) * rng.standard_normal(num_data)
         return fmean + eps

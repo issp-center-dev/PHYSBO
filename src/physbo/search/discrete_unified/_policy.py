@@ -16,13 +16,20 @@ from .. import utility
 from .. import score as search_score
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
+from ..._rng import make_rng
 
 
 class Policy(discrete.Policy):
     """Multi objective Bayesian optimization with discrete search space by using unified objective function"""
 
     def __init__(
-        self, test_X, num_objectives, comm=None, config=None, initial_data=None
+        self,
+        test_X,
+        num_objectives,
+        comm=None,
+        config=None,
+        initial_data=None,
+        rng=None,
     ):
         """
         Initialize the Policy object
@@ -43,6 +50,7 @@ class Policy(discrete.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.training_unified = None
         self.predictor = None
@@ -330,7 +338,16 @@ class Policy(discrete.Policy):
         return copy.deepcopy(self.history)
 
     def _get_actions(self, mode, N, K, alpha):
-        f = self.get_score(mode=mode, alpha=alpha, parallel=False)
+        self._update_predictor()
+        f = search_score.score(
+            mode,
+            predictor=self.predictor,
+            training=self.training_unified,
+            test=self.test.get_subset(self.actions),
+            alpha=alpha,
+            rng=self.rng,
+            comm=self.mpicomm,
+        )
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:
             return np.zeros(0, dtype=int)
@@ -368,7 +385,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fmean(self.training_unified, X)
         else:
@@ -397,7 +414,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fcov(self.training_unified, X, diag)
         else:
@@ -468,7 +485,7 @@ class Policy(discrete.Policy):
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = self._make_gp_predictor()
-                predictor.fit(training, 0, comm=self.mpicomm)
+                predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
                 self._update_predictor()
@@ -492,7 +509,13 @@ class Policy(discrete.Policy):
             test = self.test.get_subset(actions)
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            rng=self.rng,
+            comm=self.mpicomm if (parallel and self.mpisize > 1) else None,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -522,13 +545,14 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0)
+            predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(
                 self.training_unified,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
         else:
             self._update_predictor()
@@ -537,6 +561,7 @@ class Policy(discrete.Policy):
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha):
@@ -563,20 +588,19 @@ class Policy(discrete.Policy):
         """
         f = np.zeros((K, len(self.actions)), dtype=float)
 
-        # draw K samples of the values of objective function of chosen actions
-        new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = self.predictor.get_predict_samples(
-            self.training_unified, new_test_local, K
-        )
-        if self.mpisize == 1:
-            new_test = new_test_local
-            virtual_t = virtual_t_local
+        # Draw K samples of the values of objective function of chosen actions.
+        # self.test is not partitioned over ranks, so the chosen points are
+        # identical on every rank; the virtual values are drawn on rank 0 and
+        # broadcast so that all ranks fantasize the same observations.
+        new_test = self.test.get_subset(chosen_actions)
+        if self.mpisize == 1 or self.mpirank == 0:
+            virtual_t = self.predictor.get_predict_samples(
+                self.training_unified, new_test, K, rng=self.rng
+            )
         else:
-            new_test = Variable()
-            for nt in self.mpicomm.allgather(new_test_local):
-                new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            virtual_t = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
-        # virtual_t = self.predictor.get_predict_samples(self.training, new_test, K)
+            virtual_t = None
+        if self.mpisize > 1:
+            virtual_t = self.mpicomm.bcast(virtual_t, root=0)
 
         for k in range(K):
             predictor = copy.deepcopy(self.predictor)
@@ -592,8 +616,13 @@ class Policy(discrete.Policy):
 
             predictor.update(train, virtual_train)
 
-            f[k, :] = self.get_score(
-                mode, predictor=predictor, training=train, parallel=False
+            f[k, :] = search_score.score(
+                mode,
+                predictor=predictor,
+                training=train,
+                test=self.test.get_subset(self.actions),
+                rng=self.rng,
+                comm=self.mpicomm,
             )
         return np.mean(f, axis=0)
 
@@ -671,7 +700,7 @@ class Policy(discrete.Policy):
         self.training_unified = self._unify_training(self.training)
 
         self.predictor.fit(
-            self.training_unified, num_rand_basis, comm=self.mpicomm
+            self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
         self.predictor.prepare(self.training_unified)
         Z = self.predictor.get_basis(self.training_unified.X)

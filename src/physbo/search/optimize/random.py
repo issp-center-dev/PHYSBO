@@ -7,9 +7,11 @@
 
 import numpy as np
 
+from ..._rng import get_rng
+
 
 class Optimizer:
-    def __init__(self, min_X, max_X, nsamples):
+    def __init__(self, min_X, max_X, nsamples, rng=None):
         min_X = np.array(min_X)
         max_X = np.array(max_X)
         if min_X.ndim > 1 or max_X.ndim > 1:
@@ -27,8 +29,10 @@ class Optimizer:
         if nsamples < 1:
             raise ValueError("nsamples must be greater than 0")
         self.nsamples = nsamples
+        self.rng = get_rng(rng)
 
     def __call__(self, fn, mpicomm=None):
+        rng = self.rng
         if mpicomm is not None:
             mpisize = mpicomm.Get_size()
             mpirank = mpicomm.Get_rank()
@@ -43,7 +47,7 @@ class Optimizer:
         result_fx = -np.inf
         result_x = None
         for i in range(nsamples_local):
-            x = self.min_X + (self.max_X - self.min_X) * np.random.rand(self.dim)
+            x = self.min_X + (self.max_X - self.min_X) * rng.random(self.dim)
             fx = fn(x)
             if fx > result_fx:
                 result_fx = fx

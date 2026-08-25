@@ -9,6 +9,7 @@ import numpy as np
 import scipy.stats
 
 from .pareto import Pareto
+from .._rng import get_rng
 
 
 def score(mode, predictor_list, test, training, **kwargs):
@@ -26,12 +27,14 @@ def score(mode, predictor_list, test, training, **kwargs):
     elif mode == "TS":
         alpha = kwargs.get("alpha", 1.0)
         reduced_candidate_num = kwargs["reduced_candidate_num"]
+        rng = kwargs.get("rng", None)
         f = TS(
             predictor_list,
             training,
             test,
             alpha,
             reduced_candidate_num=reduced_candidate_num,
+            rng=rng,
         )
     else:
         raise NotImplementedError("mode must be EHVI, HVPI or TS.")
@@ -190,7 +193,9 @@ def EHVI(fmean, fstd, pareto):
     return score
 
 
-def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
+def TS(
+    predictor_list, training, test, alpha=1, reduced_candidate_num=None, rng=None
+):
     """Thompson Sampling for multi-objective optimization.
 
     Parameters
@@ -215,8 +220,11 @@ def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
         Score array with 1 at the chosen index and 0 elsewhere.
     """
 
+    rng = get_rng(rng)
     score = [
-        predictor.get_post_samples(training, test, alpha=alpha, objective_index=i)
+        predictor.get_post_samples(
+            training, test, alpha=alpha, objective_index=i, rng=rng
+        )
         for i, predictor in enumerate(predictor_list)
     ]
     score = np.array(score).reshape((len(predictor_list), test.X.shape[0])).T
@@ -225,15 +233,13 @@ def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
     if reduced_candidate_num is None or score.shape[0] <= reduced_candidate_num:
         use_idx = np.arange(score.shape[0])
     else:
-        use_idx = np.random.choice(
-            score.shape[0], reduced_candidate_num, replace=False
-        )
+        use_idx = rng.choice(score.shape[0], reduced_candidate_num, replace=False)
 
     # pareto.update_front(score)
     pareto.update_front(score[use_idx, :])
 
     # randomly choose candidate from pareto frontiers
-    chosen_idx = np.random.choice(pareto.front_num)
+    chosen_idx = rng.choice(pareto.front_num)
     score_res = np.zeros(score.shape[0])
     score_res[use_idx[chosen_idx]] = 1  # only chosen_idx th value is one.
 

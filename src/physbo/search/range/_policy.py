@@ -19,13 +19,21 @@ from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
+from ..._rng import make_rng, LegacyRNG
 
 
 class Policy:
     """Single objective Bayesian optimization with continuous search space"""
 
     def __init__(
-        self, *, min_X=None, max_X=None, config=None, initial_data=None, comm=None
+        self,
+        *,
+        min_X=None,
+        max_X=None,
+        config=None,
+        initial_data=None,
+        comm=None,
+        rng=None,
     ):
         """
 
@@ -41,9 +49,13 @@ class Policy:
             The first elements is the array of inputs and the second is the array of values of objective functions
         comm: MPI.Comm, optional
             MPI Communicator
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
         """
 
         self.predictor = None
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
 
@@ -104,7 +116,10 @@ class Policy:
 
         """
         self.seed = seed
-        np.random.seed(self.seed)
+        if isinstance(self.rng, LegacyRNG):
+            self.rng.seed(self.seed)
+        else:
+            self.rng = np.random.default_rng(self.seed)
 
     def write(
         self,
@@ -314,7 +329,7 @@ class Policy:
 
         if optimizer is None:
             optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000
+                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
             )
 
         N = int(num_search_each_probe)
@@ -392,7 +407,7 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
+            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0, rng=self.rng)
             predictor.prepare(self.training, objective_index=0)
             return predictor.get_post_fmean(self.training, X, objective_index=0)
         else:
@@ -421,7 +436,7 @@ class Policy:
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0)
+            predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=0, rng=self.rng)
             predictor.prepare(self.training, objective_index=0)
             return predictor.get_post_fcov(self.training, X, diag, objective_index=0)
         else:
@@ -517,7 +532,7 @@ class Policy:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = self._make_gp_predictor()
-                predictor.fit(training, 0, comm=self.mpicomm, objective_index=0)
+                predictor.fit(training, 0, comm=self.mpicomm, objective_index=0, rng=self.rng)
                 predictor.prepare(training, objective_index=0)
             else:
                 self._update_predictor()
@@ -532,7 +547,12 @@ class Policy:
             raise RuntimeError("ERROR: xs is not given")
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            rng=self.rng,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -610,7 +630,7 @@ class Policy:
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
             t = self.predictor.get_predict_samples(
-                self.training, extra_training, K, objective_index=0
+                self.training, extra_training, K, objective_index=0, rng=self.rng
             )
             extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
             for k in range(K):
@@ -636,7 +656,7 @@ class Policy:
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = np.random.rand(N, self.dim) * self.L_X.reshape(
+        action = self.rng.random((N, self.dim)) * self.L_X.reshape(
             1, -1
         ) + self.min_X.reshape(1, -1)
         if self.mpisize > 1:
@@ -770,7 +790,11 @@ class Policy:
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
-            self.training, num_rand_basis, comm=self.mpicomm, objective_index=0
+            self.training,
+            num_rand_basis,
+            comm=self.mpicomm,
+            objective_index=0,
+            rng=self.rng,
         )
         # Get basis and convert to (1, N, n) format for single-objective
         training_Z_basis = self.predictor.get_basis(self.training.X)

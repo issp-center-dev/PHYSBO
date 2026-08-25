@@ -10,6 +10,7 @@ import numpy as np
 import scipy.optimize
 
 from ...misc import deprecated_warning
+from ..._rng import get_rng
 
 
 def batch(*args, **kwargs):
@@ -24,17 +25,20 @@ class Batch(object):
     basis class for batch learning
     """
 
-    def __init__(self, gp, config):
+    def __init__(self, gp, config, rng=None):
         """
 
         Parameters
         ----------
         gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         """
 
         self.gp = gp
         self.config = config
+        self.rng = get_rng(rng)
 
     def run(self, X, t):
         """
@@ -52,7 +56,7 @@ class Batch(object):
             The solution of the optimization.
         """
         batch_size = self.config.learning.batch_size
-        sub_X, sub_t = self.gp.sub_sampling(X, t, batch_size)
+        sub_X, sub_t = self.gp.sub_sampling(X, t, batch_size, rng=self.rng)
 
         if self.config.learning.num_init_params_search != 0:
             is_init_params_search = True
@@ -130,7 +134,7 @@ class Batch(object):
         min_marlik = np.inf
 
         for i in range(num_init_params_search):
-            params = self.gp.get_cand_params(X, t)
+            params = self.gp.get_cand_params(X, t, rng=self.rng)
             params = self.one_run(params, X, t, max_iter)
             marlik = self.gp.eval_marlik(params, X, t)
 
@@ -154,17 +158,20 @@ class Online(object):
     base class for online learning
     """
 
-    def __init__(self, gp, config):
+    def __init__(self, gp, config, rng=None):
         """
 
         Parameters
         ----------
         gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         """
         self.gp = gp
         self.config = config
         self.num_iter = 0
+        self.rng = get_rng(rng)
 
     def run(self, X, t):
         """
@@ -238,12 +245,12 @@ class Online(object):
 
         num_disp = self.config.learning.num_disp
         eval_size = self.config.learning.eval_size
-        eval_X, eval_t = self.gp.sub_sampling(X, t, eval_size)
+        eval_X, eval_t = self.gp.sub_sampling(X, t, eval_size, rng=self.rng)
         timing = range(0, max_epoch, int(np.floor(max_epoch / num_disp)))
         temp = 0
 
         for num_epoch in range(0, max_epoch):
-            perm = np.random.permutation(num_data)
+            perm = self.rng.permutation(num_data)
 
             if is_disp and temp < num_disp and num_epoch == timing[temp]:
                 self.disp_marlik(params, eval_X, eval_t, num_epoch)
@@ -310,12 +317,12 @@ class Online(object):
         # is_disp = self.config.learning.is_disp
         max_epoch = self.config.learning.max_epoch_init_params_search
         eval_size = self.config.learning.eval_size
-        eval_X, eval_t = self.gp.sub_sampling(X, t, eval_size)
+        eval_X, eval_t = self.gp.sub_sampling(X, t, eval_size, rng=self.rng)
         min_params = np.zeros(self.gp.num_params)
         min_marlik = np.inf
 
         for i in range(num_init_params_search):
-            params = self.gp.get_cand_params(X, t)
+            params = self.gp.get_cand_params(X, t, rng=self.rng)
 
             params = self.one_run(params, X, t, max_epoch)
             marlik = self.gp.eval_marlik(params, eval_X, eval_t)
@@ -341,15 +348,17 @@ def adam(*args, **kwargs):
 class Adam(Online):
     """default"""
 
-    def __init__(self, gp, config):
+    def __init__(self, gp, config, rng=None):
         """
 
         Parameters
         ----------
         gp : physbo.gp.core.Model object
         config: physbo.misc.SetConfig object
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         """
-        super(Adam, self).__init__(gp, config)
+        super(Adam, self).__init__(gp, config, rng=rng)
 
         self.alpha = self.config.learning.alpha
         self.beta = self.config.learning.beta

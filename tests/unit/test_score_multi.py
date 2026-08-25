@@ -18,7 +18,7 @@ physbo = pytest.importorskip("physbo")
 def make_predictor(mocker):
     """A predictor whose posterior samples are random per objective."""
 
-    def get_post_samples(training, test, alpha, objective_index):
+    def get_post_samples(training, test, alpha, objective_index, rng=None):
         return np.random.randn(test.X.shape[0])
 
     p = mocker.MagicMock()
@@ -78,15 +78,18 @@ def test_TS_reduced_candidate_samples_full_set(predictor_list, test_points):
 def _reduction_calls(choice_spy):
     """Calls to np.random.choice that perform candidate reduction.
 
-    The reduction call has the form ``np.random.choice(N, k, replace=False)``;
-    the unrelated Pareto-front pick is ``np.random.choice(front_num)`` (a single
-    positional arg, no ``replace``).
+    The reduction call has the form ``np.random.choice(N, k, replace=False)``
+    (``replace`` possibly passed positionally, e.g. through the LegacyRNG
+    adapter); the unrelated Pareto-front pick draws with replacement
+    (``replace`` absent or True), so ``replace is False`` identifies the
+    reduction call.
     """
-    return [
-        c
-        for c in choice_spy.call_args_list
-        if c.kwargs.get("replace") is False or len(c.args) >= 2
-    ]
+    calls = []
+    for c in choice_spy.call_args_list:
+        replace = c.kwargs.get("replace", c.args[2] if len(c.args) > 2 else True)
+        if replace is False:
+            calls.append(c)
+    return calls
 
 
 def test_TS_reduced_branch_samples_from_full_set(predictor_list, test_points, mocker):

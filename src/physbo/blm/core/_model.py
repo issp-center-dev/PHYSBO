@@ -7,6 +7,7 @@
 
 import numpy as np
 from .. import inf
+from ..._rng import get_rng
 from ...misc.permutation_importance import get_permutation_importance
 
 
@@ -118,7 +119,7 @@ class Model:
             pass
         return fmu
 
-    def sampling(self, w_mu=None, N=1, alpha=1.0):
+    def sampling(self, w_mu=None, N=1, alpha=1.0, rng=None):
         """
         draws samples of weights
 
@@ -145,12 +146,12 @@ class Model:
         physbo.blm.inf.exact.sampling
         """
         if self.method == "exact":
-            w_hat = inf.exact.sampling(self, w_mu, N, alpha=alpha)
+            w_hat = inf.exact.sampling(self, w_mu, N, alpha=alpha, rng=rng)
         else:
             pass
         return w_hat
 
-    def post_sampling(self, Xtest, Psi=None, N=1, alpha=1.0):
+    def post_sampling(self, Xtest, Psi=None, N=1, alpha=1.0, rng=None):
         """
         draws samples of mean value of model
 
@@ -173,10 +174,10 @@ class Model:
         """
         if Psi is None:
             Psi = self.lik.get_basis(Xtest)
-        w_hat = self.sampling(N=N, alpha=alpha)
+        w_hat = self.sampling(N=N, alpha=alpha, rng=rng)
         return Psi.dot(w_hat) + self.lik.linear.bias
 
-    def predict_sampling(self, Xtest, Psi=None, N=1):
+    def predict_sampling(self, Xtest, Psi=None, N=1, rng=None):
         """
         draws samples from model
 
@@ -197,10 +198,11 @@ class Model:
         """
         if Xtest.shape[0] == 0:
             return np.zeros((N, 0))
-        fmean = self.post_sampling(Xtest, Psi, N=N)
+        rng = get_rng(rng)
+        fmean = self.post_sampling(Xtest, Psi, N=N, rng=rng)
         if fmean.ndim == 1:
             fmean = fmean.reshape(-1, 1)
-        A = np.random.randn(Xtest.shape[0], N)
+        A = rng.standard_normal((Xtest.shape[0], N))
         res = fmean + np.sqrt(self.lik.cov.sigma2) * A
         return res.transpose()
 
@@ -236,7 +238,7 @@ class Model:
         return fcov
 
     def get_permutation_importance(
-        self, X, t, n_perm: int, comm=None, split_features_parallel=False
+        self, X, t, n_perm: int, comm=None, split_features_parallel=False, rng=None
     ):
         """
         Calculating permutation importance of model
@@ -268,6 +270,7 @@ class Model:
             comm=comm,
             split_features_parallel=split_features_parallel,
             query_only=True,
+            rng=rng,
         )
 
     def _set_options(self, options):
