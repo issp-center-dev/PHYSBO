@@ -18,7 +18,7 @@ physbo = pytest.importorskip("physbo")
 def make_predictor(mocker):
     """A predictor whose posterior samples are random per objective."""
 
-    def get_post_samples(training, test, alpha, objective_index):
+    def get_post_samples(training, test, alpha, objective_index, rng=None):
         return np.random.randn(test.X.shape[0])
 
     p = mocker.MagicMock()
