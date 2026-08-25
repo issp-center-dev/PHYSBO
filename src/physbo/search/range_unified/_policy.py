@@ -15,8 +15,6 @@ from .. import range as range_single
 from .. import utility
 from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 
@@ -54,6 +52,7 @@ class Policy(range_single.Policy):
         else:
             self.config = config
 
+        self.ard = False
         if initial_data is not None:
             if len(initial_data) != 2:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
@@ -198,6 +197,7 @@ class Policy(range_single.Policy):
         interval=0,
         num_rand_basis=0,
         optimizer=None,
+        ard=False,
     ):
         assert unify_method is not None, "unify_method must be provided"
         self.unify_method = unify_method
@@ -213,15 +213,16 @@ class Policy(range_single.Policy):
             simulator = None
 
         is_rand_expans = False if num_rand_basis == 0 else True
+        self.ard = ard
 
         if training_list is not None:
             self.training = training_list
 
         if predictor is None:
             if is_rand_expans:
-                self.predictor = blm_predictor(self.config)
+                self.predictor = self._make_blm_predictor()
             else:
-                self.predictor = gp_predictor(self.config)
+                self.predictor = self._make_gp_predictor()
         else:
             self.predictor = predictor
 
@@ -382,7 +383,7 @@ class Policy(range_single.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(
                 self.training_unified, 0, comm=self.mpicomm, objective_index=0
             )
@@ -415,7 +416,7 @@ class Policy(range_single.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(
                 self.training_unified, 0, comm=self.mpicomm, objective_index=0
             )
@@ -456,7 +457,7 @@ class Policy(range_single.Policy):
         if predictor is None:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(training, 0, comm=self.mpicomm, objective_index=0)
                 predictor.prepare(training, objective_index=0)
             else:
@@ -507,7 +508,7 @@ class Policy(range_single.Policy):
 
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(

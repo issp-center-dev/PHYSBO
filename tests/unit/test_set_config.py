@@ -115,5 +115,13 @@ def test_boolean_helper():
     assert _set_config.boolean("True") is True
     assert _set_config.boolean(False) is False
     assert _set_config.boolean("False") is False
-    # any unknown string is treated as False
-    assert _set_config.boolean("yes") is False
+    # common truthy/falsy spellings are accepted
+    assert _set_config.boolean("yes") is True
+    assert _set_config.boolean("on") is True
+    assert _set_config.boolean("1") is True
+    assert _set_config.boolean("no") is False
+    assert _set_config.boolean("off") is False
+    assert _set_config.boolean("0") is False
+    # unknown strings are rejected
+    with pytest.raises(ValueError):
+        _set_config.boolean("maybe")
