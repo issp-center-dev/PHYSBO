@@ -86,7 +86,12 @@ def default_alg_dict(
             "param": {
                 "min_list": min_X,
                 "max_list": max_X,
-                "unit_list": d_X,
+                # Note: ODAT-SE's minsearch treats the search variables in
+                # units of unit_list (the objective function receives
+                # x / unit_list and the result is reported in the scaled
+                # coordinates), so anything other than 1 would make the
+                # returned point inconsistent with min_X/max_X.
+                "unit_list": np.ones(dim),
             },
             "minimize": {"maxiter": 100},
         }

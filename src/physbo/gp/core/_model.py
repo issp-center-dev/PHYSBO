@@ -9,7 +9,7 @@ import numpy as np
 import scipy.linalg
 
 from ... import blm
-from .. import inf
+from .. import cov, inf, lik, mean
 from . import learning
 from ._prior import Prior
 
@@ -93,6 +93,35 @@ class Model:
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)
         self.stats = ()
+
+    @classmethod
+    def create_default(cls, ard=False, num_dim=None):
+        """
+        Create a default GP model with Gaussian kernel, constant mean, and Gaussian likelihood.
+
+        Parameters
+        ----------
+        ard : bool
+            If True, use ARD (per-dimension length scale) for the Gaussian kernel.
+        num_dim : int or None
+            Input dimension. Required when ard is True; optional otherwise.
+
+        Returns
+        -------
+        Model
+            A new Model instance.
+        """
+        if ard and num_dim is None:
+            raise ValueError(
+                "ard=True requires num_dim. "
+                "Provide the input dimension (e.g. from training data)."
+            )
+        cov_kernel = cov.Gauss(num_dim=num_dim, ard=ard)
+        return cls(
+            lik=lik.Gauss(),
+            mean=mean.Const(),
+            cov=cov_kernel,
+        )
 
     def cat_params(self, lik_params, prior_params):
         """
@@ -399,7 +428,7 @@ class Model:
 
         Returns
         -------
-        numpy.ndarray
+        numpy.ndarray (N x len(Z))
 
         """
         if params is None:
