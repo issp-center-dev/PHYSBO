@@ -279,7 +279,7 @@ class Predictor(physbo.predictor.BasePredictor):
             self.prepare(training, objective_index=objective_index)
         # Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective
         Z_test = test.Z[objective_index, :, :] if test.Z is not None else None
-        return self.blm.predict_sampling(test.X, Psi=Z_test, N=N, rng=rng).transpose()
+        return self.blm.predict_sampling(test.X, Psi=Z_test, N=N, rng=rng)
 
     def update(self, training, test, objective_index=0):
         """

@@ -64,8 +64,8 @@ def test_bayes_search_with_single_training_point(X, sim):
 
 def test_nan_objective_value(X):
     # current behavior: NaN objective values are stored in the history
-    # unchecked, and the subsequent GP fit fails with a linear-algebra
-    # error; an explicit validation in write() would be an improvement
+    # unchecked and break the subsequent GP fit; an explicit validation
+    # in write() would be an improvement
     def simnan(action):
         action = np.asarray(action)
         val = -np.sum((X[action] - 0.5) ** 2, axis=1)
@@ -76,10 +76,17 @@ def test_nan_objective_value(X):
     policy.random_search(max_num_probes=len(X), simulator=simnan, is_disp=False)
     assert np.isnan(policy.history.fx[: len(X)]).any()
 
-    with pytest.raises(np.linalg.LinAlgError):
+    # how the fit breaks is LAPACK-build dependent: potrf may detect the
+    # NaN and report an error (newer scipy/LAPACK builds -> LinAlgError),
+    # or "succeed" and silently poison the predictions (older builds)
+    try:
         policy.bayes_search(
             max_num_probes=1, simulator=simnan, score="EI", is_disp=False
         )
+    except np.linalg.LinAlgError:
+        pass
+    else:
+        assert np.isnan(policy.get_post_fmean(X)).any()
 
 
 def test_get_score_dimension_mismatch():

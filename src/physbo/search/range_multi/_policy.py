@@ -15,8 +15,6 @@ from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng
@@ -58,6 +56,7 @@ class Policy(range_single.Policy):
 
         self.TS_candidate_num = None
 
+        self.ard = False
         if initial_data is not None:
             if len(initial_data) != 2:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
@@ -205,6 +204,7 @@ class Policy(range_single.Policy):
         num_rand_basis=0,
         optimizer=None,
         unify_method=None,
+        ard=False,
     ):
         """
         Performing Bayesian optimization by using multi objective function
@@ -240,6 +240,9 @@ class Policy(range_single.Policy):
         unify_method: callable, optional
             This is for compatibility with the unified-optimization Policies.
             This is not used.
+        ard: bool, optional
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Default is False.
 
         Returns
         -------
@@ -257,6 +260,7 @@ class Policy(range_single.Policy):
             simulator = None
 
         is_rand_expans = False if num_rand_basis == 0 else True
+        self.ard = ard
 
         if training_list is not None:
             self.training = training_list
@@ -264,11 +268,12 @@ class Policy(range_single.Policy):
         if predictor_list is None:
             if is_rand_expans:
                 self.predictor_list = [
-                    blm_predictor(self.config) for i in range(self.num_objectives)
+                    self._make_blm_predictor()
+                    for i in range(self.num_objectives)
                 ]
             else:
                 self.predictor_list = [
-                    gp_predictor(self.config) for i in range(self.num_objectives)
+                    self._make_gp_predictor() for i in range(self.num_objectives)
                 ]
         else:
             self.predictor_list = predictor_list
@@ -440,7 +445,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
@@ -453,6 +458,35 @@ class Policy(range_single.Policy):
             for i, predictor in enumerate(predictor_list)
         ]
         return np.array(fmean).T
+
+    def get_kernel_length_scale(self):
+        """
+        Return the Gaussian kernel length scale(s) for each objective.
+
+        Returns
+        -------
+        list of numpy.ndarray or None
+            List of length num_objectives; each element is the length scale(s)
+            for that objective's GP, or None if not available.
+        """
+        if self.predictor_list is None or all(p is None for p in self.predictor_list):
+            return None
+        self._update_predictor()
+        result = []
+        for predictor in self.predictor_list:
+            if predictor is None:
+                result.append(None)
+                continue
+            try:
+                cov = predictor.model.prior.cov
+            except AttributeError:
+                result.append(None)
+                continue
+            if not hasattr(cov, "width"):
+                result.append(None)
+                continue
+            result.append(np.atleast_1d(np.asarray(cov.width).flatten()))
+        return result
 
     def get_post_fcov(self, xs, diag=True):
         """
@@ -476,7 +510,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fcov()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)
@@ -522,7 +556,7 @@ class Policy(range_single.Policy):
                 self._warn_no_predictor("get_score()")
                 predictor_list = []
                 for i in range(self.num_objectives):
-                    predictor = gp_predictor(self.config)
+                    predictor = self._make_gp_predictor()
                     predictor.fit(training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
                     predictor.prepare(training, objective_index=i)
                     predictor_list.append(predictor)
@@ -579,7 +613,7 @@ class Policy(range_single.Policy):
             self._warn_no_predictor("get_post_fmean()")
             predictor_list = []
             for i in range(self.num_objectives):
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
                 predictor.prepare(self.training, objective_index=i)
                 predictor_list.append(predictor)

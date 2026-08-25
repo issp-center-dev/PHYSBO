@@ -15,6 +15,7 @@ from typing import Optional, Any
 from ._history import History
 from .. import utility
 from .. import score as search_score
+from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
@@ -115,6 +116,7 @@ class Policy(CheckpointMixin):
         else:
             self.config = config
 
+        self.ard = False
         if initial_data is not None:
             if len(initial_data) != 2:
                 msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
@@ -329,6 +331,7 @@ class Policy(CheckpointMixin):
         num_rand_basis=0,
         optimizer=None,
         unify_method=None,
+        ard=False,
     ):
         """
         Performing Bayesian optimization.
@@ -345,7 +348,7 @@ class Policy(CheckpointMixin):
             Base class is defined in physbo.predictor.
             If None, blm_predictor is defined.
         is_disp: bool
-             If true, process messages are outputted.
+            If true, process messages are outputted.
         simulator: callable
             Callable (function or object with ``__call__``)
             Here, action is an integer which represents the index of the candidate.
@@ -361,6 +364,9 @@ class Policy(CheckpointMixin):
         optimizer: optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
+        ard: bool
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Default is False.
 
         Returns
         -------
@@ -378,6 +384,7 @@ class Policy(CheckpointMixin):
             simulator = None
 
         is_rand_expans = num_rand_basis != 0
+        self.ard = ard
 
         if training is not None:
             self.training = training
@@ -468,7 +475,7 @@ class Policy(CheckpointMixin):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_post_fmean(self.training, X)
@@ -497,13 +504,54 @@ class Policy(CheckpointMixin):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_post_fcov(self.training, X, diag)
         else:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
+
+    def get_kernel_length_scale(self):
+        """
+        Return the Gaussian kernel length scale(s) (width) of the predictor.
+
+        With ARD, returns one length scale per input dimension; otherwise a single value.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.
+            None if the predictor is not set or not a GP with Gaussian kernel.
+        """
+        if self.predictor is None:
+            return None
+        self._update_predictor()
+        try:
+            cov = self.predictor.model.prior.cov
+        except AttributeError:
+            return None
+        if not hasattr(cov, "width"):
+            return None
+        return np.atleast_1d(np.asarray(cov.width).flatten())
+
+    def get_num_dim(self):
+        """
+        Return the input dimension (number of features) of the search space.
+
+        Returns
+        -------
+        int or None
+            The number of dimensions. None if neither training nor test data is set.
+        """
+        if (
+            self.training.X is not None
+            and self.training.X.shape[0] > 0
+        ):
+            return self.training.X.shape[1]
+        if self.test.X is not None and self.test.X.shape[0] > 0:
+            return self.test.X.shape[1]
+        return None
 
     def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
         """
@@ -526,7 +574,7 @@ class Policy(CheckpointMixin):
 
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, rng=self.rng)
             predictor.prepare(self.training)
             return predictor.get_permutation_importance(
@@ -608,7 +656,7 @@ class Policy(CheckpointMixin):
         if predictor is None:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
@@ -940,9 +988,23 @@ class Policy(CheckpointMixin):
             If false, physbo.gp.Predictor is selected.
         """
         if is_rand_expans:
-            self.predictor = blm_predictor(self.config)
+            self.predictor = self._make_blm_predictor()
         else:
-            self.predictor = gp_predictor(self.config)
+            self.predictor = self._make_gp_predictor()
+
+    def _make_gp_predictor(self):
+        """Create a GP predictor, with ARD if self.ard is True."""
+        ard = self.ard
+        num_dim = self.get_num_dim()
+        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
+        return gp_predictor(self.config, model=model)
+
+    def _make_blm_predictor(self):
+        """Create a BLM predictor, with ARD if self.ard is True."""
+        ard = self.ard
+        num_dim = self.get_num_dim()
+        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
+        return blm_predictor(self.config, model=model)
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
