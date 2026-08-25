@@ -14,8 +14,6 @@ from ._history import History
 from .. import discrete
 from .. import utility
 from .. import score as search_score
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 from ..._rng import make_rng
@@ -64,6 +62,8 @@ class Policy(discrete.Policy):
             self.config = SetConfig()
         else:
             self.config = config
+        
+        self.ard = False
 
         if initial_data is not None:
             if len(initial_data) != 2:
@@ -211,6 +211,7 @@ class Policy(discrete.Policy):
         num_rand_basis=0,
         unify_method=None,
         optimizer=None,
+        ard=False,
     ):
         """
         Performing Bayesian optimization by using unified objective function
@@ -246,6 +247,9 @@ class Policy(discrete.Policy):
         optimizer: Optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
+        ard: bool, optional
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Default is False.
 
         Returns
         -------
@@ -267,6 +271,7 @@ class Policy(discrete.Policy):
         if num_rand_basis < 0:
             raise ValueError("num_rand_basis must be non-negative")
         is_rand_expans = (num_rand_basis > 0)
+        self.ard = ard
 
         if training_list is not None:
             self.training = training_list
@@ -379,7 +384,7 @@ class Policy(discrete.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fmean(self.training_unified, X)
@@ -408,7 +413,7 @@ class Policy(discrete.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fcov(self.training_unified, X, diag)
@@ -479,7 +484,7 @@ class Policy(discrete.Policy):
         if predictor is None:
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
-                predictor = gp_predictor(self.config)
+                predictor = self._make_gp_predictor()
                 predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
@@ -539,7 +544,7 @@ class Policy(discrete.Policy):
 
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
-            predictor = gp_predictor(self.config)
+            predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(
@@ -705,9 +710,9 @@ class Policy(discrete.Policy):
 
     def _initialize_predictor(self, is_rand_expans):
         if is_rand_expans:
-            self.predictor = blm_predictor(self.config)
+            self.predictor = self._make_blm_predictor()
         else:
-            self.predictor = gp_predictor(self.config)
+            self.predictor = self._make_gp_predictor()
 
     def _update_predictor(self):
         if self.new_data is not None:

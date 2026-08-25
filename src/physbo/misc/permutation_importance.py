@@ -5,6 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Permutation feature importance for trained predictors."""
+
 import numpy as np
 
 from .._rng import get_rng
@@ -12,7 +14,14 @@ from .._rng import get_rng
 
 # TODO: move to base_model after base_model is implemented
 def get_permutation_importance(
-    model, X, t, n_perm: int, comm=None, split_features_parallel=False, rng=None
+    model,
+    X,
+    t,
+    n_perm: int,
+    comm=None,
+    split_features_parallel=False,
+    query_only=False,
+    rng=None,
 ):
     """
     Calculating permutation importance of model
@@ -27,6 +36,10 @@ def get_permutation_importance(
         number of permutations
     comm: MPI.Comm
         MPI communicator
+    query_only: bool
+        If True, call model.get_post_fmean with a single argument (query points only),
+        for models like BLM where training is already set by prepare(). If False, use
+        two arguments (training, query) as in GP. Default is False.
 
     Returns
     =======
@@ -44,7 +57,10 @@ def get_permutation_importance(
         return np.zeros(n_features), np.zeros(n_features)
 
     model.prepare(X, t)
-    fmean = model.get_post_fmean(X, X)
+    if query_only:
+        fmean = model.get_post_fmean(X)
+    else:
+        fmean = model.get_post_fmean(X, X)
     MSE_base = np.mean((fmean - t) ** 2)
 
     if comm is None:
@@ -57,23 +73,26 @@ def get_permutation_importance(
     features = np.arange(n_features)
     if split_features_parallel:
         features = np.array_split(features, mpisize)[mpirank]
-    n_features_local = len(features)
 
-    scores = np.zeros(n_features_local)
-    scores_2 = np.zeros(n_features_local)
+    # Full-length arrays so we can index by global i_feature and Allreduce correctly
+    scores = np.zeros(n_features)
+    scores_2 = np.zeros(n_features)
 
     for i_feature in features:
         X_perm = X.copy()
         for i_perm in range(n_perm):
             X_perm[:, i_feature] = rng.permutation(X_perm[:, i_feature])
-            fmean = model.get_post_fmean(X, X_perm)
+            if query_only:
+                fmean = model.get_post_fmean(X_perm)
+            else:
+                fmean = model.get_post_fmean(X, X_perm)
             s = np.mean((fmean - t) ** 2) - MSE_base
             scores[i_feature] += s
             scores_2[i_feature] += s**2
 
     if comm is not None and mpisize > 1:
-        res = np.zeros(n_features_local)
-        res_2 = np.zeros(n_features_local)
+        res = np.zeros(n_features)
+        res_2 = np.zeros(n_features)
         comm.Allreduce(scores, res)  # default of op is MPI.SUM
         comm.Allreduce(scores_2, res_2)
         scores[:] = res
