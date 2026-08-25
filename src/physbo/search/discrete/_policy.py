@@ -168,6 +168,10 @@ class Policy:
             N dimensional array (1D) or N x k dimensional array (2D).
             The negative energy of each search candidate (value of the objective function to be optimized).
             Will be normalized to (N, 1) shape internally.
+            A non-finite value (NaN or +-Inf) marks a failed evaluation:
+            the action is recorded in the history and consumed, but the
+            observation is excluded from the training data and the
+            best-value tracking.
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         time_total: numpy.ndarray
@@ -218,7 +222,15 @@ class Policy:
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        self.training.add(X=X, t=t_normalized, Z=Z)
+
+        # Failed observations (non-finite t) are kept in the history and
+        # their actions are consumed, but they are not used for training.
+        valid = utility.finite_mask(t_normalized)
+        X_ok = np.asarray(X)[valid]
+        t_ok = t_normalized[valid]
+        Z_ok = utility.mask_rows(Z, valid)
+        if np.any(valid):
+            self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove the selected actions from the list of candidates if exists
         if len(self.actions) > 0:
@@ -228,10 +240,11 @@ class Policy:
             ]
             self.actions = self._delete_actions(local_index)
 
-        if self.new_data is None:
-            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
-        else:
-            self.new_data.add(X=X, t=t_normalized, Z=Z)
+        if np.any(valid):
+            if self.new_data is None:
+                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -883,9 +896,9 @@ class Policy:
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.test.X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            actions, t = self.history.export_valid()
+            X = self.test.X[actions, :]
             # Normalize t to (N, 1) shape
             t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)

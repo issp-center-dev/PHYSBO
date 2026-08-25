@@ -115,16 +115,22 @@ class Policy(range_single.Policy):
             "The number of objectives in t must be the same as num_objectives"
         )
 
-        if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=None)
-        else:
-            self.new_data.add(X=X, t=t, Z=None)
+        # Failed observations (any non-finite objective) are kept in the
+        # history but they are not used for training.
+        valid = utility.finite_mask(t)
+        if np.any(valid):
+            X_ok = np.asarray(X)[valid]
+            t_ok = t[valid]
+            if self.new_data is None:
+                self.new_data = Variable(X=X_ok, t=t_ok, Z=None)
+            else:
+                self.new_data.add(X=X_ok, t=t_ok, Z=None)
 
-        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
-        if self.training.X is None:
-            self.training = Variable(X=X, t=t, Z=None)
-        else:
-            self.training.add(X=X, t=t, Z=None)
+            # Add to single training Variable with full 2D t matrix
+            if self.training.X is None:
+                self.training = Variable(X=X_ok, t=t_ok, Z=None)
+            else:
+                self.training.add(X=X_ok, t=t_ok, Z=None)
 
     def random_search(
         self,
@@ -532,9 +538,8 @@ class Policy(range_single.Policy):
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.history.action_X[0:N, :]
-            t = self.history.fx[0:N, :]
+            # rebuild the training data from the valid observations only
+            X, t = self.history.export_valid()
             self.training = Variable(X=X, t=t)
         else:
             self.load_training(file_training)

@@ -157,13 +157,22 @@ class Pareto(object):
 
         Pareto set is sorted on the first objective in ascending order.
         """
-        t = np.array(t)
+        t = np.array(t, dtype=float)
         if t.ndim == 1:
             t = t.reshape((1, -1))
         assert t.shape[1] == self.num_objectives
         N = t.shape[0]
 
         indices = self.num_compared + np.arange(N)
+
+        # failed observations (any non-finite objective) never join the
+        # front; they are skipped here while their indices are still
+        # consumed so that front_num keeps referring to the rows of t
+        valid = np.all(np.isfinite(t), axis=1)
+        if not np.all(valid):
+            t = t[valid]
+            indices = indices[valid]
+
         right_front, right_indices = _extract_non_dominated_points(t, indices, maximize=True)
         new_front, new_indices = _merge_fronts(self.front, right_front, self.front_num, right_indices, maximize=True)
 

@@ -101,6 +101,8 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
  For searching candidates defined above, define a simulator that gives the objective function values (values to be optimized, such as material property values) for each search candidate. In PHYSBO, the direction of optimization is to maximize the objective function, so if you want to minimize the objective function, you can do so by applying a negative value to the value returned by the simulator.
 
+ If an evaluation fails (for example, a simulation diverges or an experiment cannot be carried out), the simulator can return ``NaN`` (or an infinite value) as the objective function value. Such an evaluation is treated as a *failed observation*: the candidate is recorded in the history and is never proposed again, but the value is excluded from the training data of the Gaussian process, from the best-value tracking, and, in multi-objective optimization, from the Pareto front. In multi-objective optimization, an evaluation is regarded as failed if any of its objective values is not finite.
+
 3. Performing optimization
 
  First, set the optimization policy (the search space is passed to policy as an argument at this stage). You can choose between the following two optimization methods.
@@ -130,10 +132,11 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
   The search result ``res`` is returned as an object of the ``history`` class ( ``physbo.search.discrete.results.history`` ). The following is a reference to the search results.
 
-  - ``res.fx``: The logs of evaluation values for simulator (objective function) simulator.
+  - ``res.fx``: The logs of evaluation values for simulator (objective function) simulator. Failed observations are stored as ``NaN`` (or the infinite value returned by the simulator).
   - ``res.chosen_actions``: The logs of the action ID (parameter) when the simulator has executed.
-  - ``fbest, best_action= res.export_all_sequence_best_fx()``: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed.
-  - ``res.total_num_search``: Total number steps where the simulator has executed.
+  - ``fbest, best_action= res.export_all_sequence_best_fx()``: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed. Failed observations are skipped; until the first successful evaluation, the best value is ``NaN`` and the action ID is ``-1``.
+  - ``res.total_num_search``: Total number steps where the simulator has executed (including failed ones).
+  - ``res.valid_mask``: A boolean array marking the successful (``True``) and failed (``False``) observations; ``actions, fx = res.export_valid()`` returns the successful observations only.
 
   The ``policy`` after Bayesian optimization can be saved to external files using the ``save`` method, and the ``policy`` can be loaded from them by using the ``load`` method.
   See the `"Running PHYSBO Interactively" <notebook/tutorial_interactive_mode.html>`_ section of the tutorial for details on how to use it.
