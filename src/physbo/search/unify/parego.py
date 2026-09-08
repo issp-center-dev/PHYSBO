@@ -21,8 +21,8 @@ class ParEGO:
     weight_sum: float
     """Weight of the sum of objectives"""
 
-    weight_max: float
-    """Weight of the max of objectives"""
+    weight_min: float
+    """Weight of the min of objectives"""
 
     weights: Optional[np.ndarray]
     """Weights for the objectives.
@@ -37,14 +37,15 @@ class ParEGO:
         self,
         num_objectives: int,
         weight_sum: float = 0.05,
-        weight_max: float = 1.0,
+        weight_min: Optional[float] = None,
+        weight_max: Optional[float] = None,
         weights: Optional[np.ndarray] = None,
         weights_discrete: int = 0,
     ):
         r""" ParEGO unified objective function
 
         The unified objective function of original objectives t is defined as:
-        t_unified = weight_max * max(weights * t) + weight_sum * sum(weights * t)
+        t_unified = weight_min * min(weights * t) + weight_sum * sum(weights * t)
 
         Before calculating the unified objective function, the original objectives are normalized to 0 and 1 using min-max scaling.
 
@@ -54,8 +55,10 @@ class ParEGO:
             Number of objectives
         weight_sum: float
             Weight of the sum of objectives, default is 0.05
+        weight_min: float
+            Weight of the min of objectives, default is 1.0
         weight_max: float
-            Weight of the max of objectives, default is 1.0
+            Alias of weight_min. If both weight_min and weight_max are provided, throw an error.
         weights: np.ndarray
             Weights for the objectives.
             Weights are automatically normalized to sum to 1.
@@ -72,7 +75,16 @@ class ParEGO:
         """
         self.num_objectives = num_objectives
         self.weight_sum = weight_sum
-        self.weight_max = weight_max
+        if weight_min is None:
+            if weight_max is None:
+                self.weight_min = 1.0
+            else:
+                self.weight_min = weight_max
+        else:
+            if weight_max is None:
+                self.weight_min = weight_min
+            else:
+                raise ValueError("Both weight_min and weight_max are provided")
         if weights is not None:
             weights = np.array(weights)
             self.weights = weights / np.sum(weights)
@@ -112,8 +124,8 @@ class ParEGO:
 
         t_weighted = min_max_scaling(t, low=-1.0, high=0.0) * weights.reshape(1, -1)
         t_sum = np.sum(t_weighted, axis=1)
-        t_max = np.max(t_weighted, axis=1)
-        t_unified = self.weight_max * t_max + self.weight_sum * t_sum
+        t_min = np.min(t_weighted, axis=1)
+        t_unified = self.weight_min * t_min + self.weight_sum * t_sum
         return t_unified.reshape(-1, 1)
 
 
