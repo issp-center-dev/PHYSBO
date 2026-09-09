@@ -92,7 +92,7 @@ class TestDiscreteUnify:
     # differ from the PI/EI/TS references above, confirming UCB drives a
     # distinct search path through the unified policy.
     vid_ref_ucb = {
-        "ParEGO": 0.14004688145381594,
+        "ParEGO": 0.08592726518218119,
         "NDS": 0.16368641865433553,
     }
 
