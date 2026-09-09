@@ -12,8 +12,6 @@ import os
 
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 import physbo
 
 
@@ -82,6 +80,10 @@ def benchmark(
 
     nobj = fn.nobj
     if pdffilename_prefix is not None:
+        # matplotlib is required only when plotting; import lazily so that
+        # the benchmark logic can run without it
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(nobj - 1, nobj - 1, figsize=(5 * (nobj - 1), 5 * (nobj - 1)), sharex="col", sharey="row")
     else:
         fig = None
@@ -102,10 +104,16 @@ def benchmark(
         vid.append(v)
         if fig is not None:
             physbo.search.utility.plot_pareto_front_all(
-                res[i], steps_end=num_random_search, marker="+", ax=ax
+                res[i],
+                steps_end=num_random_search,
+                style_common={"marker": "+"},
+                ax=ax,
             )
             physbo.search.utility.plot_pareto_front_all(
-                res[i], steps_begin=num_random_search, marker="o", ax=ax
+                res[i],
+                steps_begin=num_random_search,
+                style_common={"marker": "o"},
+                ax=ax,
             )
             filename = os.path.join(
                 output_dir,

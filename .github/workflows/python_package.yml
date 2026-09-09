@@ -54,4 +54,26 @@ jobs:
       if: matrix.numpy-version == '1.26.4'
       run: uv pip install "numpy==1.26.4"
     - name: PyTest
-      run: uv run pytest --capture=sys tests
+      run: uv run pytest --capture=sys --cov=physbo --cov-report=term tests
+
+  mpi:
+    name: MPI tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: Set up UV
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: '3.13'
+    - name: Install OpenMPI
+      run: |
+        sudo apt update
+        sudo apt install -y libopenmpi-dev openmpi-bin
+    - name: Install dependencies
+      run: uv sync --extra tests --extra mpi
+    - name: PyTest (MPI)
+      run: uv run pytest tests/mpi -v
