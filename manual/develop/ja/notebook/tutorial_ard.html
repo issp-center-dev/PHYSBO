@@ -161,10 +161,10 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">simulator</span><span class="p">(</span><span class="n">actions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="n">X2</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">actions</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span>
-    <span class="k">return</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ai,i -&gt; a&quot;</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"ai,i -&gt; a"</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Search space shape:&quot;</span><span class="p">,</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Search space shape:"</span><span class="p">,</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -187,7 +187,7 @@ Search space shape: (1000, 4)
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_initial</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">n_bayes</span> <span class="o">=</span> <span class="mi">30</span>
 <span class="n">n_perm</span> <span class="o">=</span> <span class="mi">20</span>
-<span class="n">score</span> <span class="o">=</span> <span class="s2">&quot;EI&quot;</span>
+<span class="n">score</span> <span class="o">=</span> <span class="s2">"EI"</span>
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">31415</span>
 </pre></div>
 </div>
@@ -200,9 +200,9 @@ Search space shape: (1000, 4)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running with ard=True&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Running with ard=True"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
 <span class="n">policy_ard</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
 <span class="n">policy_ard</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 <span class="n">policy_ard</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -216,8 +216,8 @@ Search space shape: (1000, 4)
 
 <span class="n">best_fx_ard</span><span class="p">,</span> <span class="n">best_actions_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
 <span class="n">best_x_ard</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">best_actions_ard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best value (ard=True):&quot;</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best point:&quot;</span><span class="p">,</span> <span class="n">best_x_ard</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Best value (ard=True):"</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Best point:"</span><span class="p">,</span> <span class="n">best_x_ard</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -242,9 +242,9 @@ Best point: [0. 0. 0. 0.]
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running with ard=False&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Running with ard=False"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
 <span class="n">policy_noard</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
 <span class="n">policy_noard</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 <span class="n">policy_noard</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -258,8 +258,8 @@ Best point: [0. 0. 0. 0.]
 
 <span class="n">best_fx_noard</span><span class="p">,</span> <span class="n">best_actions_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_sequence_best_fx</span><span class="p">()</span>
 <span class="n">best_x_noard</span> <span class="o">=</span> <span class="n">test_X</span><span class="p">[</span><span class="n">best_actions_noard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best value (ard=False):&quot;</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best point:&quot;</span><span class="p">,</span> <span class="n">best_x_noard</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Best value (ard=False):"</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Best point:"</span><span class="p">,</span> <span class="n">best_x_noard</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -288,8 +288,8 @@ Best point: [-0.04345543 -0.04197482 -0.72416357 -0.13521863]
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">st</span> <span class="o">=</span> <span class="n">n_initial</span>
 <span class="n">en</span> <span class="o">=</span> <span class="n">n_initial</span> <span class="o">+</span> <span class="n">n_bayes</span>
 <span class="n">steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ARD&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;no ARD&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_ard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"ARD"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">best_fx_noard</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"no ARD"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -325,18 +325,18 @@ Best point: [-0.04345543 -0.04197482 -0.72416357 -0.13521863]
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ls_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">get_kernel_length_scale</span><span class="p">()</span>
 <span class="n">ls_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">get_kernel_length_scale</span><span class="p">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Kernel length scale ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"--- Kernel length scale ---"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">ls_ard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:  per-dimension (smaller = more relevant)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ard=True:  per-dimension (smaller = more relevant)"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ls_ard</span><span class="p">)):</span>
-        <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">ls_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="s2">"relevant"</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">"irrelevant"</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">ls_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:  (not available)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ard=True:  (not available)"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">ls_noard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False: single (isotropic):&quot;</span><span class="p">,</span> <span class="n">ls_noard</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ard=False: single (isotropic):"</span><span class="p">,</span> <span class="n">ls_noard</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False: (not available)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ard=False: (not available)"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -365,16 +365,16 @@ ard=False: single (isotropic): 2.200175177775015
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">imp_mean_ard</span><span class="p">,</span> <span class="n">imp_std_ard</span> <span class="o">=</span> <span class="n">policy_ard</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">n_perm</span><span class="o">=</span><span class="n">n_perm</span><span class="p">)</span>
 <span class="n">imp_mean_noard</span><span class="p">,</span> <span class="n">imp_std_noard</span> <span class="o">=</span> <span class="n">policy_noard</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span><span class="n">n_perm</span><span class="o">=</span><span class="n">n_perm</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Permutation importance ---&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=True:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"--- Permutation importance ---"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"ard=True:"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">D</span><span class="p">):</span>
-    <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ard=False:&quot;</span><span class="p">)</span>
+    <span class="n">rel</span> <span class="o">=</span> <span class="s2">"relevant"</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">"irrelevant"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_ard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"ard=False:"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">D</span><span class="p">):</span>
-    <span class="n">rel</span> <span class="o">=</span> <span class="s2">&quot;relevant&quot;</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;irrelevant&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(Higher mean =&gt; more important.)&quot;</span><span class="p">)</span>
+    <span class="n">rel</span> <span class="o">=</span> <span class="s2">"relevant"</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">"irrelevant"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  dim </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">): mean = </span><span class="si">{</span><span class="n">imp_mean_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std = </span><span class="si">{</span><span class="n">imp_std_noard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"(Higher mean =&gt; more important.)"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

@@ -92,7 +92,7 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
-<span class="sd">&quot;&quot;&quot;Utility helpers for the search module.</span>
+<span class="sd">"""Utility helpers for the search module.</span>
 
 <span class="sd">This module collects helpers used across the search policies:</span>
 
@@ -102,7 +102,7 @@
 <span class="sd">  Pareto front stored in a multi-objective history.</span>
 <span class="sd">* the remaining ``show_*`` / ``is_learning`` helpers format progress messages</span>
 <span class="sd">  and drive the search loop.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -113,7 +113,7 @@
 <div class="viewcode-block" id="Simulator">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.Simulator">[ドキュメント]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Simulator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulator class wrapping the test function for discrete search space.</span>
+<span class="w">    </span><span class="sd">"""Simulator class wrapping the test function for discrete search space.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -123,12 +123,12 @@
 <span class="sd">        The test function.</span>
 <span class="sd">    negate: bool, default=False</span>
 <span class="sd">        If True, the test function value is negated before returning.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">test_function</span><span class="p">,</span> <span class="n">negate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;ERROR: test_X must be a 2D array, but got </span><span class="si">{</span><span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+                <span class="sa">f</span><span class="s2">"ERROR: test_X must be a 2D array, but got </span><span class="si">{</span><span class="n">test_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array"</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">test_X</span> <span class="o">=</span> <span class="n">test_X</span>
@@ -151,7 +151,7 @@
     <span class="n">num_X</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a grid of points in the search space.</span>
+<span class="w">    </span><span class="sd">"""Make a grid of points in the search space.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -173,7 +173,7 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If min_X and max_X have different number of dimensions</span>
 <span class="sd">        If num_X has different number of dimensions from min_X and max_X</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_X</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
@@ -182,16 +182,16 @@
 
     <span class="k">if</span> <span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ERROR: min_X must be a 1D array, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+            <span class="sa">f</span><span class="s2">"ERROR: min_X must be a 1D array, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array"</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ERROR: max_X must be a 1D array, but got </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+            <span class="sa">f</span><span class="s2">"ERROR: max_X must be a 1D array, but got </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">max_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ERROR: min_X and max_X must have the same number of dimensions, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"ERROR: min_X and max_X must have the same number of dimensions, but got </span><span class="si">{</span><span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">max_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">d</span> <span class="o">=</span> <span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -203,11 +203,11 @@
 
     <span class="k">if</span> <span class="n">num_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ERROR: num_X must be a 1D array, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array&quot;</span>
+            <span class="sa">f</span><span class="s2">"ERROR: num_X must be a 1D array, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D array"</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">num_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">d</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ERROR: num_X must have the same number of dimensions as min_X and max_X, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"ERROR: num_X must have the same number of dimensions as min_X and max_X, but got </span><span class="si">{</span><span class="n">num_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -245,7 +245,7 @@
     <span class="n">style_pareto_front</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
     <span class="n">style_dominated</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -279,9 +279,9 @@
 <span class="sd">    ====</span>
 <span class="sd">    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.</span>
 <span class="sd">    - For each item, style_pareto_front and style_dominated are higher priority than style_common.</span>
-<span class="sd">    - By default, the marker is &quot;o&quot;.</span>
-<span class="sd">    - By default, the color is &quot;blue&quot; for dominated points and &quot;red&quot; for Pareto front.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    - By default, the marker is "o".</span>
+<span class="sd">    - By default, the color is "blue" for dominated points and "red" for Pareto front.</span>
+<span class="sd">    """</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
     <span class="n">front</span><span class="p">,</span> <span class="n">front_num</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">export_pareto_front</span><span class="p">()</span>
@@ -303,7 +303,7 @@
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
-    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">}</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"blue"</span><span class="p">,</span> <span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">}</span>
     <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_common</span><span class="p">)</span>
     <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_dominated</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
@@ -312,7 +312,7 @@
         <span class="o">**</span><span class="n">style</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">}</span>
+    <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="s2">"red"</span><span class="p">,</span> <span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">}</span>
     <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_common</span><span class="p">)</span>
     <span class="n">style</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">style_pareto_front</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
@@ -321,15 +321,15 @@
         <span class="o">**</span><span class="n">style</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_axisbelow</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">xlim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlim</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ylim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Objective </span><span class="si">{</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Objective </span><span class="si">{</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Objective </span><span class="si">{</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ax</span></div>
 
@@ -349,7 +349,7 @@
     <span class="n">style_pareto_front</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
     <span class="n">style_dominated</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the Pareto front of the history for all pairs of objectives.</span>
+<span class="w">    </span><span class="sd">"""Plot the Pareto front of the history for all pairs of objectives.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -380,9 +380,9 @@
 <span class="sd">    ====</span>
 <span class="sd">    - Items in style_* are passed to the `scatter` method of matplotlib.pyplot.</span>
 <span class="sd">    - For each item, style_pareto_front and style_dominated are higher priority than style_common.</span>
-<span class="sd">    - By default, the marker is &quot;o&quot;.</span>
-<span class="sd">    - By default, the color is &quot;blue&quot; for dominated points and &quot;red&quot; for Pareto front.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    - By default, the marker is "o".</span>
+<span class="sd">    - By default, the color is "blue" for dominated points and "red" for Pareto front.</span>
+<span class="sd">    """</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
     <span class="n">nobj</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -392,8 +392,8 @@
             <span class="n">nmatrix</span><span class="p">,</span>
             <span class="n">nmatrix</span><span class="p">,</span>
             <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">nmatrix</span><span class="p">,</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">nmatrix</span><span class="p">),</span>
-            <span class="n">sharex</span><span class="o">=</span><span class="s2">&quot;col&quot;</span><span class="p">,</span>
-            <span class="n">sharey</span><span class="o">=</span><span class="s2">&quot;row&quot;</span><span class="p">,</span>
+            <span class="n">sharex</span><span class="o">=</span><span class="s2">"col"</span><span class="p">,</span>
+            <span class="n">sharey</span><span class="o">=</span><span class="s2">"row"</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">ax</span><span class="p">]])</span>
@@ -433,7 +433,7 @@
 <div class="viewcode-block" id="show_search_results">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a summary of the last ``N`` single-objective search steps.</span>
+<span class="w">    </span><span class="sd">"""Print a summary of the last ``N`` single-objective search steps.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -442,7 +442,7 @@
 <span class="sd">    N: int</span>
 <span class="sd">        Number of most recent steps to display. Capped at the total number of</span>
 <span class="sd">        searches performed so far.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
     <span class="n">history</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
 
@@ -451,7 +451,7 @@
 <div class="viewcode-block" id="show_search_results_mo">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_search_results_mo">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results_mo</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a summary of the last ``N`` multi-objective search steps.</span>
+<span class="w">    </span><span class="sd">"""Print a summary of the last ``N`` multi-objective search steps.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -462,7 +462,7 @@
 <span class="sd">        searches performed so far.</span>
 <span class="sd">    disp_pareto_set: bool, default=False</span>
 <span class="sd">        If True, also display the current Pareto set.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">)</span>
     <span class="n">history</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">)</span></div>
 
@@ -471,7 +471,7 @@
 <div class="viewcode-block" id="show_start_message_multi_search">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_start_message_multi_search">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_start_message_multi_search</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print the header announcing a multiple-probe search step.</span>
+<span class="w">    </span><span class="sd">"""Print the header announcing a multiple-probe search step.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -479,18 +479,18 @@
 <span class="sd">        Zero-based index of the current search round; the printed index is</span>
 <span class="sd">        ``N + 1``.</span>
 <span class="sd">    score: str, optional</span>
-<span class="sd">        Name of the acquisition function. If None, ``&quot;random&quot;`` is shown.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Name of the acquisition function. If None, ``"random"`` is shown.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">score</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">score</span> <span class="o">=</span> <span class="s2">&quot;random&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">:</span><span class="s2">04</span><span class="si">}</span><span class="s2">-th multiple probe search (</span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+        <span class="n">score</span> <span class="o">=</span> <span class="s2">"random"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">:</span><span class="s2">04</span><span class="si">}</span><span class="s2">-th multiple probe search (</span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="show_interactive_mode">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.show_interactive_mode">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_interactive_mode</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">history</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a message when an interactive search session starts.</span>
+<span class="w">    </span><span class="sd">"""Print a message when an interactive search session starts.</span>
 
 <span class="sd">    The message is shown only at the very first step (empty history) of an</span>
 <span class="sd">    interactive run, i.e. when no simulator is provided.</span>
@@ -501,16 +501,16 @@
 <span class="sd">        The simulator, or None for interactive mode.</span>
 <span class="sd">    history: History</span>
 <span class="sd">        The search history.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;interactive mode starts ... </span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"interactive mode starts ... </span><span class="se">\n</span><span class="s2"> "</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="length_vector">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.length_vector">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">length_vector</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the number of elements of ``t``.</span>
+<span class="w">    </span><span class="sd">"""Return the number of elements of ``t``.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -521,8 +521,8 @@
 <span class="sd">    =======</span>
 <span class="sd">    int</span>
 <span class="sd">        ``len(t)`` if ``t`` is sized, otherwise 1 (treating ``t`` as a scalar).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
+<span class="sd">    """</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">"__len__"</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">N</span></div>
 
 
@@ -530,7 +530,7 @@
 <div class="viewcode-block" id="is_learning">
 <a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.is_learning">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_learning</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decide whether to (re)learn the hyperparameters at search step ``n``.</span>
+<span class="w">    </span><span class="sd">"""Decide whether to (re)learn the hyperparameters at search step ``n``.</span>
 
 <span class="sd">    Arguments</span>
 <span class="sd">    =========</span>
@@ -547,7 +547,7 @@
 <span class="sd">    =======</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if hyperparameters should be learned at this step.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="k">elif</span> <span class="n">interval</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>

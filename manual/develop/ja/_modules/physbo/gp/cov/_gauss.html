@@ -98,7 +98,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">grad_width</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">G</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Gradiant along width direction.</span>
 
 <span class="sd">    Parameters</span>
@@ -112,7 +112,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1">## The meaning of the following einsum is:</span>
     <span class="c1"># N = X.shape[0]</span>
@@ -124,13 +124,13 @@
     <span class="c1">#             gradG[d, i, j] = (X[i, d] - X[j, d]) / width[d]</span>
     <span class="c1">#             gradG[d, i, j] = gradG[d, i, j] ** 2 * G[i, j]</span>
     <span class="c1">#             gradG[d, j, i] = gradG[d, i, j]</span>
-    <span class="n">gradG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ijd,ij-&gt;dij&quot;</span><span class="p">,</span> <span class="p">((</span><span class="n">X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">X</span><span class="p">)</span> <span class="o">/</span> <span class="n">width</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+    <span class="n">gradG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"ijd,ij-&gt;dij"</span><span class="p">,</span> <span class="p">((</span><span class="n">X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">X</span><span class="p">)</span> <span class="o">/</span> <span class="n">width</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">gradG</span>
 
 <div class="viewcode-block" id="Gauss">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss">[ドキュメント]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Gauss</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;gaussian kernel&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""gaussian kernel"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -143,7 +143,7 @@
         <span class="n">max_scale</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
         <span class="n">min_scale</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -160,7 +160,7 @@
 <span class="sd">            Maximum value of scale</span>
 <span class="sd">        min_scale: float</span>
 <span class="sd">            Minimum value of scale</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">ard</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">num_dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
@@ -187,22 +187,22 @@
 <div class="viewcode-block" id="Gauss.print_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.print_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">print_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        show the current kernel parameters</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; Parameters of Gaussian kernel </span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; width  = &quot;</span><span class="p">,</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; scale  = &quot;</span><span class="p">,</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; scale2 = &quot;</span><span class="p">,</span> <span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">" Parameters of Gaussian kernel </span><span class="se">\n</span><span class="s2"> "</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">" width  = "</span><span class="p">,</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">" scale  = "</span><span class="p">,</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">" scale2 = "</span><span class="p">,</span> <span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">" </span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Gauss.prepare">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.prepare">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Setting parameters</span>
 
 <span class="sd">        Parameters</span>
@@ -216,7 +216,7 @@
 <span class="sd">        width: int</span>
 <span class="sd">        scale: int</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
             <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span>
@@ -231,7 +231,7 @@
 <div class="viewcode-block" id="Gauss.get_grad">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.get_grad">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Getting gradiant values of X</span>
 
 <span class="sd">        Parameters</span>
@@ -245,7 +245,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        grad: numpy.ndarray</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">num_data</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">params</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
@@ -254,7 +254,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">:</span>
             <span class="n">grad</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">grad_width</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">pdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">)</span>
+            <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">pdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"euclidean"</span><span class="p">)</span>
             <span class="n">grad</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">G</span> <span class="o">*</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">squareform</span><span class="p">(</span><span class="n">pairwise_dists</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">grad</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">G</span>
@@ -264,7 +264,7 @@
 <div class="viewcode-block" id="Gauss.get_cov">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.get_cov">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        compute the covariant matrix</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -286,7 +286,7 @@
 <span class="sd">            covariant matrix</span>
 <span class="sd">            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,</span>
 <span class="sd">            where num_points is the number of points in X.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">params</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">scale2</span> <span class="o">=</span> <span class="n">scale</span><span class="o">**</span><span class="mi">2</span>
 
@@ -295,12 +295,12 @@
                 <span class="n">G</span> <span class="o">=</span> <span class="n">scale2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">squareform</span><span class="p">(</span>
-                    <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">pdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                    <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">pdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"euclidean"</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
                 <span class="p">)</span>
                 <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pairwise_dists</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale2</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="n">Z</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="n">Z</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"euclidean"</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
             <span class="p">)</span>
             <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pairwise_dists</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale2</span>
 
@@ -310,7 +310,7 @@
 <div class="viewcode-block" id="Gauss.set_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.set_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        set kernel parameters</span>
 
 <span class="sd">        Parameters</span>
@@ -318,7 +318,7 @@
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters for optimization.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
@@ -327,20 +327,20 @@
 <div class="viewcode-block" id="Gauss.supp_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.supp_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">supp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set maximum (minimum) values for parameters when the parameter is greater(less) than this value.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters for optimization.</span>
-<span class="sd">            Array of real elements of size (n,), where &#39;n&#39; is the number of independent variables.</span>
+<span class="sd">            Array of real elements of size (n,), where 'n' is the number of independent variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        params: numpy.ndarray</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span>
 
@@ -359,7 +359,7 @@
 <div class="viewcode-block" id="Gauss.decomp_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.decomp_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">decomp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        decompose the parameters defined on the log region</span>
 <span class="sd">        into width and scale parameters</span>
 
@@ -372,7 +372,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        width: float</span>
 <span class="sd">        scale: float</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -382,7 +382,7 @@
 <div class="viewcode-block" id="Gauss.save">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.save">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        save the gaussian kernel</span>
 
 <span class="sd">        Parameters</span>
@@ -390,49 +390,49 @@
 <span class="sd">        file_name: str</span>
 <span class="sd">            file name to save the information of the kernel</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">kwarg</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gauss&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
-            <span class="s2">&quot;ard&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">,</span>
-            <span class="s2">&quot;num_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span><span class="p">,</span>
-            <span class="s2">&quot;max_ln_scale&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_scale</span><span class="p">,</span>
-            <span class="s2">&quot;min_ln_scale&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_scale</span><span class="p">,</span>
-            <span class="s2">&quot;max_ln_width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span><span class="p">,</span>
-            <span class="s2">&quot;min_ln_width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_width</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">,</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"gauss"</span><span class="p">,</span>
+            <span class="s2">"params"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="s2">"ard"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">,</span>
+            <span class="s2">"num_dim"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span><span class="p">,</span>
+            <span class="s2">"max_ln_scale"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_scale</span><span class="p">,</span>
+            <span class="s2">"min_ln_scale"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_scale</span><span class="p">,</span>
+            <span class="s2">"max_ln_width"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span><span class="p">,</span>
+            <span class="s2">"min_ln_width"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_width</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Gauss.load">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.load">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recovering the Gaussian kernel from file</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">         file_name: str</span>
 <span class="sd">            file name to load the information of the kernel</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;num_dim&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;ard&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_scale</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;max_ln_scale&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_scale</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;min_ln_scale&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;max_ln_width&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_width</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;min_ln_width&quot;</span><span class="p">]</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"num_dim"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"ard"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_scale</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"max_ln_scale"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_scale</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"min_ln_scale"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_ln_width</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"max_ln_width"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_ln_width</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"min_ln_width"</span><span class="p">]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"params"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Gauss.get_params_bound">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.get_params_bound">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_params_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Getting boundary array.</span>
 
 <span class="sd">        Returns</span>
@@ -440,7 +440,7 @@
 <span class="sd">        bound: list</span>
 <span class="sd">            A num_params-dimensional array with the tuple (min_params, max_params).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">:</span>
             <span class="n">bound</span> <span class="o">=</span> <span class="p">[</span>
@@ -456,7 +456,7 @@
 <div class="viewcode-block" id="Gauss.cat_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.cat_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">cat_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Taking the logarithm of width and scale parameters</span>
 <span class="sd">        and concatinate them into one ndarray</span>
 
@@ -469,7 +469,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        params: numpy.ndarray</span>
 <span class="sd">            Parameters</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
@@ -479,7 +479,7 @@
 <div class="viewcode-block" id="Gauss.rand_expans">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.rand_expans">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">rand_expans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_basis</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Kernel Expansion</span>
 
 <span class="sd">        Parameters</span>
@@ -492,7 +492,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        tupple (W, b, amp)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">params</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">scale2</span> <span class="o">=</span> <span class="n">scale</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">scale2</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_basis</span><span class="p">)</span>
@@ -504,7 +504,7 @@
 <div class="viewcode-block" id="Gauss.get_cand_params">
 <a class="viewcode-back" href="../../../../api/physbo.gp.cov.html#physbo.gp.cov.Gauss.get_cand_params">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_cand_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Getting candidate parameters.</span>
 
 <span class="sd">        Parameters</span>
@@ -520,7 +520,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        params: numpy.ndarray</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">:</span>
             <span class="c1"># with ARD</span>
             <span class="n">width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_dim</span><span class="p">)</span>

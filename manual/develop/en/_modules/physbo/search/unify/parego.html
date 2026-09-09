@@ -104,37 +104,38 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">ParEGO</span><span class="p">:</span>
 
     <span class="n">num_objectives</span><span class="p">:</span> <span class="nb">int</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of objectives&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Number of objectives"""</span>
 
     <span class="n">weight_sum</span><span class="p">:</span> <span class="nb">float</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight of the sum of objectives&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Weight of the sum of objectives"""</span>
 
-    <span class="n">weight_max</span><span class="p">:</span> <span class="nb">float</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight of the max of objectives&quot;&quot;&quot;</span>
+    <span class="n">weight_min</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">"""Weight of the min of objectives"""</span>
 
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weights for the objectives.</span>
+<span class="w">    </span><span class="sd">"""Weights for the objectives.</span>
 <span class="sd">    Weights are automatically normalized to sum to 1.</span>
 <span class="sd">    If None, random weights are used for each call.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">weights_discrete</span><span class="p">:</span> <span class="nb">int</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of discrete points to generate random weights&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Number of discrete points to generate random weights"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_objectives</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">weight_sum</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">weight_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">weight_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weight_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weights_discrete</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; ParEGO unified objective function</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">""" ParEGO unified objective function</span>
 
 <span class="sd">        The unified objective function of original objectives t is defined as:</span>
-<span class="sd">        t_unified = weight_max * max(weights * t) + weight_sum * sum(weights * t)</span>
+<span class="sd">        t_unified = weight_min * min(weights * t) + weight_sum * sum(weights * t)</span>
 
-<span class="sd">        Before calculating the unified objective function, the original objectives are normalized to 0 and 1 using min-max scaling.</span>
+<span class="sd">        Before calculating the unified objective function, the original objectives are normalized to the range [-1, 0] using min-max scaling.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -142,8 +143,10 @@
 <span class="sd">            Number of objectives</span>
 <span class="sd">        weight_sum: float</span>
 <span class="sd">            Weight of the sum of objectives, default is 0.05</span>
+<span class="sd">        weight_min: float</span>
+<span class="sd">            Weight of the min of objectives, default is 1.0</span>
 <span class="sd">        weight_max: float</span>
-<span class="sd">            Weight of the max of objectives, default is 1.0</span>
+<span class="sd">            Alias of weight_min. If both weight_min and weight_max are provided, throw an error.</span>
 <span class="sd">        weights: np.ndarray</span>
 <span class="sd">            Weights for the objectives.</span>
 <span class="sd">            Weights are automatically normalized to sum to 1.</span>
@@ -157,10 +160,19 @@
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
 <span class="sd">        [1] J. Knowles, ParEGO: a hybrid algorithm with on-line landscape approximation for expensive multiobjective optimization problems, IEEE Trans. Evol. Comput. 10, 50 (2006) (doi:10.1109/tevc.2005.851274).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span> <span class="o">=</span> <span class="n">weight_sum</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_max</span> <span class="o">=</span> <span class="n">weight_max</span>
+        <span class="k">if</span> <span class="n">weight_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">weight_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weight_min</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weight_min</span> <span class="o">=</span> <span class="n">weight_max</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">weight_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weight_min</span> <span class="o">=</span> <span class="n">weight_min</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Both weight_min and weight_max are provided"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
@@ -169,7 +181,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weights_discrete</span> <span class="o">=</span> <span class="n">weights_discrete</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate unified objective function by ParEGO method</span>
 
 <span class="sd">        Parameters</span>
@@ -183,7 +195,7 @@
 <span class="sd">        t_unified: np.ndarray</span>
 <span class="sd">            Values of the unified objective function</span>
 <span class="sd">            Shape: (N, 1)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights_discrete</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights_discrete</span><span class="p">)</span>
@@ -196,12 +208,12 @@
         <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;The number of objectives in t (</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">) must be the same as the number of objectives in the ParEGO (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"The number of objectives in t (</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">) must be the same as the number of objectives in the ParEGO (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="si">}</span><span class="s2">)"</span>
 
         <span class="n">t_weighted</span> <span class="o">=</span> <span class="n">min_max_scaling</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">low</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">t_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">t_weighted</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">t_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">t_weighted</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">t_unified</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_max</span> <span class="o">*</span> <span class="n">t_max</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span> <span class="o">*</span> <span class="n">t_sum</span>
+        <span class="n">t_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">t_weighted</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">t_unified</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_min</span> <span class="o">*</span> <span class="n">t_min</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span> <span class="o">*</span> <span class="n">t_sum</span>
         <span class="k">return</span> <span class="n">t_unified</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
 
 
@@ -210,7 +222,7 @@
 <div class="viewcode-block" id="sample_weights">
 <a class="viewcode-back" href="../../../../api/physbo.search.unify.parego.html#physbo.search.unify.sample_weights">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_weights</span><span class="p">(</span><span class="n">num_objectives</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Sample weights for the objectives</span>
 
 <span class="sd">    Parameters</span>
@@ -219,7 +231,7 @@
 <span class="sd">        Number of objectives</span>
 <span class="sd">    s: int</span>
 <span class="sd">        Number of discrete points to sample weights</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">ls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_objectives</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_objectives</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
