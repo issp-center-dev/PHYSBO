@@ -69,6 +69,35 @@ In addition, the EI score is the expected value of the difference between the pr
 
 where :math:`\phi(\cdot)` is a probability density function.
 
+The Upper Confidence Bound (UCB) is also available. Its score is given by
+
+.. math::
+
+   \text{UCB} (\mathbf{x}) = \mu_c (\mathbf{x}) + \beta \, \sigma_c (\mathbf{x}),
+
+where :math:`\beta \geq 0` is a trade-off parameter between exploitation and
+exploration. A larger :math:`\beta` puts more weight on the uncertainty
+:math:`\sigma_c (\mathbf{x})` (exploration), while :math:`\beta = 0` reduces to
+greedy exploitation of the posterior mean :math:`\mu_c (\mathbf{x})`.
+
+.. note::
+
+   The acquisition function is selected by the ``score`` argument of
+   ``bayes_search`` / ``get_score`` (``"TS"`` (default), ``"EI"``, ``"PI"`` and
+   ``"UCB"``). For UCB, the trade-off parameter :math:`\beta` is set by the
+   ``ucb_beta`` argument (default ``1.0``):
+
+   .. code-block:: python
+
+      # discrete search space
+      policy = physbo.search.discrete.Policy(test_X=X)
+      policy.bayes_search(
+          max_num_probes=10, simulator=sim, score="UCB", ucb_beta=2.0
+      )
+
+   UCB is available for single-objective optimization (the ``discrete``,
+   ``discrete_unified`` and ``range`` policies).
+
 
 - Step3: Experiment (Simulation)
 

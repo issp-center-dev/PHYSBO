@@ -70,6 +70,33 @@ PIスコアは、現在得られている :math:`y` の最大値 :math:`y_{\max}
 
 ここで :math:`\phi(\cdot)` は確率密度関数です。
 
+さらに、信頼上限(UCB : Upper Confidence Bound)も利用できます。UCBによるスコアは次式で与えられます。
+
+.. math::
+
+   \text{UCB} (\mathbf{x}) = \mu_c (\mathbf{x}) + \beta \, \sigma_c (\mathbf{x})
+
+ここで :math:`\beta \geq 0` は活用(exploitation)と探索(exploration)のトレードオフを調整するパラメータです。
+:math:`\beta` を大きくすると予測の不確かさ :math:`\sigma_c (\mathbf{x})` を重視した探索的な選択になり、
+:math:`\beta = 0` のときは予測平均 :math:`\mu_c (\mathbf{x})` を貪欲に最大化する選択になります。
+
+.. note::
+
+   獲得関数は ``bayes_search`` / ``get_score`` の ``score`` 引数で選択します
+   (``"TS"`` (デフォルト)、 ``"EI"`` 、 ``"PI"`` 、 ``"UCB"`` )。
+   UCBの場合、トレードオフパラメータ :math:`\beta` は ``ucb_beta`` 引数で指定します
+   (デフォルトは ``1.0`` )。
+
+   .. code-block:: python
+
+      # 離散空間の探索
+      policy = physbo.search.discrete.Policy(test_X=X)
+      policy.bayes_search(
+          max_num_probes=10, simulator=sim, score="UCB", ucb_beta=2.0
+      )
+
+   UCBは単目的最適化( ``discrete`` 、 ``discrete_unified`` 、 ``range`` の各Policy)で利用できます。
+
 
 - ステップ３：実験
 
