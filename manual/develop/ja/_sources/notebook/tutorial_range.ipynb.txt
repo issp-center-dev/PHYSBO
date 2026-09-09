@@ -463,7 +463,8 @@
    "source": [
     "\n",
     "`physbo.search.optimize.random.Optimizer` 以外のオプティマイザを使うことで、ランダムサーチ以外の最大化アルゴリズムを利用できます。\n",
-    "PHYSBOでは、ODAT-SEを用いるオプティマイザ `physbo.search.optimize.odatse.Optimizer` を提供しています。このライブラリは\n",
+    "PHYSBOでは、ODAT-SEを用いるオプティマイザ `physbo.search.optimize.odatse.Optimizer` を提供しています。\n",
+    "このライブラリは\n",
     "\n",
     "- \"exchange\": レプリカ交換モンテカルロ法\n",
     "- \"pamc\": ポピュレーションアニーリングモンテカルロ法\n",
@@ -889,16 +890,20 @@
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": null,
+   "cell_type": "markdown",
    "metadata": {},
-   "outputs": [],
-   "source": []
+   "source": [
+    "PHYSBO の Policy で `comm=None` とした場合（あるいは省略した場合）には離散版や `random.Optimizer` と同様に逐次実行になります。\n",
+    "並列実行する場合は PHYSBO の Policy で `comm=MPI.COMM_WORLD` を指定してください。\n",
+    "\n",
+    "なお、`mpi4py` がインストールされている場合、逐次実行の場合にもODAT-SEが内部で `MPI.Init()` でMPI環境を起動します。\n",
+    "起動を防ぎたい場合は、あらかじめ環境変数 `ODATSE_NOMPI=1` を指定してください（例: `ODATSE_NOMPI=1 python script.py`）。"
+   ]
   }
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": ".venv",
+   "display_name": ".venv (3.11.14)",
    "language": "python",
    "name": "python3"
   },

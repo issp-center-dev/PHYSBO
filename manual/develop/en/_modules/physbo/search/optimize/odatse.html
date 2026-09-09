@@ -96,6 +96,7 @@
 
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">odatse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">odatse.mpi</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">odatse.solver.function</span>
 
 
@@ -174,7 +175,12 @@
             <span class="s2">"param"</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">"min_list"</span><span class="p">:</span> <span class="n">min_X</span><span class="p">,</span>
                 <span class="s2">"max_list"</span><span class="p">:</span> <span class="n">max_X</span><span class="p">,</span>
-                <span class="s2">"unit_list"</span><span class="p">:</span> <span class="n">d_X</span><span class="p">,</span>
+                <span class="c1"># Note: ODAT-SE's minsearch treats the search variables in</span>
+                <span class="c1"># units of unit_list (the objective function receives</span>
+                <span class="c1"># x / unit_list and the result is reported in the scaled</span>
+                <span class="c1"># coordinates), so anything other than 1 would make the</span>
+                <span class="c1"># returned point inconsistent with min_X/max_X.</span>
+                <span class="s2">"unit_list"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span>
             <span class="p">},</span>
             <span class="s2">"minimize"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"maxiter"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
         <span class="p">}</span>
@@ -228,18 +234,18 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        fn : callable</span>
-<span class="sd">            The objective function to minimize. Should take a numpy array of shape (dim,) and return a float.</span>
-<span class="sd">        min_X : numpy.ndarray</span>
-<span class="sd">            Lower bounds for each dimension</span>
-<span class="sd">        max_X : numpy.ndarray</span>
-<span class="sd">            Upper bounds for each dimension</span>
+<span class="sd">            The objective function to maximize. Should take a numpy array of shape (dim,) and return a float.</span>
 <span class="sd">        mpicomm : MPI.Comm, optional</span>
-<span class="sd">            MPI communicator for parallel optimization. If None, runs in serial.</span>
+<span class="sd">            MPI communicator for parallel optimization. With ODAT-SE 4.0,</span>
+<span class="sd">            None initializes a single-process context (nalg=1, nsolve=1).</span>
+<span class="sd">            Set ODATSE_NOMPI=1 before importing PHYSBO to avoid MPI</span>
+<span class="sd">            initialization. For parallel execution,</span>
+<span class="sd">            specify MPI.COMM_WORLD; custom communicators are not supported.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
-<span class="sd">            The optimal point found by the optimizer</span>
+<span class="sd">            The optimal point found by the optimizer, with shape (1, dim).</span>
 <span class="sd">        """</span>
 
         <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="p">[</span><span class="s2">"param"</span><span class="p">][</span><span class="s2">"min_list"</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
@@ -251,6 +257,31 @@
         <span class="p">}</span>
 
         <span class="n">info_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"base"</span><span class="p">:</span> <span class="n">base_dict</span><span class="p">,</span> <span class="s2">"algorithm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="p">,</span> <span class="s2">"solver"</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="k">if</span> <span class="n">odatse</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s2">"4.0.0"</span><span class="p">:</span>
+            <span class="c1"># ODAT-SE 4 requires a process-wide context before constructing</span>
+            <span class="c1"># the solver. Reuse it across successive acquisition searches.</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># check if odatse.mpi.setup() has been called yet or not</span>
+                <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">algcomm</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mpicomm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">nalg</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nsolve</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">mpicomm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mpicomm</span> <span class="o">!=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ODAT-SE 4 requires mpicomm=MPI.COMM_WORLD"</span><span class="p">)</span>
+
+            <span class="n">algsize</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">algsize</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">solsize</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"PHYSBO requires ODAT-SE solver parallelism nsolve=1"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">algsize</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">mpicomm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">algsize</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"mpicomm=None (serial execution) but mpiexec was invoked with np&gt;1."</span><span class="p">)</span>
 
         <span class="n">info</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">Info</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
         <span class="n">solver</span> <span class="o">=</span> <span class="n">odatse</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">Solver</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
@@ -268,7 +299,9 @@
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">alg</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"mapper"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alg_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"mapper"</span> <span class="ow">and</span> <span class="s2">"x"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="c1"># ODAT-SE 3.2 returns no point for mapper; 4.0 returns it directly</span>
+            <span class="c1"># and adds a header to ColorMap.txt.</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"odatse_output/ColorMap.txt"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
                 <span class="n">fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
@@ -280,7 +313,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">X</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
 
 </pre></div>
 
