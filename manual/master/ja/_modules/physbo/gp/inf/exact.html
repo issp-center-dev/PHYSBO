@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>physbo.gp.inf.exact &mdash; PHYSBO 3.2.0 ドキュメント</title>
+  <title>physbo.gp.inf.exact &mdash; PHYSBO 3.2.1 ドキュメント</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=edec8d6d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=d67760e9"></script>
+      <script src="../../../../_static/documentation_options.js?v=720fe4f0"></script>
       <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../../_static/translations.js?v=4755f45a"></script>
@@ -95,7 +95,7 @@
 <div class="viewcode-block" id="eval_marlik">
 <a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.eval_marlik">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">eval_marlik</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluating marginal likelihood.</span>
 
 <span class="sd">    Parameters</span>
@@ -114,7 +114,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    marlik: float</span>
 <span class="sd">        Marginal likelihood.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ndata</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
@@ -140,7 +140,7 @@
 <div class="viewcode-block" id="get_grad_marlik">
 <a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_grad_marlik">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_grad_marlik</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluating gradiant of marginal likelihood.</span>
 
 <span class="sd">    Parameters</span>
@@ -159,7 +159,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    grad_marlik: numpy.ndarray</span>
 <span class="sd">        Gradiant of marginal likelihood.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ndata</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
@@ -175,7 +175,7 @@
 
     <span class="n">grad_marlik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">gp</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; lik &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" lik """</span>
     <span class="k">if</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">lik_grad</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_grad</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">lik_params</span><span class="p">)</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="n">lik_grad</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
@@ -184,7 +184,7 @@
         <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">misc</span><span class="o">.</span><span class="n">traceAB2</span><span class="p">(</span><span class="n">invA</span><span class="p">,</span> <span class="n">lik_grad</span><span class="p">)</span>
 
     <span class="n">ntemp</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">num_params</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; prior &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" prior """</span>
     <span class="k">if</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">mean_grad</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">get_grad_mean</span><span class="p">(</span><span class="n">ndata</span><span class="p">,</span> <span class="n">prior_params</span><span class="p">)</span>
         <span class="n">grad_marlik</span><span class="p">[</span><span class="n">ntemp</span> <span class="p">:</span> <span class="n">ntemp</span> <span class="o">+</span> <span class="n">gp</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">num_params</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span>
@@ -207,7 +207,7 @@
 <div class="viewcode-block" id="prepare">
 <a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.prepare">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -224,7 +224,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    stats: tupple</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ndata</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="c1"># ndims = X.shape[1]</span>
 
@@ -249,7 +249,7 @@
 <div class="viewcode-block" id="get_post_fmean">
 <a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fmean">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculating the mean of posterior</span>
 
 <span class="sd">    Parameters</span>
@@ -265,7 +265,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">ntest</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -283,7 +283,7 @@
 <div class="viewcode-block" id="get_post_fcov">
 <a class="viewcode-back" href="../../../../api/physbo.gp.inf.exact.html#physbo.gp.inf.exact.get_post_fcov">[ドキュメント]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculating the covariance of posterior</span>
 
 <span class="sd">    Parameters</span>
@@ -303,7 +303,7 @@
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false,</span>
 <span class="sd">            where num_points is the number of points in X.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">lik_params</span><span class="p">,</span> <span class="n">prior_params</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">decomp_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
@@ -356,7 +356,7 @@
 <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     <span class="fa fa-book"> Read the Docs</span>
-    v: 3.2.0
+    v: 3.2.1
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
@@ -366,14 +366,14 @@
         
         <dd>
         
-          <a href="../../../../../../3.2.0/en/_modules/physbo/gp/inf/exact.html">en</a>
+          <a href="../../../../../../3.2.1/en/_modules/physbo/gp/inf/exact.html">en</a>
         
         </dd>
       
         
         <dd>
         <strong>
-          <a href="../../../../../../3.2.0/ja/_modules/physbo/gp/inf/exact.html">ja</a>
+          <a href="../../../../../../3.2.1/ja/_modules/physbo/gp/inf/exact.html">ja</a>
         </strong>
         </dd>
       
@@ -397,7 +397,7 @@
         
         <dd>
         <strong>
-          <a href="../../../../../../3.2.0/ja/_modules/physbo/gp/inf/exact.html">3.2.0</a>
+          <a href="../../../../../../3.2.1/ja/_modules/physbo/gp/inf/exact.html">3.2.1</a>
         </strong>
         </dd>
       

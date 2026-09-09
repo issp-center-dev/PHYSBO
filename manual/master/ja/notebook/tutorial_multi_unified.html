@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>多目的最適化の高速計算 &mdash; PHYSBO 3.2.0 ドキュメント</title>
+  <title>多目的最適化の高速計算 &mdash; PHYSBO 3.2.1 ドキュメント</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d67760e9"></script>
+      <script src="../_static/documentation_options.js?v=720fe4f0"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/translations.js?v=4755f45a"></script>
@@ -149,18 +149,18 @@
 <h3>ParEGO 法<a class="headerlink" href="#ParEGO-法" title="Link to this heading"></a></h3>
 <section id="id5">
 <h4>定義<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
-<p>ParEGO法は、目的関数の値について重み付き和と重み付き最大値をとることで、多目的最適化を単目的最適化に帰着させる方法です。 目的関数の重みを <span class="math notranslate nohighlight">\(\vec{w} = (w_1, w_2, \dots, w_p)\)</span> とし、和と最大値の重みをそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{max}\)</span> とすると、新たな目的関数は</p>
+<p>ParEGO法は、目的関数の値について重み付き和と重み付き最小値をとることで、多目的最適化を単目的最適化に帰着させる方法です。 目的関数の重みを <span class="math notranslate nohighlight">\(\vec{w} = (w_1, w_2, \dots, w_p)\)</span> とし、和と最小値の重みをそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{min}\)</span> とすると、新たな目的関数は</p>
 <div class="math notranslate nohighlight">
-\[z_i = \rho_\text{sum} \sum_{j} w_j y_{i,j} + \rho_\text{max} \max_{j} w_j y_{i,j}\]</div>
-<p>となります。</p>
+\[z_i = \rho_\text{sum} \sum_{j} w_j y_{i,j} + \rho_\text{min} \min_{j} w_j y_{i,j}\]</div>
+<p>となります。 この目的関数をベイズ最適化で最大化します。 なお、原著論文は最小化問題を扱っていたので、 <span class="math notranslate nohighlight">\(\min_{j} w_j y_{i,j}\)</span> ではなく <span class="math notranslate nohighlight">\(\max_{j} w_j y_{i,j}\)</span> になっています。 他の文献と比較する際には注意してください。</p>
 </section>
 <section id="PHYSBO-での使い方">
 <h4>PHYSBO での使い方<a class="headerlink" href="#PHYSBO-での使い方" title="Link to this heading"></a></h4>
 <p>PHYSBOでは、 <code class="docutils literal notranslate"><span class="pre">physbo.search.unify.ParEGO</span></code> クラスとして ParEGO 法を実装しています。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">ParEGO</span><span class="p">(</span><span class="n">weight_sum</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">weight_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_discrete</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">unify_method</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">unify</span><span class="o">.</span><span class="n">ParEGO</span><span class="p">(</span><span class="n">weight_sum</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">weight_min</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights_discrete</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">weight_sum</span></code> と <code class="docutils literal notranslate"><span class="pre">weight_max</span></code> はそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{max}\)</span> に対応します。 <code class="docutils literal notranslate"><span class="pre">weights</span></code> には重み <span class="math notranslate nohighlight">\(\vec{w}\)</span> を指定します。</p>
+<p><code class="docutils literal notranslate"><span class="pre">weight_sum</span></code> と <code class="docutils literal notranslate"><span class="pre">weight_min</span></code> はそれぞれ <span class="math notranslate nohighlight">\(\rho_\text{sum}\)</span> と <span class="math notranslate nohighlight">\(\rho_\text{min}\)</span> に対応します。 <code class="docutils literal notranslate"><span class="pre">weights</span></code> には重み <span class="math notranslate nohighlight">\(\vec{w}\)</span> を指定します。</p>
 <ul class="simple">
 <li><p>重み <span class="math notranslate nohighlight">\(\vec{w}\)</span> は <span class="math notranslate nohighlight">\(\sum_{j} w_j = 1\)</span> として自動的に規格化されます。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">weights</span> <span class="pre">=</span> <span class="pre">None</span></code> とすると、ベイズ最適化のステップごとに重みを乱数で生成します。</p>
@@ -246,7 +246,7 @@
 
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'HVPI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_HVPI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">time_HVPI</span>
 </pre></div>
@@ -258,7 +258,7 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-4.208933115005493
+4.355309724807739
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -270,15 +270,15 @@
     <span class="n">res_HVPI</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_HVPI</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;HVPI&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"HVPI"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -349,7 +349,7 @@ np.float64(0.3285497837573861)
 
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'EI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_NDS</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">time_NDS</span>
 </pre></div>
@@ -361,7 +361,7 @@ np.float64(0.3285497837573861)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-1.7659821510314941
+1.8123118877410889
 </pre></div></div>
 </div>
 <section id="パレート解のプロット">
@@ -375,15 +375,15 @@ np.float64(0.3285497837573861)
     <span class="n">res_NDS</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_NDS</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;NDS&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"NDS"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -439,7 +439,7 @@ np.float64(0.30923409715730354)
 
 <span class="n">res_random</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'EI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_ParEGO</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">time_ParEGO</span>
 </pre></div>
@@ -451,7 +451,7 @@ np.float64(0.30923409715730354)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-1.7743690013885498
+1.845445156097412
 </pre></div></div>
 </div>
 <section id="id18">
@@ -465,15 +465,15 @@ np.float64(0.30923409715730354)
     <span class="n">res_ParEGO</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_ParEGO</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;ParEGO&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"ParEGO"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -511,7 +511,7 @@ Text(0.5, 1.0, &#39;ParEGO&#39;)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-np.float64(0.18004551161609372)
+np.float64(0.30738182186615104)
 </pre></div></div>
 </div>
 </section>
@@ -524,9 +524,9 @@ np.float64(0.18004551161609372)
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># make table</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s2">&quot;アルゴリズム&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NDS&quot;</span><span class="p">,</span> <span class="s2">&quot;ParEGO&quot;</span><span class="p">,</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;計算時間&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">time_NDS</span><span class="p">,</span> <span class="n">time_ParEGO</span><span class="p">,</span> <span class="n">time_HVPI</span><span class="p">],</span>
-    <span class="s2">&quot;劣解領域体積&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_NDS</span><span class="p">,</span> <span class="n">VID_ParEGO</span><span class="p">,</span> <span class="n">VID_HVPI</span><span class="p">]</span>
+    <span class="s2">"アルゴリズム"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"NDS"</span><span class="p">,</span> <span class="s2">"ParEGO"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">],</span>
+    <span class="s2">"計算時間"</span><span class="p">:</span> <span class="p">[</span><span class="n">time_NDS</span><span class="p">,</span> <span class="n">time_ParEGO</span><span class="p">,</span> <span class="n">time_HVPI</span><span class="p">],</span>
+    <span class="s2">"劣解領域体積"</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_NDS</span><span class="p">,</span> <span class="n">VID_ParEGO</span><span class="p">,</span> <span class="n">VID_HVPI</span><span class="p">]</span>
 <span class="p">})</span>
 <span class="n">df</span>
 <br/></pre></div>
@@ -564,19 +564,19 @@ np.float64(0.18004551161609372)
     <tr>
       <th>0</th>
       <td>NDS</td>
-      <td>1.765982</td>
+      <td>1.812312</td>
       <td>0.309234</td>
     </tr>
     <tr>
       <th>1</th>
       <td>ParEGO</td>
-      <td>1.774369</td>
-      <td>0.180046</td>
+      <td>1.845445</td>
+      <td>0.307382</td>
     </tr>
     <tr>
       <th>2</th>
       <td>HVPI</td>
-      <td>4.208933</td>
+      <td>4.355310</td>
       <td>0.328550</td>
     </tr>
   </tbody>
@@ -626,7 +626,7 @@ g_3(x, y) = 30 - 5x - y \ge 0 \\
 
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_KYMN_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;HVPI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_KYMN_HVPI</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'HVPI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_KYMN_HVPI</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">VID_KYMN_HVPI</span> <span class="o">=</span> <span class="n">res_KYMN_HVPI</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
 <span class="n">VID_KYMN_HVPI</span>
@@ -635,17 +635,17 @@ g_3(x, y) = 30 - 5x - y \ge 0 \\
     <span class="n">res_KYMN_HVPI</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_HVPI</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;HVPI&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"HVPI"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -679,7 +679,7 @@ Text(0.5, 1.0, &#39;HVPI&#39;)
 
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'EI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">VID_KYMN_ParEGO</span> <span class="o">=</span> <span class="n">res_KYMN_ParEGO</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
 <span class="n">VID_KYMN_ParEGO</span>
@@ -688,17 +688,17 @@ Text(0.5, 1.0, &#39;HVPI&#39;)
     <span class="n">res_KYMN_ParEGO</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_ParEGO</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;ParEGO&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"ParEGO"</span><span class="p">)</span>
 <br/></pre></div>
 </div>
 </div>
@@ -732,7 +732,7 @@ Text(0.5, 1.0, &#39;ParEGO&#39;)
 
 <span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="n">res_KYMN_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">&#39;EI&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">res_KYMN_NDS</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="n">num_bayes_search</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simu_KYMN</span><span class="p">,</span> <span class="n">unify_method</span><span class="o">=</span><span class="n">unify_method</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s1">'EI'</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">time_KYMN_NDS</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
 <span class="n">VID_KYMN_NDS</span> <span class="o">=</span> <span class="n">res_KYMN_NDS</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn_KYMN</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
 <span class="n">VID_KYMN_NDS</span>
@@ -741,17 +741,17 @@ Text(0.5, 1.0, &#39;ParEGO&#39;)
     <span class="n">res_KYMN_NDS</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_end</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;+&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_NDS</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span><span class="p">,</span>
-    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;marker&quot;</span><span class="p">:</span> <span class="s2">&quot;o&quot;</span><span class="p">},</span>
+    <span class="n">style_common</span><span class="o">=</span><span class="p">{</span><span class="s2">"marker"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">},</span>
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;NDS&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"NDS"</span><span class="p">)</span>
 <br/></pre></div>
 </div>
 </div>
@@ -779,9 +779,9 @@ Text(0.5, 1.0, &#39;NDS&#39;)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s2">&quot;アルゴリズム&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NDS&quot;</span><span class="p">,</span> <span class="s2">&quot;ParEGO&quot;</span><span class="p">,</span> <span class="s2">&quot;HVPI&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;計算時間&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">time_KYMN_NDS</span><span class="p">,</span> <span class="n">time_KYMN_ParEGO</span><span class="p">,</span> <span class="n">time_KYMN_HVPI</span><span class="p">],</span>
-    <span class="s2">&quot;劣解領域体積&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_KYMN_NDS</span><span class="p">,</span> <span class="n">VID_KYMN_ParEGO</span><span class="p">,</span> <span class="n">VID_KYMN_HVPI</span><span class="p">]</span>
+    <span class="s2">"アルゴリズム"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"NDS"</span><span class="p">,</span> <span class="s2">"ParEGO"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">],</span>
+    <span class="s2">"計算時間"</span><span class="p">:</span> <span class="p">[</span><span class="n">time_KYMN_NDS</span><span class="p">,</span> <span class="n">time_KYMN_ParEGO</span><span class="p">,</span> <span class="n">time_KYMN_HVPI</span><span class="p">],</span>
+    <span class="s2">"劣解領域体積"</span><span class="p">:</span> <span class="p">[</span><span class="n">VID_KYMN_NDS</span><span class="p">,</span> <span class="n">VID_KYMN_ParEGO</span><span class="p">,</span> <span class="n">VID_KYMN_HVPI</span><span class="p">]</span>
 <span class="p">})</span>
 <br/></pre></div>
 </div>
@@ -818,19 +818,19 @@ Text(0.5, 1.0, &#39;NDS&#39;)
     <tr>
       <th>0</th>
       <td>NDS</td>
-      <td>1.762965</td>
+      <td>1.802375</td>
       <td>970.781427</td>
     </tr>
     <tr>
       <th>1</th>
       <td>ParEGO</td>
-      <td>1.748870</td>
-      <td>975.909589</td>
+      <td>1.819727</td>
+      <td>977.430256</td>
     </tr>
     <tr>
       <th>2</th>
       <td>HVPI</td>
-      <td>3.898581</td>
+      <td>4.097177</td>
       <td>932.139351</td>
     </tr>
   </tbody>
@@ -875,7 +875,7 @@ Text(0.5, 1.0, &#39;NDS&#39;)
 <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     <span class="fa fa-book"> Read the Docs</span>
-    v: 3.2.0
+    v: 3.2.1
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
@@ -885,14 +885,14 @@ Text(0.5, 1.0, &#39;NDS&#39;)
         
         <dd>
         
-          <a href="../../../3.2.0/en/notebook/tutorial_multi_unified.html">en</a>
+          <a href="../../../3.2.1/en/notebook/tutorial_multi_unified.html">en</a>
         
         </dd>
       
         
         <dd>
         <strong>
-          <a href="../../../3.2.0/ja/notebook/tutorial_multi_unified.html">ja</a>
+          <a href="../../../3.2.1/ja/notebook/tutorial_multi_unified.html">ja</a>
         </strong>
         </dd>
       
@@ -916,7 +916,7 @@ Text(0.5, 1.0, &#39;NDS&#39;)
         
         <dd>
         <strong>
-          <a href="../../../3.2.0/ja/notebook/tutorial_multi_unified.html">3.2.0</a>
+          <a href="../../../3.2.1/ja/notebook/tutorial_multi_unified.html">3.2.1</a>
         </strong>
         </dd>
       
