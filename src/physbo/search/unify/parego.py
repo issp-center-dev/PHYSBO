@@ -47,7 +47,7 @@ class ParEGO:
         The unified objective function of original objectives t is defined as:
         t_unified = weight_min * min(weights * t) + weight_sum * sum(weights * t)
 
-        Before calculating the unified objective function, the original objectives are normalized to 0 and 1 using min-max scaling.
+        Before calculating the unified objective function, the original objectives are normalized to the range [-1, 0] using min-max scaling.
 
         Parameters
         ----------
