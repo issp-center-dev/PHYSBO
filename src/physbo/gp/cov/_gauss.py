@@ -409,11 +409,10 @@ class Gauss:
             num_data = X.shape[0]
             M = max(2000, int(np.floor(num_data / 5)))
 
-            dist = np.zeros(M)
-
-            for m in range(M):
-                a = np.random.randint(0, X.shape[0], 2)
-                dist[m] = np.linalg.norm(X[a[0], :] - X[a[1], :])
+            # Sample M random pairs of points at once and compute the pairwise
+            # distances in a vectorized manner instead of a Python loop.
+            pairs = np.random.randint(0, num_data, (M, 2))
+            dist = np.linalg.norm(X[pairs[:, 0], :] - X[pairs[:, 1], :], axis=1)
 
             dist = np.sort(dist)
             tmp = int(np.floor(M / 10))
