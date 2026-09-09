@@ -29,10 +29,14 @@ MPIEXEC = shutil.which("mpirun") or shutil.which("mpiexec")
 @pytest.mark.skipif(
     importlib.util.find_spec("mpi4py") is None, reason="mpi4py is not installed"
 )
-def test_mpi_consistency():
-    script = os.path.join(os.path.dirname(__file__), "run_mpi_check.py")
+@pytest.mark.parametrize(
+    "script_name, nprocs",
+    [("run_mpi_check.py", 2), ("run_odatse_check.py", 1), ("run_odatse_check.py", 2)],
+)
+def test_mpi_consistency(script_name, nprocs):
+    script = os.path.join(os.path.dirname(__file__), script_name)
     res = subprocess.run(
-        [MPIEXEC, "-np", "2", sys.executable, script],
+        [MPIEXEC, "-np", str(nprocs), sys.executable, script],
         capture_output=True,
         text=True,
         timeout=600,

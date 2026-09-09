@@ -47,19 +47,29 @@ def test_default_alg_dict_unknown(min_X, max_X):
         default_alg_dict(min_X, max_X, "unknown_algorithm")
 
 
-def test_optimizer_minsearch(min_X, max_X, tmp_path, monkeypatch):
+@pytest.mark.parametrize("algorithm_name", ["minsearch", "exchange", "pamc", "bayes"])
+def test_optimizer(min_X, max_X, tmp_path, monkeypatch, algorithm_name):
     # ODAT-SE writes its results under the current directory
     monkeypatch.chdir(tmp_path)
-    optimizer = Optimizer(default_alg_dict(min_X, max_X, "minsearch"))
+    optimizer = Optimizer(default_alg_dict(min_X, max_X, algorithm_name))
     X = optimizer(fn)
     assert X.shape == (1, 2)
     assert np.allclose(X[0], [0.5, 0.5], atol=0.05)
 
 
+def test_optimizer_repeated_calls(min_X, max_X, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    optimizer = Optimizer(default_alg_dict(min_X, max_X, "minsearch"))
+    for target in [0.25, 0.75]:
+        X = optimizer(lambda x: -np.sum((x - target) ** 2))
+        assert X.shape == (1, 2)
+        assert np.allclose(X[0], [target, target], atol=0.05)
+
+
 @pytest.mark.skipif(
     sys.platform == "win32" and Version(odatse.__version__) <= Version("3.2.1"),
     reason="ODAT-SE <= 3.2.1 removes ColorMap.txt.tmp while it is still open, "
-    "which fails on Windows (fixed in ODAT-SE main, not yet released)",
+    "which fails on Windows (fixed in ODAT-SE 4.0.0)",
 )
 def test_optimizer_mapper(min_X, max_X, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
