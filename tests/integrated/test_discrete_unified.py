@@ -47,21 +47,21 @@ class TestDiscreteUnify:
         self.policy.set_seed(12345)
         self.unify_method = {
             "ParEGO": physbo.search.unify.ParEGO(
-                num_objectives=2, weight_sum=0.5, weight_max=0.5, weights=None
+                num_objectives=2, weight_sum=0.5, weight_min=0.5, weights=None
             ),
             "NDS": physbo.search.unify.NDS(num_objectives=2, rank_max=10),
         }
 
         self.vid_ref = {
-            ("PI", "ParEGO", 0): 0.10003702093436417,
-            ("EI", "ParEGO", 0): 0.10003702093436417,
-            ("TS", "ParEGO", 0): 0.10204727026444038,
+            ("PI", "ParEGO", 0): 0.18464354551889506,
+            ("EI", "ParEGO", 0): 0.11076136561520267,
+            ("TS", "ParEGO", 0): 0.10003702093436417,
             ("PI", "NDS", 0): 0.18343541849063327,
             ("EI", "NDS", 0): 0.18343541849063327,
             ("TS", "NDS", 0): 0.2163315871396495,
-            ("PI", "ParEGO", 10): 0.08712717490793076,
-            ("EI", "ParEGO", 10): 0.12956442096199472,
-            ("TS", "ParEGO", 10): 0.13042353460033285,
+            ("PI", "ParEGO", 10): 0.14710521168216184,
+            ("EI", "ParEGO", 10): 0.13288175153331716,
+            ("TS", "ParEGO", 10): 0.13374086517165518,
             ("PI", "NDS", 10): 0.1954734380647939,
             ("EI", "NDS", 10): 0.16112209109885733,
             ("TS", "NDS", 10): 0.09917790729602605,

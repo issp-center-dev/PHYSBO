@@ -5,6 +5,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Utility helpers for the search module.
+
+This module collects helpers used across the search policies:
+
+* :class:`Simulator` wraps a test function so it can be called by action index.
+* :func:`make_grid` builds a grid of candidate points for a discrete search.
+* :func:`plot_pareto_front` and :func:`plot_pareto_front_all` visualize the
+  Pareto front stored in a multi-objective history.
+* the remaining ``show_*`` / ``is_learning`` helpers format progress messages
+  and drive the search loop.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -320,32 +332,106 @@ def plot_pareto_front_all(
 
 
 def show_search_results(history, N):
+    """Print a summary of the last ``N`` single-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results(n)
 
 
 def show_search_results_mo(history, N, disp_pareto_set=False):
+    """Print a summary of the last ``N`` multi-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The multi-objective search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    disp_pareto_set: bool, default=False
+        If True, also display the current Pareto set.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results_mo(n, disp_pareto_set)
 
 
 def show_start_message_multi_search(N, score=None):
+    """Print the header announcing a multiple-probe search step.
+
+    Arguments
+    =========
+    N: int
+        Zero-based index of the current search round; the printed index is
+        ``N + 1``.
+    score: str, optional
+        Name of the acquisition function. If None, ``"random"`` is shown.
+    """
     if score is None:
         score = "random"
     print(f"{N + 1:04}-th multiple probe search ({score})")
 
 
 def show_interactive_mode(simulator, history):
+    """Print a message when an interactive search session starts.
+
+    The message is shown only at the very first step (empty history) of an
+    interactive run, i.e. when no simulator is provided.
+
+    Arguments
+    =========
+    simulator: callable or None
+        The simulator, or None for interactive mode.
+    history: History
+        The search history.
+    """
     if simulator is None and history.total_num_search == 0:
         print("interactive mode starts ... \n ")
 
 
 def length_vector(t):
+    """Return the number of elements of ``t``.
+
+    Arguments
+    =========
+    t: array-like or scalar
+        Input object.
+
+    Returns
+    =======
+    int
+        ``len(t)`` if ``t`` is sized, otherwise 1 (treating ``t`` as a scalar).
+    """
     N = len(t) if hasattr(t, "__len__") else 1
     return N
 
 
 def is_learning(n, interval):
+    """Decide whether to (re)learn the hyperparameters at search step ``n``.
+
+    Arguments
+    =========
+    n: int
+        Zero-based index of the current search step.
+    interval: int
+        Hyperparameter learning interval.
+
+        * ``interval == 0``: learn only at the first step (``n == 0``).
+        * ``interval > 0``: learn every ``interval`` steps.
+        * ``interval < 0``: never learn.
+
+    Returns
+    =======
+    bool
+        True if hyperparameters should be learned at this step.
+    """
     if interval == 0:
         return n == 0
     elif interval > 0:

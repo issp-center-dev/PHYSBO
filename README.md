@@ -1,4 +1,16 @@
-# optimization tools for PHYsics based on Bayesian Optimization ( PHYSBO )
+<p align="center">
+  <img src="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/docs/sphinx/manual/_static/logo.png" alt="PHYSBO logo" width="360"><br>
+  <b>optimization tools for PHYsics based on Bayesian Optimization</b>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/physbo/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/physbo.svg"></a>
+  <a href="https://pypi.org/project/physbo/"><img alt="Python versions" src="https://img.shields.io/badge/python-3.9%2B-blue.svg"></a>
+  <a href="https://mozilla.org/MPL/2.0/"><img alt="License: MPL-2.0" src="https://img.shields.io/badge/license-MPL--2.0-brightgreen.svg"></a>
+  <a href="https://github.com/issp-center-dev/PHYSBO/actions/workflows/python_package.yml"><img alt="Test python package" src="https://github.com/issp-center-dev/PHYSBO/actions/workflows/python_package.yml/badge.svg"></a>
+  <a href="https://issp-center-dev.github.io/PHYSBO/"><img alt="Documentation" src="https://img.shields.io/badge/docs-online-blue.svg"></a>
+  <a href="https://doi.org/10.1016/j.cpc.2022.108405"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2022.108405-blue.svg"></a>
+</p>
 
 Bayesian optimization has been proven as an effective tool in accelerating scientific discovery.
 A standard implementation (e.g., scikit-learn), however, can accommodate only small training data.
@@ -13,6 +25,9 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
 - Latest (develop branch)
   - [English](https://issp-center-dev.github.io/PHYSBO/manual/develop/en/index.html)
   - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/index.html)
+- API Reference
+  - [English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/api.html)
+  - [日本語](https://issp-center-dev.github.io/PHYSBO/manual/master/ja/api.html)
 
 ## Dependencies
 
