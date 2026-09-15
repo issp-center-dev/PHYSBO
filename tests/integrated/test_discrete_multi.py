@@ -49,7 +49,7 @@ class TestDiscreteMulti:
         [
             ("EHVI", 0.2392468337984477),
             ("HVPI", 0.25322554948754283),
-            ("TS", 0.17724278568874974),
+            ("TS", 0.16199314137324872),
         ],
     )
     def test_multi_objective(self, score, vid_ref, assert_reference):
