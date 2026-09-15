@@ -314,6 +314,7 @@ class Policy:
         optimizer=None,
         unify_method=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization.
@@ -336,7 +337,8 @@ class Policy:
             Here, action is an integer which represents the index of the candidate.
         score: str
             The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+            TS (Thompson Sampling), EI (Expected Improvement), PI (Probability of Improvement)
+            and UCB (Upper Confidence Bound) are available.
         interval: int
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -349,6 +351,10 @@ class Policy:
         ard: bool
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
             Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used when
+            ``score == "UCB"``. The score is ``fmean + ucb_beta * fstd``;
+            larger values favor exploration. Default is 1.0.
 
         Returns
         -------
@@ -397,7 +403,7 @@ class Policy:
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha, ucb_beta)
             time_get_action = time.time() - time_get_action
 
             N_indeed = len(action)
@@ -584,6 +590,7 @@ class Policy:
         training=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calcualte score (acquisition function)
@@ -591,7 +598,7 @@ class Policy:
         Parameters
         ----------
         mode: str
-            The type of aquisition funciton. TS, EI and PI are available.
+            The type of aquisition funciton. TS, EI, PI and UCB are available.
             These functions are defined in score.py.
         actions: array of int
             actions to calculate score
@@ -608,6 +615,9 @@ class Policy:
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used if mode = UCB.
+            The score is ``fmean + ucb_beta * fstd``. Default is 1.0.
 
         Returns
         -------
@@ -661,14 +671,19 @@ class Policy:
             test = self.test.get_subset(actions)
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            ucb_beta=ucb_beta,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
         return f
 
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
         """
         Getting marginal scores.
 
@@ -722,11 +737,15 @@ class Policy:
             predictor.update(train, virtual_train)
 
             f[k, :] = self.get_score(
-                mode, predictor=predictor, training=train, parallel=False
+                mode,
+                predictor=predictor,
+                training=train,
+                ucb_beta=ucb_beta,
+                parallel=False,
             )
         return np.mean(f, axis=0)
 
-    def _get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
         """
         Getting next candidates
 
@@ -754,6 +773,7 @@ class Policy:
             predictor=self.predictor,
             training=self.training,
             alpha=alpha,
+            ucb_beta=ucb_beta,
             parallel=False,
         )
         champion, local_champion, local_index = self._find_champion(f)
@@ -764,7 +784,7 @@ class Policy:
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
