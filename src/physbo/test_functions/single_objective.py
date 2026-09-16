@@ -29,6 +29,27 @@ class SingleTestFunction(TestFunction):
 
 
 class Sphere(SingleTestFunction):
+    r"""Sphere function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = \sum_{i=1}^d x_i^2
+
+    Global minimum: :math:`f(\boldsymbol{0}) = 0`.
+
+    Arguments
+    =========
+    dim: int, default=2
+        Number of dimensions.
+    min_X: np.ndarray | list[float] | float
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -36,26 +57,6 @@ class Sphere(SingleTestFunction):
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Sphere function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = \sum_{i=1}^d x_i^2
-
-        Global minimum: :math:`f(\boldsymbol{0}) = 0`.
-
-        Arguments
-        =========
-        dim: int, default=2
-            Number of dimensions.
-        min_X: np.ndarray | list[float] | float
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=dim,
             min_X=min_X,
@@ -71,6 +72,33 @@ class Sphere(SingleTestFunction):
 
 
 class Rastrigin(SingleTestFunction):
+    r"""Rastrigin function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = A n + \sum_{i=1}^n (x_i^2 - A \cos(2 \pi x_i))
+
+    Global minimum: :math:`f(\boldsymbol{0}) = 0`.
+
+    Arguments
+    =========
+    dim: int, default=2
+        Number of dimensions :math:`n`.
+    A: float, default=10.0
+        Amplitude parameter.
+    min_X: np.ndarray | list[float] | float, default=-5.12
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=5.12
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+
+    References
+    ==========
+    Rastrigin, L. A. "Systems of extremal control." Mir, Moscow (1974).
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -79,32 +107,6 @@ class Rastrigin(SingleTestFunction):
         max_X: np.ndarray | list[float] | float = 5.12,
         test_maximizer: bool = True,
     ):
-        r"""Rastrigin function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = A n + \sum_{i=1}^n (x_i^2 - A \cos(2 \pi x_i))
-
-        Global minimum: :math:`f(\boldsymbol{0}) = 0`.
-
-        Arguments
-        =========
-        dim: int, default=2
-            Number of dimensions :math:`n`.
-        A: float, default=10.0
-            Amplitude parameter.
-        min_X: np.ndarray | list[float] | float, default=-5.12
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=5.12
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-
-        References
-        ==========
-        Rastrigin, L. A. "Systems of extremal control." Mir, Moscow (1974).
-        """
         super().__init__(
             dim=dim,
             min_X=min_X,
@@ -123,6 +125,35 @@ class Rastrigin(SingleTestFunction):
 
 
 class Ackley(SingleTestFunction):
+    r"""Ackley function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = -a \exp \left( -b \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2} \right) - \exp \left( \frac{1}{n} \sum_{i=1}^n \cos(c x_i) \right) + a + \exp(1)
+
+    Global minimum: :math:`f(\boldsymbol{0}) = 0`.
+
+    Arguments
+    =========
+    dim: int, default=2
+        Number of dimensions :math:`n`.
+    a: float, default=20.0
+        First parameter.
+    b: float, default=0.2
+        Second parameter.
+    min_X: np.ndarray | list[float] | float, default=-32.768
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=32.768
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+
+    References
+    ==========
+    Ackley, D. H. (1987) "A connectionist machine for genetic hillclimbing", Kluwer Academic Publishers, Boston MA. p. 13-14.
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -132,34 +163,6 @@ class Ackley(SingleTestFunction):
         max_X: np.ndarray | list[float] | float = 32.768,
         test_maximizer: bool = True,
     ):
-        r"""Ackley function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = -a \exp \left( -b \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2} \right) - \exp \left( \frac{1}{n} \sum_{i=1}^n \cos(c x_i) \right) + a + \exp(1)
-
-        Global minimum: :math:`f(\boldsymbol{0}) = 0`.
-
-        Arguments
-        =========
-        dim: int, default=2
-            Number of dimensions :math:`n`.
-        a: float, default=20.0
-            First parameter.
-        b: float, default=0.2
-            Second parameter.
-        min_X: np.ndarray | list[float] | float, default=-32.768
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=32.768
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-
-        References
-        ==========
-        Ackley, D. H. (1987) "A connectionist machine for genetic hillclimbing", Kluwer Academic Publishers, Boston MA. p. 13-14.
-        """
         super().__init__(
             dim=dim,
             min_X=min_X,
@@ -184,6 +187,32 @@ class Ackley(SingleTestFunction):
 
 
 class Rosenbrock(SingleTestFunction):
+    r"""Rosenbrock function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = \sum_{i=1}^{n-1} \left( a (x_{i+1} - x_i^2)^2 + (1 - x_i)^2 \right)
+
+    Global minimum: :math:`f(1, \dots, 1) = 0`.
+
+    Arguments
+    =========
+    dim: int, default=2
+        Number of dimensions :math:`n`. Must be >= 2.
+    a: float, default=100.0
+        Amplitude parameter.
+    min_X: np.ndarray | list[float] | float, default=-5.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=10.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    References
+    ==========
+    Rosenbrock, H.H. (1960). "An automatic method for finding the greatest or least value of a function". The Computer Journal. 3 (3): 175-184.  https://doi.org/10.1093/comjnl/3.3.175
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -192,31 +221,6 @@ class Rosenbrock(SingleTestFunction):
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Rosenbrock function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = \sum_{i=1}^{n-1} \left( a (x_{i+1} - x_i^2)^2 + (1 - x_i)^2 \right)
-
-        Global minimum: :math:`f(1, \dots, 1) = 0`.
-
-        Arguments
-        =========
-        dim: int, default=2
-            Number of dimensions :math:`n`. Must be >= 2.
-        a: float, default=100.0
-            Amplitude parameter.
-        min_X: np.ndarray | list[float] | float, default=-5.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=10.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        References
-        ==========
-        Rosenbrock, H.H. (1960). "An automatic method for finding the greatest or least value of a function". The Computer Journal. 3 (3): 175-184.  https://doi.org/10.1093/comjnl/3.3.175
-        """
         if dim < 2:
             raise ValueError(f"ERROR: dimension must be >= 2: dim = {dim}")
         super().__init__(
@@ -239,30 +243,31 @@ class Rosenbrock(SingleTestFunction):
 
 
 class Beale(SingleTestFunction):
+    r"""Beale function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = (1.5 - x_1 + x_1 x_2)^2 + (2.25 - x_1 + x_1 x_2^2)^2 + (2.625 - x_1 + x_1 x_2^3)^2
+
+    Global minimum: :math:`f(3, 0.5) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-4.5
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=4.5
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -4.5,
         max_X: np.ndarray | list[float] | float = 4.5,
         test_maximizer: bool = True,
     ):
-        r"""Beale function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = (1.5 - x_1 + x_1 x_2)^2 + (2.25 - x_1 + x_1 x_2^2)^2 + (2.625 - x_1 + x_1 x_2^3)^2
-
-        Global minimum: :math:`f(3, 0.5) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-4.5
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=4.5
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -286,30 +291,31 @@ class Beale(SingleTestFunction):
 
 
 class Booth(SingleTestFunction):
+    r"""Booth function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = (x_1 + 2 x_2 - 7)^2 + (2 x_1 + x_2 - 5)^2
+
+    Global minimum: :math:`f(1, 3) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-10.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=10.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -10.0,
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Booth function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = (x_1 + 2 x_2 - 7)^2 + (2 x_1 + x_2 - 5)^2
-
-        Global minimum: :math:`f(1, 3) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-10.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=10.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -329,30 +335,31 @@ class Booth(SingleTestFunction):
 
 
 class Matyas(SingleTestFunction):
+    r"""Matyas function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = 0.26 (x_1^2 + x_2^2) - 0.48 x_1 x_2
+
+    Global minimum: :math:`f(0, 0) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-10.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=10.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -10.0,
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Matyas function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = 0.26 (x_1^2 + x_2^2) - 0.48 x_1 x_2
-
-        Global minimum: :math:`f(0, 0) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-10.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=10.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -370,34 +377,35 @@ class Matyas(SingleTestFunction):
 
 
 class Himmelblau(SingleTestFunction):
+    r"""Himmelblau's function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2
+
+    Global minimum: :math:`f(3, 2) = f(-2.805118, 3.131312) = f(-3.779310, -3.283186) = f(3.584428, -1.848126) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-5.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=5.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    
+    References
+    ==========
+    Himmelblau, D. (1972). Applied Nonlinear Programming. McGraw-Hill.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Himmelblau's function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2
-
-        Global minimum: :math:`f(3, 2) = f(-2.805118, 3.131312) = f(-3.779310, -3.283186) = f(3.584428, -1.848126) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-5.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=5.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        
-        References
-        ==========
-        Himmelblau, D. (1972). Applied Nonlinear Programming. McGraw-Hill.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -424,30 +432,31 @@ class Himmelblau(SingleTestFunction):
 
 
 class ThreeHumpCamel(SingleTestFunction):
+    r"""Three-hump camel function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = 2 x_1^2 - 1.05 x_1^4 + x_1^6 / 6 + x_1 x_2 + x_2^2
+
+    Global minimum: :math:`f(0, 0) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-5.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=5.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Three-hump camel function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = 2 x_1^2 - 1.05 x_1^4 + x_1^6 / 6 + x_1 x_2 + x_2^2
-
-        Global minimum: :math:`f(0, 0) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-5.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=5.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -470,30 +479,31 @@ class ThreeHumpCamel(SingleTestFunction):
 
 
 class Easom(SingleTestFunction):
+    r"""Easom function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = -\cos(x_1) \cos(x_2) \exp \left( -((x_1 - \pi)^2 + (x_2 - \pi)^2) \right) + 1
+
+    Global minimum: :math:`f(\pi, \pi) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-100.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=100.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -100.0,
         max_X: np.ndarray | list[float] | float = 100.0,
         test_maximizer: bool = True,
     ):
-        r"""Easom function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = -\cos(x_1) \cos(x_2) \exp \left( -((x_1 - \pi)^2 + (x_2 - \pi)^2) \right) + 1
-
-        Global minimum: :math:`f(\pi, \pi) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-100.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=100.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,
@@ -516,6 +526,27 @@ class Easom(SingleTestFunction):
 
 
 class StyblinskiTang(SingleTestFunction):
+    r"""Styblinski-Tang function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = \sum_{i=1}^n \left( \frac{x_i^4 - 16 x_i^2 + 5 x_i}{2} \right)
+
+    Global minimum: :math:`f(-2.903534, \dots, -2.903534) \approx -39.16617 n`.
+
+    Arguments
+    =========
+    dim: int, default=2
+        Number of dimensions.
+    min_X: np.ndarray | list[float] | float, default=-5.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=5.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -523,26 +554,6 @@ class StyblinskiTang(SingleTestFunction):
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Styblinski-Tang function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = \sum_{i=1}^n \left( \frac{x_i^4 - 16 x_i^2 + 5 x_i}{2} \right)
-
-        Global minimum: :math:`f(-2.903534, \dots, -2.903534) \approx -39.16617 n`.
-
-        Arguments
-        =========
-        dim: int, default=2
-            Number of dimensions.
-        min_X: np.ndarray | list[float] | float, default=-5.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=5.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=dim,
             min_X=min_X,
@@ -559,30 +570,31 @@ class StyblinskiTang(SingleTestFunction):
 
 
 class Schaffer2(SingleTestFunction):
+    r"""Schaffer's second function.
+
+    .. math::
+
+        \text{Minimize}\quad
+        f(\boldsymbol{x}) = 0.5 + \frac{\sin^2(x_1^2 - x_2^2) - 0.5}{(1 + 0.001 (x_1^2 + x_2^2))^2}
+
+    Global minimum: :math:`f(0, 0) = 0`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-100.0
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float, default=100.0
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the test function is negated for testing a maximization problem solver.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -100.0,
         max_X: np.ndarray | list[float] | float = 100.0,
         test_maximizer: bool = True,
     ):
-        r"""Schaffer's second function.
-
-        .. math::
-
-            \text{Minimize}\quad
-            f(\boldsymbol{x}) = 0.5 + \frac{\sin^2(x_1^2 - x_2^2) - 0.5}{(1 + 0.001 (x_1^2 + x_2^2))^2}
-
-        Global minimum: :math:`f(0, 0) = 0`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-100.0
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float, default=100.0
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
-        """
         super().__init__(
             dim=2,
             min_X=min_X,

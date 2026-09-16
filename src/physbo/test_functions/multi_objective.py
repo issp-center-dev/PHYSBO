@@ -92,6 +92,32 @@ class MultiTestFunction(TestFunction):
 
 
 class Gaussian(MultiTestFunction):
+    r"""Gaussian function.
+
+    A sum of Gaussian peaks; each objective is maximal at its own center.
+
+    .. math::
+
+        \text{Maximize}\quad
+        f_n(\boldsymbol{x}) = A_n \exp \left( -\frac{\left|\boldsymbol{x} - \boldsymbol{c}_n\right|^2}{2 w_n^2} \right)
+
+    Arguments
+    =========
+    centers : np.ndarray
+        Centers of the Gaussian functions :math:`\boldsymbol{c}_n`.
+    widths : np.ndarray | list[float] | float, default=1.0
+        Widths of the Gaussian functions :math:`w_n`.
+    amplitudes : np.ndarray | list[float] | float, default=1.0
+        Amplitudes of the Gaussian functions :math:`A_n`.
+    min_X : np.ndarray | list[float] | float, default=-2.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=2.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values describe a maximization problem (as defined above).
+        If False, they are negated to describe a minimization problem.
+    """
+
     _is_maximization = True
 
     def __init__(
@@ -103,32 +129,6 @@ class Gaussian(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 2.0,
         test_maximizer: bool = True,
     ):
-        r"""Gaussian function.
-
-        A sum of Gaussian peaks; each objective is maximal at its own center.
-
-        .. math::
-
-            \text{Maximize}\quad
-            f_n(\boldsymbol{x}) = A_n \exp \left( -\frac{\left|\boldsymbol{x} - \boldsymbol{c}_n\right|^2}{2 w_n^2} \right)
-
-        Arguments
-        =========
-        centers : np.ndarray
-            Centers of the Gaussian functions :math:`\boldsymbol{c}_n`.
-        widths : np.ndarray | list[float] | float, default=1.0
-            Widths of the Gaussian functions :math:`w_n`.
-        amplitudes : np.ndarray | list[float] | float, default=1.0
-            Amplitudes of the Gaussian functions :math:`A_n`.
-        min_X : np.ndarray | list[float] | float, default=-2.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=2.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values describe a maximization problem (as defined above).
-            If False, they are negated to describe a minimization problem.
-        """
-
         if centers.ndim != 2:
             raise ValueError(
                 f"ERROR: centers must be a 2D array, but got {centers.ndim}D array"
@@ -206,6 +206,55 @@ class Gaussian(MultiTestFunction):
 
 
 class FonsecaFleming(MultiTestFunction):
+    r"""Fonseca and Fleming's function (:math:`N`-variable form).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 1 - \exp \left( -\sum_{i=1}^N \left( x_i - \frac{1}{\sqrt{N}} \right)^2 \right) \\
+        f_2(\boldsymbol{x}) = 1 - \exp \left( -\sum_{i=1}^N \left( x_i + \frac{1}{\sqrt{N}} \right)^2 \right)
+        \end{cases}
+
+    The Pareto-optimal set is the segment
+    :math:`x_1 = \cdots = x_N \in [-1/\sqrt{N}, 1/\sqrt{N}]`.
+
+    Arguments
+    =========
+    dim : int, default=2
+        Number of dimensions :math:`N`.
+    min_X : np.ndarray | list[float] | float, default=-4.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=4.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The implementation (the :math:`N`-variable form with the centers at
+    :math:`\pm 1/\sqrt{N}` and the search space :math:`-4 \le x_i \le 4`)
+    follows Van Veldhuizen (1999) and Deb (2001), where it is attributed to
+    Fonseca and Fleming (1995b).
+    The two-variable form in Fonseca and Fleming (1995a) uses the centers
+    :math:`(1, -1)` and :math:`(-1, 1)` instead, which is a different problem
+    (the distance between the centers is :math:`2\sqrt{2}` instead of 2).
+    :class:`VLMOP2` is the same function with the search space
+    :math:`-2 \le x_i \le 2` used by Van Veldhuizen and Lamont (1999).
+
+    References
+    ==========
+    Carlos M. Fonseca, Peter J. Fleming; Multiobjective Genetic Algorithms Made Easy: Selection, Sharing, and Mating Restriction. Proceedings of the 1st International Conference on Genetic Algorithms in Engineering Systems: Innovations and Applications (GALESIA), IEE, 1995, pp. 45-52. (1995b)
+
+    Carlos M. Fonseca, Peter J. Fleming; An Overview of Evolutionary Algorithms in Multiobjective Optimization. Evol Comput 1995; 3 (1): 1-16. doi: https://doi.org/10.1162/evco.1995.3.1.1 (1995a; two-variable form)
+
+    David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP2)
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    """
+
     def __init__(
         self,
         dim: int = 2,
@@ -213,55 +262,6 @@ class FonsecaFleming(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 4.0,
         test_maximizer: bool = True,
     ):
-        r"""Fonseca and Fleming's function (:math:`N`-variable form).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 1 - \exp \left( -\sum_{i=1}^N \left( x_i - \frac{1}{\sqrt{N}} \right)^2 \right) \\
-            f_2(\boldsymbol{x}) = 1 - \exp \left( -\sum_{i=1}^N \left( x_i + \frac{1}{\sqrt{N}} \right)^2 \right)
-            \end{cases}
-
-        The Pareto-optimal set is the segment
-        :math:`x_1 = \cdots = x_N \in [-1/\sqrt{N}, 1/\sqrt{N}]`.
-
-        Arguments
-        =========
-        dim : int, default=2
-            Number of dimensions :math:`N`.
-        min_X : np.ndarray | list[float] | float, default=-4.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=4.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The implementation (the :math:`N`-variable form with the centers at
-        :math:`\pm 1/\sqrt{N}` and the search space :math:`-4 \le x_i \le 4`)
-        follows Van Veldhuizen (1999) and Deb (2001), where it is attributed to
-        Fonseca and Fleming (1995b).
-        The two-variable form in Fonseca and Fleming (1995a) uses the centers
-        :math:`(1, -1)` and :math:`(-1, 1)` instead, which is a different problem
-        (the distance between the centers is :math:`2\sqrt{2}` instead of 2).
-        :class:`VLMOP2` is the same function with the search space
-        :math:`-2 \le x_i \le 2` used by Van Veldhuizen and Lamont (1999).
-
-        References
-        ==========
-        Carlos M. Fonseca, Peter J. Fleming; Multiobjective Genetic Algorithms Made Easy: Selection, Sharing, and Mating Restriction. Proceedings of the 1st International Conference on Genetic Algorithms in Engineering Systems: Innovations and Applications (GALESIA), IEE, 1995, pp. 45-52. (1995b)
-
-        Carlos M. Fonseca, Peter J. Fleming; An Overview of Evolutionary Algorithms in Multiobjective Optimization. Evol Comput 1995; 3 (1): 1-16. doi: https://doi.org/10.1162/evco.1995.3.1.1 (1995a; two-variable form)
-
-        David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP2)
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        """
-
         super().__init__(
             nobj=2,
             dim=dim,
@@ -284,47 +284,48 @@ class FonsecaFleming(MultiTestFunction):
 
 
 class Viennet(MultiTestFunction):
+    r"""Viennet's function (the third test problem of Viennet et al. (1996)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 0.5 (x_1^2 + x_2^2) + \sin(x_1^2 + x_2^2) \\
+        f_2(\boldsymbol{x}) = (3 x_1 - 2 x_2 + 4)^2 / 8 + (x_1 - x_2 + 1)^2 / 27 + 15 \\
+        f_3(\boldsymbol{x}) = 1 / (x_1^2 + x_2^2 + 1) - 1.1 \exp(-(x_1^2 + x_2^2))
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-3.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=3.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    Viennet et al. (1996) propose several test problems; this is the third one.
+    It is listed as MOP3 in Van Veldhuizen and Lamont (1999) (hence :class:`VLMOP3`)
+    and as MOP5 in Van Veldhuizen (1999).
+    The search space :math:`-3 \le x_i \le 3` agrees with Deb (2001).
+
+    References
+    ==========
+    Viennet, R., et al. "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Journal of Systems Science 27(2), 255-260 (1996).
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -3.0,
         max_X: np.ndarray | list[float] | float = 3.0,
         test_maximizer: bool = True,
     ):
-        r"""Viennet's function (the third test problem of Viennet et al. (1996)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 0.5 (x_1^2 + x_2^2) + \sin(x_1^2 + x_2^2) \\
-            f_2(\boldsymbol{x}) = (3 x_1 - 2 x_2 + 4)^2 / 8 + (x_1 - x_2 + 1)^2 / 27 + 15 \\
-            f_3(\boldsymbol{x}) = 1 / (x_1^2 + x_2^2 + 1) - 1.1 \exp(-(x_1^2 + x_2^2))
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-3.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=3.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        Viennet et al. (1996) propose several test problems; this is the third one.
-        It is listed as MOP3 in Van Veldhuizen and Lamont (1999) (hence :class:`VLMOP3`)
-        and as MOP5 in Van Veldhuizen (1999).
-        The search space :math:`-3 \le x_i \le 3` agrees with Deb (2001).
-
-        References
-        ==========
-        Viennet, R., et al. "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Journal of Systems Science 27(2), 255-260 (1996).
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        """
         super().__init__(
             nobj=3,
             dim=2,
@@ -352,52 +353,53 @@ class Viennet(MultiTestFunction):
 
 
 class BinhKorn(MultiTestFunction):
+    r"""Binh-Korn's function (test case 2 of Binh and Korn (1997)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 4 x_1^2 + 4 x_2^2 \\
+        f_2(\boldsymbol{x}) = (x_1 - 5)^2 + (x_2 - 5)^2
+        \end{cases}
+
+        \text{Subject to}
+        \begin{cases}
+        g_1(\boldsymbol{x}) = (x_1 - 5)^2 + x_2^2 \le 25 \\
+        g_2(\boldsymbol{x}) = (x_1 - 8)^2 + (x_2 + 3)^2 \ge 7.7
+        \end{cases}
+
+    The Pareto-optimal set consists of :math:`x_1 = x_2 \in [0, 3]` and
+    :math:`x_1 \in [3, 5], x_2 = 3`.
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=np.array([0.0, 0.0])
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=np.array([5.0, 3.0])
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    Binh and Korn (1997) present two test problems; this is test case 2
+    (test case 1 is :class:`ChankongHaimes`).
+    :class:`Binh1` has the same objectives but no constraints and a
+    different search space, and is therefore a different problem.
+
+    References
+    ==========
+    To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = np.array([0.0, 0.0]),
         max_X: np.ndarray | list[float] | float = np.array([5.0, 3.0]),
         test_maximizer: bool = True,
     ):
-        r"""Binh-Korn's function (test case 2 of Binh and Korn (1997)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 4 x_1^2 + 4 x_2^2 \\
-            f_2(\boldsymbol{x}) = (x_1 - 5)^2 + (x_2 - 5)^2
-            \end{cases}
-
-            \text{Subject to}
-            \begin{cases}
-            g_1(\boldsymbol{x}) = (x_1 - 5)^2 + x_2^2 \le 25 \\
-            g_2(\boldsymbol{x}) = (x_1 - 8)^2 + (x_2 + 3)^2 \ge 7.7
-            \end{cases}
-
-        The Pareto-optimal set consists of :math:`x_1 = x_2 \in [0, 3]` and
-        :math:`x_1 \in [3, 5], x_2 = 3`.
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=np.array([0.0, 0.0])
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=np.array([5.0, 3.0])
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        Binh and Korn (1997) present two test problems; this is test case 2
-        (test case 1 is :class:`ChankongHaimes`).
-        :class:`Binh1` has the same objectives but no constraints and a
-        different search space, and is therefore a different problem.
-
-        References
-        ==========
-        To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
-        """
         super().__init__(
             nobj=2,
             dim=2,
@@ -428,58 +430,58 @@ class BinhKorn(MultiTestFunction):
 
 
 class ChankongHaimes(MultiTestFunction):
+    r"""Chankong-Haimes's function (also known as SRN).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 2 + (x_1 - 2)^2 + (x_2 - 1)^2 \\
+        f_2(\boldsymbol{x}) = 9 x_1 - (x_2 - 1)^2
+        \end{cases}
+
+        \text{Subject to}
+        \begin{cases}
+        g_1(\boldsymbol{x}) = x_1^2 + x_2^2 \le 225 \\
+        g_2(\boldsymbol{x}) = x_1 - 3 x_2 \le -10
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-20.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=20.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The problem originates from Chankong and Haimes (1983).
+    Srinivas and Deb (1994) borrowed it as a test problem, and it is
+    widely known as SRN after them (see Deb (2001)); :class:`SRN` is an alias.
+    It is also test case 1 of Binh and Korn (1997) and
+    the second study case of Binh (1999) (:class:`Binh2`).
+
+    References
+    ==========
+    Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
+
+    Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
+
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -20.0,
         max_X: np.ndarray | list[float] | float = 20.0,
         test_maximizer: bool = True,
     ):
-        r"""Chankong-Haimes's function (also known as SRN).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 2 + (x_1 - 2)^2 + (x_2 - 1)^2 \\
-            f_2(\boldsymbol{x}) = 9 x_1 - (x_2 - 1)^2
-            \end{cases}
-
-            \text{Subject to}
-            \begin{cases}
-            g_1(\boldsymbol{x}) = x_1^2 + x_2^2 \le 225 \\
-            g_2(\boldsymbol{x}) = x_1 - 3 x_2 \le -10
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-20.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=20.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The problem originates from Chankong and Haimes (1983).
-        Srinivas and Deb (1994) borrowed it as a test problem, and it is
-        widely known as SRN after them (see Deb (2001)); :class:`SRN` is an alias.
-        It is also test case 1 of Binh and Korn (1997) and
-        the second study case of Binh (1999) (:class:`Binh2`).
-
-        References
-        ==========
-        Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
-
-        Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
-
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -510,6 +512,65 @@ class ChankongHaimes(MultiTestFunction):
 
 
 class KitaYabumotoMoriNishikawa(MultiTestFunction):
+    r"""Kita-Yabumoto-Mori-Nishikawa's function.
+
+    The original problem is a maximization problem:
+
+    .. math::
+
+        \text{Maximize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = -x_1^2 + x_2 \\
+        f_2(\boldsymbol{x}) = \frac{1}{2}x_1 + x_2 + 1
+        \end{cases}
+
+        \text{Subject to}
+        \begin{cases}
+        g_1(\boldsymbol{x}) = \frac{x_1}{6} + x_2 \le \frac{13}{2} \\
+        g_2(\boldsymbol{x}) = \frac{x_1}{2} + x_2 \le \frac{15}{2} \\
+        g_3(\boldsymbol{x}) = 5 x_1 + x_2 \le 30 \\
+        x_1 \ge 0, \quad x_2 \ge 0
+        \end{cases}
+
+    Both objectives increase with :math:`x_2`, so the Pareto-optimal set lies on
+    the upper boundary of the feasible region:
+    :math:`x_1 \in [0, 3],\ x_2 = 13/2 - x_1/6` (where :math:`g_1` is active).
+    The feasible region is contained in :math:`0 \le x_1 \le 6, 0 \le x_2 \le 6.5`.
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+        The non-negativity constraints :math:`x_1, x_2 \ge 0` are represented
+        by this lower bound.
+    max_X : np.ndarray | list[float] | float, default=7.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values describe the maximization problem as defined above.
+        If False, they are negated to describe a minimization problem.
+
+    Note
+    ====
+    The search space is not stated explicitly in the references;
+    :math:`[0, 7]^2` is chosen so that it contains the feasible region.
+
+    A widely circulated variant (e.g., "Test function 4" in the Wikipedia
+    article "Test functions for optimization") drops :math:`x_1, x_2 \ge 0`
+    and uses :math:`-7 \le x_1, x_2 \le 4`.
+    In that box none of the constraints is active and the Pareto-optimal set
+    (:math:`x_2 \ge 6`) is outside the box, so it is a different problem.
+    Versions of PHYSBO before this change implemented that variant.
+
+    The reference box is the range of the objectives over the feasible region:
+    :math:`f_1 \in [-36, 6.5]`, :math:`f_2 \in [1, 8.5]`.
+
+    References
+    ==========
+    Kita, H., Yabumoto, Y., Mori, N., Nishikawa, Y. (1996). Multi-objective optimization by means of the thermodynamical genetic algorithm. In: Voigt, HM., Ebeling, W., Rechenberg, I., Schwefel, HP. (eds) Parallel Problem Solving from Nature — PPSN IV. PPSN 1996. Lecture Notes in Computer Science, vol 1141. Springer, Berlin, Heidelberg. https://doi.org/10.1007/3-540-61723-X_1014
+
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany. (study case 4)
+    """
+
     _is_maximization = True
 
     def __init__(
@@ -518,65 +579,6 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 7.0,
         test_maximizer: bool = True,
     ):
-        r"""Kita-Yabumoto-Mori-Nishikawa's function.
-
-        The original problem is a maximization problem:
-
-        .. math::
-
-            \text{Maximize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = -x_1^2 + x_2 \\
-            f_2(\boldsymbol{x}) = \frac{1}{2}x_1 + x_2 + 1
-            \end{cases}
-
-            \text{Subject to}
-            \begin{cases}
-            g_1(\boldsymbol{x}) = \frac{x_1}{6} + x_2 \le \frac{13}{2} \\
-            g_2(\boldsymbol{x}) = \frac{x_1}{2} + x_2 \le \frac{15}{2} \\
-            g_3(\boldsymbol{x}) = 5 x_1 + x_2 \le 30 \\
-            x_1 \ge 0, \quad x_2 \ge 0
-            \end{cases}
-
-        Both objectives increase with :math:`x_2`, so the Pareto-optimal set lies on
-        the upper boundary of the feasible region:
-        :math:`x_1 \in [0, 3],\ x_2 = 13/2 - x_1/6` (where :math:`g_1` is active).
-        The feasible region is contained in :math:`0 \le x_1 \le 6, 0 \le x_2 \le 6.5`.
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-            The non-negativity constraints :math:`x_1, x_2 \ge 0` are represented
-            by this lower bound.
-        max_X : np.ndarray | list[float] | float, default=7.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values describe the maximization problem as defined above.
-            If False, they are negated to describe a minimization problem.
-
-        Note
-        ====
-        The search space is not stated explicitly in the references;
-        :math:`[0, 7]^2` is chosen so that it contains the feasible region.
-
-        A widely circulated variant (e.g., "Test function 4" in the Wikipedia
-        article "Test functions for optimization") drops :math:`x_1, x_2 \ge 0`
-        and uses :math:`-7 \le x_1, x_2 \le 4`.
-        In that box none of the constraints is active and the Pareto-optimal set
-        (:math:`x_2 \ge 6`) is outside the box, so it is a different problem.
-        Versions of PHYSBO before this change implemented that variant.
-
-        The reference box is the range of the objectives over the feasible region:
-        :math:`f_1 \in [-36, 6.5]`, :math:`f_2 \in [1, 8.5]`.
-
-        References
-        ==========
-        Kita, H., Yabumoto, Y., Mori, N., Nishikawa, Y. (1996). Multi-objective optimization by means of the thermodynamical genetic algorithm. In: Voigt, HM., Ebeling, W., Rechenberg, I., Schwefel, HP. (eds) Parallel Problem Solving from Nature — PPSN IV. PPSN 1996. Lecture Notes in Computer Science, vol 1141. Springer, Berlin, Heidelberg. https://doi.org/10.1007/3-540-61723-X_1014
-
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany. (study case 4)
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -608,46 +610,47 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
 
 
 class Binh1(MultiTestFunction):
+    r"""Binh's first function (the first study case of Binh (1999)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 4 x_1^2 + 4 x_2^2 \\
+        f_2(\boldsymbol{x}) = (x_1 - 5)^2 + (x_2 - 5)^2
+        \end{cases}
+
+    The Pareto-optimal set is the segment :math:`x_1 = x_2 \in [0, 5]`.
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-5.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=10.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The objectives are the same as those of :class:`BinhKorn`, but this
+    problem has no constraints and a different search space
+    (:math:`-5 \le x_i \le 10`), so the Pareto-optimal set is different.
+    Versions of PHYSBO before this change treated ``Binh1`` as an alias of
+    :class:`BinhKorn`.
+
+    References
+    ==========
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Binh's first function (the first study case of Binh (1999)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 4 x_1^2 + 4 x_2^2 \\
-            f_2(\boldsymbol{x}) = (x_1 - 5)^2 + (x_2 - 5)^2
-            \end{cases}
-
-        The Pareto-optimal set is the segment :math:`x_1 = x_2 \in [0, 5]`.
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-5.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=10.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The objectives are the same as those of :class:`BinhKorn`, but this
-        problem has no constraints and a different search space
-        (:math:`-5 \le x_i \le 10`), so the Pareto-optimal set is different.
-        Versions of PHYSBO before this change treated ``Binh1`` as an alias of
-        :class:`BinhKorn`.
-
-        References
-        ==========
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
-        """
         super().__init__(
             nobj=2,
             dim=2,
@@ -712,51 +715,51 @@ class Binh4(KitaYabumotoMoriNishikawa):
 
 
 class Binh5(MultiTestFunction):
+    r"""Binh's fifth function (a multi-modal test problem of Deb (1999)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = \frac{g(x_2)}{x_1}
+        \end{cases},\quad
+        \text{where}\quad
+        g(x) = 2 - \exp\left(-\left(\frac{x - 0.2}{0.004}\right)^2\right) - 0.8 \exp\left(-\left(\frac{x - 0.6}{0.4}\right)^2\right)
+
+    :math:`g` has the global minimum at :math:`x_2 = 0.2` and a local minimum
+    at :math:`x_2 = 0.6`.
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=[0.1, 0.0]
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The problem is one of the constructed test problems of Deb (1999)
+    (also in Deb (2001)); Binh (1999) lists it as the fifth study case.
+
+    References
+    ==========
+    Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = [0.1, 0.0],
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""Binh's fifth function (a multi-modal test problem of Deb (1999)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = \frac{g(x_2)}{x_1}
-            \end{cases},\quad
-            \text{where}\quad
-            g(x) = 2 - \exp\left(-\left(\frac{x - 0.2}{0.004}\right)^2\right) - 0.8 \exp\left(-\left(\frac{x - 0.6}{0.4}\right)^2\right)
-
-        :math:`g` has the global minimum at :math:`x_2 = 0.2` and a local minimum
-        at :math:`x_2 = 0.6`.
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=[0.1, 0.0]
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The problem is one of the constructed test problems of Deb (1999)
-        (also in Deb (2001)); Binh (1999) lists it as the fifth study case.
-
-        References
-        ==========
-        Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -785,43 +788,43 @@ class Binh5(MultiTestFunction):
 
 
 class Binh6(MultiTestFunction):
+    r"""Binh's sixth function (the sixth study case of Binh (1999)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = \sqrt{x_1^2 + x_2^2 + 1} \\
+        f_2(\boldsymbol{x}) = \frac{g(x_3, x_4)}{f_1(\boldsymbol{x})}
+        \end{cases},\quad
+        \text{where}\quad
+        g(x_3, x_4) = 100 (x_4 - x_3^2)^2 + (1 - x_3)^2 + 2
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-5.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=5.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The implementation follows Binh (1999); the origin of the problem has not been identified.
+
+    References
+    ==========
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Binh's sixth function (the sixth study case of Binh (1999)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = \sqrt{x_1^2 + x_2^2 + 1} \\
-            f_2(\boldsymbol{x}) = \frac{g(x_3, x_4)}{f_1(\boldsymbol{x})}
-            \end{cases},\quad
-            \text{where}\quad
-            g(x_3, x_4) = 100 (x_4 - x_3^2)^2 + (1 - x_3)^2 + 2
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-5.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=5.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The implementation follows Binh (1999); the origin of the problem has not been identified.
-
-        References
-        ==========
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
-        """
-
         super().__init__(
             nobj=2,
             dim=4,
@@ -848,41 +851,41 @@ class Binh6(MultiTestFunction):
 
 
 class Binh8(MultiTestFunction):
+    r"""Binh's eighth function (the eighth study case of Binh (1999)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 + x_2 \\
+        f_2(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin(5 \pi x_1)^4
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The implementation follows Binh (1999); the origin of the problem has not been identified.
+
+    References
+    ==========
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = 0.0,
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""Binh's eighth function (the eighth study case of Binh (1999)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 + x_2 \\
-            f_2(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin(5 \pi x_1)^4
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The implementation follows Binh (1999); the origin of the problem has not been identified.
-
-        References
-        ==========
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -906,56 +909,56 @@ class Binh8(MultiTestFunction):
 
 
 class Binh9(MultiTestFunction):
+    r"""Binh's ninth function (a discontinuous-front test problem of Deb (1999)).
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = g(x_2) h(x_1, x_2)
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(x_2) = 1 + 10 x_2 \\
+        h(x_1, x_2) = 1 - \left( \frac{x_1}{g(x_2)} \right)^2 - \left( \frac{x_1}{g(x_2)} \right) \sin(8 \pi x_1)
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=0.0
+            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The problem is the discontinuous-front test problem of Deb (1999)
+    :math:`h = 1 - (f_1/g)^\alpha - (f_1/g)\sin(2\pi q f_1)` with
+    :math:`\alpha = 2` and :math:`q = 4` (also in Deb (2001)).
+    It is listed as MOP6 in Van Veldhuizen (1999) and as the ninth study case in Binh (1999).
+
+    References
+    ==========
+    Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP6)
+
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = 0.0,
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""Binh's ninth function (a discontinuous-front test problem of Deb (1999)).
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = g(x_2) h(x_1, x_2)
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(x_2) = 1 + 10 x_2 \\
-            h(x_1, x_2) = 1 - \left( \frac{x_1}{g(x_2)} \right)^2 - \left( \frac{x_1}{g(x_2)} \right) \sin(8 \pi x_1)
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=0.0
-                Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The problem is the discontinuous-front test problem of Deb (1999)
-        :math:`h = 1 - (f_1/g)^\alpha - (f_1/g)\sin(2\pi q f_1)` with
-        :math:`\alpha = 2` and :math:`q = 4` (also in Deb (2001)).
-        It is listed as MOP6 in Van Veldhuizen (1999) and as the ninth study case in Binh (1999).
-
-        References
-        ==========
-        Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP6)
-
-        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -981,42 +984,43 @@ class Binh9(MultiTestFunction):
 
 
 class Kursawe(MultiTestFunction):
+    r"""Kursawe's function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = \sum_{i=1}^{2} -10 \exp \left( -0.2 \sqrt{x_i^2 + x_{i+1}^2} \right) \\
+        f_2(\boldsymbol{x}) = \sum_{i=1}^{3} \left( \left| x_i \right|^{0.8} + 5 \sin(x_i^3) \right)
+        \end{cases}
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-5.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=5.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The search space :math:`-5 \le x_i \le 5` follows Deb (2001).
+
+    References
+    ==========
+    Kursawe, F., "A variant of evolution strategies for vector optimization," in PPSN I, Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197.
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 5.0,
         test_maximizer: bool = True,
     ):
-        r"""Kursawe's function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = \sum_{i=1}^{2} -10 \exp \left( -0.2 \sqrt{x_i^2 + x_{i+1}^2} \right) \\
-            f_2(\boldsymbol{x}) = \sum_{i=1}^{3} \left( \left| x_i \right|^{0.8} + 5 \sin(x_i^3) \right)
-            \end{cases}
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-5.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=5.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The search space :math:`-5 \le x_i \le 5` follows Deb (2001).
-
-        References
-        ==========
-        Kursawe, F., "A variant of evolution strategies for vector optimization," in PPSN I, Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197.
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-        """
         super().__init__(
             nobj=2,
             dim=3,
@@ -1041,52 +1045,52 @@ class Kursawe(MultiTestFunction):
 
 
 class Schaffer1(MultiTestFunction):
+    r"""Schaffer's first function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(x) = x^2 \\
+        f_2(x) = (x - 2)^2
+        \end{cases}
+
+    The Pareto-optimal set is :math:`x \in [0, 2]`.
+
+    Arguments
+    =========
+    min_X: np.ndarray | list[float] | float, default=-10.0
+        Minimum value of the search space :math:`x_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=10.0
+        Maximum value of the search space :math:`x_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    Deb (2001) uses the search space :math:`-A \le x \le A` with
+    :math:`A` from :math:`10` to :math:`10^5`; a larger :math:`A` makes the
+    problem harder because the Pareto-optimal set becomes relatively smaller.
+    The default corresponds to :math:`A = 10`.
+    The reference box is computed from ``min_X`` and ``max_X``
+    (the range of each objective over the search space), so it stays
+    consistent for any :math:`A`.
+
+    References
+    ==========
+    Schaffer, J. David. "Multiple objective optimization with vector evaluated genetic algorithms." Proceedings of the first international conference on genetic algorithms and their applications. Psychology Press, 2014.
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -10.0,
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Schaffer's first function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(x) = x^2 \\
-            f_2(x) = (x - 2)^2
-            \end{cases}
-
-        The Pareto-optimal set is :math:`x \in [0, 2]`.
-
-        Arguments
-        =========
-        min_X: np.ndarray | list[float] | float, default=-10.0
-            Minimum value of the search space :math:`x_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=10.0
-            Maximum value of the search space :math:`x_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        Deb (2001) uses the search space :math:`-A \le x \le A` with
-        :math:`A` from :math:`10` to :math:`10^5`; a larger :math:`A` makes the
-        problem harder because the Pareto-optimal set becomes relatively smaller.
-        The default corresponds to :math:`A = 10`.
-        The reference box is computed from ``min_X`` and ``max_X``
-        (the range of each objective over the search space), so it stays
-        consistent for any :math:`A`.
-
-        References
-        ==========
-        Schaffer, J. David. "Multiple objective optimization with vector evaluated genetic algorithms." Proceedings of the first international conference on genetic algorithms and their applications. Psychology Press, 2014.
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        """
-
         super().__init__(
             nobj=2,
             dim=1,
@@ -1127,49 +1131,49 @@ class Schaffer1(MultiTestFunction):
 
 
 class Schaffer2(MultiTestFunction):
+    r"""Schaffer's second function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(x) = \begin{cases}
+            -x & \text{if } x \leq 1.0 \\
+            x - 2 & \text{if } 1.0 < x \leq 3.0 \\
+            4 - x & \text{if } 3.0 < x \leq 4.0 \\
+            x - 4 & \text{if } x > 4.0
+        \end{cases} \\
+        f_2(x) = (x - 5)^2
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-5.0
+            Minimum value of the search space :math:`x_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=10.0
+        Maximum value of the search space :math:`x_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    Note
+    ====
+    The search space :math:`-5 \le x \le 10` follows Deb (2001).
+
+    References
+    ==========
+    Schaffer, J. David. "Multiple objective optimization with vector evaluated genetic algorithms." Proceedings of the first international conference on genetic algorithms and their applications. Psychology Press, 2014.
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = -5.0,
         max_X: np.ndarray | list[float] | float = 10.0,
         test_maximizer: bool = True,
     ):
-        r"""Schaffer's second function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(x) = \begin{cases}
-                -x & \text{if } x \leq 1.0 \\
-                x - 2 & \text{if } 1.0 < x \leq 3.0 \\
-                4 - x & \text{if } 3.0 < x \leq 4.0 \\
-                x - 4 & \text{if } x > 4.0
-            \end{cases} \\
-            f_2(x) = (x - 5)^2
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-5.0
-                Minimum value of the search space :math:`x_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=10.0
-            Maximum value of the search space :math:`x_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        Note
-        ====
-        The search space :math:`-5 \le x \le 10` follows Deb (2001).
-
-        References
-        ==========
-        Schaffer, J. David. "Multiple objective optimization with vector evaluated genetic algorithms." Proceedings of the first international conference on genetic algorithms and their applications. Psychology Press, 2014.
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-
-        """
-
         super().__init__(
             nobj=2,
             dim=1,
@@ -1196,6 +1200,53 @@ class Schaffer2(MultiTestFunction):
 
 
 class Poloni(MultiTestFunction):
+    r"""Poloni's function.
+
+    The original problem is a maximization problem:
+
+    .. math::
+
+        \text{Maximize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = -\left[1 + (a_1 - b_1(\boldsymbol{x}))^2 + (a_2 - b_2(\boldsymbol{x}))^2\right] \\
+        f_2(\boldsymbol{x}) = -\left[(x_1 + 3)^2 + (x_2 + 1)^2\right]
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        a_1 = 0.5 \sin(1) - 2 \cos(1) + \sin(2) - 1.5 \cos(2) \\
+        a_2 = 1.5 \sin(1) - \cos(1) + 2 \sin(2) - 0.5 \cos(2) \\
+        b_1(\boldsymbol{x}) = 0.5 \sin(x_1) - 2 \cos(x_1) + \sin(x_2) - 1.5 \cos(x_2) \\
+        b_2(\boldsymbol{x}) = 1.5 \sin(x_1) - \cos(x_1) + 2 \sin(x_2) - 0.5 \cos(x_2) \\
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=-np.pi
+            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=np.pi
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values describe the maximization problem as defined above.
+        If False, they are negated to describe a minimization problem.
+
+    Note
+    ====
+    Poloni et al. (2000) define the problem as a maximization problem as above.
+    Deb (2001) (as POL) negates :math:`f_1` and :math:`f_2` and states it as a
+    minimization problem with the same search space; that form is what
+    ``test_maximizer=False`` returns.
+    Listed as MOP3 in Van Veldhuizen (1999).
+
+    References
+    ==========
+    Poloni, C., Giurgevich, A., Onesti, L., Pediroda, V., "Hybridization of a multi-objective genetic algorithm, a neural network and a classical optimizer for a complex design problem in fluid dynamics," Computer Methods in Applied Mechanics and Engineering 186(2-4), 403-420 (2000). https://doi.org/10.1016/S0045-7825(99)00394-1
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001. (POL)
+
+    David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP3)
+    """
+
     _is_maximization = True
 
     def __init__(
@@ -1204,53 +1255,6 @@ class Poloni(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = np.pi,
         test_maximizer: bool = True,
     ):
-        r"""Poloni's function.
-
-        The original problem is a maximization problem:
-
-        .. math::
-
-            \text{Maximize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = -\left[1 + (a_1 - b_1(\boldsymbol{x}))^2 + (a_2 - b_2(\boldsymbol{x}))^2\right] \\
-            f_2(\boldsymbol{x}) = -\left[(x_1 + 3)^2 + (x_2 + 1)^2\right]
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            a_1 = 0.5 \sin(1) - 2 \cos(1) + \sin(2) - 1.5 \cos(2) \\
-            a_2 = 1.5 \sin(1) - \cos(1) + 2 \sin(2) - 0.5 \cos(2) \\
-            b_1(\boldsymbol{x}) = 0.5 \sin(x_1) - 2 \cos(x_1) + \sin(x_2) - 1.5 \cos(x_2) \\
-            b_2(\boldsymbol{x}) = 1.5 \sin(x_1) - \cos(x_1) + 2 \sin(x_2) - 0.5 \cos(x_2) \\
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=-np.pi
-                Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=np.pi
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values describe the maximization problem as defined above.
-            If False, they are negated to describe a minimization problem.
-
-        Note
-        ====
-        Poloni et al. (2000) define the problem as a maximization problem as above.
-        Deb (2001) (as POL) negates :math:`f_1` and :math:`f_2` and states it as a
-        minimization problem with the same search space; that form is what
-        ``test_maximizer=False`` returns.
-        Listed as MOP3 in Van Veldhuizen (1999).
-
-        References
-        ==========
-        Poloni, C., Giurgevich, A., Onesti, L., Pediroda, V., "Hybridization of a multi-objective genetic algorithm, a neural network and a classical optimizer for a complex design problem in fluid dynamics," Computer Methods in Applied Mechanics and Engineering 186(2-4), 403-420 (2000). https://doi.org/10.1016/S0045-7825(99)00394-1
-
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001. (POL)
-
-        David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP3)
-        """
-
         super().__init__(
             nobj=2,
             dim=2,
@@ -1288,6 +1292,39 @@ class Poloni(MultiTestFunction):
 
 
 class ZDT1(MultiTestFunction):
+    r"""ZDT's first function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
+        h(f1(\boldsymbol{x}), g(\boldsymbol{x})) = 1 - \sqrt{f_1(\boldsymbol{x}) / g(\boldsymbol{x})}
+        \end{cases}
+
+    Arguments
+    =========
+    dim: int, default=30
+        Dimension of the problem :math:`N`.
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+    """
+
     def __init__(
         self,
         dim: int = 30,
@@ -1295,39 +1332,6 @@ class ZDT1(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""ZDT's first function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
-            h(f1(\boldsymbol{x}), g(\boldsymbol{x})) = 1 - \sqrt{f_1(\boldsymbol{x}) / g(\boldsymbol{x})}
-            \end{cases}
-
-        Arguments
-        =========
-        dim: int, default=30
-            Dimension of the problem :math:`N`.
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
-        """
-
         super().__init__(
             nobj=2,
             dim=dim,
@@ -1351,6 +1355,39 @@ class ZDT1(MultiTestFunction):
 
 
 class ZDT2(MultiTestFunction):
+    r"""ZDT's second function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x})) \\
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
+        h(f_1(\boldsymbol{x}), g(\boldsymbol{x})) = 1 - \left(f_1(\boldsymbol{x}) / g(\boldsymbol{x})\right)^2
+        \end{cases}
+
+    Arguments
+    =========
+    dim: int, default=30
+        Dimension of the problem :math:`N`.
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+    """
+
     def __init__(
         self,
         dim: int = 30,
@@ -1358,38 +1395,6 @@ class ZDT2(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""ZDT's second function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x})) \\
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
-            h(f_1(\boldsymbol{x}), g(\boldsymbol{x})) = 1 - \left(f_1(\boldsymbol{x}) / g(\boldsymbol{x})\right)^2
-            \end{cases}
-
-        Arguments
-        =========
-        dim: int, default=30
-            Dimension of the problem :math:`N`.
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
-        """
         super().__init__(
             nobj=2,
             dim=dim,
@@ -1413,6 +1418,39 @@ class ZDT2(MultiTestFunction):
 
 
 class ZDT3(MultiTestFunction):
+    r"""ZDT's third function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
+        h(\boldsymbol{x}) = 1 - \sqrt{f_1(\boldsymbol{x}) / g(\boldsymbol{x})} - \frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})} \sin(10 \pi f_1(\boldsymbol{x}))
+        \end{cases}
+
+    Arguments
+    =========
+    dim: int, default=30
+        Dimension of the problem :math:`N`.
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+    """
+
     def __init__(
         self,
         dim: int = 30,
@@ -1420,39 +1458,6 @@ class ZDT3(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""ZDT's third function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(\boldsymbol{x}) = 1 + 9 \sum_{i=2}^{N} x_i / (N - 1) \\
-            h(\boldsymbol{x}) = 1 - \sqrt{f_1(\boldsymbol{x}) / g(\boldsymbol{x})} - \frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})} \sin(10 \pi f_1(\boldsymbol{x}))
-            \end{cases}
-
-        Arguments
-        =========
-        dim: int, default=30
-            Dimension of the problem :math:`N`.
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
-        """
-
         super().__init__(
             nobj=2,
             dim=dim,
@@ -1476,6 +1481,41 @@ class ZDT3(MultiTestFunction):
 
 
 class ZDT4(MultiTestFunction):
+    r"""ZDT's fourth function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(\boldsymbol{x}) = 1 + 10 (N - 1) + \sum_{i=2}^{N} \left(x_i^2 - 10 \cos(4 \pi x_i)\right) \\
+        h(\boldsymbol{x}) = 1 - \sqrt{\frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})}}
+        \end{cases}
+
+    Arguments
+    =========
+    dim: int, default=10
+        Dimension of the problem :math:`N`.
+    min_X: np.ndarray | list[float] | float
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+        Default is x_1 = 0.0 and x_i = -5.0 for i = 2, ..., N.
+    max_X: np.ndarray | list[float] | float
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+        Default is x_1 = 1.0 and x_i = 5.0 for i = 2, ..., N.
+    test_maximizer: bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+    """
+
     def __init__(
         self,
         dim: int = 10,
@@ -1483,41 +1523,6 @@ class ZDT4(MultiTestFunction):
         max_X: None | np.ndarray | list[float] | float = None,
         test_maximizer: bool = True,
     ):
-        r"""ZDT's fourth function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(\boldsymbol{x}) = 1 + 10 (N - 1) + \sum_{i=2}^{N} \left(x_i^2 - 10 \cos(4 \pi x_i)\right) \\
-            h(\boldsymbol{x}) = 1 - \sqrt{\frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})}}
-            \end{cases}
-
-        Arguments
-        =========
-        dim: int, default=10
-            Dimension of the problem :math:`N`.
-        min_X: np.ndarray | list[float] | float
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-            Default is x_1 = 0.0 and x_i = -5.0 for i = 2, ..., N.
-        max_X: np.ndarray | list[float] | float
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-            Default is x_1 = 1.0 and x_i = 5.0 for i = 2, ..., N.
-        test_maximizer: bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
-        """
-
         if min_X is None:
             min_X = np.full(dim, -5.0)
             min_X[0] = 0.0
@@ -1548,6 +1553,39 @@ class ZDT4(MultiTestFunction):
 
 
 class ZDT6(MultiTestFunction):
+    r"""ZDT's sixth function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin^6(6 \pi x_1) \\
+        f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(\boldsymbol{x}) = 1 + 9 \left(\sum_{i=2}^{N} x_i / (N - 1)\right)^{0.25} \\
+        h(\boldsymbol{x}) = 1 - \left(\frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})}\right)^2
+        \end{cases}
+
+    Arguments
+    =========
+    dim: int, default=10
+        Dimension of the problem :math:`N`.
+    min_X : np.ndarray | list[float] | float, default=0.0
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=1.0
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+    """
+
     def __init__(
         self,
         dim: int = 10,
@@ -1555,38 +1593,6 @@ class ZDT6(MultiTestFunction):
         max_X: np.ndarray | list[float] | float = 1.0,
         test_maximizer: bool = True,
     ):
-        r"""ZDT's sixth function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin^6(6 \pi x_1) \\
-            f_2(\boldsymbol{x}) = g(\boldsymbol{x}) h(f_1(\boldsymbol{x}), g(\boldsymbol{x}))
-            \end{cases}
-
-            \text{where}
-            \begin{cases}
-            g(\boldsymbol{x}) = 1 + 9 \left(\sum_{i=2}^{N} x_i / (N - 1)\right)^{0.25} \\
-            h(\boldsymbol{x}) = 1 - \left(\frac{f_1(\boldsymbol{x})}{g(\boldsymbol{x})}\right)^2
-            \end{cases}
-
-        Arguments
-        =========
-        dim: int, default=10
-            Dimension of the problem :math:`N`.
-        min_X : np.ndarray | list[float] | float, default=0.0
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=1.0
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
-        """
         super().__init__(
             nobj=2,
             dim=dim,
@@ -1610,47 +1616,47 @@ class ZDT6(MultiTestFunction):
 
 
 class OsyczkaKundu(MultiTestFunction):
+    r"""Osyczka-Kundu's function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = -25 (x_1 - 2)^2 - (x_2 - 2)^2 - (x_3 - 1)^2 - (x_4 - 4)^2 - (x_5 - 1)^2 \\
+        f_2(\boldsymbol{x}) = \sum_{i=1}^{6} x_i^2
+        \end{cases}
+
+        \text{Subject to}
+        \begin{cases}
+        g_1(\boldsymbol{x}) = x_1 + x_2 - 2 \ge 0 \\
+        g_2(\boldsymbol{x}) = 6 - x_1 - x_2 \ge 0 \\
+        g_3(\boldsymbol{x}) = 2 - x_2 + x_1 \ge 0 \\
+        g_4(\boldsymbol{x}) = 2 - x_1 + 3 x_2 \ge 0 \\
+        g_5(\boldsymbol{x}) = 4 - \left(x_3 - 3\right)^2 - x_4 \ge 0 \\
+        g_6(\boldsymbol{x}) = \left(x_5 - 3\right)^2 + x_6 - 4 \ge 0 \\
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=[0.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+        Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=[10.0, 10.0, 5.0, 6.0, 5.0, 10.0]
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Osyczka, A., Kundu, S. A new method to solve generalized multicriteria optimization problems using the simple genetic algorithm. Structural Optimization 10, 94-99 (1995). https://doi.org/10.1007/BF01743536
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = [0.0, 0.0, 1.0, 0.0, 1.0, 0.0],
         max_X: np.ndarray | list[float] | float = [10.0, 10.0, 5.0, 6.0, 5.0, 10.0],
         test_maximizer: bool = True,
     ):
-        r"""Osyczka-Kundu's function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = -25 (x_1 - 2)^2 - (x_2 - 2)^2 - (x_3 - 1)^2 - (x_4 - 4)^2 - (x_5 - 1)^2 \\
-            f_2(\boldsymbol{x}) = \sum_{i=1}^{6} x_i^2
-            \end{cases}
-
-            \text{Subject to}
-            \begin{cases}
-            g_1(\boldsymbol{x}) = x_1 + x_2 - 2 \ge 0 \\
-            g_2(\boldsymbol{x}) = 6 - x_1 - x_2 \ge 0 \\
-            g_3(\boldsymbol{x}) = 2 - x_2 + x_1 \ge 0 \\
-            g_4(\boldsymbol{x}) = 2 - x_1 + 3 x_2 \ge 0 \\
-            g_5(\boldsymbol{x}) = 4 - \left(x_3 - 3\right)^2 - x_4 \ge 0 \\
-            g_6(\boldsymbol{x}) = \left(x_5 - 3\right)^2 + x_6 - 4 \ge 0 \\
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=[0.0, 0.0, 1.0, 0.0, 1.0, 0.0]
-            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=[10.0, 10.0, 5.0, 6.0, 5.0, 10.0]
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Osyczka, A., Kundu, S. A new method to solve generalized multicriteria optimization problems using the simple genetic algorithm. Structural Optimization 10, 94-99 (1995). https://doi.org/10.1007/BF01743536
-        """
-
         super().__init__(
             nobj=2,
             dim=6,
@@ -1700,42 +1706,43 @@ class OsyczkaKundu(MultiTestFunction):
 
 
 class ConstrEX(MultiTestFunction):
+    r"""ConstrEX function.
+
+    .. math::
+
+        \text{Minimize}
+        \begin{cases}
+        f_1(\boldsymbol{x}) = x_1 \\
+        f_2(\boldsymbol{x}) = (1 + x_2) / x_1
+        \end{cases}
+
+        \text{Subject to}
+        \begin{cases}
+        g_1(\boldsymbol{x}) = 9 x_1 + x_2 \ge 6 \\
+        g_2(\boldsymbol{x}) = 9 x_1 - x_2 \ge 1 \\
+        \end{cases}
+
+    Arguments
+    =========
+    min_X : np.ndarray | list[float] | float, default=[0.1, 0.0]
+            Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
+    max_X : np.ndarray | list[float] | float, default=[1.0, 5.0]
+        Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
+    test_maximizer : bool, default=True
+        If True, the returned values are negated to describe a maximization problem.
+        If False, they describe the minimization problem as defined above.
+
+    References
+    ==========
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+    """
+
     def __init__(
         self,
         min_X: np.ndarray | list[float] | float = [0.1, 0.0],
         max_X: np.ndarray | list[float] | float = [1.0, 5.0],
         test_maximizer: bool = True,
     ):
-        r"""ConstrEX function.
-
-        .. math::
-
-            \text{Minimize}
-            \begin{cases}
-            f_1(\boldsymbol{x}) = x_1 \\
-            f_2(\boldsymbol{x}) = (1 + x_2) / x_1
-            \end{cases}
-
-            \text{Subject to}
-            \begin{cases}
-            g_1(\boldsymbol{x}) = 9 x_1 + x_2 \ge 6 \\
-            g_2(\boldsymbol{x}) = 9 x_1 - x_2 \ge 1 \\
-            \end{cases}
-
-        Arguments
-        =========
-        min_X : np.ndarray | list[float] | float, default=[0.1, 0.0]
-                Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        max_X : np.ndarray | list[float] | float, default=[1.0, 5.0]
-            Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
-        test_maximizer : bool, default=True
-            If True, the returned values are negated to describe a maximization problem.
-            If False, they describe the minimization problem as defined above.
-
-        References
-        ==========
-        Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
-        """
         super().__init__(
             nobj=2,
             dim=2,

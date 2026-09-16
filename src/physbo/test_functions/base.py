@@ -35,6 +35,23 @@ class TestFunction(ABC):
     they always describe a minimization problem.
     The sign is flipped only when the declared sense and the requested sense
     differ.
+
+    Arguments
+    =========
+    nobj: int
+        Number of objectives.
+    dim: int
+        Number of dimensions.
+    min_X: np.ndarray | list[float] | float
+        Minimum value of search space for each dimension.
+    max_X: np.ndarray | list[float] | float
+        Maximum value of search space for each dimension.
+    test_maximizer: bool, default=True
+        If True, the returned values describe a maximization problem
+        (for testing a maximization problem solver such as PHYSBO).
+        If False, they describe a minimization problem.
+    name: str | None, default=None
+        Name of the test function. If None, the class name is used.
     """
 
     # Sense in which ``f`` (and the reference box) is written.
@@ -50,23 +67,6 @@ class TestFunction(ABC):
         test_maximizer: bool = True,
         name: str | None = None,
     ):
-        """Initialize the test function.
-
-        Arguments
-        =========
-        nobj: int
-            Number of objectives.
-        dim: int
-            Number of dimensions.
-        min_X: np.ndarray | list[float] | float
-            Minimum value of search space for each dimension.
-        max_X: np.ndarray | list[float] | float
-            Maximum value of search space for each dimension.
-        test_maximizer: bool, default=True
-            If True, the returned values describe a maximization problem
-            (for testing a maximization problem solver such as PHYSBO).
-            If False, they describe a minimization problem.
-        """
         self._nobj = nobj
         self._dim = dim
         self._test_maximizer = test_maximizer
