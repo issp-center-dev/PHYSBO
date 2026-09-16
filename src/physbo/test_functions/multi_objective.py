@@ -237,8 +237,12 @@ class FonsecaFleming(MultiTestFunction):
     :math:`\pm 1/\sqrt{N}` and the search space :math:`-4 \le x_i \le 4`)
     follows Van Veldhuizen (1999) and Deb (2001), where it is attributed to
     Fonseca and Fleming (1995b).
-    The two-variable form in Fonseca and Fleming (1995a) uses the centers
-    :math:`(1, -1)` and :math:`(-1, 1)` instead, which is a different problem
+    Van Veldhuizen (1999) distinguishes two problems by Fonseca and Fleming:
+    "Fonseca", the two-variable form of Fonseca and Fleming (1995a) with the
+    centers :math:`(1, -1)` and :math:`(-1, 1)`, and "Fonseca (2)", the
+    :math:`N`-variable form of Fonseca and Fleming (1995b) with
+    :math:`-4 \le x_i \le 4`, which is the one implemented here (MOP2).
+    The two-variable form is a different problem
     (the distance between the centers is :math:`2\sqrt{2}` instead of 2).
     :class:`VLMOP2` is the same function with the search space
     :math:`-2 \le x_i \le 2` used by Van Veldhuizen and Lamont (1999).
