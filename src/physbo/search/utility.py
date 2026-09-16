@@ -200,7 +200,8 @@ def plot_pareto_front(
     for i in range(steps_begin, steps_end):
         if i in front_num:
             undominated.append(i)
-        else:
+        elif np.all(np.isfinite(history.fx[i])):
+            # failed observations (non-finite values) are not plotted
             dominated.append(i)
         min_fx = np.minimum(min_fx, history.fx[i, [x, y]])
         max_fx = np.maximum(max_fx, history.fx[i, [x, y]])
@@ -411,6 +412,51 @@ def length_vector(t):
     """
     N = len(t) if hasattr(t, "__len__") else 1
     return N
+
+
+def finite_mask(t):
+    """Return the mask of valid (finite) observations.
+
+    An observation is valid when all of its objective values are finite;
+    a NaN or an infinite value marks a failed evaluation.
+
+    Parameters
+    ----------
+    t: numpy.ndarray
+        N dimensional array (single objective) or N x k dimensional array
+        (k objectives) of objective values.
+
+    Returns
+    -------
+    mask: numpy.ndarray of bool, shape (N,)
+        True for valid observations, False for failed ones.
+    """
+    t = np.asarray(t, dtype=float)
+    if t.ndim <= 1:
+        return np.isfinite(t).reshape(-1)
+    return np.all(np.isfinite(t), axis=tuple(range(1, t.ndim)))
+
+
+def mask_rows(Z, mask):
+    """Select the observations given by mask from a basis array Z.
+
+    Parameters
+    ----------
+    Z: numpy.ndarray or None
+        (N, n) array, or (k, N, n) array (one basis per objective), or None.
+    mask: numpy.ndarray of bool, shape (N,)
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Z restricted to the rows where mask is True (None if Z is None).
+    """
+    if Z is None:
+        return None
+    Z = np.asarray(Z)
+    if Z.ndim == 3:
+        return Z[:, mask, :]
+    return Z[mask]
 
 
 def is_learning(n, interval):

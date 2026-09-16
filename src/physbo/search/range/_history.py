@@ -22,8 +22,9 @@ class History:
         self.action_X = np.zeros((MAX_SEARCH, self.dim), dtype=float)
         self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
 
-        self.best_index = np.zeros(MAX_SEARCH, dtype=int)
-        self.best_index[0] = 0
+        # index of the best valid observation so far; -1 until the first
+        # valid (finite) observation
+        self.best_index = np.full(MAX_SEARCH, -1, dtype=int)
 
         self.time_total_ = np.zeros(MAX_SEARCH, dtype=float)
         self.time_update_predictor_ = np.zeros(MAX_SEARCH, dtype=float)
@@ -45,6 +46,36 @@ class History:
     @property
     def time_run_simulator(self):
         return copy.copy(self.time_run_simulator_[0 : self.num_runs])
+
+    @property
+    def valid_mask(self):
+        """
+        Mask of valid observations (True) vs failed ones (False).
+
+        An observation is failed when its objective value is not finite
+        (NaN or +-Inf). Failed observations are kept in the history but
+        excluded from the training data and the best-value tracking.
+
+        Returns
+        -------
+        numpy.ndarray of bool, shape (total_num_search,)
+        """
+        return utility.finite_mask(self.fx[0 : self.total_num_search])
+
+    def export_valid(self):
+        """
+        Export the valid (successfully evaluated) observations.
+
+        Returns
+        -------
+        X: numpy.ndarray
+            Inputs of the valid observations (N_valid x dim).
+        fx: numpy.ndarray
+            Objective values of the valid observations.
+        """
+        N = self.total_num_search
+        mask = self.valid_mask
+        return self.action_X[0:N, :][mask], self.fx[0:N][mask]
 
     def write(
         self,
@@ -88,14 +119,14 @@ class History:
         self.fx[st:en] = t
         self.action_X[st:en, :] = action_X
 
+        # track the best valid observation; failed (non-finite) ones are
+        # skipped and best_index stays -1 until the first valid one
         for n in range(st, en):
-            if n == 0:
-                self.best_index[0] = 0
-                continue
-            if self.fx[n] > self.fx[self.best_index[n - 1]]:
+            prev = self.best_index[n - 1] if n > 0 else -1
+            if np.isfinite(self.fx[n]) and (prev < 0 or self.fx[n] > self.fx[prev]):
                 self.best_index[n] = n
             else:
-                self.best_index[n] = self.best_index[n - 1]
+                self.best_index[n] = prev
 
         self.num_runs += 1
         self.total_num_search += N
@@ -128,13 +159,16 @@ class History:
             The best X at each sequence.
         """
 
-        best_fx = np.zeros(self.num_runs, dtype=float)
-        best_X = np.zeros((self.num_runs, self.dim), dtype=float)
+        # NaN until the first valid observation
+        best_fx = np.full(self.num_runs, np.nan, dtype=float)
+        best_X = np.full((self.num_runs, self.dim), np.nan, dtype=float)
 
         for r in range(self.num_runs):
             n = self.terminal_num_run[r] - 1
-            best_fx[r] = self.fx[self.best_index[n]]
-            best_X[r, :] = self.action_X[self.best_index[n], :]
+            b = self.best_index[n]
+            if b >= 0:
+                best_fx[r] = self.fx[b]
+                best_X[r, :] = self.action_X[b, :]
 
         return best_fx, best_X
 
@@ -149,11 +183,14 @@ class History:
         best_actions: numpy.ndarray
         """
 
-        best_fx = np.zeros(self.total_num_search, dtype=float)
-        best_X = np.zeros((self.total_num_search, self.dim), dtype=float)
+        # NaN until the first valid observation
+        best_fx = np.full(self.total_num_search, np.nan, dtype=float)
+        best_X = np.full((self.total_num_search, self.dim), np.nan, dtype=float)
         for n in range(self.total_num_search):
-            best_fx[n] = self.fx[self.best_index[n]]
-            best_X[n, :] = self.action_X[self.best_index[n], :]
+            b = self.best_index[n]
+            if b >= 0:
+                best_fx[n] = self.fx[b]
+                best_X[n, :] = self.action_X[b, :]
         return best_fx, best_X
 
     def save(self, filename):
@@ -212,19 +249,19 @@ class History:
 
     def show_search_results(self, N):
         n = self.total_num_search
-        index = np.argmax(self.fx[0:n])
+        index = self.best_index[n - 1]
+        if index >= 0:
+            best_msg = f"current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]})"
+        else:
+            best_msg = "current best f(x) = (no valid observation yet)"
 
         if N == 1:
             print(
                 f"{n:04d}-th step: f(x) = {self.fx[n - 1]:.6f} (action={self.action_X[n - 1, :]})"
             )
-            print(
-                f"   current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]}) \n"
-            )
+            print("   " + best_msg + " \n")
         else:
-            print(
-                f"current best f(x) = {self.fx[index]:.6f} (best action={self.action_X[index, :]})"
-            )
+            print(best_msg)
 
             print("list of simulation results")
             st = self.total_num_search - N
