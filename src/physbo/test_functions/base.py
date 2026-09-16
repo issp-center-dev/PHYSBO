@@ -22,8 +22,24 @@ class TestFunction(ABC):
 
     Note
     =====
-    The test function f should be defined as a minimization problem.
+    Each test function is implemented in the same sense (minimization or
+    maximization) as in the reference it follows, so that ``f`` and the
+    docstring can be compared with the literature directly.
+    A subclass declares its sense by the class attribute ``_is_maximization``
+    (``False`` by default, i.e., minimization).
+
+    ``test_maximizer`` selects the sense of the *returned* values:
+    with ``test_maximizer=True`` (the default) the values returned by
+    ``__call__`` and the reference box always describe a maximization
+    problem (as PHYSBO maximizes objectives), and with ``test_maximizer=False``
+    they always describe a minimization problem.
+    The sign is flipped only when the declared sense and the requested sense
+    differ.
     """
+
+    # Sense in which ``f`` (and the reference box) is written.
+    # Subclasses whose reference defines a maximization problem set this to True.
+    _is_maximization: bool = False
 
     def __init__(
         self,
@@ -47,7 +63,9 @@ class TestFunction(ABC):
         max_X: np.ndarray | list[float] | float
             Maximum value of search space for each dimension.
         test_maximizer: bool, default=True
-            If True, the test function is negated for testing a maximization problem solver.
+            If True, the returned values describe a maximization problem
+            (for testing a maximization problem solver such as PHYSBO).
+            If False, they describe a minimization problem.
         """
         self._nobj = nobj
         self._dim = dim
@@ -101,10 +119,43 @@ class TestFunction(ABC):
         # This is assertion because it is the Developer's responsibility to ensure that the number of objectives is correct
         assert f.shape[1] == self._nobj
 
-        if self._test_maximizer:
+        if self._needs_negation():
             return -f
         else:
             return f
+
+    def _needs_negation(self) -> bool:
+        """Whether the values of ``f`` must be negated to obtain the requested sense.
+
+        The sign is flipped only when the sense in which ``f`` is written
+        (``_is_maximization``) differs from the requested sense (``test_maximizer``).
+        """
+        return self._test_maximizer != self._is_maximization
+
+    @property
+    def is_maximization(self) -> bool:
+        """Whether the test function is defined as a maximization problem in its reference.
+
+        This describes how ``f`` is written, not the sense of the returned values
+        (which is selected by ``test_maximizer``).
+
+        Returns
+        =======
+        bool
+            True if the original problem is a maximization problem.
+        """
+        return self._is_maximization
+
+    @property
+    def test_maximizer(self) -> bool:
+        """Whether the returned values describe a maximization problem.
+
+        Returns
+        =======
+        bool
+            True if ``__call__`` returns values of a maximization problem.
+        """
+        return self._test_maximizer
 
     @property
     def dim(self) -> int:
@@ -153,6 +204,9 @@ class TestFunction(ABC):
     @abstractmethod
     def f(self, x: np.ndarray) -> np.ndarray:
         """Evaluate the test function at the given point.
+
+        ``f`` is written in the sense of the reference (see ``_is_maximization``);
+        the conversion to the requested sense is done by ``__call__``.
 
         Arguments
         =========
