@@ -472,7 +472,7 @@ class ChankongHaimes(MultiTestFunction):
         ==========
         Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
 
-        N. Srinivas and K. Deb, "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
+        Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
 
         Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
 
@@ -1013,7 +1013,7 @@ class Kursawe(MultiTestFunction):
 
         References
         ==========
-        F. Kursawe, "A variant of evolution strategies for vector optimization," in PPSN I, Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197.
+        Kursawe, F., "A variant of evolution strategies for vector optimization," in PPSN I, Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197.
 
         Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
         """
@@ -1244,7 +1244,7 @@ class Poloni(MultiTestFunction):
 
         References
         ==========
-        C. Poloni, A. Giurgevich, L. Onesti, V. Pediroda, "Hybridization of a multi-objective genetic algorithm, a neural network and a classical optimizer for a complex design problem in fluid dynamics," Computer Methods in Applied Mechanics and Engineering 186(2-4), 403-420 (2000). https://doi.org/10.1016/S0045-7825(99)00394-1
+        Poloni, C., Giurgevich, A., Onesti, L., Pediroda, V., "Hybridization of a multi-objective genetic algorithm, a neural network and a classical optimizer for a complex design problem in fluid dynamics," Computer Methods in Applied Mechanics and Engineering 186(2-4), 403-420 (2000). https://doi.org/10.1016/S0045-7825(99)00394-1
 
         Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001. (POL)
 
@@ -1325,7 +1325,7 @@ class ZDT1(MultiTestFunction):
 
         References
         ==========
-        E. Zitzler, K. Deb, and L. Thiele, "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
         """
 
         super().__init__(
@@ -1388,7 +1388,7 @@ class ZDT2(MultiTestFunction):
 
         References
         ==========
-        E. Zitzler, K. Deb, and L. Thiele, "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
         """
         super().__init__(
             nobj=2,
@@ -1450,7 +1450,7 @@ class ZDT3(MultiTestFunction):
 
         References
         ==========
-        E. Zitzler, K. Deb, and L. Thiele, "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
         """
 
         super().__init__(
@@ -1515,7 +1515,7 @@ class ZDT4(MultiTestFunction):
 
         References
         ==========
-        E. Zitzler, K. Deb, and L. Thiele, "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
         """
 
         if min_X is None:
@@ -1585,7 +1585,7 @@ class ZDT6(MultiTestFunction):
 
         References
         ==========
-        E. Zitzler, K. Deb, and L. Thiele, "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
+        Zitzler, E., Deb, K., and Thiele, L., "Comparison of Multiobjective Evolutionary Algorithms: Empirical Results," Evolutionary Computation 8(2), 173-195 (2000). doi: 10.1162/106365600568202.
         """
         super().__init__(
             nobj=2,
@@ -1771,7 +1771,7 @@ class SRN(ChankongHaimes):
 
     References
     ==========
-    N. Srinivas and K. Deb, "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
+    Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
     """
 
 
