@@ -396,7 +396,7 @@ class BinhKorn(MultiTestFunction):
 
         References
         ==========
-        Binh, To Thanh, and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
+        To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
         """
         super().__init__(
             nobj=2,
@@ -476,7 +476,7 @@ class ChankongHaimes(MultiTestFunction):
 
         Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
 
-        Binh, To Thanh, and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
+        To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
 
         """
 
@@ -574,7 +574,7 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
         ==========
         Kita, H., Yabumoto, Y., Mori, N., Nishikawa, Y. (1996). Multi-objective optimization by means of the thermodynamical genetic algorithm. In: Voigt, HM., Ebeling, W., Rechenberg, I., Schwefel, HP. (eds) Parallel Problem Solving from Nature — PPSN IV. PPSN 1996. Lecture Notes in Computer Science, vol 1141. Springer, Berlin, Heidelberg. https://doi.org/10.1007/3-540-61723-X_1014
 
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany. (study case 4)
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany. (study case 4)
         """
 
         super().__init__(
@@ -646,7 +646,7 @@ class Binh1(MultiTestFunction):
 
         References
         ==========
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
         """
         super().__init__(
             nobj=2,
@@ -680,7 +680,7 @@ class Binh2(ChankongHaimes):
 
     References
     ==========
-    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
     """
 
 
@@ -694,7 +694,7 @@ class Binh3(FonsecaFleming):
 
     References
     ==========
-    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
     """
 
 
@@ -707,7 +707,7 @@ class Binh4(KitaYabumotoMoriNishikawa):
 
     References
     ==========
-    To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+    To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
     """
 
 
@@ -754,7 +754,7 @@ class Binh5(MultiTestFunction):
 
         Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
 
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
         """
 
         super().__init__(
@@ -819,7 +819,7 @@ class Binh6(MultiTestFunction):
 
         References
         ==========
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
         """
 
         super().__init__(
@@ -880,7 +880,7 @@ class Binh8(MultiTestFunction):
 
         References
         ==========
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
         """
 
         super().__init__(
@@ -953,7 +953,7 @@ class Binh9(MultiTestFunction):
 
         David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP6)
 
-        To, Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+        To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
         """
 
         super().__init__(
