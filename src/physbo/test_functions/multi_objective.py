@@ -1016,10 +1016,8 @@ class Kursawe(MultiTestFunction):
     :math:`f_2`, is defined for any number :math:`n` of variables, and states
     no variable bounds.
     Van Veldhuizen (1999) reproduces the original form (general :math:`n`,
-    :math:`\sin^3(x_i)`, no bounds) as MOP4 and notes, citing personal
-    correspondence with M. Laumanns, that the problem was misprinted in the
-    original paper (presumably the upper limit of the sum in :math:`f_1`,
-    which is printed as :math:`n` although the summand involves :math:`x_{i+1}`).
+    :math:`\sin^3(x_i)`, no bounds) as MOP4 and notes that the problem was
+    misprinted in the original paper.
     Because of the change from :math:`\sin^3(x_i)` to :math:`\sin(x_i^3)`,
     the Pareto-optimal set of this function differs from that of the original.
 
