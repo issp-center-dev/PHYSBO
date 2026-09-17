@@ -988,7 +988,7 @@ class Binh9(MultiTestFunction):
 
 
 class Kursawe(MultiTestFunction):
-    r"""Kursawe's function.
+    r"""Kursawe's function (the three-variable modified version, KUR in Deb (2001)).
 
     .. math::
 
@@ -1010,13 +1010,26 @@ class Kursawe(MultiTestFunction):
 
     Note
     ====
-    The search space :math:`-5 \le x_i \le 5` follows Deb (2001).
+    The implementation follows Deb (2001), which differs from the original
+    problem of Kursawe (1991) in three respects (as noted by Deb):
+    the original uses :math:`\sin^3(x_i)` instead of :math:`\sin(x_i^3)` in
+    :math:`f_2`, is defined for any number :math:`n` of variables, and states
+    no variable bounds.
+    Van Veldhuizen (1999) reproduces the original form (general :math:`n`,
+    :math:`\sin^3(x_i)`, no bounds) as MOP4 and notes, citing personal
+    correspondence with M. Laumanns, that the problem was misprinted in the
+    original paper (presumably the upper limit of the sum in :math:`f_1`,
+    which is printed as :math:`n` although the summand involves :math:`x_{i+1}`).
+    Because of the change from :math:`\sin^3(x_i)` to :math:`\sin(x_i^3)`,
+    the Pareto-optimal set of this function differs from that of the original.
 
     References
     ==========
-    Kursawe, F., "A variant of evolution strategies for vector optimization," in PPSN I, Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197.
+    Kursawe, F., "A variant of evolution strategies for vector optimization," in Parallel Problem Solving from Nature (PPSN I, 1990), Vol 496 Lect Notes in Comput Sci. Springer-Verlag, 1991, pp. 193-197. (Cited as Kursawe (1990) in Deb (2001) and Van Veldhuizen (1999).)
 
-    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001. (KUR)
+
+    David A. Van Veldhuizen; Multiobjective Evolutionary Algorithms: Classifications, Analyses, and New Innovations. Ph.D. thesis, Air Force Institute of Technology, 1999. (MOP4)
     """
 
     def __init__(
