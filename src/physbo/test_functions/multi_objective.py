@@ -858,14 +858,20 @@ class Binh6(MultiTestFunction):
 
 
 class Binh8(MultiTestFunction):
-    r"""Binh's eighth function (the eighth study case of Binh (1999)).
+    r"""Binh's eighth function (a test problem of Deb (1999) with a non-uniformly represented front).
 
     .. math::
 
         \text{Minimize}
         \begin{cases}
-        f_1(\boldsymbol{x}) = x_1 + x_2 \\
-        f_2(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin(5 \pi x_1)^4
+        f_1(\boldsymbol{x}) = 1 - \exp(-4 x_1) \sin^4(5 \pi x_1) \\
+        f_2(\boldsymbol{x}) = g(x_2) h(x_1, x_2)
+        \end{cases}
+
+        \text{where}
+        \begin{cases}
+        g(x_2) = 1 + 10 x_2 \\
+        h(x_1, x_2) = 1 - \left( \frac{f_1(\boldsymbol{x})}{g(x_2)} \right)^4
         \end{cases}
 
     Arguments
@@ -880,10 +886,25 @@ class Binh8(MultiTestFunction):
 
     Note
     ====
-    The implementation follows Binh (1999); the origin of the problem has not been identified.
+    The problem is the one Deb (1999) uses to compare parameter-space and function-space niching:
+    :math:`h = 1 - (f_1 / (\beta g))^\alpha` with :math:`\beta = 1` and :math:`\alpha = 4`.
+    The expression :math:`g = 1 + 10 x_2` is taken from Deb (2001) (:math:`f_1` is Eq. (8.31) there);
+    Deb (1999) does not give it.
+    Neither Deb (1999) nor Deb (2001) states the range of :math:`x_2`, which is taken from Binh (1999).
+    The Pareto-optimal front is :math:`f_2 = 1 - f_1^4` and is non-convex;
+    a uniform sampling of :math:`x_1` is biased towards :math:`f_1 \approx 1`.
+    It is the eighth study case in Binh (1999).
+    The formulas printed there
+    (:math:`f_1 = x_1 + x_2`, :math:`f_2 = 1 - \exp(-4 x_1) \sin^4(5 \pi x_1)`)
+    are inconsistent with Figure 8 of the same report, which agrees with the problem above.
+    PHYSBO up to version 3.2.1 implemented the formulas as printed.
 
     References
     ==========
+    Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
+
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+
     To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
     """
 
@@ -904,15 +925,17 @@ class Binh8(MultiTestFunction):
     def f(self, x: np.ndarray) -> np.ndarray:
         x1 = x[:, 0]
         x2 = x[:, 1]
-        f1 = x1 + x2
-        f2 = 1.0 - np.exp(-4.0 * x1) * np.sin(5.0 * np.pi * x1) ** 4
+        f1 = 1.0 - np.exp(-4.0 * x1) * np.sin(5.0 * np.pi * x1) ** 4
+        g = 1 + 10 * x2
+        h = 1.0 - (f1 / g) ** 4
+        f2 = g * h
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.0, 0.3])
+        return np.array([0.3, 0.0])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([2.0, 1.0])
+        return np.array([1.0, 11.0])
 
 
 class Binh9(MultiTestFunction):

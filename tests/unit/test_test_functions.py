@@ -222,6 +222,7 @@ def test_multi_objective_constraint_is_active(name):
     [
         "KitaYabumotoMoriNishikawa",
         "Binh1",
+        "Binh8",
         "BinhKorn",
         "Poloni",
         "FonsecaFleming",
@@ -277,6 +278,33 @@ def test_binh1_pareto_set():
     assert np.all(P[:, 0] >= -h - 1e-12)
     assert np.all(P[:, 0] <= 5.0 + h + 1e-12)
     assert P[:, 0].max() > 4.0  # the segment is not truncated like BinhKorn
+
+
+def test_binh8_follows_deb():
+    # Binh (1999) case 8 is the problem of Deb (1999) with h = 1 - (f1 / g)^4;
+    # g = 1 + 10 x2 is given in Deb (2001).  The formulas printed in
+    # Binh (1999) (f1 = x1 + x2) contradict Figure 8 of the same report.
+    fn = multi_objective.Binh8(test_maximizer=False)
+    # values read from Figure 8 (left) of Binh (1999): (x1, f1)
+    X = np.array([[0.095, 0.0], [0.6, 0.0], [0.697, 0.0]])
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 0], [0.325, 1.0, 0.939], atol=2e-3)
+    # on the Pareto-optimal set x2 = 0 the front is f2 = 1 - f1^4
+    X = np.c_[np.linspace(0.0, 1.0, 101), np.zeros(101)]
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 1], 1.0 - Y[:, 0] ** 4)
+    assert Y[:, 0].min() > 0.32
+    # independent transcription off the front
+    Y = fn(np.array([[0.3, 0.5]]))
+    f1 = 1.0 - np.exp(-1.2) * np.sin(1.5 * np.pi) ** 4
+    np.testing.assert_allclose(Y[0], [f1, 6.0 * (1.0 - (f1 / 6.0) ** 4)])
+
+    # the Pareto-optimal set is x2 = 0 (_nondominated_mask assumes maximization)
+    fn = multi_objective.Binh8()
+    X = fn.make_grid(41)
+    P = X[_nondominated_mask(fn(X))]
+    assert len(P) > 0
+    np.testing.assert_allclose(P[:, 1], 0.0)
 
 
 def test_fonseca_fleming_domains():

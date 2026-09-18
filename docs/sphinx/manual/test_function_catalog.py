@@ -40,6 +40,7 @@ PARETO_SET: dict[str, str] = {
     "BinhKorn": r"x_1 = x_2 \in [0, 3];\ x_1 \in [3, 5], x_2 = 3",
     "KitaYabumotoMoriNishikawa": r"x_1 \in [0, 3],\ x_2 = 13/2 - x_1/6",
     "Binh1": r"x_1 = x_2 \in [0, 5]",
+    "Binh8": r"x_1 \in [0, 1],\ x_2 = 0",
     "Schaffer1": r"x \in [0, 2]",
     "Schaffer2": r"x \in [1, 2] \cup [4, 5]",
     "ZDT1": r"x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)",
