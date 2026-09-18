@@ -389,7 +389,7 @@ class BinhKorn(MultiTestFunction):
     Note
     ====
     Binh and Korn (1997) present two test problems; this is test case 2
-    (test case 1 is :class:`ChankongHaimes`).
+    (test case 1 is :class:`SRN`).
     :class:`Binh1` has the same objectives but no constraints and a
     different search space, and is therefore a different problem.
 
@@ -433,8 +433,8 @@ class BinhKorn(MultiTestFunction):
         return np.array([140.0, 50.0])
 
 
-class ChankongHaimes(MultiTestFunction):
-    r"""Chankong-Haimes's function (also known as SRN).
+class SRN(MultiTestFunction):
+    r"""SRN (Srinivas and Deb's constrained test problem, also called Chankong-Haimes's function).
 
     .. math::
 
@@ -465,18 +465,20 @@ class ChankongHaimes(MultiTestFunction):
     The objectives originate from Chankong and Haimes (1983), who solved the
     unconstrained problem.
     Srinivas and Deb (1994) added the constraints :math:`g_1, g_2` to make the
-    problem more difficult, and this constrained problem is widely known as
-    SRN after them (see Deb (2001)); :class:`SRN` is an alias.
+    problem more difficult, and this constrained problem is known as SRN
+    after them (see Deb (2001)).
+    The problem is also often called Chankong-Haimes's function after the
+    origin of the objectives; :class:`ChankongHaimes` is an alias.
     It is also test case 1 of Binh and Korn (1997) and
     the second study case of Binh (1999) (:class:`Binh2`).
 
     References
     ==========
-    Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
-
     Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
 
-    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
+    Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001. (SRN)
+
+    Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
 
     To Thanh Binh and Ulrich Korn. "MOBES: A multiobjective evolution strategy for constrained optimization problems." The third international conference on genetic algorithms (Mendel 97). Vol. 25. 1997.
 
@@ -679,13 +681,13 @@ class Binh1(MultiTestFunction):
         return np.array([800.0, 200.0])
 
 
-class Binh2(ChankongHaimes):
+class Binh2(SRN):
     r"""Binh's second function.
 
-    This is an alias of :class:`ChankongHaimes` (SRN); the objectives,
+    This is an alias of :class:`SRN`; the objectives,
     constraints and search space of the second study case of Binh (1999)
     agree with it.
-    See :class:`ChankongHaimes` for the definition and the arguments.
+    See :class:`SRN` for the definition and the arguments.
 
     References
     ==========
@@ -1787,15 +1789,17 @@ class ConstrEX(MultiTestFunction):
         return np.array([1.0, 60.0])
 
 
-class SRN(ChankongHaimes):
-    r"""SRN (Srinivas and Deb's test problem).
+class ChankongHaimes(SRN):
+    r"""Chankong-Haimes's function.
 
-    This is an alias of :class:`ChankongHaimes`.
-    See :class:`ChankongHaimes` for the definition and the arguments.
+    This is an alias of :class:`SRN`, named after the origin of the objectives
+    (Chankong and Haimes (1983) solved the unconstrained problem; the
+    constraints were added by Srinivas and Deb (1994)).
+    See :class:`SRN` for the definition and the arguments.
 
     References
     ==========
-    Srinivas, N. and Deb, K., "Multiobjective optimization using nondominated sorting in genetic algorithms," Evolutionary Computation 2(3), 221-248 (1994).
+    Chankong, V., and Haimes, Y. Y., "Multiobjective decision making: Theory and methodology", North-Holland series in system science and engineering, 1983. (Reprinted by Dover, 2008.)
     """
 
 
