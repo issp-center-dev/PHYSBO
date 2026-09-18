@@ -462,9 +462,11 @@ class ChankongHaimes(MultiTestFunction):
 
     Note
     ====
-    The problem originates from Chankong and Haimes (1983).
-    Srinivas and Deb (1994) borrowed it as a test problem, and it is
-    widely known as SRN after them (see Deb (2001)); :class:`SRN` is an alias.
+    The objectives originate from Chankong and Haimes (1983), who solved the
+    unconstrained problem.
+    Srinivas and Deb (1994) added the constraints :math:`g_1, g_2` to make the
+    problem more difficult, and this constrained problem is widely known as
+    SRN after them (see Deb (2001)); :class:`SRN` is an alias.
     It is also test case 1 of Binh and Korn (1997) and
     the second study case of Binh (1999) (:class:`Binh2`).
 
