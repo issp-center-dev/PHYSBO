@@ -20,11 +20,19 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-# import sys
+import sys
 import os
 from importlib.util import find_spec
 
 # sys.path.insert(0, os.path.abspath("../../../../../physbo"))
+
+# generator of the benchmark-function tables (docs/sphinx/manual/test_function_catalog.py)
+sys.path.insert(0, os.path.abspath("../.."))
+from test_function_catalog import sphinx_setup as _test_function_catalog_setup  # noqa: E402
+
+
+def setup(app):
+    return _test_function_catalog_setup(app, lang="en")
 
 # -- Project information -----------------------------------------------------
 
