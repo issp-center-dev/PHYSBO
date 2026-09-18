@@ -233,10 +233,9 @@ class FonsecaFleming(MultiTestFunction):
 
     Note
     ====
-    The implementation (the :math:`N`-variable form with the centers at
-    :math:`\pm 1/\sqrt{N}` and the search space :math:`-4 \le x_i \le 4`)
-    follows Van Veldhuizen (1999) and Deb (2001), where it is attributed to
-    Fonseca and Fleming (1995b).
+    The :math:`N`-variable form with the centers at :math:`\pm 1/\sqrt{N}`
+    is given in Fonseca and Fleming (1995b); the search space
+    :math:`-4 \le x_i \le 4` follows Van Veldhuizen (1999) and Deb (2001).
     Van Veldhuizen (1999) distinguishes two problems by Fonseca and Fleming:
     "Fonseca", the two-variable form of Fonseca and Fleming (1995a) with the
     centers :math:`(1, -1)` and :math:`(-1, 1)`, and "Fonseca (2)", the
