@@ -795,7 +795,7 @@ class Binh5(MultiTestFunction):
 
 
 class Binh6(MultiTestFunction):
-    r"""Binh's sixth function (the sixth study case of Binh (1999)).
+    r"""Binh's sixth function (a test problem of Binh (1999) built on the Rosenbrock function).
 
     .. math::
 
@@ -809,9 +809,9 @@ class Binh6(MultiTestFunction):
 
     Arguments
     =========
-    min_X : np.ndarray | list[float] | float, default=-5.0
+    min_X : np.ndarray | list[float] | float, default=-3.0
         Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-    max_X : np.ndarray | list[float] | float, default=5.0
+    max_X : np.ndarray | list[float] | float, default=3.0
         Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
     test_maximizer : bool, default=True
         If True, the returned values are negated to describe a maximization problem.
@@ -819,17 +819,38 @@ class Binh6(MultiTestFunction):
 
     Note
     ====
-    The implementation follows Binh (1999); the origin of the problem has not been identified.
+    The problem is constructed in Binh (1999) (the sixth study case)
+    in the form of the tunable two-objective problems of Deb (1999, Section 5),
+    :math:`f_1 = f_1(\boldsymbol{x}_\mathrm{I})` and
+    :math:`f_2 = g(\boldsymbol{x}_\mathrm{II}) h(f_1, g)`,
+    with :math:`\boldsymbol{x}_\mathrm{I} = (x_1, x_2)`,
+    :math:`\boldsymbol{x}_\mathrm{II} = (x_3, x_4)` and :math:`h = 1 / f_1`.
+    The function :math:`g` is the Rosenbrock ("banana") function plus 2,
+    whose minimum lies in a narrow and flat valley;
+    :math:`f_1 \ge 1` and :math:`g \ge 2` satisfy the conditions
+    :math:`f_1 > 0` and :math:`g > 0` of the construction.
+    The Pareto-optimal front is :math:`f_1 f_2 = 2`
+    (:math:`x_3 = x_4 = 1` with arbitrary :math:`x_1` and :math:`x_2`),
+    in agreement with Figure 6 of the report.
+    Binh (1999) does not state the search space.
+    The front drawn in Figure 6 ends at :math:`f_1 = \sqrt{19}`,
+    which means that the largest :math:`|x_1|` and :math:`|x_2|` are 3;
+    the default :math:`[-3, 3]^4` assumes a symmetric box and the same range for :math:`x_3` and :math:`x_4`.
+    PHYSBO up to version 3.2.1 used :math:`[-5, 5]^4`.
 
     References
     ==========
     To Thanh Binh. (1999). A Multiobjective Evolutionary Algorithm: The Study Cases. Technical report, Institute for Automation and Communication, Barleben, Germany.
+
+    Kalyanmoy Deb. "Multi-objective genetic algorithms: Problem difficulties and construction of test problems." Evolutionary Computation 7(3), 205-230 (1999). (Also: Technical Report CI-49/98, University of Dortmund, 1998.)
+
+    Rosenbrock, H.H. (1960). "An automatic method for finding the greatest or least value of a function". The Computer Journal. 3 (3): 175-184.  https://doi.org/10.1093/comjnl/3.3.175
     """
 
     def __init__(
         self,
-        min_X: np.ndarray | list[float] | float = -5.0,
-        max_X: np.ndarray | list[float] | float = 5.0,
+        min_X: np.ndarray | list[float] | float = -3.0,
+        max_X: np.ndarray | list[float] | float = 3.0,
         test_maximizer: bool = True,
     ):
         super().__init__(
@@ -851,10 +872,10 @@ class Binh6(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([1.0, 0.2])
+        return np.array([1.0, 0.4])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([8.9, 1.0e5])
+        return np.array([4.4, 1.5e4])
 
 
 class Binh8(MultiTestFunction):

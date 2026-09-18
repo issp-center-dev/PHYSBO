@@ -280,6 +280,30 @@ def test_binh1_pareto_set():
     assert P[:, 0].max() > 4.0  # the segment is not truncated like BinhKorn
 
 
+def test_binh6_pareto_front():
+    # Binh (1999) case 6: f2 = g / f1 with g = Rosenbrock + 2, so the
+    # Pareto-optimal front is f1 f2 = 2, attained at x3 = x4 = 1
+    fn = multi_objective.Binh6(test_maximizer=False)
+    # the search space is not stated in Binh (1999); the front drawn in its
+    # Figure 6 ends at f1 = sqrt(19), i.e. max |x1| = max |x2| = 3
+    assert np.all(fn.min_X == -3.0)
+    assert np.all(fn.max_X == 3.0)
+    # end of the front (largest f1) and the point with the largest f2
+    X_ext = np.array([[3.0, -3.0, 1.0, 1.0], [0.0, 0.0, 3.0, -3.0]])
+    np.testing.assert_allclose(fn(X_ext)[0], [np.sqrt(19.0), 2.0 / np.sqrt(19.0)])
+    rng = np.random.RandomState(0)
+    X = rng.uniform(fn.min_X, fn.max_X, size=(1000, fn.dim))
+    # the reference box covers the range of the objectives (extremes included)
+    X = np.r_[X, X_ext]
+    Y = fn(X)
+    assert np.all(Y >= fn.reference_min)
+    assert np.all(Y <= fn.reference_max)
+    assert np.all(Y[:, 0] * Y[:, 1] >= 2.0 - 1e-12)
+    X[:, 2:] = 1.0
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 0] * Y[:, 1], 2.0)
+
+
 def test_binh8_follows_deb():
     # Binh (1999) case 8 is the problem of Deb (1999) with h = 1 - (f1 / g)^4;
     # g = 1 + 10 x2 is given in Deb (2001).  The formulas printed in
