@@ -117,6 +117,57 @@ def check_range():
     log("range (EI): OK")
 
 
+def f_multi(x):
+    x = np.atleast_2d(x)
+    return np.stack(
+        [-np.sum((x - 0.25) ** 2, axis=-1), -np.sum((x - 0.75) ** 2, axis=-1)],
+        axis=-1,
+    )
+
+
+def check_range_multi():
+    """Parallel multi-objective range search: ranks must agree on the history."""
+    policy = physbo.search.range_multi.Policy(
+        num_objectives=2,
+        min_X=np.array([0.0, 0.0]),
+        max_X=np.array([1.0, 1.0]),
+        comm=comm,
+    )
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=5, simulator=f_multi, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=2, simulator=f_multi, score="HVPI", is_disp=False, interval=0
+    )
+    N = res.total_num_search
+    assert_identical_over_ranks(res.action_X[:N], "range_multi action_X")
+    assert_identical_over_ranks(res.fx[:N], "range_multi fx")
+    log("range_multi (HVPI): OK")
+
+
+def check_range_unified():
+    """Parallel unified-objective range search: ranks must agree on the history."""
+    policy = physbo.search.range_unified.Policy(
+        num_objectives=2,
+        min_X=np.array([0.0, 0.0]),
+        max_X=np.array([1.0, 1.0]),
+        comm=comm,
+    )
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=5, simulator=f_multi, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=2,
+        simulator=f_multi,
+        score="EI",
+        unify_method=physbo.search.unify.ParEGO(num_objectives=2),
+        is_disp=False,
+        interval=0,
+    )
+    N = res.total_num_search
+    assert_identical_over_ranks(res.action_X[:N], "range_unified action_X")
+    assert_identical_over_ranks(res.fx[:N], "range_unified fx")
+    log("range_unified (EI, ParEGO): OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     check_discrete("EI")
@@ -124,6 +175,8 @@ def main():
     check_discrete("TS")
     check_random_optimizer()
     check_range()
+    check_range_multi()
+    check_range_unified()
     log("all MPI checks passed")
 
 
