@@ -11,6 +11,7 @@ import numpy as np
 
 from ... import _mpi
 from ..._rng import get_rng
+from ..utility import sample_feasible
 
 
 class Optimizer:
@@ -27,9 +28,17 @@ class Optimizer:
         Random number generator for the samples; None (default) uses the
         global ``numpy.random`` state. In a parallel run every process
         draws its own samples from its own generator.
+    constraint : callable, optional
+        A function from an array of shape (N, d) to a boolean array of N
+        elements (True for feasible points). If given, the samples are
+        feasible points drawn by rejection sampling (on every process for
+        its own share of the samples).
     """
 
-    def __init__(self, min_X, max_X, nsamples, rng=None):
+    #: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.
+    max_trials_per_point = 10000
+
+    def __init__(self, min_X, max_X, nsamples, rng=None, constraint=None):
         min_X = np.array(min_X)
         max_X = np.array(max_X)
         if min_X.ndim > 1 or max_X.ndim > 1:
@@ -48,6 +57,11 @@ class Optimizer:
             raise ValueError("nsamples must be greater than 0")
         self.nsamples = nsamples
         self.rng = get_rng(rng)
+        self.constraint = constraint
+
+    def _sample_uniform(self, N):
+        """Draw N points uniformly from the box [min_X, max_X]."""
+        return self.min_X + (self.max_X - self.min_X) * self.rng.random((N, self.dim))
 
     def __call__(self, fn, mpicomm=None):
         """
@@ -67,14 +81,16 @@ class Optimizer:
 
         Returns
         -------
-        numpy.ndarray
+        numpy.ndarray or None
             The first sample with the largest score, of shape (dim,); in a
             parallel run, of the process of the lowest rank among equally good
             ones. If no sample has a score larger than ``-inf`` (all scores
-            are ``nan`` or ``-inf``), the first sample (of rank 0) is returned
-            and a ``RuntimeWarning`` is issued on every process.
+            are ``nan`` or ``-inf``), the first sample (of the lowest rank
+            with a sample) is returned and a ``RuntimeWarning`` is issued on
+            every process. None, on every process, only with a
+            ``constraint`` for which no feasible sample was found within
+            ``max_trials_per_point * nsamples`` draws.
         """
-        rng = self.rng
         if mpicomm is not None:
             mpisize = mpicomm.Get_size()
             mpirank = mpicomm.Get_rank()
@@ -87,10 +103,25 @@ class Optimizer:
             nsamples_local += 1
 
         def sample():
+            if self.constraint is None:
+                samples = None
+                nlocal = nsamples_local
+            else:
+                # feasible points are drawn beforehand
+                samples = sample_feasible(
+                    self._sample_uniform,
+                    nsamples_local,
+                    self.constraint,
+                    max_trials_per_point=self.max_trials_per_point,
+                )
+                nlocal = 0 if samples is None else nsamples_local
             result_fx = -np.inf
             result_x = None
-            for i in range(nsamples_local):
-                x = self.min_X + (self.max_X - self.min_X) * rng.random(self.dim)
+            for i in range(nlocal):
+                if samples is None:
+                    x = self._sample_uniform(1)[0]
+                else:
+                    x = samples[i]
                 fx = fn(x)
                 if fx > result_fx:
                     result_fx = fx
@@ -104,13 +135,21 @@ class Optimizer:
         result_fx, result_x = (None, None) if error is not None else result
         if mpisize > 1:
             # gathered as objects, so that scores of any type (e.g. float32,
-            # or integers beyond 2**53) are compared as they are
-            result_fx_all = _mpi.allgather(mpicomm, result_fx, error)
+            # or integers beyond 2**53) are compared as they are; with the
+            # scores, whether the process has a sample at all (it may have
+            # none with a constraint)
+            results_all = _mpi.allgather(
+                mpicomm, (result_fx, result_x is not None), error
+            )
+            ranks_with_sample = [
+                rank for rank in range(mpisize) if results_all[rank][1]
+            ]
+            if len(ranks_with_sample) == 0:
+                return None
             # the first of equally good processes, like np.argmax; with no
-            # score larger than -inf anywhere, the first process, which has
-            # at least one sample
-            best_rank = max(range(mpisize), key=lambda rank: result_fx_all[rank])
-            result_fx = result_fx_all[best_rank]
+            # score larger than -inf anywhere, the first process with a sample
+            best_rank = max(ranks_with_sample, key=lambda rank: results_all[rank][0])
+            result_fx = results_all[best_rank][0]
             # a process without samples still needs a buffer to receive the
             # point
             if result_x is None:
@@ -119,6 +158,9 @@ class Optimizer:
                     self.dim, dtype=np.result_type(self.min_X, self.max_X, float)
                 )
             mpicomm.Bcast(result_x, root=best_rank)
+        elif result_x is None:
+            # no feasible sample (only with a constraint)
+            return None
 
         if result_fx == -np.inf:
             # the same on every process, as result_fx is the best of all

@@ -9,6 +9,7 @@ import numpy as np
 import copy
 import pickle as pickle
 import time
+import warnings
 
 from ._history import History
 from .. import utility
@@ -27,11 +28,18 @@ from .._checkpoint import CheckpointMixin
 class Policy(CheckpointMixin):
     """Single objective Bayesian optimization with continuous search space"""
 
+    #: No constraint, for subclasses whose constructor does not set it.
+    constraint = None
+
+    #: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.
+    max_trials_per_point = 10000
+
     def __init__(
         self,
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         config=None,
         initial_data=None,
         comm=None,
@@ -45,10 +53,17 @@ class Policy(CheckpointMixin):
             The minimum value of each dimension of the search space.
         max_X: numpy.ndarray
             The maximum value of each dimension of the search space.
+        constraint: callable, optional
+            Inequality constraints on the search space.
+            A function from an array of shape (N, d) to a boolean array of N elements (True for feasible points).
+            Only feasible points are proposed by random_search and bayes_search.
+            If None (default), the whole box [min_X, max_X] is searched.
+            This is not saved by save(); pass it again to the constructor.
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
             The first elements is the array of inputs and the second is the array of values of objective functions
+            These points are not checked against the constraint.
         comm: MPI.Comm, optional
             MPI Communicator
         rng: None, "legacy", int, or numpy.random.Generator, optional
@@ -73,6 +88,7 @@ class Policy(CheckpointMixin):
             "min_X must be less than max_X for each dimension"
         )
         self.L_X = self.max_X - self.min_X
+        self.constraint = constraint
         self.history = History(dim=self.dim)
         if config is None:
             self.config = SetConfig()
@@ -354,9 +370,7 @@ class Policy(CheckpointMixin):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -679,8 +693,80 @@ class Policy(CheckpointMixin):
             # the samples, and so the predictors, differ between the processes
             _mpi.allgather(self.mpicomm, None, error)
 
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
+
+    def _default_optimizer(self):
+        """Optimizer of the acquisition function used when none is given."""
+        return RandomOptimizer(
+            min_X=self.min_X,
+            max_X=self.max_X,
+            nsamples=1000,
+            rng=self.rng,
+            constraint=self.constraint,
+        )
+
+    def _constrained(self, fn):
+        """Make the acquisition function -inf at infeasible points."""
+        if self.constraint is None:
+            return fn
+
+        def wrapped(x):
+            x = np.asarray(x)
+            if utility.is_feasible(self.constraint, x.reshape(1, -1))[0]:
+                return fn(x)
+            return -np.inf
+
+        return wrapped
+
+    def _optimize_score(self, fn, optimizer):
+        """
+        Maximize the acquisition function under the constraint.
+
+        Parameters
+        ----------
+        fn: callable
+            Acquisition function, from a point of shape (dim,) to float.
+        optimizer: Optimizer object
+            Called as optimizer(fn, mpicomm=...).
+
+        Returns
+        -------
+        X: numpy.ndarray
+            The point to be searched next.
+
+        Notes
+        -----
+        Infeasible points are hidden from the optimizer by -inf, but the optimizer can
+        still fail to return a feasible point (no feasible sample, or a local search
+        started from an infeasible point). The returned point is therefore checked,
+        and replaced with a feasible random point if it is not feasible.
+        """
+        X = optimizer(self._constrained(fn), mpicomm=self.mpicomm)
+        if self.constraint is None:
+            return X
+
+        is_ok = X is not None
+        if is_ok:
+            x = np.asarray(X, dtype=float).reshape(1, -1)
+            is_ok = bool(
+                x.shape[1] == self.dim
+                and np.all(np.isfinite(x))
+                and utility.is_feasible(self.constraint, x)[0]
+            )
+        if self.mpisize > 1:
+            # all the ranks must take the same branch
+            is_ok = self.mpicomm.bcast(is_ok, root=0)
+        if is_ok:
+            return X
+
+        if self.mpirank == 0:
+            warnings.warn(
+                "The optimizer of the acquisition function did not return a feasible point. "
+                "A feasible random point is proposed instead.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        return self._get_random_action(1)[0]
 
     def _get_actions(
         self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
@@ -758,12 +844,45 @@ class Policy(CheckpointMixin):
         action: numpy.ndarray
             Indexes of actions selected randomly from search candidates.
         """
-        action = self.rng.random((N, self.dim)) * self.L_X.reshape(
+        if self.constraint is None:
+            action = self._sample_uniform(N)
+            if self.mpisize > 1:
+                self.mpicomm.Bcast(action, root=0)
+            return action
+
+        # Only rank 0 samples, since the number of trials depends on the random numbers.
+        action = None
+        if self.mpirank == 0:
+            action = utility.sample_feasible(
+                self._sample_uniform,
+                N,
+                self.constraint,
+                max_trials_per_point=self.max_trials_per_point,
+            )
+        if self.mpisize > 1:
+            # all the ranks must raise the error together
+            found = self.mpicomm.bcast(action is not None, root=0)
+            if found:
+                if self.mpirank != 0:
+                    action = np.zeros((N, self.dim))
+                self.mpicomm.Bcast(action, root=0)
+            else:
+                action = None
+        if action is None:
+            raise RuntimeError(
+                "ERROR: feasible points were not found in {} random samples. "
+                "The feasible region may be empty or too small "
+                "(equality constraints are not supported).".format(
+                    self.max_trials_per_point * N
+                )
+            )
+        return action
+
+    def _sample_uniform(self, N):
+        """Draw N points uniformly from the box [min_X, max_X]."""
+        return self.rng.random((N, self.dim)) * self.L_X.reshape(
             1, -1
         ) + self.min_X.reshape(1, -1)
-        if self.mpisize > 1:
-            self.mpicomm.Bcast(action, root=0)
-        return action
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """
