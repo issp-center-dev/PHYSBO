@@ -1410,10 +1410,11 @@ class ZDT1(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.0, 1.0])
+        # f2 = g h with 1 <= g <= 10: from 0 (f1 = 1, g = 1) to 10 (f1 = 0, g = 10)
+        return np.array([0.0, 0.0])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([1.0, 7.2])
+        return np.array([1.0, 10.0])
 
 
 class ZDT2(MultiTestFunction):
@@ -1473,7 +1474,8 @@ class ZDT2(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.0, 1.0])
+        # f2 = g h with 1 <= g <= 10: from 0 (f1 = 1, g = 1) to 10 (f1 = 0, g = 10)
+        return np.array([0.0, 0.0])
 
     def _ref_max(self) -> np.ndarray:
         return np.array([1.0, 10.0])
@@ -1536,10 +1538,11 @@ class ZDT3(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.0, 1.0])
+        # the minimum of f2 is that of the Pareto-optimal front (g = 1), -0.7734
+        return np.array([0.0, -0.8])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([1.0, 7.2])
+        return np.array([1.0, 10.0])
 
 
 class ZDT4(MultiTestFunction):
@@ -1608,10 +1611,12 @@ class ZDT4(MultiTestFunction):
         return np.c_[f1, f2]
 
     def _ref_min(self) -> np.ndarray:
-        return np.array([0.0, 35.0])
+        return np.array([0.0, 0.0])
 
     def _ref_max(self) -> np.ndarray:
-        return np.array([1.0, 305.0])
+        # the maximum of x^2 - 10 cos(4 pi x) in [-5, 5] is 32.5911 (at |x| = 4.7560),
+        # so that g <= 1 + (N - 1) (10 + 32.5911); f2 = g at f1 = 0
+        return np.array([1.0, 1.0 + 42.6 * (self.dim - 1)])
 
 
 class ZDT6(MultiTestFunction):

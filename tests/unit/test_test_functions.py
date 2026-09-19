@@ -241,6 +241,51 @@ def test_multi_objective_reference_box_covers_range(name):
     assert np.all(f <= fn.reference_max + 1e-9)
 
 
+@pytest.mark.parametrize("name", MULTI_NAMES)
+def test_multi_objective_reference_box_contains_samples(name):
+    # Pareto.volume_in_dominance does not clip the front to the reference box,
+    # so every value that can be observed must lie inside it
+    fn = getattr(multi_objective, name)()
+    rng = np.random.RandomState(2024)
+    X = rng.uniform(fn.min_X, fn.max_X, size=(5000, fn.dim))
+    # faces and corners of the search space, where the extremes usually are
+    Y = rng.uniform(fn.min_X, fn.max_X, size=(5000, fn.dim))
+    snap = rng.randint(0, 3, size=Y.shape)
+    Y = np.where(snap == 0, fn.min_X, np.where(snap == 1, fn.max_X, Y))
+    X = np.r_[X, Y]
+    X = X[np.asarray(fn.constraint(X)).reshape(-1)]
+    f = fn(X)
+    assert np.all(f >= fn.reference_min - 1e-9)
+    assert np.all(f <= fn.reference_max + 1e-9)
+
+
+@pytest.mark.parametrize(
+    "name, rest, f2_max",
+    [
+        ("ZDT1", 1.0, 10.0),
+        ("ZDT2", 1.0, 10.0),
+        ("ZDT3", 1.0, 10.0),
+        # x^2 - 10 cos(4 pi x) is largest at |x| = 4.7560 (32.5911)
+        ("ZDT4", 4.7560, 1.0 + 9.0 * (10.0 + 32.5911)),
+    ],
+)
+def test_zdt_reference_box_covers_range(name, rest, f2_max):
+    # the extremes of f2 = g h are out of reach of random sampling in 10-30
+    # dimensions: the largest value is at f1 = 0 with the largest g, the
+    # smallest on the Pareto-optimal front (g = 1)
+    fn = getattr(multi_objective, name)(test_maximizer=False)
+    x_max = np.r_[0.0, np.full(fn.dim - 1, rest)]
+    x1 = np.linspace(0.0, 1.0, 1001)
+    X_front = np.c_[x1, np.zeros((len(x1), fn.dim - 1))]
+    Y = fn(np.r_[[x_max], X_front])
+    np.testing.assert_allclose(Y[0], [0.0, f2_max], rtol=1e-6)
+    assert np.all(Y >= fn.reference_min)
+    assert np.all(Y <= fn.reference_max)
+    # the box is not much larger than the range
+    span = Y.max(axis=0) - Y.min(axis=0)
+    assert np.all(fn.reference_max - fn.reference_min <= 1.05 * span)
+
+
 def test_schaffer1_reference_box_follows_domain():
     # Deb (2001) uses -A <= x <= A with A up to 1e5; the box must follow A
     fn = multi_objective.Schaffer1(min_X=-1000.0, max_X=1000.0, test_maximizer=False)
