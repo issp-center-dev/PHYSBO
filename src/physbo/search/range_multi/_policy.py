@@ -15,7 +15,6 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng
@@ -30,6 +29,7 @@ class Policy(range_single.Policy):
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         comm=None,
         config=None,
         initial_data=None,
@@ -41,6 +41,7 @@ class Policy(range_single.Policy):
         self.max_X = np.array(max_X)
         self.L_X = self.max_X - self.min_X
         self.dim = self.min_X.shape[0]
+        self.constraint = constraint
 
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
@@ -305,9 +306,7 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -447,8 +446,7 @@ class Policy(range_single.Policy):
             # some processes only, so that they all use the same reference
             # points and warn (or raise) together
             pareto.prepare_reference_points(upper=upper)
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
 
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         X = np.zeros((N, self.dim))

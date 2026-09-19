@@ -15,7 +15,6 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng, attach_rng
@@ -30,6 +29,7 @@ class Policy(range_single.Policy):
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         comm=None,
         config=None,
         initial_data=None,
@@ -41,6 +41,7 @@ class Policy(range_single.Policy):
         self.max_X = np.array(max_X)
         self.L_X = self.max_X - self.min_X
         self.dim = self.min_X.shape[0]
+        self.constraint = constraint
 
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
@@ -296,9 +297,7 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -399,8 +398,7 @@ class Policy(range_single.Policy):
             # the samples, and so the predictors, differ between the processes
             _mpi.allgather(self.mpicomm, None, error)
 
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
 
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         """
