@@ -56,7 +56,7 @@ Main options (see `--help` for the full list):
 | `--num_bayes_search_set` | 4 | Number of sets; hypervolume is recorded after each set |
 | `--nrand_basis_TS` | 300 | Number of random basis functions (used when `--score TS`) |
 | `--N` | 51 | Grid points per dimension (dim ≤ 3), otherwise `N^3` random candidates |
-| `--use_range` | off | Use the continuous (range) policies instead of the discrete ones |
+| `--use_range` | off | Use the continuous (range) policies instead of the discrete ones. The constraint of the test function is passed to the policy and to the optimizer, so that only feasible points are evaluated, as in the discrete mode |
 | `--seed` | 12345 | Random seed |
 | `--output_dir` | `output_functions` | Output directory |
 | `--header` | off | Write the header line to the output file and exit |
