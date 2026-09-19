@@ -35,6 +35,11 @@ class Policy(range_single.Policy):
         initial_data=None,
         rng=None,
     ):
+        # The constructor of range.Policy is not called: it sets up the history, the
+        # training data and initial_data for a single objective. This class inherits
+        # range.Policy only to share its helper methods, so everything the base
+        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
+        # must be set here as well.
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
