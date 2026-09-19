@@ -461,11 +461,12 @@ class SRN(MultiTestFunction):
 
     Note
     ====
-    The objectives originate from Chankong and Haimes (1983), who solved the
-    unconstrained problem.
-    Srinivas and Deb (1994) added the constraints :math:`g_1, g_2` to make the
-    problem more difficult, and this constrained problem is known as SRN
-    after them (see Deb (2001)).
+    The objectives originate from Chankong and Haimes (1983), where they appear
+    as an example of goal programming, a two-objective nonconvex problem on
+    :math:`\{\boldsymbol{x} \in \mathbb{R}^2 \mid \boldsymbol{x} \ge 0\}`.
+    Srinivas and Deb (1994) replaced the feasible region by the constraints
+    :math:`g_1, g_2` to make the problem more difficult, and this constrained
+    problem is known as SRN after them (see Deb (2001)).
     The problem is also often called Chankong-Haimes's function after the
     origin of the objectives; :class:`ChankongHaimes` is an alias.
     It is also test case 1 of Binh and Korn (1997) and
@@ -1841,8 +1842,9 @@ class ChankongHaimes(SRN):
     r"""Chankong-Haimes's function.
 
     This is an alias of :class:`SRN`, named after the origin of the objectives
-    (Chankong and Haimes (1983) solved the unconstrained problem; the
-    constraints were added by Srinivas and Deb (1994)).
+    (an example of goal programming in Chankong and Haimes (1983), defined on
+    :math:`\boldsymbol{x} \ge 0`; the constraints :math:`g_1, g_2` were
+    introduced by Srinivas and Deb (1994)).
     See :class:`SRN` for the definition and the arguments.
 
     References
