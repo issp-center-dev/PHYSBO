@@ -313,11 +313,12 @@ class Viennet(MultiTestFunction):
     Viennet et al. (1996) propose several test problems; this is the third one.
     It is listed as MOP3 in Van Veldhuizen and Lamont (1999) (hence :class:`VLMOP3`)
     and as MOP5 in Van Veldhuizen (1999).
-    The search space :math:`-3 \le x_i \le 3` agrees with Deb (2001).
+    The objectives and the search space :math:`-3 \le x_i \le 3` are as in
+    Viennet et al. (1996); Deb (2001) uses the same search space.
 
     References
     ==========
-    Viennet, R., et al. "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Journal of Systems Science 27(2), 255-260 (1996).
+    Viennet, R., Fonteix, C., Marc, I., "Multicriteria Optimization Using a Genetic Algorithm for Determining a Pareto Set," International Journal of Systems Science 27(2), 255-260 (1996).
 
     Kalyanmoy Deb; Multi-Objective Optimization Using Evolutionary Algorithms. Wiley, 2001.
 
