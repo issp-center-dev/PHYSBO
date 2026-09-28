@@ -72,7 +72,9 @@ class TestRangeUnified:
     @pytest.mark.parametrize("score", ["PI", "EI", "TS"])
     @pytest.mark.parametrize("unify_method", ["ParEGO", "NDS"])
     @pytest.mark.parametrize("num_rand_basis", [0, 10])
-    def test_multi_objective(self, score, unify_method, num_rand_basis):
+    def test_multi_objective(
+        self, score, unify_method, num_rand_basis, assert_reference
+    ):
         vid_ref = self.vid_ref[(score, unify_method, num_rand_basis)]
         self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
         res = self.policy.bayes_search(
@@ -83,5 +85,5 @@ class TestRangeUnified:
             num_rand_basis=num_rand_basis,
         )
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
-        assert vid == pytest.approx(vid_ref, rel=1e-3)
+        assert_reference(vid, vid_ref, score)
         self.policy.get_score(score, xs=np.array([[0.0, 0.0]]))
