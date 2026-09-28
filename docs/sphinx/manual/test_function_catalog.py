@@ -46,7 +46,11 @@ PARETO_SET: dict[str, str] = {
     "Schaffer2": r"x \in [1, 2] \cup [4, 5]",
     "ZDT1": r"x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)",
     "ZDT2": r"x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)",
-    "ZDT3": r"x_1 \in [0, 1] \text{ (disconnected)},\ x_i = 0\ (i \ge 2)",
+    # only a disconnected subset of [0, 1] is Pareto-optimal (five segments)
+    "ZDT3": (
+        r"x_1 \in [0, 0.083] \cup [0.182, 0.258] \cup [0.409, 0.454] "
+        r"\cup [0.618, 0.653] \cup [0.823, 0.852],\ x_i = 0\ (i \ge 2)"
+    ),
     "ZDT4": r"x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)",
     "ZDT6": r"x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)",
 }

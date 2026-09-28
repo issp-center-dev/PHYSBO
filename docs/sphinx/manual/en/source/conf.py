@@ -129,7 +129,8 @@ templates_path = ["../../_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+# "_generated" holds fragments included by test_functions.rst; they are not pages
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "_generated"]
 for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
     if t in tags:
         print(t)
