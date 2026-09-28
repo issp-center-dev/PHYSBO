@@ -550,8 +550,8 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
     =========
     min_X : np.ndarray | list[float] | float, default=0.0
         Minimum value of the search space :math:`\boldsymbol{x}_{\min}`.
-        The non-negativity constraints :math:`x_1, x_2 \ge 0` are represented
-        by this lower bound.
+        The non-negativity constraints :math:`x_1, x_2 \ge 0` are part of
+        ``constraint``, so they hold for any lower bound.
     max_X : np.ndarray | list[float] | float, default=7.0
         Maximum value of the search space :math:`\boldsymbol{x}_{\max}`.
     test_maximizer : bool, default=True
@@ -609,7 +609,8 @@ class KitaYabumotoMoriNishikawa(MultiTestFunction):
         g1 = x1 / 6.0 + x2 <= 6.5
         g2 = 0.5 * x1 + x2 <= 7.5
         g3 = 5.0 * x1 + x2 <= 30.0
-        return np.logical_and(np.logical_and(g1, g2), g3)
+        nonneg = np.logical_and(x1 >= 0.0, x2 >= 0.0)
+        return np.logical_and(np.logical_and(np.logical_and(g1, g2), g3), nonneg)
 
     def _ref_min(self) -> np.ndarray:
         return np.array([-36.0, 1.0])

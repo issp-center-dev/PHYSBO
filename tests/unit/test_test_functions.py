@@ -310,6 +310,25 @@ def test_kita_pareto_set():
     assert P[:, 1].max() > 6.0
 
 
+def test_kita_nonnegativity_is_a_constraint():
+    # x1, x2 >= 0 belong to the problem, so they must hold even when the
+    # search space is widened to negative values; otherwise the problem
+    # silently turns into the variant on [-7, 4]^2 and the objective values
+    # leave the reference box
+    fn = multi_objective.KitaYabumotoMoriNishikawa(min_X=-7.0)
+    X = fn.make_grid(29)
+    assert len(X) > 0
+    assert np.all(X >= 0.0)
+    f = fn(X)
+    assert np.all(f >= fn.reference_min - 1e-9)
+    assert np.all(f <= fn.reference_max + 1e-9)
+
+    # the feasible set does not depend on the lower bound
+    X0 = multi_objective.KitaYabumotoMoriNishikawa().make_grid(15)
+    assert np.all(fn.constraint(X0))
+    assert not np.any(fn.constraint(np.array([[-0.5, 1.0], [1.0, -0.5]])))
+
+
 def test_binh1_pareto_set():
     # Binh (1999) case 1 (unconstrained): the Pareto-optimal set is the
     # segment x1 = x2 in [0, 5]
