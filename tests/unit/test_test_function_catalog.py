@@ -20,7 +20,6 @@ import pathlib
 import pytest
 
 physbo = pytest.importorskip("physbo")
-docutils_core = pytest.importorskip("docutils.core")
 
 from physbo.test_functions import base, multi_objective, single_objective
 
@@ -82,6 +81,42 @@ def test_constraint_column_matches_override(catalog):
         assert catalog._has_constraint(primary) == expected, primary.__name__
 
 
+def _rst_messages(text):
+    """System messages (warnings and errors) docutils reports for ``text``.
+
+    Only the tests that parse reStructuredText need docutils, so it is
+    imported here instead of at the top of the module.
+    """
+    docutils_core = pytest.importorskip("docutils.core")
+    from docutils import nodes
+    from docutils.parsers.rst import roles
+
+    # The tables use the Sphinx role :class: to link to the API reference.
+    # Plain docutils does not know it, so register a stand-in.
+    roles.register_generic_role("class", nodes.literal)
+
+    messages = []
+    docutils_core.publish_doctree(
+        text,
+        settings_overrides={
+            # report warnings (level 2) and above; never raise
+            "report_level": 2,
+            "halt_level": 5,
+            "warning_stream": _Collector(messages),
+        },
+    )
+    return messages
+
+
+def test_rst_check_detects_malformed_table():
+    # guards the check itself: a list-table with rows of different lengths
+    # must be reported
+    broken = ".. list-table::\n   :header-rows: 1\n\n   * - a\n     - b\n   * - c\n"
+    messages = _rst_messages(broken)
+    assert len(messages) > 0
+    assert "list-table" in messages[0]
+
+
 @pytest.mark.parametrize("lang", ["en", "ja"])
 def test_generated_tables_are_valid_rst(catalog, lang, tmp_path):
     paths = catalog.write_tables(str(tmp_path), lang)
@@ -89,17 +124,13 @@ def test_generated_tables_are_valid_rst(catalog, lang, tmp_path):
     for path in paths:
         text = pathlib.Path(path).read_text(encoding="utf-8")
         assert text.startswith(".. list-table::")
-        # docutils reports malformed tables as system messages of level >= 2
-        messages = []
-        docutils_core.publish_doctree(
-            text,
-            settings_overrides={
-                "report_level": 5,
-                "halt_level": 5,
-                "warning_stream": _Collector(messages),
-            },
-        )
+        messages = _rst_messages(text)
         assert messages == [], "\n".join(messages)
+
+
+@pytest.mark.parametrize("lang", ["en", "ja"])
+def test_generated_tables_list_every_class(catalog, lang, tmp_path):
+    paths = catalog.write_tables(str(tmp_path), lang)
 
     # every primary class appears in its table
     multi = pathlib.Path(paths[0]).read_text(encoding="utf-8")
