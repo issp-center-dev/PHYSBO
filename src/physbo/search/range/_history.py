@@ -118,15 +118,7 @@ class History:
         self.terminal_num_run[self.num_runs] = en
         self.fx[st:en] = t
         self.action_X[st:en, :] = action_X
-
-        # track the best valid observation; failed (non-finite) ones are
-        # skipped and best_index stays -1 until the first valid one
-        for n in range(st, en):
-            prev = self.best_index[n - 1] if n > 0 else -1
-            if np.isfinite(self.fx[n]) and (prev < 0 or self.fx[n] > self.fx[prev]):
-                self.best_index[n] = n
-            else:
-                self.best_index[n] = prev
+        self._update_best_index(st, en)
 
         self.num_runs += 1
         self.total_num_search += N
@@ -146,6 +138,20 @@ class History:
         if time_run_simulator is None:
             time_run_simulator = np.zeros(N, dtype=float)
         self.time_run_simulator_[st:en] = time_run_simulator
+
+    def _update_best_index(self, st, en):
+        """
+        Update best_index[st:en] from fx.
+
+        Failed (non-finite) observations are skipped, and best_index stays -1
+        until the first valid one.
+        """
+        for n in range(st, en):
+            prev = self.best_index[n - 1] if n > 0 else -1
+            if np.isfinite(self.fx[n]) and (prev < 0 or self.fx[n] > self.fx[prev]):
+                self.best_index[n] = n
+            else:
+                self.best_index[n] = prev
 
     def export_sequence_best_fx(self):
         """
@@ -241,7 +247,9 @@ class History:
         self.fx[0:N] = data["fx"]
         self.action_X[0:N, :] = data["action_X"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
-        self.best_index[0:N] = data["best_index"]
+        # best_index is recomputed from fx: the saved one may refer to a
+        # failed observation if the file was written by an older version
+        self._update_best_index(0, N)
         self.time_total_[0:N] = data["time_total"]
         self.time_update_predictor_[0:N] = data["time_update_predictor"]
         self.time_get_action_[0:N] = data["time_get_action"]

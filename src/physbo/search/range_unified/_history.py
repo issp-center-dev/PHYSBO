@@ -181,6 +181,9 @@ class History(object):
         self.action_X[0:N, :] = data["action_X"]
         self.terminal_num_run[0:M] = data["terminal_num_run"]
         self.pareto = data["pareto"]
+        # the front is recomputed from fx: the saved one may contain failed
+        # observations if the file was written by an older version
+        self.pareto.rebuild_front(self.fx[0:N], self.terminal_num_run[0:M])
 
     def show_search_results_mo(self, N, disp_pareto_set=False):
         n = self.total_num_search

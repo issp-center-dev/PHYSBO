@@ -188,6 +188,40 @@ class Pareto(object):
             self.front = new_front
             self.front_num = new_indices
 
+    def rebuild_front(self, t, terminal_num_run):
+        """
+        Recompute the non-dominated set of points from the observations.
+
+        The front is updated in the same order as the observations were
+        written. The reference points are kept unless they are not finite.
+
+        Parameters
+        ----------
+        t: numpy.ndarray
+            N x num_objectives dimensional array. All the observations.
+        terminal_num_run: numpy.ndarray
+            The number of the observations at the end of each run.
+        """
+        self.front = np.zeros((0, self.num_objectives))
+        self.front_num = np.zeros(0, dtype=int)
+        self.num_compared = 0
+        self.front_updated = False
+        self.cells = None
+
+        st = 0
+        for en in terminal_num_run:
+            self.update_front(t[st:en])
+            st = en
+
+        # reference points estimated from a front with failed observations
+        if self.reference_min is not None and not np.all(
+            np.isfinite(self.reference_min)
+        ):
+            self.reference_min = None
+        if self.reference_max is not None and not np.all(
+            np.isfinite(self.reference_max)
+        ):
+            self.reference_max = None
 
     def __update_front_old(self, t):
         """
