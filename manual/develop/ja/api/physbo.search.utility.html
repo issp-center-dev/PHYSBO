@@ -136,6 +136,26 @@ and drive the search loop.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.finite_mask">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">finite_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#finite_mask"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.finite_mask" title="Link to this definition"></a></dt>
+<dd><p>Return the mask of valid (finite) observations.</p>
+<p>An observation is valid when all of its objective values are finite;
+a NaN or an infinite value marks a failed evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>numpy.ndarray</em>) -- N dimensional array (single objective) or N x k dimensional array
+(k objectives) of objective values.</p>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mask</strong> -- True for valid observations, False for failed ones.</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray of bool, shape (N,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.is_learning">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">is_learning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#is_learning"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.is_learning" title="Link to this definition"></a></dt>
 <dd><p>Decide whether to (re)learn the hyperparameters at search step <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
@@ -205,6 +225,26 @@ The output is a numpy array of shape (N, d), where N is the number of points and
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.mask_rows">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">mask_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#mask_rows"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.mask_rows" title="Link to this definition"></a></dt>
+<dd><p>Select the observations given by mask from a basis array Z.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<em>numpy.ndarray</em><em> or </em><em>None</em>) -- (N, n) array, or (k, N, n) array (one basis per objective), or None.</p></li>
+<li><p><strong>mask</strong> (<em>numpy.ndarray</em><em> of </em><em>bool</em><em>, </em><em>shape</em><em> (</em><em>N</em><em>,</em><em>)</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p>Z restricted to the rows where mask is True (None if Z is None).</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.plot_pareto_front">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">plot_pareto_front</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style_common</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style_pareto_front</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style_dominated</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#plot_pareto_front"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.plot_pareto_front" title="Link to this definition"></a></dt>
 <dd><p>Plot the Pareto front of the history in the projection to the (x, y)-plane (objective x and y).</p>
@@ -269,6 +309,41 @@ If None, plot until the end.</p></li>
 <li><p>By default, the color is &quot;blue&quot; for dominated points and &quot;red&quot; for Pareto front.</p></li>
 </ul>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.require_finite">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">require_finite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_shown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#require_finite"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.require_finite" title="Link to this definition"></a></dt>
+<dd><p>Raise an error if t contains a failed (non-finite) observation.</p>
+<p>For the policies with a continuous search space. A failed point cannot
+be removed from a continuous search space, and hence it would be
+proposed again and again if it were only excluded from the training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) -- N x d dimensional array. The inputs of the observations.</p></li>
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) -- N x k dimensional array. The objective values of the observations.</p></li>
+<li><p><strong>max_shown</strong> (<em>int</em>) -- The maximum number of the failed observations shown in the message.</p></li>
+</ul>
+</dd>
+<dt class="field-even">例外<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If any objective value is NaN or +-Inf.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.require_training_data">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">require_training_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#require_training_data"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.require_training_data" title="Link to this definition"></a></dt>
+<dd><p>Raise an error if there is no observation to train the predictor with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<a class="reference internal" href="physbo.html#physbo.Variable" title="physbo.Variable"><em>physbo.Variable</em></a>) -- The training dataset.</p>
+</dd>
+<dt class="field-even">例外<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> -- If the training dataset is empty.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

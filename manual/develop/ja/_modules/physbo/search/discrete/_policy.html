@@ -263,6 +263,10 @@
 <span class="sd">            N dimensional array (1D) or N x k dimensional array (2D).</span>
 <span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
 <span class="sd">            Will be normalized to (N, 1) shape internally.</span>
+<span class="sd">            A non-finite value (NaN or +-Inf) marks a failed evaluation:</span>
+<span class="sd">            the action is recorded in the history and consumed, but the</span>
+<span class="sd">            observation is excluded from the training data and the</span>
+<span class="sd">            best-value tracking.</span>
 <span class="sd">        X:  numpy.ndarray</span>
 <span class="sd">            N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</span>
 <span class="sd">        time_total: numpy.ndarray</span>
@@ -313,7 +317,15 @@
             <span class="n">time_get_action</span><span class="o">=</span><span class="n">time_get_action</span><span class="p">,</span>
             <span class="n">time_run_simulator</span><span class="o">=</span><span class="n">time_run_simulator</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+
+        <span class="c1"># Failed observations (non-finite t) are kept in the history and</span>
+        <span class="c1"># their actions are consumed, but they are not used for training.</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">finite_mask</span><span class="p">(</span><span class="n">t_normalized</span><span class="p">)</span>
+        <span class="n">X_ok</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="n">valid</span><span class="p">]</span>
+        <span class="n">t_ok</span> <span class="o">=</span> <span class="n">t_normalized</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+        <span class="n">Z_ok</span> <span class="o">=</span> <span class="n">utility</span><span class="o">.</span><span class="n">mask_rows</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">valid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_ok</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_ok</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z_ok</span><span class="p">)</span>
 
         <span class="c1"># remove the selected actions from the list of candidates if exists</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -323,10 +335,11 @@
             <span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_ok</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_ok</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z_ok</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_ok</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_ok</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z_ok</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.random_search">
@@ -476,6 +489,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">predictor</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_predictor</span><span class="p">(</span><span class="n">is_rand_expans</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">utility</span><span class="o">.</span><span class="n">require_training_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
@@ -1008,9 +1024,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">file_training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span> <span class="p">:]</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span>
+            <span class="c1"># rebuild the training data from the valid observations only</span>
+            <span class="n">actions</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_valid</span><span class="p">()</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">actions</span><span class="p">,</span> <span class="p">:]</span>
             <span class="c1"># Normalize t to (N, 1) shape</span>
             <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">)</span>

@@ -296,7 +296,8 @@
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_begin</span><span class="p">,</span> <span class="n">steps_end</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">:</span>
             <span class="n">undominated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+            <span class="c1"># failed observations (non-finite values) are not plotted</span>
             <span class="n">dominated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
         <span class="n">min_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">min_fx</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]])</span>
         <span class="n">max_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">max_fx</span><span class="p">,</span> <span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]])</span>
@@ -525,6 +526,129 @@
 <span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">"__len__"</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">N</span></div>
+
+
+
+<div class="viewcode-block" id="finite_mask">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.finite_mask">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">finite_mask</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return the mask of valid (finite) observations.</span>
+
+<span class="sd">    An observation is valid when all of its objective values are finite;</span>
+<span class="sd">    a NaN or an infinite value marks a failed evaluation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t: numpy.ndarray</span>
+<span class="sd">        N dimensional array (single objective) or N x k dimensional array</span>
+<span class="sd">        (k objectives) of objective values.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mask: numpy.ndarray of bool, shape (N,)</span>
+<span class="sd">        True for valid observations, False for failed ones.</span>
+<span class="sd">    """</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="mask_rows">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.mask_rows">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mask_rows</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Select the observations given by mask from a basis array Z.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Z: numpy.ndarray or None</span>
+<span class="sd">        (N, n) array, or (k, N, n) array (one basis per objective), or None.</span>
+<span class="sd">    mask: numpy.ndarray of bool, shape (N,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray or None</span>
+<span class="sd">        Z restricted to the rows where mask is True (None if Z is None).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Z</span><span class="p">[:,</span> <span class="n">mask</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">return</span> <span class="n">Z</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="require_finite">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.require_finite">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">require_finite</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">max_shown</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Raise an error if t contains a failed (non-finite) observation.</span>
+
+<span class="sd">    For the policies with a continuous search space. A failed point cannot</span>
+<span class="sd">    be removed from a continuous search space, and hence it would be</span>
+<span class="sd">    proposed again and again if it were only excluded from the training data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X: numpy.ndarray</span>
+<span class="sd">        N x d dimensional array. The inputs of the observations.</span>
+<span class="sd">    t: numpy.ndarray</span>
+<span class="sd">        N x k dimensional array. The objective values of the observations.</span>
+<span class="sd">    max_shown: int</span>
+<span class="sd">        The maximum number of the failed observations shown in the message.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If any objective value is NaN or +-Inf.</span>
+<span class="sd">    """</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="n">finite_mask</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+        <span class="k">return</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">failed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">valid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  X = </span><span class="si">{</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, t = </span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">failed</span><span class="p">[:</span><span class="n">max_shown</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">failed</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_shown</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  ... (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failed</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">max_shown</span><span class="si">}</span><span class="s2"> more)"</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Non-finite objective value (NaN or +-Inf) is given for "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failed</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span><span class="si">}</span><span class="s2"> point(s):</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">Failed evaluations are not supported in continuous search spaces"</span>
+        <span class="s2">" (range policies), because a failed point would be proposed again."</span>
+        <span class="s2">" Return a finite penalty value suitable for your problem"</span>
+        <span class="s2">" from the simulator instead."</span>
+        <span class="s2">" Nothing has been written to the history."</span>
+    <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="require_training_data">
+<a class="viewcode-back" href="../../../api/physbo.search.utility.html#physbo.search.utility.require_training_data">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">require_training_data</span><span class="p">(</span><span class="n">training</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Raise an error if there is no observation to train the predictor with.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    training: physbo.Variable</span>
+<span class="sd">        The training dataset.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If the training dataset is empty.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"No valid observation is available for Bayesian optimization."</span>
+            <span class="s2">" Add observations with finite objective values"</span>
+            <span class="s2">" (e.g., by random_search) before calling bayes_search."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
 
 

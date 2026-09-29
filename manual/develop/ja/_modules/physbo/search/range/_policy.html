@@ -221,6 +221,8 @@
 <span class="sd">            N dimensional array (1D) or N x 1 dimensional array (2D).</span>
 <span class="sd">            The negative energy of each search candidate (value of the objective function to be optimized).</span>
 <span class="sd">            Will be normalized to (N, 1) shape internally.</span>
+<span class="sd">            All the values must be finite. Failed evaluations are not</span>
+<span class="sd">            supported in continuous search spaces.</span>
 <span class="sd">        time_total: numpy.ndarray</span>
 <span class="sd">            N dimenstional array. The total elapsed time in each step.</span>
 <span class="sd">            If None (default), filled by 0.0.</span>
@@ -237,9 +239,16 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If t contains a non-finite value (NaN or +-Inf).</span>
+<span class="sd">            Nothing is written to the history in this case.</span>
 <span class="sd">        """</span>
         <span class="c1"># Normalize t to (N, 1) shape</span>
         <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">utility</span><span class="o">.</span><span class="n">require_finite</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t_normalized</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
             <span class="n">t</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
@@ -409,6 +418,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">predictor</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_predictor</span><span class="p">(</span><span class="n">is_rand_expans</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">utility</span><span class="o">.</span><span class="n">require_training_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
@@ -814,9 +826,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">file_training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span>
+            <span class="c1"># rebuild the training data from the valid observations only</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_valid</span><span class="p">()</span>
             <span class="c1"># Normalize t to (N, 1) shape</span>
             <span class="n">t_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_normalized</span><span class="p">)</span>

@@ -97,6 +97,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">pareto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 
 <span class="n">MAX_SEARCH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30000</span><span class="p">)</span>
 
@@ -135,6 +136,39 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_run_simulator</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">valid_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Mask of valid observations (True) vs failed ones (False).</span>
+
+<span class="sd">        An observation is failed when any of its objective values is not</span>
+<span class="sd">        finite (NaN or +-Inf). Failed observations are kept in the history</span>
+<span class="sd">        but excluded from the training data and the Pareto front.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray of bool, shape (total_num_search,)</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">utility</span><span class="o">.</span><span class="n">finite_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+
+<div class="viewcode-block" id="History.export_valid">
+<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.History.export_valid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Export the valid (successfully evaluated) observations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            Inputs of the valid observations (N_valid x dim).</span>
+<span class="sd">        fx: numpy.ndarray</span>
+<span class="sd">            Objective values of the valid observations (N_valid x num_objectives).</span>
+<span class="sd">        """</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:][</span><span class="n">mask</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span></div>
+
 
 <div class="viewcode-block" id="History.write">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.History.write">[docs]</a>
@@ -249,7 +283,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"fx"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"action_X"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"terminal_num_run"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span>
+        <span class="c1"># the front is recomputed from fx: the saved one may contain failed</span>
+        <span class="c1"># observations if the file was written by an older version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">rebuild_front</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="History.show_search_results_mo">

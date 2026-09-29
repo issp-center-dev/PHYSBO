@@ -258,13 +258,22 @@
 
 <span class="sd">        Pareto set is sorted on the first objective in ascending order.</span>
 <span class="sd">        """</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span>
         <span class="n">N</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+        <span class="c1"># failed observations (any non-finite objective) never join the</span>
+        <span class="c1"># front; they are skipped here while their indices are still</span>
+        <span class="c1"># consumed so that front_num keeps referring to the rows of t</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+
         <span class="n">right_front</span><span class="p">,</span> <span class="n">right_indices</span> <span class="o">=</span> <span class="n">_extract_non_dominated_points</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">new_front</span><span class="p">,</span> <span class="n">new_indices</span> <span class="o">=</span> <span class="n">_merge_fronts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">right_front</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span><span class="p">,</span> <span class="n">right_indices</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -279,6 +288,43 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">new_front</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">new_indices</span>
+
+<div class="viewcode-block" id="Pareto.rebuild_front">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.rebuild_front">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebuild_front</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">terminal_num_run</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Recompute the non-dominated set of points from the observations.</span>
+
+<span class="sd">        The front is updated in the same order as the observations were</span>
+<span class="sd">        written. The reference points are kept unless they are not finite.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t: numpy.ndarray</span>
+<span class="sd">            N x num_objectives dimensional array. All the observations.</span>
+<span class="sd">        terminal_num_run: numpy.ndarray</span>
+<span class="sd">            The number of the observations at the end of each run.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">st</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">en</span> <span class="ow">in</span> <span class="n">terminal_num_run</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_front</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">])</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">en</span>
+
+        <span class="c1"># reference points estimated from a front with failed observations</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__update_front_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>

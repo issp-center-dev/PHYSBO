@@ -150,6 +150,21 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="physbo.search.discrete.History.export_valid">
+<span class="sig-name descname"><span class="pre">export_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_history.html#History.export_valid"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete.History.export_valid" title="Link to this definition"></a></dt>
+<dd><p>Export the valid (successfully evaluated) observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">戻り値<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>actions</strong> (<em>numpy.ndarray</em>) -- Indexes of the actions of the valid observations.</p></li>
+<li><p><strong>fx</strong> (<em>numpy.ndarray</em>) -- Objective values of the valid observations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.History.load">
 <span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete/_history.html#History.load"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete.History.load" title="Link to this definition"></a></dt>
 <dd><p>Load the information of the history.</p>
@@ -195,6 +210,20 @@
 <dt class="sig sig-object py" id="physbo.search.discrete.History.time_update_predictor">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">time_update_predictor</span></span><a class="headerlink" href="#physbo.search.discrete.History.time_update_predictor" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.search.discrete.History.valid_mask">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">valid_mask</span></span><a class="headerlink" href="#physbo.search.discrete.History.valid_mask" title="Link to this definition"></a></dt>
+<dd><p>Mask of valid observations (True) vs failed ones (False).</p>
+<p>An observation is failed when its objective value is not finite
+(NaN or +-Inf). Failed observations are kept in the history but
+excluded from the training data and the best-value tracking.</p>
+<dl class="field-list simple">
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray of bool, shape (total_num_search,)</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete.History.write">
@@ -569,7 +598,11 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 <li><p><strong>action</strong> (<em>numpy.ndarray</em>) -- Indexes of actions.</p></li>
 <li><p><strong>t</strong> (<em>numpy.ndarray</em>) -- N dimensional array (1D) or N x k dimensional array (2D).
 The negative energy of each search candidate (value of the objective function to be optimized).
-Will be normalized to (N, 1) shape internally.</p></li>
+Will be normalized to (N, 1) shape internally.
+A non-finite value (NaN or +-Inf) marks a failed evaluation:
+the action is recorded in the history and consumed, but the
+observation is excluded from the training data and the
+best-value tracking.</p></li>
 <li><p><strong>X</strong> (<em>numpy.ndarray</em>) -- N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.</p></li>
 <li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) -- N dimenstional array. The total elapsed time in each step.
 If None (default), filled by 0.0.</p></li>

@@ -182,14 +182,6 @@
         <span class="n">time_get_action</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">time_run_simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">t</span><span class="p">,</span>
-            <span class="n">X</span><span class="p">,</span>
-            <span class="n">time_total</span><span class="o">=</span><span class="n">time_total</span><span class="p">,</span>
-            <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">time_update_predictor</span><span class="p">,</span>
-            <span class="n">time_get_action</span><span class="o">=</span><span class="n">time_get_action</span><span class="p">,</span>
-            <span class="n">time_run_simulator</span><span class="o">=</span><span class="n">time_run_simulator</span><span class="p">,</span>
-        <span class="p">)</span>
         <span class="n">N</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -206,6 +198,19 @@
         <span class="p">)</span>
         <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="p">(</span>
             <span class="s2">"The number of objectives in t must be the same as num_objectives"</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Failed evaluations are not supported in continuous search spaces;</span>
+        <span class="c1"># raise before anything is written</span>
+        <span class="n">utility</span><span class="o">.</span><span class="n">require_finite</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="n">t</span><span class="p">,</span>
+            <span class="n">X</span><span class="p">,</span>
+            <span class="n">time_total</span><span class="o">=</span><span class="n">time_total</span><span class="p">,</span>
+            <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">time_update_predictor</span><span class="p">,</span>
+            <span class="n">time_get_action</span><span class="o">=</span><span class="n">time_get_action</span><span class="p">,</span>
+            <span class="n">time_run_simulator</span><span class="o">=</span><span class="n">time_run_simulator</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -318,6 +323,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">predictor</span>
+
+        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">utility</span><span class="o">.</span><span class="n">require_training_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
@@ -649,9 +657,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">file_training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># rebuild the training data from the valid observations only</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">export_valid</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load_training</span><span class="p">(</span><span class="n">file_training</span><span class="p">)</span>

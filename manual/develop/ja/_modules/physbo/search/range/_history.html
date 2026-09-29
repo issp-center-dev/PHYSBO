@@ -112,8 +112,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># index of the best valid observation so far; -1 until the first</span>
+        <span class="c1"># valid (finite) observation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">time_total_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_update_predictor_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -135,6 +136,39 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">valid_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Mask of valid observations (True) vs failed ones (False).</span>
+
+<span class="sd">        An observation is failed when its objective value is not finite</span>
+<span class="sd">        (NaN or +-Inf). Failed observations are kept in the history but</span>
+<span class="sd">        excluded from the training data and the best-value tracking.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray of bool, shape (total_num_search,)</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">utility</span><span class="o">.</span><span class="n">finite_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
+
+<div class="viewcode-block" id="History.export_valid">
+<a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.History.export_valid">[ドキュメント]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Export the valid (successfully evaluated) observations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            Inputs of the valid observations (N_valid x dim).</span>
+<span class="sd">        fx: numpy.ndarray</span>
+<span class="sd">            Objective values of the valid observations.</span>
+<span class="sd">        """</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:][</span><span class="n">mask</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span></div>
+
 
 <div class="viewcode-block" id="History.write">
 <a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.History.write">[ドキュメント]</a>
@@ -179,15 +213,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span> <span class="o">=</span> <span class="n">en</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">action_X</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_best_index</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">+=</span> <span class="n">N</span>
@@ -209,6 +235,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">time_run_simulator_</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_run_simulator</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_best_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Update best_index[st:en] from fx.</span>
+
+<span class="sd">        Failed (non-finite) observations are skipped, and best_index stays -1</span>
+<span class="sd">        until the first valid one.</span>
+<span class="sd">        """</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
+            <span class="n">prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prev</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">prev</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev</span>
+
 <div class="viewcode-block" id="History.export_sequence_best_fx">
 <a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.History.export_sequence_best_fx">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">export_sequence_best_fx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -223,13 +263,16 @@
 <span class="sd">            The best X at each sequence.</span>
 <span class="sd">        """</span>
 
-        <span class="n">best_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">best_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># NaN until the first valid observation</span>
+        <span class="n">best_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">best_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">):</span>
             <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="n">best_fx</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span>
-            <span class="n">best_X</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">best_fx</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                <span class="n">best_X</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span>
 
         <span class="k">return</span> <span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span></div>
 
@@ -247,11 +290,14 @@
 <span class="sd">        best_actions: numpy.ndarray</span>
 <span class="sd">        """</span>
 
-        <span class="n">best_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">best_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># NaN until the first valid observation</span>
+        <span class="n">best_fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">best_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">):</span>
-            <span class="n">best_fx</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span>
-            <span class="n">best_X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">best_fx</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                <span class="n">best_X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">return</span> <span class="n">best_fx</span><span class="p">,</span> <span class="n">best_X</span></div>
 
 
@@ -308,7 +354,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"fx"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"action_X"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"terminal_num_run"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"best_index"</span><span class="p">]</span>
+        <span class="c1"># best_index is recomputed from fx: the saved one may refer to a</span>
+        <span class="c1"># failed observation if the file was written by an older version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_best_index</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_total_</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"time_total"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_update_predictor_</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"time_update_predictor"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_get_action_</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"time_get_action"</span><span class="p">]</span>
@@ -319,19 +367,19 @@
 <a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.History.show_search_results">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_index</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">best_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"current best f(x) = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (best action=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">index</span><span class="p">,</span><span class="w"> </span><span class="p">:]</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">best_msg</span> <span class="o">=</span> <span class="s2">"current best f(x) = (no valid observation yet)"</span>
 
         <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">-th step: f(x) = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (action=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">:]</span><span class="si">}</span><span class="s2">)"</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"   current best f(x) = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (best action=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">index</span><span class="p">,</span><span class="w"> </span><span class="p">:]</span><span class="si">}</span><span class="s2">) </span><span class="se">\n</span><span class="s2">"</span>
-            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"   "</span> <span class="o">+</span> <span class="n">best_msg</span> <span class="o">+</span> <span class="s2">" </span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"current best f(x) = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (best action=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_X</span><span class="p">[</span><span class="n">index</span><span class="p">,</span><span class="w"> </span><span class="p">:]</span><span class="si">}</span><span class="s2">)"</span>
-            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">best_msg</span><span class="p">)</span>
 
             <span class="nb">print</span><span class="p">(</span><span class="s2">"list of simulation results"</span><span class="p">)</span>
             <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">-</span> <span class="n">N</span>
