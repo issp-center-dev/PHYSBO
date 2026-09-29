@@ -31,7 +31,12 @@ MPIEXEC = shutil.which("mpirun") or shutil.which("mpiexec")
 )
 @pytest.mark.parametrize(
     "script_name, nprocs",
-    [("run_mpi_check.py", 2), ("run_odatse_check.py", 1), ("run_odatse_check.py", 2)],
+    [
+        ("run_mpi_check.py", 2),
+        ("run_failed_observation_check.py", 2),
+        ("run_odatse_check.py", 1),
+        ("run_odatse_check.py", 2),
+    ],
 )
 def test_mpi_consistency(script_name, nprocs):
     script = os.path.join(os.path.dirname(__file__), script_name)
