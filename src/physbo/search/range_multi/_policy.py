@@ -92,14 +92,6 @@ class Policy(range_single.Policy):
         time_get_action=None,
         time_run_simulator=None,
     ):
-        self.history.write(
-            t,
-            X,
-            time_total=time_total,
-            time_update_predictor=time_update_predictor,
-            time_get_action=time_get_action,
-            time_run_simulator=time_run_simulator,
-        )
         N = X.shape[0]
         t = np.array(t)
 
@@ -115,6 +107,19 @@ class Policy(range_single.Policy):
             "The dimension of X must be the same as the dimension of min_X and max_X"
         )
         assert t.shape[1] == self.num_objectives, "The number of objectives in t must be the same as num_objectives"
+
+        # Failed evaluations are not supported in continuous search spaces;
+        # raise before anything is written
+        utility.require_finite(X, t)
+
+        self.history.write(
+            t,
+            X,
+            time_total=time_total,
+            time_update_predictor=time_update_predictor,
+            time_get_action=time_get_action,
+            time_run_simulator=time_run_simulator,
+        )
 
         if self.predictor_list[0] is not None:
             z = []
@@ -276,6 +281,9 @@ class Policy(range_single.Policy):
                 ]
         else:
             self.predictor_list = predictor_list
+
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
 
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
@@ -646,9 +654,8 @@ class Policy(range_single.Policy):
         self.history.load(file_history)
 
         if file_training_list is None:
-            N = self.history.total_num_search
-            X = self.history.action_X[0:N, :]
-            t = self.history.fx[0:N, :]
+            # rebuild the training data from the valid observations only
+            X, t = self.history.export_valid()
             self.training = Variable(X=X, t=t)
         else:
             self.load_training_list(file_training_list)

@@ -126,6 +126,8 @@ class Policy:
             N dimensional array (1D) or N x 1 dimensional array (2D).
             The negative energy of each search candidate (value of the objective function to be optimized).
             Will be normalized to (N, 1) shape internally.
+            All the values must be finite. Failed evaluations are not
+            supported in continuous search spaces.
         time_total: numpy.ndarray
             N dimenstional array. The total elapsed time in each step.
             If None (default), filled by 0.0.
@@ -142,9 +144,16 @@ class Policy:
         Returns
         -------
 
+        Raises
+        ------
+        ValueError
+            If t contains a non-finite value (NaN or +-Inf).
+            Nothing is written to the history in this case.
         """
         # Normalize t to (N, 1) shape
         t_normalized = normalize_t(t, k=1)
+
+        utility.require_finite(X, t_normalized)
 
         self.history.write(
             t.flatten(),
@@ -308,6 +317,9 @@ class Policy:
             self.predictor = predictor
         elif self.predictor is None:
             self._init_predictor(is_rand_expans)
+
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
 
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
@@ -692,9 +704,8 @@ class Policy:
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.history.action_X[0:N, :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            X, t = self.history.export_valid()
             # Normalize t to (N, 1) shape
             t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)

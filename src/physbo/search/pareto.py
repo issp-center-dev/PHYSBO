@@ -157,13 +157,22 @@ class Pareto(object):
 
         Pareto set is sorted on the first objective in ascending order.
         """
-        t = np.array(t)
+        t = np.array(t, dtype=float)
         if t.ndim == 1:
             t = t.reshape((1, -1))
         assert t.shape[1] == self.num_objectives
         N = t.shape[0]
 
         indices = self.num_compared + np.arange(N)
+
+        # failed observations (any non-finite objective) never join the
+        # front; they are skipped here while their indices are still
+        # consumed so that front_num keeps referring to the rows of t
+        valid = np.all(np.isfinite(t), axis=1)
+        if not np.all(valid):
+            t = t[valid]
+            indices = indices[valid]
+
         right_front, right_indices = _extract_non_dominated_points(t, indices, maximize=True)
         new_front, new_indices = _merge_fronts(self.front, right_front, self.front_num, right_indices, maximize=True)
 
@@ -179,6 +188,40 @@ class Pareto(object):
             self.front = new_front
             self.front_num = new_indices
 
+    def rebuild_front(self, t, terminal_num_run):
+        """
+        Recompute the non-dominated set of points from the observations.
+
+        The front is updated in the same order as the observations were
+        written. The reference points are kept unless they are not finite.
+
+        Parameters
+        ----------
+        t: numpy.ndarray
+            N x num_objectives dimensional array. All the observations.
+        terminal_num_run: numpy.ndarray
+            The number of the observations at the end of each run.
+        """
+        self.front = np.zeros((0, self.num_objectives))
+        self.front_num = np.zeros(0, dtype=int)
+        self.num_compared = 0
+        self.front_updated = False
+        self.cells = None
+
+        st = 0
+        for en in terminal_num_run:
+            self.update_front(t[st:en])
+            st = en
+
+        # reference points estimated from a front with failed observations
+        if self.reference_min is not None and not np.all(
+            np.isfinite(self.reference_min)
+        ):
+            self.reference_min = None
+        if self.reference_max is not None and not np.all(
+            np.isfinite(self.reference_max)
+        ):
+            self.reference_max = None
 
     def __update_front_old(self, t):
         """
