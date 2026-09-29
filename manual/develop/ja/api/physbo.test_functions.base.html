@@ -56,6 +56,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Reference</a><ul class="current">
@@ -116,9 +117,19 @@
 <p>Test functions are used to evaluate the performance of the optimization algorithms.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The test function f should be defined as a minimization problem.</p>
+<p>Each test function is implemented in the same sense (minimization or
+maximization) as in the reference it follows, so that <code class="docutils literal notranslate"><span class="pre">f</span></code> and the
+docstring can be compared with the literature directly.
+A subclass declares its sense by the class attribute <code class="docutils literal notranslate"><span class="pre">_is_maximization</span></code>
+(<code class="docutils literal notranslate"><span class="pre">False</span></code> by default, i.e., minimization).</p>
+<p><code class="docutils literal notranslate"><span class="pre">test_maximizer</span></code> selects the sense of the <em>returned</em> values:
+with <code class="docutils literal notranslate"><span class="pre">test_maximizer=True</span></code> (the default) the values returned by
+<code class="docutils literal notranslate"><span class="pre">__call__</span></code> and the reference box always describe a maximization
+problem (as PHYSBO maximizes objectives), and with <code class="docutils literal notranslate"><span class="pre">test_maximizer=False</span></code>
+they always describe a minimization problem.
+The sign is flipped only when the declared sense and the requested sense
+differ.</p>
 </div>
-<p>Initialize the test function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -126,7 +137,10 @@
 <li><p><strong>dim</strong> (<em>int</em>) -- Number of dimensions.</p></li>
 <li><p><strong>min_X</strong> (<em>np.ndarray</em><em> | </em><em>list</em><em>[</em><em>float</em><em>] </em><em>| </em><em>float</em>) -- Minimum value of search space for each dimension.</p></li>
 <li><p><strong>max_X</strong> (<em>np.ndarray</em><em> | </em><em>list</em><em>[</em><em>float</em><em>] </em><em>| </em><em>float</em>) -- Maximum value of search space for each dimension.</p></li>
-<li><p><strong>test_maximizer</strong> (<em>bool</em><em>, </em><em>default=True</em>) -- If True, the test function is negated for testing a maximization problem solver.</p></li>
+<li><p><strong>test_maximizer</strong> (<em>bool</em><em>, </em><em>default=True</em>) -- If True, the returned values describe a maximization problem
+(for testing a maximization problem solver such as PHYSBO).
+If False, they describe a minimization problem.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>default=None</em>) -- Name of the test function. If None, the class name is used.</p></li>
 </ul>
 </dd>
 </dl>
@@ -167,6 +181,8 @@ The output value is a numpy array of shape (n,), where n is the number of points
 <dt class="sig sig-object py" id="physbo.test_functions.base.TestFunction.f">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/physbo/test_functions/base.html#TestFunction.f"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.test_functions.base.TestFunction.f" title="Link to this definition"></a></dt>
 <dd><p>Evaluate the test function at the given point.</p>
+<p><code class="docutils literal notranslate"><span class="pre">f</span></code> is written in the sense of the reference (see <code class="docutils literal notranslate"><span class="pre">_is_maximization</span></code>);
+the conversion to the requested sense is done by <code class="docutils literal notranslate"><span class="pre">__call__</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) -- The point at which to evaluate the test function.
@@ -178,6 +194,22 @@ The output value is a numpy array of shape (n, k), where k is the number of obje
 </dd>
 <dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.test_functions.base.TestFunction.is_maximization">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_maximization</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#physbo.test_functions.base.TestFunction.is_maximization" title="Link to this definition"></a></dt>
+<dd><p>Whether the test function is defined as a maximization problem in its reference.</p>
+<p>This describes how <code class="docutils literal notranslate"><span class="pre">f</span></code> is written, not the sense of the returned values
+(which is selected by <code class="docutils literal notranslate"><span class="pre">test_maximizer</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">戻り値<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the original problem is a maximization problem.</p>
+</dd>
+<dt class="field-even">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -263,6 +295,20 @@ The output is a numpy array of shape (N, d), where N is the number of points and
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>str</em>) -- The name of the test function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.test_functions.base.TestFunction.test_maximizer">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">test_maximizer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#physbo.test_functions.base.TestFunction.test_maximizer" title="Link to this definition"></a></dt>
+<dd><p>Whether the returned values describe a maximization problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">戻り値<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if <code class="docutils literal notranslate"><span class="pre">__call__</span></code> returns values of a maximization problem.</p>
+</dd>
+<dt class="field-even">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>

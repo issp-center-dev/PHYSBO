@@ -1,0 +1,579 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benchmark functions &mdash; PHYSBO 3.3-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5e09bc0c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PHYSBO API Reference" href="api.html" />
+    <link rel="prev" title="Algorithm" href="algorithm.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setconfig.html">Detailed Settings for Learning</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">Algorithm</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmark functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-objective-functions">Multi-objective functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#single-objective-functions">Single-objective functions</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Benchmark functions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/test_functions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="benchmark-functions">
+<span id="chap-test-functions"></span><h1>Benchmark functions<a class="headerlink" href="#benchmark-functions" title="Link to this heading"></a></h1>
+<p>PHYSBO bundles benchmark (test) functions in <a class="reference internal" href="api/physbo.test_functions.html#module-physbo.test_functions" title="physbo.test_functions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">physbo.test_functions</span></code></a>
+for trying out and comparing the optimization algorithms.
+The tables below summarize the properties needed to choose a function;
+the definition of each function, its references, and the reference box for
+the hypervolume are documented in the API reference
+(<a class="reference internal" href="api/physbo.test_functions.multi_objective.html#module-physbo.test_functions.multi_objective" title="physbo.test_functions.multi_objective"><code class="xref py py-mod docutils literal notranslate"><span class="pre">physbo.test_functions.multi_objective</span></code></a> and
+<a class="reference internal" href="api/physbo.test_functions.single_objective.html#module-physbo.test_functions.single_objective" title="physbo.test_functions.single_objective"><code class="xref py py-mod docutils literal notranslate"><span class="pre">physbo.test_functions.single_objective</span></code></a>), which the class names link to.</p>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>A test function object is callable on an array of points of shape <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">dim)</span></code>
+and returns an array of shape <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">nobj)</span></code>.
+It also provides the search space (<code class="docutils literal notranslate"><span class="pre">min_X</span></code>, <code class="docutils literal notranslate"><span class="pre">max_X</span></code>), a constraint filter
+(<code class="docutils literal notranslate"><span class="pre">constraint</span></code>), a grid generator that applies the constraints (<code class="docutils literal notranslate"><span class="pre">make_grid</span></code>),
+and, for multi-objective functions, the reference box for the hypervolume
+(<code class="docutils literal notranslate"><span class="pre">reference_min</span></code>, <code class="docutils literal notranslate"><span class="pre">reference_max</span></code>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
+<span class="n">fn</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">test_functions</span><span class="o">.</span><span class="n">multi_objective</span><span class="o">.</span><span class="n">SRN</span><span class="p">()</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span>      <span class="c1"># candidates satisfying the constraints</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>                  <span class="c1"># shape (N, 2)</span>
+<span class="c1"># ... after the search ...</span>
+<span class="n">vid</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">volume_in_dominance</span><span class="p">(</span><span class="n">fn</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">fn</span><span class="o">.</span><span class="n">reference_max</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Each function is implemented in the same sense (minimization or maximization)
+as in the reference it follows, shown in the column “Original sense”.
+Since PHYSBO maximizes objectives, the values returned by a test function
+describe a maximization problem by default (<code class="docutils literal notranslate"><span class="pre">test_maximizer=True</span></code>):
+the values of a minimization problem are negated, and those of a maximization
+problem are returned as they are.
+Pass <code class="docutils literal notranslate"><span class="pre">test_maximizer=False</span></code> to obtain the values of a minimization problem instead.
+The reference box follows the same convention.</p>
+</section>
+<section id="multi-objective-functions">
+<h2>Multi-objective functions<a class="headerlink" href="#multi-objective-functions" title="Link to this heading"></a></h2>
+<p>The search space of an alias is that of the class it refers to unless stated
+otherwise in the column “Aliases”.
+The Pareto-optimal sets are given for the functions where a closed form is known.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 17.3%" />
+<col style="width: 15.4%" />
+<col style="width: 5.8%" />
+<col style="width: 8.7%" />
+<col style="width: 6.7%" />
+<col style="width: 8.7%" />
+<col style="width: 16.3%" />
+<col style="width: 21.2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Objectives</p></th>
+<th class="head"><p>Variables</p></th>
+<th class="head"><p>Constraints</p></th>
+<th class="head"><p>Original sense</p></th>
+<th class="head"><p>Default search space</p></th>
+<th class="head"><p>Pareto-optimal set</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Gaussian" title="physbo.test_functions.multi_objective.Gaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gaussian</span></code></a></p></td>
+<td></td>
+<td><p>K</p></td>
+<td><p>N</p></td>
+<td><p>no</p></td>
+<td><p>maximization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-2, 2]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{convex hull of the centers } \boldsymbol{c}_n \text{ (for } w_n = w \text{)}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.FonsecaFleming" title="physbo.test_functions.multi_objective.FonsecaFleming"><code class="xref py py-class docutils literal notranslate"><span class="pre">FonsecaFleming</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh3" title="physbo.test_functions.multi_objective.Binh3"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh3</span></code></a>, <a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.VLMOP2" title="physbo.test_functions.multi_objective.VLMOP2"><code class="xref py py-class docutils literal notranslate"><span class="pre">VLMOP2</span></code></a> (search space <span class="math notranslate nohighlight">\([-2, 2]^{N}\)</span>)</p></td>
+<td><p>2</p></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-4, 4]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 = \cdots = x_N \in [-1/\sqrt{N}, 1/\sqrt{N}]\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Viennet" title="physbo.test_functions.multi_objective.Viennet"><code class="xref py py-class docutils literal notranslate"><span class="pre">Viennet</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.VLMOP3" title="physbo.test_functions.multi_objective.VLMOP3"><code class="xref py py-class docutils literal notranslate"><span class="pre">VLMOP3</span></code></a></p></td>
+<td><p>3</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-3, 3]^{2}\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.BinhKorn" title="physbo.test_functions.multi_objective.BinhKorn"><code class="xref py py-class docutils literal notranslate"><span class="pre">BinhKorn</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>yes</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 5] \times [0, 3]\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 = x_2 \in [0, 3];\ x_1 \in [3, 5], x_2 = 3\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.SRN" title="physbo.test_functions.multi_objective.SRN"><code class="xref py py-class docutils literal notranslate"><span class="pre">SRN</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh2" title="physbo.test_functions.multi_objective.Binh2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh2</span></code></a>, <a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ChankongHaimes" title="physbo.test_functions.multi_objective.ChankongHaimes"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChankongHaimes</span></code></a></p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>yes</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-20, 20]^{2}\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.KitaYabumotoMoriNishikawa" title="physbo.test_functions.multi_objective.KitaYabumotoMoriNishikawa"><code class="xref py py-class docutils literal notranslate"><span class="pre">KitaYabumotoMoriNishikawa</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh4" title="physbo.test_functions.multi_objective.Binh4"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh4</span></code></a></p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>yes</p></td>
+<td><p>maximization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 7]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 3],\ x_2 = 13/2 - x_1/6\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh1" title="physbo.test_functions.multi_objective.Binh1"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh1</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 10]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 = x_2 \in [0, 5]\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh5" title="physbo.test_functions.multi_objective.Binh5"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh5</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0.1, 1] \times [0, 1]\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh6" title="physbo.test_functions.multi_objective.Binh6"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh6</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>4</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-3, 3]^{4}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_3 = x_4 = 1\ (x_1, x_2 \text{ arbitrary})\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh8" title="physbo.test_functions.multi_objective.Binh8"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh8</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_2 = 0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Binh9" title="physbo.test_functions.multi_objective.Binh9"><code class="xref py py-class docutils literal notranslate"><span class="pre">Binh9</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{2}\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Kursawe" title="physbo.test_functions.multi_objective.Kursawe"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kursawe</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>3</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 5]^{3}\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Schaffer1" title="physbo.test_functions.multi_objective.Schaffer1"><code class="xref py py-class docutils literal notranslate"><span class="pre">Schaffer1</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.VLMOP1" title="physbo.test_functions.multi_objective.VLMOP1"><code class="xref py py-class docutils literal notranslate"><span class="pre">VLMOP1</span></code></a></p></td>
+<td><p>2</p></td>
+<td><p>1</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-10, 10]\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x \in [0, 2]\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Schaffer2" title="physbo.test_functions.multi_objective.Schaffer2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Schaffer2</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>1</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 10]\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x \in [1, 2] \cup [4, 5]\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.Poloni" title="physbo.test_functions.multi_objective.Poloni"><code class="xref py py-class docutils literal notranslate"><span class="pre">Poloni</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p>maximization</p></td>
+<td><p><span class="math notranslate nohighlight">\([-\pi, \pi]^{2}\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ZDT1" title="physbo.test_functions.multi_objective.ZDT1"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZDT1</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>N (default 30)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ZDT2" title="physbo.test_functions.multi_objective.ZDT2"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZDT2</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>N (default 30)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ZDT3" title="physbo.test_functions.multi_objective.ZDT3"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZDT3</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>N (default 30)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 0.083] \cup [0.182, 0.258] \cup [0.409, 0.454] \cup [0.618, 0.653] \cup [0.823, 0.852],\ x_i = 0\ (i \ge 2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ZDT4" title="physbo.test_functions.multi_objective.ZDT4"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZDT4</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>N (default 10)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_i \in [-5, 5]\ (i \ge 2)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ZDT6" title="physbo.test_functions.multi_objective.ZDT6"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZDT6</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>N (default 10)</p></td>
+<td><p>no</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 1]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(x_1 \in [0, 1],\ x_i = 0\ (i \ge 2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.OsyczkaKundu" title="physbo.test_functions.multi_objective.OsyczkaKundu"><code class="xref py py-class docutils literal notranslate"><span class="pre">OsyczkaKundu</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>6</p></td>
+<td><p>yes</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 10] \times [0, 10] \times [1, 5] \times [0, 6] \times [1, 5] \times [0, 10]\)</span></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.multi_objective.html#physbo.test_functions.multi_objective.ConstrEX" title="physbo.test_functions.multi_objective.ConstrEX"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConstrEX</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>yes</p></td>
+<td><p>minimization</p></td>
+<td><p><span class="math notranslate nohighlight">\([0.1, 1] \times [0, 5]\)</span></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="single-objective-functions">
+<h2>Single-objective functions<a class="headerlink" href="#single-objective-functions" title="Link to this heading"></a></h2>
+<p>The global minimum points and values are those of the minimization problem
+(<code class="docutils literal notranslate"><span class="pre">test_maximizer=False</span></code>); for the functions with a variable number of
+variables they are shown for the default number.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18.4%" />
+<col style="width: 10.2%" />
+<col style="width: 9.2%" />
+<col style="width: 7.1%" />
+<col style="width: 16.3%" />
+<col style="width: 28.6%" />
+<col style="width: 10.2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Variables</p></th>
+<th class="head"><p>Constraints</p></th>
+<th class="head"><p>Default search space</p></th>
+<th class="head"><p>Global minimum point</p></th>
+<th class="head"><p>Minimum value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Sphere" title="physbo.test_functions.single_objective.Sphere"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sphere</span></code></a></p></td>
+<td></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 5]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rastrigin" title="physbo.test_functions.single_objective.Rastrigin"><code class="xref py py-class docutils literal notranslate"><span class="pre">Rastrigin</span></code></a></p></td>
+<td></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5.12, 5.12]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Ackley" title="physbo.test_functions.single_objective.Ackley"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ackley</span></code></a></p></td>
+<td></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-32.768, 32.768]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Rosenbrock" title="physbo.test_functions.single_objective.Rosenbrock"><code class="xref py py-class docutils literal notranslate"><span class="pre">Rosenbrock</span></code></a></p></td>
+<td></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 10]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((1, 1)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Beale" title="physbo.test_functions.single_objective.Beale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Beale</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-4.5, 4.5]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((3, 0.5)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Booth" title="physbo.test_functions.single_objective.Booth"><code class="xref py py-class docutils literal notranslate"><span class="pre">Booth</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-10, 10]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((1, 3)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Matyas" title="physbo.test_functions.single_objective.Matyas"><code class="xref py py-class docutils literal notranslate"><span class="pre">Matyas</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-10, 10]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Himmelblau" title="physbo.test_functions.single_objective.Himmelblau"><code class="xref py py-class docutils literal notranslate"><span class="pre">Himmelblau</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 5]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((3, 2),\ (-2.8051, 3.1313),\ (-3.7793, -3.2832),\ (3.5844, -1.8481)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.ThreeHumpCamel" title="physbo.test_functions.single_objective.ThreeHumpCamel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ThreeHumpCamel</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 5]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Easom" title="physbo.test_functions.single_objective.Easom"><code class="xref py py-class docutils literal notranslate"><span class="pre">Easom</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-100, 100]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((3.1416, 3.1416)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.StyblinskiTang" title="physbo.test_functions.single_objective.StyblinskiTang"><code class="xref py py-class docutils literal notranslate"><span class="pre">StyblinskiTang</span></code></a></p></td>
+<td></td>
+<td><p>N (default 2)</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-5, 5]^{N}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((-2.9035, -2.9035)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(-78.3323\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/physbo.test_functions.single_objective.html#physbo.test_functions.single_objective.Schaffer2" title="physbo.test_functions.single_objective.Schaffer2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Schaffer2</span></code></a></p></td>
+<td></td>
+<td><p>2</p></td>
+<td><p>no</p></td>
+<td><p><span class="math notranslate nohighlight">\([-100, 100]^{2}\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\((0, 0)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithm.html" class="btn btn-neutral float-left" title="Algorithm" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="PHYSBO API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/test_functions.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../3.3-dev/ja/test_functions.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/en/test_functions.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/en/test_functions.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/test_functions.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

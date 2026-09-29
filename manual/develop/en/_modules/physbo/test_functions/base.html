@@ -52,6 +52,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
@@ -110,8 +111,41 @@
 
 <span class="sd">    Note</span>
 <span class="sd">    =====</span>
-<span class="sd">    The test function f should be defined as a minimization problem.</span>
+<span class="sd">    Each test function is implemented in the same sense (minimization or</span>
+<span class="sd">    maximization) as in the reference it follows, so that ``f`` and the</span>
+<span class="sd">    docstring can be compared with the literature directly.</span>
+<span class="sd">    A subclass declares its sense by the class attribute ``_is_maximization``</span>
+<span class="sd">    (``False`` by default, i.e., minimization).</span>
+
+<span class="sd">    ``test_maximizer`` selects the sense of the *returned* values:</span>
+<span class="sd">    with ``test_maximizer=True`` (the default) the values returned by</span>
+<span class="sd">    ``__call__`` and the reference box always describe a maximization</span>
+<span class="sd">    problem (as PHYSBO maximizes objectives), and with ``test_maximizer=False``</span>
+<span class="sd">    they always describe a minimization problem.</span>
+<span class="sd">    The sign is flipped only when the declared sense and the requested sense</span>
+<span class="sd">    differ.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    =========</span>
+<span class="sd">    nobj: int</span>
+<span class="sd">        Number of objectives.</span>
+<span class="sd">    dim: int</span>
+<span class="sd">        Number of dimensions.</span>
+<span class="sd">    min_X: np.ndarray | list[float] | float</span>
+<span class="sd">        Minimum value of search space for each dimension.</span>
+<span class="sd">    max_X: np.ndarray | list[float] | float</span>
+<span class="sd">        Maximum value of search space for each dimension.</span>
+<span class="sd">    test_maximizer: bool, default=True</span>
+<span class="sd">        If True, the returned values describe a maximization problem</span>
+<span class="sd">        (for testing a maximization problem solver such as PHYSBO).</span>
+<span class="sd">        If False, they describe a minimization problem.</span>
+<span class="sd">    name: str | None, default=None</span>
+<span class="sd">        Name of the test function. If None, the class name is used.</span>
 <span class="sd">    """</span>
+
+    <span class="c1"># Sense in which ``f`` (and the reference box) is written.</span>
+    <span class="c1"># Subclasses whose reference defines a maximization problem set this to True.</span>
+    <span class="n">_is_maximization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -122,21 +156,6 @@
         <span class="n">test_maximizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Initialize the test function.</span>
-
-<span class="sd">        Arguments</span>
-<span class="sd">        =========</span>
-<span class="sd">        nobj: int</span>
-<span class="sd">            Number of objectives.</span>
-<span class="sd">        dim: int</span>
-<span class="sd">            Number of dimensions.</span>
-<span class="sd">        min_X: np.ndarray | list[float] | float</span>
-<span class="sd">            Minimum value of search space for each dimension.</span>
-<span class="sd">        max_X: np.ndarray | list[float] | float</span>
-<span class="sd">            Maximum value of search space for each dimension.</span>
-<span class="sd">        test_maximizer: bool, default=True</span>
-<span class="sd">            If True, the test function is negated for testing a maximization problem solver.</span>
-<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nobj</span> <span class="o">=</span> <span class="n">nobj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dim</span> <span class="o">=</span> <span class="n">dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_test_maximizer</span> <span class="o">=</span> <span class="n">test_maximizer</span>
@@ -189,10 +208,43 @@
         <span class="c1"># This is assertion because it is the Developer's responsibility to ensure that the number of objectives is correct</span>
         <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nobj</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_maximizer</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needs_negation</span><span class="p">():</span>
             <span class="k">return</span> <span class="o">-</span><span class="n">f</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">f</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_needs_negation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the values of ``f`` must be negated to obtain the requested sense.</span>
+
+<span class="sd">        The sign is flipped only when the sense in which ``f`` is written</span>
+<span class="sd">        (``_is_maximization``) differs from the requested sense (``test_maximizer``).</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_maximizer</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_maximization</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_maximization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the test function is defined as a maximization problem in its reference.</span>
+
+<span class="sd">        This describes how ``f`` is written, not the sense of the returned values</span>
+<span class="sd">        (which is selected by ``test_maximizer``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the original problem is a maximization problem.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_maximization</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_maximizer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the returned values describe a maximization problem.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if ``__call__`` returns values of a maximization problem.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_maximizer</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -243,6 +295,9 @@
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Evaluate the test function at the given point.</span>
+
+<span class="sd">        ``f`` is written in the sense of the reference (see ``_is_maximization``);</span>
+<span class="sd">        the conversion to the requested sense is done by ``__call__``.</span>
 
 <span class="sd">        Arguments</span>
 <span class="sd">        =========</span>

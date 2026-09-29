@@ -85,6 +85,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
@@ -604,16 +605,18 @@ np.float64(0.30738182186615104)
 <p>We now perform Bayesian optimization using the Kita-Yabumoto-Mori-Nishikawa function:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{cases}
-f_1(x, y) = -x^2 + y^2 \\
+f_1(x, y) = -x^2 + y \\
 f_2(x, y) = 0.5x + y + 1 \\
 \end{cases}\end{split}\]</div>
-<p>Furthermore, <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> have the following constraints:</p>
+<p>Both objectives are to be maximized. Furthermore, <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> have the following constraints:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{cases}
-g_1(x, y) = 6.5 - x/6 - y \ge 0 \\
-g_2(x, y) = 7.5 - x/2 - y \ge 0 \\
-g_3(x, y) = 30 - 5x - y \ge 0 \\
+g_1(x, y) = x/6 + y \le 6.5 \\
+g_2(x, y) = x/2 + y \le 7.5 \\
+g_3(x, y) = 5x + y \le 30 \\
+x \ge 0, \quad y \ge 0
 \end{cases}\end{split}\]</div>
+<p>The search space is taken as <span class="math notranslate nohighlight">\(0 \le x, y \le 7\)</span> so that it contains the feasible region. Since both objectives increase with <span class="math notranslate nohighlight">\(y\)</span>, the Pareto-optimal solutions lie on the upper boundary of the feasible region, <span class="math notranslate nohighlight">\(y = 6.5 - x/6\)</span> (<span class="math notranslate nohighlight">\(0 \le x \le 3\)</span>).</p>
 <p>Kita, H., Yabumoto, Y., Mori, N., Nishikawa, Y. (1996). Multi-objective optimization by means of the thermodynamical genetic algorithm. In: Voigt, HM., Ebeling, W., Rechenberg, I., Schwefel, HP. (eds) Parallel Problem Solving from Nature — PPSN IV. PPSN 1996. Lecture Notes in Computer Science, vol 1141. Springer, Berlin, Heidelberg. <a class="reference external" href="https://doi.org/10.1007/3-540-61723-X_1014">https://doi.org/10.1007/3-540-61723-X_1014</a></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -657,8 +660,8 @@ g_3(x, y) = 30 - 5x - y \ge 0 \\
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_HVPI</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"HVPI"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -713,8 +716,8 @@ Text(0.5, 1.0, &#39;HVPI&#39;)
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_ParEGO</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"ParEGO"</span><span class="p">)</span>
 <br/></pre></div>
 </div>
@@ -769,8 +772,8 @@ Text(0.5, 1.0, &#39;ParEGO&#39;)
 <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">plot_pareto_front_all</span><span class="p">(</span>
     <span class="n">res_KYMN_NDS</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">steps_begin</span><span class="o">=</span><span class="n">num_random_search</span>
 <span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"NDS"</span><span class="p">)</span>
 <br/></pre></div>
 </div>
@@ -838,26 +841,26 @@ Text(0.5, 1.0, &#39;NDS&#39;)
     <tr>
       <th>0</th>
       <td>NDS</td>
-      <td>2.054426</td>
-      <td>970.781427</td>
+      <td>1.690122</td>
+      <td>314.208073</td>
     </tr>
     <tr>
       <th>1</th>
       <td>ParEGO</td>
-      <td>1.837256</td>
-      <td>977.430256</td>
+      <td>1.664951</td>
+      <td>314.248914</td>
     </tr>
     <tr>
       <th>2</th>
       <td>HVPI</td>
-      <td>4.284750</td>
-      <td>932.139351</td>
+      <td>3.775407</td>
+      <td>314.403240</td>
     </tr>
   </tbody>
 </table>
 </div></div>
 </div>
-<p>In this case, ParEGO works better than NDS and HVPI.</p>
+<p>In this case, the three methods reach almost the same volume of the dominated region; the differences among them are less than 0.1%.</p>
 </section>
 </section>
 </section>
