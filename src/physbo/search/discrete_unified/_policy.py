@@ -212,6 +212,7 @@ class Policy(discrete.Policy):
         unify_method=None,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization by using unified objective function
@@ -304,7 +305,7 @@ class Policy(discrete.Policy):
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha, ucb_beta)
             time_get_action = time.time() - time_get_action
 
             N_indeed = len(action)
@@ -340,8 +341,8 @@ class Policy(discrete.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _get_actions(self, mode, N, K, alpha):
-        f = self.get_score(mode=mode, alpha=alpha, parallel=False)
+    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
+        f = self.get_score(mode=mode, alpha=alpha, ucb_beta=ucb_beta, parallel=False)
         champion, local_champion, local_index = self._find_champion(f)
         if champion == -1:
             return np.zeros(0, dtype=int)
@@ -350,7 +351,7 @@ class Policy(discrete.Policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
@@ -426,6 +427,7 @@ class Policy(discrete.Policy):
         training=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calculate score (acquisition function)
@@ -503,7 +505,12 @@ class Policy(discrete.Policy):
             test = self.test.get_subset(actions)
 
         f = search_score.score(
-            mode, predictor=predictor, training=training, test=test, alpha=alpha
+            mode,
+            predictor=predictor,
+            training=training,
+            test=test,
+            alpha=alpha,
+            ucb_beta=ucb_beta,
         )
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
@@ -550,7 +557,7 @@ class Policy(discrete.Policy):
                 split_features_parallel=split_features_parallel,
             )
 
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
         """
         Getting marginal scores.
 
@@ -604,7 +611,11 @@ class Policy(discrete.Policy):
             predictor.update(train, virtual_train)
 
             f[k, :] = self.get_score(
-                mode, predictor=predictor, training=train, parallel=False
+                mode,
+                predictor=predictor,
+                training=train,
+                ucb_beta=ucb_beta,
+                parallel=False,
             )
         return np.mean(f, axis=0)
 

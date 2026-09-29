@@ -18,7 +18,7 @@ def score(mode, predictor, test, training=None, **kwargs):
     mode: str
         Kind of score.
 
-        "EI", "PI", and "TS" are available.
+        "EI", "PI", "TS", and "UCB" are available.
 
     predictor: predictor object
         Base class is defined in physbo.predictor.
@@ -40,6 +40,11 @@ def score(mode, predictor, test, training=None, **kwargs):
     alpha: float
         noise for sampling source (default: 1.0)
         Used only for mode == "TS"
+
+    ucb_beta: float
+        Trade-off parameter between exploitation and exploration (default: 1.0).
+        The score is ``fmean + ucb_beta * fstd``; larger values favor
+        exploration. Used only for mode == "UCB".
 
     Returns
     -------
@@ -63,8 +68,11 @@ def score(mode, predictor, test, training=None, **kwargs):
     elif mode == "TS":
         alpha = kwargs.get("alpha", 1.0)
         return TS(predictor, training, test, alpha)
+    elif mode == "UCB":
+        beta = kwargs.get("ucb_beta", 1.0)
+        return UCB(predictor, training, test, beta)
     else:
-        raise NotImplementedError("ERROR: mode must be EI, PI or TS.")
+        raise NotImplementedError("ERROR: mode must be EI, PI, TS or UCB.")
 
 
 def EI(predictor, training, test, fmax=None):
@@ -153,3 +161,35 @@ def TS(predictor, training, test, alpha=1):
     score: numpy.ndarray
     """
     return (predictor.get_post_samples(training, test, alpha=alpha)).flatten()
+
+
+def UCB(predictor, training, test, beta=1.0):
+    """
+    Upper Confidence Bound (UCB).
+
+    The score is ``fmean + beta * fstd``, where ``fmean`` and ``fstd`` are the
+    mean and the standard deviation of the posterior predictive distribution.
+    Since PHYSBO maximizes the objective, larger ``beta`` puts more weight on
+    exploration (high-variance candidates), while ``beta == 0`` reduces to
+    greedy exploitation of the posterior mean.
+
+    Parameters
+    ----------
+    predictor: predictor object
+        Base class is defined in physbo.predictor.
+    training: physbo.variable
+        Training dataset.
+        If the predictor is not trained, use this for training.
+    test: physbo.variable
+        Inputs
+    beta: float
+        Trade-off parameter between exploitation and exploration.
+        (default: 1.0)
+    Returns
+    -------
+    score: numpy.ndarray
+    """
+    fmean = predictor.get_post_fmean(training, test)
+    fcov = predictor.get_post_fcov(training, test)
+    fstd = np.sqrt(fcov)
+    return (fmean + beta * fstd).flatten()

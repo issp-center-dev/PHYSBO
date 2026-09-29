@@ -76,6 +76,41 @@ class TestRange:
         assert np.allclose(best_X[-1], [0.5, 0.5], atol=0.1)
         self.policy.get_score("EI", xs=np.array([[0.5, 0.5]]))
 
+    def test_bayes_search_ucb(self):
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        # Best objective reached by the random phase alone, used to confirm the
+        # UCB search step actually contributes beyond random sampling.
+        best_fx_random, _ = self.policy.history.export_all_sequence_best_fx()
+        best_after_random = best_fx_random[-1]
+
+        res = self.policy.bayes_search(
+            max_num_probes=self.nsearch,
+            simulator=self.sim,
+            score="UCB",
+            ucb_beta=2.0,
+        )
+        best_fx, best_X = res.export_all_sequence_best_fx()
+        print(best_fx)
+        print(best_X)
+        # The UCB search must improve on the random-only best (this exact
+        # comparison is the primary regression check). The convergence bounds
+        # below match the neighboring EI test (abs=0.01, atol=0.1) to avoid
+        # brittleness; note the random phase's best (~ -0.0137 for this seed)
+        # still fails abs=0.01, so reaching it requires the UCB search to work.
+        assert best_fx[-1] > best_after_random
+        assert best_fx[-1] == pytest.approx(0.0, abs=0.01)
+        assert np.allclose(best_X[-1], [0.5, 0.5], atol=0.1)
+        # ucb_beta adds the (non-negative) std to the mean, so a larger beta
+        # never decreases the score of any candidate.
+        xs = np.array([[0.2, 0.3], [0.5, 0.5], [0.8, 0.1]])
+        f_low = self.policy.get_score("UCB", xs=xs, ucb_beta=0.0)
+        f_high = self.policy.get_score("UCB", xs=xs, ucb_beta=5.0)
+        assert np.all(np.isfinite(f_low)) and np.all(np.isfinite(f_high))
+        assert np.all(f_high >= f_low - 1e-8)
+        # ucb_beta must actually be threaded through the range get_score path;
+        # if it were ignored (defaulted) the two score arrays would be identical.
+        assert not np.allclose(f_low, f_high)
+
     def test_interactive(self):
         actions = self.policy.random_search(
             max_num_probes=1, num_search_each_probe=self.nrand, simulator=None
