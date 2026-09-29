@@ -126,9 +126,8 @@ class Policy:
             N dimensional array (1D) or N x 1 dimensional array (2D).
             The negative energy of each search candidate (value of the objective function to be optimized).
             Will be normalized to (N, 1) shape internally.
-            A non-finite value (NaN or +-Inf) marks a failed evaluation:
-            the point is recorded in the history, but the observation is
-            excluded from the training data and the best-value tracking.
+            All the values must be finite. Failed evaluations are not
+            supported in continuous search spaces.
         time_total: numpy.ndarray
             N dimenstional array. The total elapsed time in each step.
             If None (default), filled by 0.0.
@@ -145,9 +144,16 @@ class Policy:
         Returns
         -------
 
+        Raises
+        ------
+        ValueError
+            If t contains a non-finite value (NaN or +-Inf).
+            Nothing is written to the history in this case.
         """
         # Normalize t to (N, 1) shape
         t_normalized = normalize_t(t, k=1)
+
+        utility.require_finite(X, t_normalized)
 
         self.history.write(
             t.flatten(),
@@ -163,19 +169,12 @@ class Policy:
             Z = Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
         else:
             Z = None
-        # Failed observations (non-finite t) are kept in the history but
-        # they are not used for training.
-        valid = utility.finite_mask(t_normalized)
-        if np.any(valid):
-            X_ok = np.asarray(X)[valid]
-            t_ok = t_normalized[valid]
-            Z_ok = utility.mask_rows(Z, valid)
-            self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
+        self.training.add(X=X, t=t_normalized, Z=Z)
 
-            if self.new_data is None:
-                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
-            else:
-                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
+        if self.new_data is None:
+            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t_normalized, Z=Z)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -318,6 +317,9 @@ class Policy:
             self.predictor = predictor
         elif self.predictor is None:
             self._init_predictor(is_rand_expans)
+
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
 
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)

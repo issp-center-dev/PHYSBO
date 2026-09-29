@@ -90,14 +90,6 @@ class Policy(range_single.Policy):
         time_get_action=None,
         time_run_simulator=None,
     ):
-        self.history.write(
-            t,
-            X,
-            time_total=time_total,
-            time_update_predictor=time_update_predictor,
-            time_get_action=time_get_action,
-            time_run_simulator=time_run_simulator,
-        )
         N = X.shape[0]
         t = np.array(t)
 
@@ -114,6 +106,19 @@ class Policy(range_single.Policy):
         )
         assert t.shape[1] == self.num_objectives, "The number of objectives in t must be the same as num_objectives"
 
+        # Failed evaluations are not supported in continuous search spaces;
+        # raise before anything is written
+        utility.require_finite(X, t)
+
+        self.history.write(
+            t,
+            X,
+            time_total=time_total,
+            time_update_predictor=time_update_predictor,
+            time_get_action=time_get_action,
+            time_run_simulator=time_run_simulator,
+        )
+
         if self.predictor_list[0] is not None:
             z = []
             for p in self.predictor_list:
@@ -125,23 +130,16 @@ class Policy(range_single.Policy):
         else:
             Z = None
 
-        # Failed observations (any non-finite objective) are kept in the
-        # history but they are not used for training.
-        valid = utility.finite_mask(t)
-        if np.any(valid):
-            X_ok = np.asarray(X)[valid]
-            t_ok = t[valid]
-            Z_ok = utility.mask_rows(Z, valid)
-            if self.new_data is None:
-                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
-            else:
-                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
+        if self.new_data is None:
+            self.new_data = Variable(X=X, t=t, Z=Z)
+        else:
+            self.new_data.add(X=X, t=t, Z=Z)
 
-            # Add to single training Variable with full 2D t matrix and (k, N, n) Z
-            if self.training.X is None:
-                self.training = Variable(X=X_ok, t=t_ok, Z=Z_ok)
-            else:
-                self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
+        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
+        if self.training.X is None:
+            self.training = Variable(X=X, t=t, Z=Z)
+        else:
+            self.training.add(X=X, t=t, Z=Z)
 
     def random_search(
         self,
@@ -281,6 +279,9 @@ class Policy(range_single.Policy):
                 ]
         else:
             self.predictor_list = predictor_list
+
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
 
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)

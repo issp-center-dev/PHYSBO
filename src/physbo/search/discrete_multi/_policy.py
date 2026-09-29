@@ -274,6 +274,9 @@ class Policy(discrete.Policy):
         else:
             self.predictor_list = predictor_list
 
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
+
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
 

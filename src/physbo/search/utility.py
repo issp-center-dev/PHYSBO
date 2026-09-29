@@ -459,6 +459,72 @@ def mask_rows(Z, mask):
     return Z[mask]
 
 
+def require_finite(X, t, max_shown=5):
+    """Raise an error if t contains a failed (non-finite) observation.
+
+    For the policies with a continuous search space. A failed point cannot
+    be removed from a continuous search space, and hence it would be
+    proposed again and again if it were only excluded from the training data.
+
+    Parameters
+    ----------
+    X: numpy.ndarray
+        N x d dimensional array. The inputs of the observations.
+    t: numpy.ndarray
+        N x k dimensional array. The objective values of the observations.
+    max_shown: int
+        The maximum number of the failed observations shown in the message.
+
+    Raises
+    ------
+    ValueError
+        If any objective value is NaN or +-Inf.
+    """
+    valid = finite_mask(t)
+    if np.all(valid):
+        return
+
+    X = np.asarray(X)
+    t = np.asarray(t)
+    failed = np.where(~valid)[0]
+    lines = [f"  X = {X[i]}, t = {t[i]}" for i in failed[:max_shown]]
+    if len(failed) > max_shown:
+        lines.append(f"  ... ({len(failed) - max_shown} more)")
+    msg = (
+        "Non-finite objective value (NaN or +-Inf) is given for "
+        f"{len(failed)} of {len(valid)} point(s):\n"
+        + "\n".join(lines)
+        + "\nFailed evaluations are not supported in continuous search spaces"
+        " (range policies), because a failed point would be proposed again."
+        " Return a finite penalty value suitable for your problem"
+        " from the simulator instead."
+        " Nothing has been written to the history."
+    )
+    raise ValueError(msg)
+
+
+def require_training_data(training):
+    """Raise an error if there is no observation to train the predictor with.
+
+    Parameters
+    ----------
+    training: physbo.Variable
+        The training dataset.
+
+    Raises
+    ------
+    RuntimeError
+        If the training dataset is empty.
+    """
+    if training is None or training.X is None or training.X.shape[0] == 0:
+        msg = (
+            "No valid observation is available for Bayesian optimization."
+            " Add observations with finite objective values"
+            " (e.g., by random_search) before calling bayes_search."
+        )
+        raise RuntimeError(msg)
+
+
 def is_learning(n, interval):
     """Decide whether to (re)learn the hyperparameters at search step ``n``.
 
