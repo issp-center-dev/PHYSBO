@@ -20,11 +20,19 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-# import sys
+import sys
 import os
 from importlib.util import find_spec
 
 # sys.path.insert(0, os.path.abspath("../../../../../physbo"))
+
+# generator of the benchmark-function tables (docs/sphinx/manual/test_function_catalog.py)
+sys.path.insert(0, os.path.abspath("../.."))
+from test_function_catalog import sphinx_setup as _test_function_catalog_setup  # noqa: E402
+
+
+def setup(app):
+    return _test_function_catalog_setup(app, lang="en")
 
 # -- Project information -----------------------------------------------------
 
@@ -121,7 +129,8 @@ templates_path = ["../../_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+# "_generated" holds fragments included by test_functions.rst; they are not pages
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "_generated"]
 for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
     if t in tags:
         print(t)
