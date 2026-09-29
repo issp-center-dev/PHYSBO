@@ -230,11 +230,14 @@ class History:
 
     def show_search_results(self, N):
         n = self.total_num_search
-        best_fx, best_actions = self.export_all_sequence_best_fx()
-        if np.isfinite(best_fx[n - 1]):
+        fx = self.fx[0:n]
+        valid = np.isfinite(fx)
+        if np.any(valid):
+            # failed observations are skipped
+            index = np.argmax(np.where(valid, fx, -np.inf))
             best_msg = "current best f(x) = %f (best action=%d)" % (
-                best_fx[n - 1],
-                best_actions[n - 1],
+                fx[index],
+                self.chosen_actions[index],
             )
         else:
             best_msg = "current best f(x) = (no valid observation yet)"
