@@ -101,7 +101,11 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
  For searching candidates defined above, define a simulator that gives the objective function values (values to be optimized, such as material property values) for each search candidate. In PHYSBO, the direction of optimization is to maximize the objective function, so if you want to minimize the objective function, you can do so by applying a negative value to the value returned by the simulator.
 
- If an evaluation fails (for example, a simulation diverges or an experiment cannot be carried out), the simulator can return ``NaN`` (or an infinite value) as the objective function value. Such an evaluation is treated as a *failed observation*: the candidate is recorded in the history and is never proposed again, but the value is excluded from the training data of the Gaussian process, from the best-value tracking, and, in multi-objective optimization, from the Pareto front. In multi-objective optimization, an evaluation is regarded as failed if any of its objective values is not finite.
+ If an evaluation fails (for example, a simulation diverges or an experiment cannot be carried out), the simulator can return ``NaN`` (or an infinite value) as the objective function value, when the search space is given as a list of candidates (``physbo.search.discrete`` , ``discrete_multi`` , and ``discrete_unified`` ). Such an evaluation is treated as a *failed observation*: the candidate is recorded in the history and is never proposed again, but the value is excluded from the training data of the Gaussian process, from the best-value tracking, and, in multi-objective optimization, from the Pareto front. In multi-objective optimization, an evaluation is regarded as failed if any of its objective values is not finite.
+
+ Note that the Gaussian process does not learn where the evaluations fail, and hence the candidates near a failed one can still be proposed. If the evaluations fail in a region of the search space rather than at isolated candidates, consider returning a finite penalty value suitable for the problem instead of ``NaN`` . ``bayes_search`` raises an error if there is no successful observation yet.
+
+ Failed observations are not supported in continuous search spaces (``physbo.search.range`` , ``range_multi`` , and ``range_unified`` ). Since a failed point cannot be removed from a continuous search space, it would be proposed again and again. These policies raise ``ValueError`` without writing anything to the history when a non-finite objective function value is given. Return a finite penalty value suitable for the problem from the simulator instead.
 
 3. Performing optimization
 
@@ -134,7 +138,7 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
   - ``res.fx``: The logs of evaluation values for simulator (objective function) simulator. Failed observations are stored as ``NaN`` (or the infinite value returned by the simulator).
   - ``res.chosen_actions``: The logs of the action ID (parameter) when the simulator has executed.
-  - ``fbest, best_action= res.export_all_sequence_best_fx()``: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed. Failed observations are skipped; until the first successful evaluation, the best value is ``NaN`` and the action ID is ``-1``.
+  - ``fbest, best_action= res.export_all_sequence_best_fx()``: The logs of the best values and their action IDs (parameters) at each step where the simulator has executed. Failed observations are skipped. While there is no successful observation yet, ``fbest`` is ``NaN`` and ``best_action`` is ``-1``. Since ``-1`` is a valid index in NumPy (it refers to the last element), make sure that ``fbest`` is finite before using ``best_action`` as an index.
   - ``res.total_num_search``: Total number steps where the simulator has executed (including failed ones).
   - ``res.valid_mask``: A boolean array marking the successful (``True``) and failed (``False``) observations; ``actions, fx = res.export_valid()`` returns the successful observations only.
 
