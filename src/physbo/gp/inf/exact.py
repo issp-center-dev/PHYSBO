@@ -217,7 +217,7 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
     G = gp.prior.get_cov(X=X, Z=Z, params=prior_params)
 
     invUG = scipy.linalg.solve_triangular(
-        U.transpose(), G, lower=True, overwrite_b=False, check_finite=False
+        U.transpose(), G, lower=True, overwrite_b=True, check_finite=False
     )
 
     if diag:
@@ -225,7 +225,13 @@ def get_post_fcov(gp, X, Z, params=None, diag=True):
         diag_invUG2 = misc.diagAB(invUG.transpose(), invUG)
         post_cov = diagK - diag_invUG2
     else:
-        K = gp.prior.get_cov(X=Z, params=prior_params)
-        post_cov = K - np.dot(invUG.transpose(), invUG)
+        post_cov = gp.prior.get_cov(X=Z, params=prior_params)
+        # post_cov -= invUG^T @ invUG, computed row-block wise in place
+        # to avoid allocating another (ntest x ntest) matrix
+        ntest = post_cov.shape[0]
+        block_size = max(1, (1 << 21) // max(ntest, 1))
+        for i0 in range(0, ntest, block_size):
+            i1 = min(i0 + block_size, ntest)
+            post_cov[i0:i1] -= invUG[:, i0:i1].transpose() @ invUG
 
     return post_cov

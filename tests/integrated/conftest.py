@@ -10,16 +10,14 @@ import warnings
 import pytest
 
 # Whether the reference (golden) values of the stochastic scores (TS) are
-# enforced strictly. The exact-GP Thompson sampling currently draws its
-# posterior sample through an SVD of a highly degenerate covariance matrix
-# (np.random.multivariate_normal), so the drawn sample -- and with it the
-# whole search trajectory and the final hypervolume -- depends on the
-# BLAS/LAPACK build shipped with numpy/scipy. Until that is fixed, an
-# exact comparison would pin the execution environment, not the program.
-#
-# TODO: set to True (and adopt the regenerated reference values) when the
-# Cholesky-based sampling (feature/cholesky-sampling) is merged.
-STRICT_STOCHASTIC_REFERENCE = False
+# enforced strictly. The posterior sampling is now based on the Cholesky
+# decomposition (draw_multivariate_normal), which -- unlike the SVD of a
+# degenerate covariance matrix -- has no sign/ordering ambiguity, so the
+# drawn samples no longer depend on the BLAS/LAPACK build and the
+# reference values are expected to be reproducible across environments.
+# Set this back to False (with a TODO) if the TS references ever prove
+# environment-sensitive again.
+STRICT_STOCHASTIC_REFERENCE = True
 
 
 @pytest.fixture
