@@ -59,7 +59,12 @@ def _get_grad_marlik_lu_reference(gp, X, t, params):
 
 
 @pytest.mark.parametrize("ard", [False, True])
-@pytest.mark.parametrize("case", ["generic", "single", "generic_trace", "close_trace"])
+# "close" checks the data-fit and mean terms (alpha) with an ill-conditioned
+# covariance; there the alpha terms dominate and hide errors of the inverse,
+# which the "_trace" cases (alpha = 0) check instead
+@pytest.mark.parametrize(
+    "case", ["generic", "single", "close", "generic_trace", "close_trace"]
+)
 def test_get_grad_marlik_matches_lu_inverse(ard, case):
     from physbo.gp.inf import exact
 
