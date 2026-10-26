@@ -170,6 +170,85 @@ def test_update_front_matches_brute_force(seed):
         )
 
 
+def test_update_front_without_new_front_points():
+    pareto = Pareto(2)
+    pareto.update_front(np.array([[1.0, 3.0], [3.0, 1.0]]))
+    pareto.divide_non_dominated_region()
+    cells = pareto.cells
+    front = pareto.front.copy()
+    # an empty batch, failed observations only, and a dominated point
+    for t in (np.zeros((0, 2)), np.array([[np.nan, 1.0], [np.inf, -np.inf]]), [0.5, 0.5]):
+        num_compared = pareto.num_compared
+        pareto.update_front(t)
+        assert not pareto.front_updated
+        assert pareto.cells is cells
+        numpy.testing.assert_array_equal(pareto.front, front)
+        numpy.testing.assert_array_equal(pareto.front_num, [0, 1])
+        assert pareto.num_compared == num_compared + np.atleast_2d(t).shape[0]
+    # a new point joining the front clears the cells
+    pareto.update_front([2.0, 2.0])
+    assert pareto.front_updated
+    assert pareto.cells is None
+    numpy.testing.assert_array_equal(pareto.front_num, [0, 5, 1])
+
+
+def test_update_front_one_objective():
+    pareto = Pareto(1)
+    pareto.update_front(np.array([[1.0], [3.0], [2.0], [3.0]]))
+    numpy.testing.assert_array_equal(pareto.front, [[3.0], [3.0]])
+    numpy.testing.assert_array_equal(pareto.front_num, [1, 3])
+    pareto.update_front(np.array([[4.0]]))
+    numpy.testing.assert_array_equal(pareto.front_num, [4])
+
+
+def test_update_front_signed_zero_ties():
+    pareto = Pareto(2)
+    pareto.update_front(np.array([[0.0, 1.0], [-0.0, 1.0], [1.0, 0.0]]))
+    # equal points do not dominate each other; ties keep the row order
+    numpy.testing.assert_array_equal(pareto.front_num, [0, 1, 2])
+    assert not np.signbit(pareto.front[0, 0]) and np.signbit(pareto.front[1, 0])
+
+
+def test_update_front_large_values():
+    pareto = Pareto(2)
+    pareto.update_front(np.array([[-1e308, 0.0]]))
+    with np.errstate(over="raise"):
+        pareto.update_front(np.array([[1e308, 0.0]]))
+    assert pareto.front_updated
+    numpy.testing.assert_array_equal(pareto.front, [[1e308, 0.0]])
+    numpy.testing.assert_array_equal(pareto.front_num, [1])
+    assert pareto.num_compared == 2
+
+
+def test_update_front_signed_zero_ties_across_updates():
+    pareto = Pareto(2)
+    pareto.update_front(np.array([[-0.0, 1.0], [1.0, 0.0]]))
+    pareto.update_front(np.array([[0.0, 1.0]]))
+    # the equal point joins; on ties the current front comes first
+    assert pareto.front_updated
+    numpy.testing.assert_array_equal(pareto.front_num, [0, 2, 1])
+    assert np.signbit(pareto.front[0, 0]) and not np.signbit(pareto.front[1, 0])
+
+
+def test_cross_dominance_blocks(monkeypatch):
+    import physbo.search.pareto as pareto_module
+
+    rng = np.random.default_rng(7)
+    front_t = rng.integers(0, 5, size=(40, 3)).astype(float)
+    new_t = rng.integers(0, 5, size=(23, 3)).astype(float)
+    ref = pareto_module._cross_dominance(front_t, new_t)
+    # blocks of 2 new points (last one partial), and a budget below front.size
+    for budget in (2 * front_t.size, 1):
+        monkeypatch.setattr(pareto_module, "_CROSS_DOMINANCE_BLOCK_ELEMENTS", budget)
+        res = pareto_module._cross_dominance(front_t, new_t)
+        numpy.testing.assert_array_equal(res[0], ref[0])
+        numpy.testing.assert_array_equal(res[1], ref[1])
+    keep_front = [not any(dominate(n, f) for n in new_t) for f in front_t]
+    keep_new = [not any(dominate(f, n) for f in front_t) for n in new_t]
+    numpy.testing.assert_array_equal(ref[0], keep_front)
+    numpy.testing.assert_array_equal(ref[1], keep_new)
+
+
 def test_nds_ranking():
     # A=(2,2) and C=(0,3) are rank 1; B=(1,1) is rank 2; D=(0,0) is rank 3
     t = np.array([[2.0, 2.0], [1.0, 1.0], [0.0, 3.0], [0.0, 0.0]])

@@ -66,6 +66,33 @@ def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
     return mask
 
 
+# maximum number of elements of the (block, front_size, n_obj) temporaries
+_CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
+
+
+def _cross_dominance(front: np.ndarray, t: np.ndarray):
+    """
+    Masks of the points of front not dominated by any point of t, and of the
+    points of t not dominated by any point of front (maximization).
+    """
+    keep_front = np.ones(front.shape[0], dtype=bool)
+    keep_new = np.ones(t.shape[0], dtype=bool)
+    if front.shape[0] == 0 or t.shape[0] == 0:
+        return keep_front, keep_new
+    block = max(1, _CROSS_DOMINANCE_BLOCK_ELEMENTS // front.size)
+    for start in range(0, t.shape[0], block):
+        stop = min(start + block, t.shape[0])
+        # compared directly: the difference of the values may overflow
+        ge = t[start:stop, None, :] >= front[None, :, :]
+        le = t[start:stop, None, :] <= front[None, :, :]
+        # new point dominates front point: all(ge) and any(t > front)
+        dominates = np.all(ge, axis=2) & ~np.all(le, axis=2)
+        dominated = np.all(le, axis=2) & ~np.all(ge, axis=2)
+        keep_front &= ~np.any(dominates, axis=0)
+        keep_new[start:stop] = ~np.any(dominated, axis=1)
+    return keep_front, keep_new
+
+
 class Pareto(object):
     def __init__(self, num_objectives, dom_rule=None):
         self.num_objectives = num_objectives
@@ -90,7 +117,10 @@ class Pareto(object):
         """
         Update the non-dominated set of points.
 
-        Pareto set is sorted on the first objective in ascending order.
+        Pareto set is sorted on the first objective in ascending order; on
+        ties, the points of the current front come first and then the new
+        points in the order of the rows of t.  front_updated tells whether
+        any of the new points joined the front.
         """
         t = np.array(t, dtype=float)
         if t.ndim == 1:
@@ -108,25 +138,29 @@ class Pareto(object):
             t = t[valid]
             indices = indices[valid]
 
-        # the non-dominated points of the current front and the new points,
+        # non-dominated points among the new points
+        mask = _non_dominated_mask(t)
+        t = t[mask]
+        indices = indices[mask]
+
+        # remove the points of the current front dominated by a new point and
+        # the new points dominated by a point of the current front
+        keep_front, keep_new = _cross_dominance(self.front, t)
+        # the front is updated if any of the new points joins it; a point of
+        # the current front can be removed only by a new point that joins
+        self.front_updated = bool(np.any(keep_new))
+        self.num_compared += N
+        if not self.front_updated:
+            return
+
         # sorted on the first objective in ascending order; ties keep the
         # current front first and then the order of the rows of t
-        all_t = np.r_[self.front, t]
-        all_indices = np.r_[self.front_num, indices]
-        mask = _non_dominated_mask(all_t)
-        all_t = all_t[mask]
-        all_indices = all_indices[mask]
+        all_t = np.r_[self.front[keep_front], t[keep_new]]
+        all_indices = np.r_[self.front_num[keep_front], indices[keep_new]]
         sorted_idx = np.argsort(all_t[:, 0], kind="stable")
-        new_front = all_t[sorted_idx]
-        new_indices = all_indices[sorted_idx]
-
-        # the front is updated if any of the new points joins it
-        self.front_updated = bool(np.any(new_indices >= self.num_compared))
-        self.num_compared += N
-        if self.front_updated:
-            self.cells = None
-            self.front = new_front
-            self.front_num = new_indices
+        self.front = all_t[sorted_idx]
+        self.front_num = all_indices[sorted_idx]
+        self.cells = None
 
     def rebuild_front(self, t, terminal_num_run):
         """
