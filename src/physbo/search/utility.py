@@ -5,6 +5,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Utility helpers for the search module.
+
+This module collects helpers used across the search policies:
+
+* :class:`Simulator` wraps a test function so it can be called by action index.
+* :func:`make_grid` builds a grid of candidate points for a discrete search.
+* :func:`plot_pareto_front` and :func:`plot_pareto_front_all` visualize the
+  Pareto front stored in a multi-objective history.
+* the remaining ``show_*`` / ``is_learning`` helpers format progress messages
+  and drive the search loop.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -188,7 +200,8 @@ def plot_pareto_front(
     for i in range(steps_begin, steps_end):
         if i in front_num:
             undominated.append(i)
-        else:
+        elif np.all(np.isfinite(history.fx[i])):
+            # failed observations (non-finite values) are not plotted
             dominated.append(i)
         min_fx = np.minimum(min_fx, history.fx[i, [x, y]])
         max_fx = np.maximum(max_fx, history.fx[i, [x, y]])
@@ -320,32 +333,217 @@ def plot_pareto_front_all(
 
 
 def show_search_results(history, N):
+    """Print a summary of the last ``N`` single-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results(n)
 
 
 def show_search_results_mo(history, N, disp_pareto_set=False):
+    """Print a summary of the last ``N`` multi-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The multi-objective search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    disp_pareto_set: bool, default=False
+        If True, also display the current Pareto set.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results_mo(n, disp_pareto_set)
 
 
 def show_start_message_multi_search(N, score=None):
+    """Print the header announcing a multiple-probe search step.
+
+    Arguments
+    =========
+    N: int
+        Zero-based index of the current search round; the printed index is
+        ``N + 1``.
+    score: str, optional
+        Name of the acquisition function. If None, ``"random"`` is shown.
+    """
     if score is None:
         score = "random"
     print(f"{N + 1:04}-th multiple probe search ({score})")
 
 
 def show_interactive_mode(simulator, history):
+    """Print a message when an interactive search session starts.
+
+    The message is shown only at the very first step (empty history) of an
+    interactive run, i.e. when no simulator is provided.
+
+    Arguments
+    =========
+    simulator: callable or None
+        The simulator, or None for interactive mode.
+    history: History
+        The search history.
+    """
     if simulator is None and history.total_num_search == 0:
         print("interactive mode starts ... \n ")
 
 
 def length_vector(t):
+    """Return the number of elements of ``t``.
+
+    Arguments
+    =========
+    t: array-like or scalar
+        Input object.
+
+    Returns
+    =======
+    int
+        ``len(t)`` if ``t`` is sized, otherwise 1 (treating ``t`` as a scalar).
+    """
     N = len(t) if hasattr(t, "__len__") else 1
     return N
 
 
+def finite_mask(t):
+    """Return the mask of valid (finite) observations.
+
+    An observation is valid when all of its objective values are finite;
+    a NaN or an infinite value marks a failed evaluation.
+
+    Parameters
+    ----------
+    t: numpy.ndarray
+        N dimensional array (single objective) or N x k dimensional array
+        (k objectives) of objective values.
+
+    Returns
+    -------
+    mask: numpy.ndarray of bool, shape (N,)
+        True for valid observations, False for failed ones.
+    """
+    t = np.asarray(t, dtype=float)
+    if t.ndim <= 1:
+        return np.isfinite(t).reshape(-1)
+    return np.all(np.isfinite(t), axis=tuple(range(1, t.ndim)))
+
+
+def mask_rows(Z, mask):
+    """Select the observations given by mask from a basis array Z.
+
+    Parameters
+    ----------
+    Z: numpy.ndarray or None
+        (N, n) array, or (k, N, n) array (one basis per objective), or None.
+    mask: numpy.ndarray of bool, shape (N,)
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Z restricted to the rows where mask is True (None if Z is None).
+    """
+    if Z is None:
+        return None
+    Z = np.asarray(Z)
+    if Z.ndim == 3:
+        return Z[:, mask, :]
+    return Z[mask]
+
+
+def require_finite(X, t, max_shown=5):
+    """Raise an error if t contains a failed (non-finite) observation.
+
+    For the policies with a continuous search space. A failed point cannot
+    be removed from a continuous search space, and hence it would be
+    proposed again and again if it were only excluded from the training data.
+
+    Parameters
+    ----------
+    X: numpy.ndarray
+        N x d dimensional array. The inputs of the observations.
+    t: numpy.ndarray
+        N x k dimensional array. The objective values of the observations.
+    max_shown: int
+        The maximum number of the failed observations shown in the message.
+
+    Raises
+    ------
+    ValueError
+        If any objective value is NaN or +-Inf.
+    """
+    valid = finite_mask(t)
+    if np.all(valid):
+        return
+
+    X = np.asarray(X)
+    t = np.asarray(t)
+    failed = np.where(~valid)[0]
+    lines = [f"  X = {X[i]}, t = {t[i]}" for i in failed[:max_shown]]
+    if len(failed) > max_shown:
+        lines.append(f"  ... ({len(failed) - max_shown} more)")
+    msg = (
+        "Non-finite objective value (NaN or +-Inf) is given for "
+        f"{len(failed)} of {len(valid)} point(s):\n"
+        + "\n".join(lines)
+        + "\nFailed evaluations are not supported in continuous search spaces"
+        " (range policies), because a failed point would be proposed again."
+        " Return a finite penalty value suitable for your problem"
+        " from the simulator instead."
+        " Nothing has been written to the history."
+    )
+    raise ValueError(msg)
+
+
+def require_training_data(training):
+    """Raise an error if there is no observation to train the predictor with.
+
+    Parameters
+    ----------
+    training: physbo.Variable
+        The training dataset.
+
+    Raises
+    ------
+    RuntimeError
+        If the training dataset is empty.
+    """
+    if training is None or training.X is None or training.X.shape[0] == 0:
+        msg = (
+            "No valid observation is available for Bayesian optimization."
+            " Add observations with finite objective values"
+            " (e.g., by random_search) before calling bayes_search."
+        )
+        raise RuntimeError(msg)
+
+
 def is_learning(n, interval):
+    """Decide whether to (re)learn the hyperparameters at search step ``n``.
+
+    Arguments
+    =========
+    n: int
+        Zero-based index of the current search step.
+    interval: int
+        Hyperparameter learning interval.
+
+        * ``interval == 0``: learn only at the first step (``n == 0``).
+        * ``interval > 0``: learn every ``interval`` steps.
+        * ``interval < 0``: never learn.
+
+    Returns
+    =======
+    bool
+        True if hyperparameters should be learned at this step.
+    """
     if interval == 0:
         return n == 0
     elif interval > 0:

@@ -37,8 +37,8 @@ os.makedirs(output_dir, exist_ok=True)
 filename = os.path.join(output_dir, f"dim_{dim}.txt")
 if args.header:
     with open(filename, "w") as f:
-        f.write("score num_bayes volume elapsed_time\n")
-    sys.stdout.write("score num_bayes volume elapsed_time\n")
+        f.write("score nobj volume elapsed_time\n")
+    sys.stdout.write("score nobj volume elapsed_time\n")
     sys.exit(0)
 
 nobj = args.nobj

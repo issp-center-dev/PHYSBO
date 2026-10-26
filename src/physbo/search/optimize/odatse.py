@@ -10,6 +10,7 @@ import numpy as np
 
 
 import odatse
+import odatse.mpi
 import odatse.solver.function
 
 
@@ -86,7 +87,12 @@ def default_alg_dict(
             "param": {
                 "min_list": min_X,
                 "max_list": max_X,
-                "unit_list": d_X,
+                # Note: ODAT-SE's minsearch treats the search variables in
+                # units of unit_list (the objective function receives
+                # x / unit_list and the result is reported in the scaled
+                # coordinates), so anything other than 1 would make the
+                # returned point inconsistent with min_X/max_X.
+                "unit_list": np.ones(dim),
             },
             "minimize": {"maxiter": 100},
         }
@@ -137,18 +143,18 @@ class Optimizer:
         Parameters
         ----------
         fn : callable
-            The objective function to minimize. Should take a numpy array of shape (dim,) and return a float.
-        min_X : numpy.ndarray
-            Lower bounds for each dimension
-        max_X : numpy.ndarray
-            Upper bounds for each dimension
+            The objective function to maximize. Should take a numpy array of shape (dim,) and return a float.
         mpicomm : MPI.Comm, optional
-            MPI communicator for parallel optimization. If None, runs in serial.
+            MPI communicator for parallel optimization. With ODAT-SE 4.0,
+            None initializes a single-process context (nalg=1, nsolve=1).
+            Set ODATSE_NOMPI=1 before importing PHYSBO to avoid MPI
+            initialization. For parallel execution,
+            specify MPI.COMM_WORLD; custom communicators are not supported.
 
         Returns
         -------
         numpy.ndarray
-            The optimal point found by the optimizer
+            The optimal point found by the optimizer, with shape (1, dim).
         """
 
         dim = self.alg_dict["param"]["min_list"].size
@@ -160,6 +166,31 @@ class Optimizer:
         }
 
         info_dict = {"base": base_dict, "algorithm": self.alg_dict, "solver": {}}
+
+        if odatse.__version__ >= "4.0.0":
+            # ODAT-SE 4 requires a process-wide context before constructing
+            # the solver. Reuse it across successive acquisition searches.
+
+            try:
+                # check if odatse.mpi.setup() has been called yet or not
+                odatse.mpi.algcomm()
+            except RuntimeError:
+                if mpicomm is None:
+                    odatse.mpi.setup(nalg=1, nsolve=1)
+                else:
+                    odatse.mpi.setup()
+
+            if mpicomm is not None and mpicomm != odatse.mpi.comm():
+                raise ValueError("ODAT-SE 4 requires mpicomm=MPI.COMM_WORLD")
+
+            algsize = odatse.mpi.algsize()
+            if odatse.mpi.solsize() != 1:
+                raise ValueError("PHYSBO requires ODAT-SE solver parallelism nsolve=1")
+        else:
+            algsize = odatse.mpi.size()
+
+        if mpicomm is None and algsize != 1:
+            raise ValueError("mpicomm=None (serial execution) but mpiexec was invoked with np>1.")
 
         info = odatse.Info(info_dict)
         solver = odatse.solver.function.Solver(info)
@@ -177,7 +208,9 @@ class Optimizer:
 
         result = alg.main()
 
-        if self.alg_dict.get("name") == "mapper":
+        if self.alg_dict.get("name") == "mapper" and "x" not in result:
+            # ODAT-SE 3.2 returns no point for mapper; 4.0 returns it directly
+            # and adds a header to ColorMap.txt.
             with open("odatse_output/ColorMap.txt") as f:
                 X = np.zeros((1, dim))
                 fx = np.inf
@@ -189,4 +222,4 @@ class Optimizer:
         else:
             X = result["x"]
 
-        return X.reshape(1, -1)
+        return np.asarray(X).reshape(1, -1)

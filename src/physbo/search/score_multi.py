@@ -225,8 +225,9 @@ def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
     if reduced_candidate_num is None or score.shape[0] <= reduced_candidate_num:
         use_idx = np.arange(score.shape[0])
     else:
-        use_idx = np.arange(reduced_candidate_num)
-        use_idx = np.random.choice(use_idx, reduced_candidate_num, replace=False)
+        use_idx = np.random.choice(
+            score.shape[0], reduced_candidate_num, replace=False
+        )
 
     # pareto.update_front(score)
     pareto.update_front(score[use_idx, :])
