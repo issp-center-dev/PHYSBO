@@ -7,8 +7,6 @@
 
 from __future__ import annotations
 
-import copy
-
 import numpy as np
 import time
 
@@ -43,92 +41,29 @@ def dominate(t1, t2):
     return np.all(t1 >= t2) and np.any(t1 > t2)
 
 
-def _merge_fronts(
-    front1: np.ndarray,
-    front2: np.ndarray,
-    indices1: np.ndarray,
-    indices2: np.ndarray,
-    maximize: bool = True,
-) -> tuple[np.ndarray, np.ndarray]:
-    assert front1.ndim == 2
-    assert front2.ndim == 2
-    N1, D = front1.shape
-    N2, D2 = front2.shape
-    assert D == D2
-    if N1 == 0:
-        return front2, indices2
-    if N2 == 0:
-        return front1, indices1
+def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
+    """
+    Mask of the points of t not dominated by any other point (maximization).
 
-    diff = np.zeros((N2, N1, D))
-    for i2 in range(N2):
-        diff[i2, :, :] = front2[i2, :] - front1
-    # dominated_1[i2, i1] = True if front1[i1] is dominated by front2[i2]
-    # dominated_2[i2, j1] = True if front2[i2] is dominated by front1[i1]
-    if maximize:
-        dominated_1 = np.all(diff >= 0, axis=2) & np.any(diff > 0, axis=2)
-        dominated_2 = np.all(diff <= 0, axis=2) & np.any(diff < 0, axis=2)
-    else:
-        dominated_1 = np.all(diff <= 0, axis=2) & np.any(diff < 0, axis=2)
-        dominated_2 = np.all(diff >= 0, axis=2) & np.any(diff > 0, axis=2)
-
-
-    undominated_1 = ~(dominated_1.any(axis=0))
-    undominated_2 = ~(dominated_2.any(axis=1))
-
-    new_front1 = front1[undominated_1]
-    new_indices1 = indices1[undominated_1]
-    new_front2 = front2[undominated_2]
-    new_indices2 = indices2[undominated_2]
-    new_N1 = len(new_front1)
-    new_N2 = len(new_front2)
-
-    i1 = 0
-    i2 = 0
-    new_front = []
-    new_indices = []
-    while i1 < new_N1 or i2 < new_N2:
-        if i1 == new_N1:
-            new_front.append(new_front2[i2])
-            new_indices.append(new_indices2[i2])
-            i2 += 1
-        elif i2 == new_N2:
-            new_front.append(new_front1[i1])
-            new_indices.append(new_indices1[i1])
-            i1 += 1
-        elif new_front1[i1, 0] > new_front2[i2, 0]:
-            new_front.append(new_front2[i2])
-            new_indices.append(new_indices2[i2])
-            i2 += 1
-        else:
-            new_front.append(new_front1[i1])
-            new_indices.append(new_indices1[i1])
-            i1 += 1
-    res_front = np.array(new_front).reshape(-1, D)
-    res_indices = np.array(new_indices).reshape(-1)
-    return res_front, res_indices
-
-
-def _extract_non_dominated_points(t: np.ndarray, indices: np.ndarray, maximize: bool = True):
-    assert t.ndim == 2
+    The points are visited in descending lexicographic order.  The first
+    remaining point cannot be dominated by any later point, so it is
+    non-dominated; the points it dominates are removed at once.  This costs
+    O(N * front_size * n_obj) vectorized operations.
+    """
     N = t.shape[0]
-    if N < 2:
-        return t, indices
-
-    Nleft = N // 2
-
-    tleft = copy.deepcopy(t[:Nleft, :])
-    ileft = copy.deepcopy(indices[:Nleft])
-
-    tleft, ileft = _extract_non_dominated_points(tleft, ileft, maximize)
-
-    tright = copy.deepcopy(t[Nleft:, :])
-    iright = copy.deepcopy(indices[Nleft:])
-
-    tright, iright = _extract_non_dominated_points(tright, iright, maximize)
-
-    merged_front, merged_indices = _merge_fronts(tleft, tright, ileft, iright, maximize)
-    return merged_front, merged_indices
+    mask = np.zeros(N, dtype=bool)
+    # np.lexsort uses the last key as the primary one
+    order = np.lexsort(t.T[::-1])[::-1]
+    rest = t[order]
+    rest_idx = order
+    while rest_idx.size > 0:
+        p = rest[0]
+        mask[rest_idx[0]] = True
+        others = rest[1:]
+        dominated = np.all(others <= p, axis=1) & np.any(others < p, axis=1)
+        rest = others[~dominated]
+        rest_idx = rest_idx[1:][~dominated]
+    return mask
 
 
 class Pareto(object):
@@ -173,15 +108,20 @@ class Pareto(object):
             t = t[valid]
             indices = indices[valid]
 
-        right_front, right_indices = _extract_non_dominated_points(t, indices, maximize=True)
-        new_front, new_indices = _merge_fronts(self.front, right_front, self.front_num, right_indices, maximize=True)
+        # the non-dominated points of the current front and the new points,
+        # sorted on the first objective in ascending order; ties keep the
+        # current front first and then the order of the rows of t
+        all_t = np.r_[self.front, t]
+        all_indices = np.r_[self.front_num, indices]
+        mask = _non_dominated_mask(all_t)
+        all_t = all_t[mask]
+        all_indices = all_indices[mask]
+        sorted_idx = np.argsort(all_t[:, 0], kind="stable")
+        new_front = all_t[sorted_idx]
+        new_indices = all_indices[sorted_idx]
 
-        updated = False
-        for i in new_indices:
-            if i in right_indices:
-                updated = True
-                break
-        self.front_updated = updated
+        # the front is updated if any of the new points joins it
+        self.front_updated = bool(np.any(new_indices >= self.num_compared))
         self.num_compared += N
         if self.front_updated:
             self.cells = None

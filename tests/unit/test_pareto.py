@@ -137,6 +137,39 @@ def test_volume_random_2d_binary_search_consistency():
     assert v1 == pytest.approx(dominated.mean(), abs=0.01)
 
 
+def front_brute_force(t, num_compared=0):
+    """Non-dominated rows of t, sorted stably on the first objective."""
+    keep = [
+        i
+        for i in range(len(t))
+        if not any(dominate(t[j], t[i]) for j in range(len(t)) if j != i)
+    ]
+    keep = np.array(keep, dtype=int)
+    order = np.argsort(t[keep, 0], kind="stable")
+    return t[keep[order]], num_compared + keep[order]
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_update_front_matches_brute_force(seed):
+    rng = np.random.default_rng(seed)
+    num_objectives = 2 + seed % 3
+    pareto = Pareto(num_objectives)
+    seen = np.zeros((0, num_objectives))
+    for n in (1, 7, 0, 30, 12):
+        # small integers: many ties and duplicated points
+        t = rng.integers(0, 4, size=(n, num_objectives)).astype(float)
+        before = pareto.front_num.copy()
+        pareto.update_front(t)
+        seen = np.r_[seen, t]
+        front, front_num = front_brute_force(seen)
+        numpy.testing.assert_array_equal(pareto.front, front)
+        numpy.testing.assert_array_equal(pareto.front_num, front_num)
+        assert pareto.num_compared == len(seen)
+        assert pareto.front_updated == (
+            not np.array_equal(np.sort(before), np.sort(front_num))
+        )
+
+
 def test_nds_ranking():
     # A=(2,2) and C=(0,3) are rank 1; B=(1,1) is rank 2; D=(0,0) is rank 3
     t = np.array([[2.0, 2.0], [1.0, 1.0], [0.0, 3.0], [0.0, 0.0]])
