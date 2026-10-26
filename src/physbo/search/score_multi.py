@@ -6,9 +6,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import scipy.stats
+import scipy.special
 
 from .pareto import Pareto
+from .score import _norm_pdf
+
+# maximum number of elements of each temporary array in EHVI
+_EHVI_BLOCK_ELEMENTS = 1 << 18
 
 
 def score(mode, predictor_list, test, training, **kwargs):
@@ -89,8 +93,8 @@ def HVPI(fmean, fstd, pareto):
     fstd = fstd.reshape((N, 1, n_obj))
 
     # calculate cdf
-    Phi_l = scipy.stats.norm.cdf((l - fmean) / fstd)
-    Phi_u = scipy.stats.norm.cdf((u - fmean) / fstd)
+    Phi_l = scipy.special.ndtr((l - fmean) / fstd)
+    Phi_u = scipy.special.ndtr((u - fmean) / fstd)
 
     #  calculate PoI
     poi = np.sum(np.prod(Phi_u - Phi_l, axis=2), axis=1)  # shape: (N, 1)
@@ -149,44 +153,41 @@ def EHVI(fmean, fstd, pareto):
 
     ax = np.arange(n_obj)
 
-    # convert to minimization problem
+    # cell bounds in the minimization problem, shape: (n_cell, n_obj)
     l = front[pareto.cells.ub, ax] * -1
     u = front[pareto.cells.lb, ax] * -1
 
-    n_cell = pareto.cells.lb.shape[0]
-
-    # shape: (n_cell, 1, n_cell, n_obj)
-    l = np.tile(l, (n_cell, 1, 1, 1))
-    u = np.tile(u, (n_cell, 1, 1, 1))
-    a = l.transpose((2, 1, 0, 3))
-    b = u.transpose((2, 1, 0, 3))
+    # The hypervolume improvement of a point y is the sum over the cells
+    # [l, u] of the non-dominated region of vol([l, u] & {z >= y}), which
+    # vanishes for a dominated y.  Its expectation can therefore be taken
+    # over the whole box y >= lo spanned by the cells, where it factorizes
+    # over the objectives: each cell costs n_obj closed-form terms, i.e.,
+    # O(N * n_cell * n_obj) instead of the O(N * n_cell**2 * n_obj) of
+    # summing over all pairs of cells.
+    lo = np.min(l, axis=0)  # shape: (n_obj,)
+    width = u - l
 
     # convert to minimization problem
-    fmean = fmean.reshape((1, N, 1, n_obj)) * -1
-    fstd = fstd.reshape((1, N, 1, n_obj))
+    fmean = fmean * -1
+    score = np.empty(N)
 
-    # calculate pdf, cdf
-    phi_min_bu = scipy.stats.norm.pdf((np.minimum(b, u) - fmean) / fstd)
-    phi_max_al = scipy.stats.norm.pdf((np.maximum(a, l) - fmean) / fstd)
-    Phi_l = scipy.stats.norm.cdf((l - fmean) / fstd)
-    Phi_u = scipy.stats.norm.cdf((u - fmean) / fstd)
-    Phi_a = scipy.stats.norm.cdf((a - fmean) / fstd)
-    Phi_b = scipy.stats.norm.cdf((b - fmean) / fstd)
-
-    ## calculate G
-    is_type_A = np.logical_and(a < u, l < b)
-    is_type_B = u <= a
-
-    # note: Phi[max_or_min(x,y)] = max_or_min(Phi[x], Phi[y])
-    EI_A = (
-        (b - a) * (np.maximum(Phi_a, Phi_l) - Phi_l)
-        + (b - fmean) * (np.minimum(Phi_b, Phi_u) - np.maximum(Phi_a, Phi_l))
-        + fstd * (phi_min_bu - phi_max_al)
-    )
-    EI_B = (b - a) * (Phi_u - Phi_l)
-
-    G = EI_A * is_type_A + EI_B * is_type_B
-    score = np.sum(np.sum(np.prod(G, axis=3), axis=0), axis=1)  # shape: (N, 1)
+    # bound the size of the (block, n_cell, n_obj) temporaries
+    block = max(1, _EHVI_BLOCK_ELEMENTS // max(1, l.size))
+    for start in range(0, N, block):
+        stop = min(start + block, N)
+        m = fmean[start:stop, None, :]  # shape: (n, 1, n_obj)
+        s = fstd[start:stop, None, :]
+        zl = (l - m) / s  # shape: (n, n_cell, n_obj)
+        zu = (u - m) / s
+        Phi_l = scipy.special.ndtr(zl)
+        Phi_lo = scipy.special.ndtr((lo - m) / s)
+        # E[(u - max(l, Y))^+ ; Y >= lo] for Y ~ N(m, s^2)
+        G = (
+            width * (Phi_l - Phi_lo)
+            + (u - m) * (scipy.special.ndtr(zu) - Phi_l)
+            + s * (_norm_pdf(zu) - _norm_pdf(zl))
+        )
+        score[start:stop] = np.sum(np.prod(G, axis=2), axis=1)
     return score
 
 

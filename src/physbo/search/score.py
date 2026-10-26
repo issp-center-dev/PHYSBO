@@ -6,7 +6,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import scipy.stats
+import scipy.special
+
+_SQRT_2PI = np.sqrt(2 * np.pi)
+
+
+def _norm_pdf(x):
+    """Standard normal PDF, as scipy.stats.norm.pdf without its overhead."""
+    return np.exp(-(x**2) / 2.0) / _SQRT_2PI
 
 
 def score(mode, predictor, test, training=None, **kwargs):
@@ -96,7 +103,7 @@ def EI(predictor, training, test, fmax=None):
 
     temp1 = fmean - fmax
     temp2 = temp1 / fstd
-    score = temp1 * scipy.stats.norm.cdf(temp2) + fstd * scipy.stats.norm.pdf(temp2)
+    score = temp1 * scipy.special.ndtr(temp2) + fstd * _norm_pdf(temp2)
     return score
 
 
@@ -128,7 +135,7 @@ def PI(predictor, training, test, fmax=None):
         fmax = np.max(predictor.get_post_fmean(training, training))
 
     temp = (fmean - fmax) / fstd
-    score = scipy.stats.norm.cdf(temp)
+    score = scipy.special.ndtr(temp)
     return score
 
 
