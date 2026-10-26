@@ -102,9 +102,9 @@ def hvi_exact(y, front, reference_min, reference_max):
     """Hypervolume improvement of each row of y (objectives maximized).
 
     The volume of the box [reference_min, y] not dominated by the front,
-    by inclusion-exclusion over the front points; as in physbo, points
-    beyond reference_max do not contribute.  It does not use the cells of
-    the non-dominated region.
+    by inclusion-exclusion over the front points (meant for fronts of a few
+    points); as in physbo, points beyond reference_max do not contribute.
+    It does not use the cells of the non-dominated region.
     """
     y = np.atleast_2d(y)
     hvi = np.zeros(y.shape[0])
@@ -163,10 +163,28 @@ def test_EHVI_against_monte_carlo(name):
 def test_EHVI_deterministic_limit(name):
     # for fstd -> 0 the EHVI tends to the hypervolume improvement of fmean
     pareto, rmin, rmax, fmean, _ = make_oracle_problem(name)
-    fmean = np.r_[fmean, pareto.front[:1] - 0.1]  # add a dominated candidate
-    res = score_multi.EHVI(fmean, np.full(fmean.shape, 1e-9), pareto)
+    beyond_max = np.full(rmax.shape, 0.5)
+    beyond_max[0] = rmax[0] + 0.2
+    below_min = np.full(rmin.shape, 2.5)
+    below_min[0] = rmin[0] - 0.5
+    # add a dominated candidate and non-dominated ones beyond reference_max
+    # and below reference_min, which do not contribute
+    fmean = np.r_[fmean, pareto.front[:1] - 0.1, [beyond_max], [below_min]]
+    fstd = np.full(fmean.shape, 1e-9)
+    expected = hvi_exact(fmean, pareto.front, rmin, rmax)
+    # (inclusion-exclusion leaves rounding errors of about 1e-16)
+    assert np.all(np.abs(expected[-3:]) < 1e-12) and np.sum(expected[:-3] > 1e-3) >= 3
     numpy.testing.assert_allclose(
-        res, hvi_exact(fmean, pareto.front, rmin, rmax), rtol=1e-6, atol=1e-12
+        score_multi.EHVI(fmean, fstd, pareto), expected, rtol=1e-6, atol=1e-12
+    )
+    # HVPI multiplies the volume dominated by fmean in the non-dominated
+    # region (without upper reference point) by the probability of
+    # improvement, which tends to 1 for a non-dominated fmean
+    numpy.testing.assert_allclose(
+        score_multi.HVPI(fmean, fstd, pareto),
+        hvi_exact(fmean, pareto.front, rmin, np.full(rmax.shape, np.inf)),
+        rtol=1e-6,
+        atol=1e-12,
     )
 
 

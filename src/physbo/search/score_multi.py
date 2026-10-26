@@ -59,7 +59,9 @@ def HVPI(fmean, fstd, pareto):
         N * n_obj elements (reshaped to (N, n_obj))
     pareto: Pareto object
         Pareto object.  The non-dominated region is divided into cells and
-        the reference points are set by default if not done yet.
+        reference_min is set by default if not done yet.
+
+    The result holds only while the front lies above reference_min.
 
     Returns
     -------
@@ -129,9 +131,13 @@ def EHVI(fmean, fstd, pareto):
         N * n_obj elements (reshaped to (N, n_obj))
     pareto: Pareto object
         Pareto object.  The non-dominated region is divided into cells and
-        the reference points are set by default if not done yet.  The
-        result is the expected hypervolume improvement only while the front
-        lies between reference_min and reference_max.
+        the reference points are set by default if not done yet.
+
+    The result is the expectation of the hypervolume improvement over the
+    objectives, independent normal variables, where predictions beyond
+    reference_max in any objective contribute zero (they are not clipped).
+    It holds only while the front lies between reference_min and
+    reference_max.
 
     Returns
     -------
