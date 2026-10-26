@@ -6,12 +6,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import scipy.special
 
 from .pareto import Pareto
-from .score import _norm_pdf
+from .score import _norm_cdf, _norm_pdf
 
-# maximum number of elements of each temporary array in EHVI
+# target number of elements of each (block, n_cell, n_obj) temporary array in
+# EHVI; a block holds at least one candidate, so the temporaries never get
+# smaller than (1, n_cell, n_obj)
 _EHVI_BLOCK_ELEMENTS = 1 << 18
 
 
@@ -51,16 +52,18 @@ def HVPI(fmean, fstd, pareto):
     Parameters
     ----------
     fmean: numpy.ndarray
-        mean of the predictive distribution
+        mean of the predictive distribution, shape (N, n_obj)
+        (any shape with N * n_obj elements is reshaped to it)
     fstd: numpy.ndarray
-        standard deviation of the predictive distribution
+        standard deviation of the predictive distribution, shape as fmean
     pareto: Pareto object
-        Pareto object
+        Pareto object.  The non-dominated region is divided into cells and
+        the reference points are set by default if not done yet.
 
     Returns
     -------
     score: numpy.ndarray
-        score of the candidate
+        score of the candidates, shape (N,)
     """
 
     if pareto.cells is None:
@@ -93,8 +96,8 @@ def HVPI(fmean, fstd, pareto):
     fstd = fstd.reshape((N, 1, n_obj))
 
     # calculate cdf
-    Phi_l = scipy.special.ndtr((l - fmean) / fstd)
-    Phi_u = scipy.special.ndtr((u - fmean) / fstd)
+    Phi_l = _norm_cdf((l - fmean) / fstd)
+    Phi_u = _norm_cdf((u - fmean) / fstd)
 
     #  calculate PoI
     poi = np.sum(np.prod(Phi_u - Phi_l, axis=2), axis=1)  # shape: (N, 1)
@@ -118,16 +121,18 @@ def EHVI(fmean, fstd, pareto):
     Parameters
     ----------
     fmean: numpy.ndarray
-        mean of the predictive distribution
+        mean of the predictive distribution, shape (N, n_obj)
+        (any shape with N * n_obj elements is reshaped to it)
     fstd: numpy.ndarray
-        standard deviation of the predictive distribution
+        standard deviation of the predictive distribution, shape as fmean
     pareto: Pareto object
-        Pareto object
+        Pareto object.  The non-dominated region is divided into cells and
+        the reference points are set by default if not done yet.
 
     Returns
     -------
     score: numpy.ndarray
-        score of the candidate
+        score of the candidates, shape (N,)
     """
 
     if pareto.cells is None:
@@ -164,14 +169,16 @@ def EHVI(fmean, fstd, pareto):
     # over the objectives: each cell costs n_obj closed-form terms, i.e.,
     # O(N * n_cell * n_obj) instead of the O(N * n_cell**2 * n_obj) of
     # summing over all pairs of cells.
+    # lo is -reference_max: points beyond reference_max do not contribute
     lo = np.min(l, axis=0)  # shape: (n_obj,)
     width = u - l
 
     # convert to minimization problem
-    fmean = fmean * -1
+    fmean = fmean.reshape((N, n_obj)) * -1
+    fstd = fstd.reshape((N, n_obj))
     score = np.empty(N)
 
-    # bound the size of the (block, n_cell, n_obj) temporaries
+    # process the candidates in blocks to bound the temporary memory
     block = max(1, _EHVI_BLOCK_ELEMENTS // max(1, l.size))
     for start in range(0, N, block):
         stop = min(start + block, N)
@@ -179,12 +186,12 @@ def EHVI(fmean, fstd, pareto):
         s = fstd[start:stop, None, :]
         zl = (l - m) / s  # shape: (n, n_cell, n_obj)
         zu = (u - m) / s
-        Phi_l = scipy.special.ndtr(zl)
-        Phi_lo = scipy.special.ndtr((lo - m) / s)
+        Phi_l = _norm_cdf(zl)
+        Phi_lo = _norm_cdf((lo - m) / s)
         # E[(u - max(l, Y))^+ ; Y >= lo] for Y ~ N(m, s^2)
         G = (
             width * (Phi_l - Phi_lo)
-            + (u - m) * (scipy.special.ndtr(zu) - Phi_l)
+            + (u - m) * (_norm_cdf(zu) - Phi_l)
             + s * (_norm_pdf(zu) - _norm_pdf(zl))
         )
         score[start:stop] = np.sum(np.prod(G, axis=2), axis=1)

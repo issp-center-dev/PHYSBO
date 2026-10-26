@@ -141,3 +141,79 @@ def test_HVPI_matches_scipy_stats():
     poi = np.sum(np.prod(norm.cdf((u - m) / s) - norm.cdf((l - m) / s), axis=2), axis=1)
     hv = np.sum(np.prod(u - np.maximum(l, m), axis=2) * np.all(m < u, axis=2), axis=1)
     numpy.testing.assert_array_equal(res, hv * poi)
+
+
+def test_EHVI_accepts_flattened_inputs():
+    rng = np.random.default_rng(3)
+    fmean, fstd, pareto = make_problem(rng, 2, 6, N=20)
+    res = score_multi.EHVI(fmean, fstd, pareto)  # sets the reference points
+    ref = ehvi_pairwise(fmean, fstd, pareto)
+    numpy.testing.assert_allclose(res, ref, rtol=1e-10)
+    numpy.testing.assert_allclose(
+        score_multi.EHVI(fmean, fstd.ravel(), pareto), ref, rtol=1e-10
+    )
+    numpy.testing.assert_allclose(
+        score_multi.EHVI(fmean[:, None, :], fstd[None], pareto), ref, rtol=1e-10
+    )
+    assert score_multi.EHVI(fmean[:0], fstd[:0], pareto).shape == (0,)
+
+
+def test_EHVI_one_objective():
+    pareto = Pareto(1)
+    pareto.update_front(np.array([[0.5], [1.0]]))
+    pareto.set_reference_min([-1.0])
+    pareto.set_reference_max([3.0])
+    fmean = np.array([0.0, 1.0, 2.0, 2.9])
+    fstd = np.array([0.5, 0.3, 0.2, 0.4])
+    res = score_multi.EHVI(fmean, fstd, pareto)
+    numpy.testing.assert_allclose(
+        res, ehvi_pairwise(fmean[:, None], fstd[:, None], pareto), rtol=1e-12
+    )
+    # E[(Y - 1)^+ ; Y <= 3] for Y ~ N(m, s^2), by quadrature: as in the
+    # pairwise formulation, points beyond reference_max do not contribute
+    y = np.linspace(1.0, 3.0, 200001)
+    for m, s, r in zip(fmean, fstd, res):
+        w = scipy.stats.norm.pdf(y, m, s)
+        f = (y - 1.0) * w
+        # trapezoidal rule (np.trapezoid is not available in NumPy 1.x)
+        integral = np.sum(0.5 * (f[1:] + f[:-1]) * np.diff(y))
+        assert r == pytest.approx(integral, rel=1e-8)
+
+
+def test_EHVI_near_reference_points():
+    # candidates around reference_min/reference_max in each objective
+    pareto = Pareto(3)
+    pareto.update_front(np.array([[0.0, 1.0, 2.0], [1.0, 2.0, 0.0], [2.0, 0.0, 1.0]]))
+    pareto.set_reference_min([-1.0, -1.0, -1.0])
+    pareto.set_reference_max([3.0, 3.0, 3.0])
+    fmean = np.array(
+        [
+            [3.0, 1.0, 1.0],
+            [3.5, 2.5, 1.0],
+            [-1.0, 3.0, 2.9],
+            [2.9, 2.9, 2.9],
+            [-1.5, -1.5, -1.5],
+            [1.0, 2.0, 0.0],
+        ]
+    )
+    for scale in (1e-3, 0.3, 2.0):
+        fstd = np.full(fmean.shape, scale)
+        numpy.testing.assert_allclose(
+            score_multi.EHVI(fmean, fstd, pareto),
+            ehvi_pairwise(fmean, fstd, pareto),
+            rtol=1e-10,
+            atol=1e-14,
+        )
+
+
+def test_normal_cdf_pdf_promote_like_scipy_stats():
+    from physbo.search.score import _norm_cdf, _norm_pdf
+
+    x = np.r_[np.linspace(-40.0, 40.0, 1001), np.nan, np.inf, -np.inf]
+    numpy.testing.assert_array_equal(_norm_cdf(x), scipy.stats.norm.cdf(x))
+    numpy.testing.assert_array_equal(_norm_pdf(x), scipy.stats.norm.pdf(x))
+    x32 = x.astype(np.float32)
+    assert _norm_cdf(x32).dtype == scipy.stats.norm.cdf(x32).dtype
+    assert _norm_pdf(x32).dtype == scipy.stats.norm.pdf(x32).dtype
+    numpy.testing.assert_array_equal(_norm_cdf(x32), scipy.stats.norm.cdf(x32))
+    numpy.testing.assert_array_equal(_norm_pdf(x32), scipy.stats.norm.pdf(x32))

@@ -11,8 +11,15 @@ import scipy.special
 _SQRT_2PI = np.sqrt(2 * np.pi)
 
 
+def _norm_cdf(x):
+    """Standard normal CDF, as scipy.stats.norm.cdf without its overhead."""
+    # scipy.stats promotes the input to float64; so does this function
+    return scipy.special.ndtr(np.asarray(x, dtype=float))
+
+
 def _norm_pdf(x):
     """Standard normal PDF, as scipy.stats.norm.pdf without its overhead."""
+    x = np.asarray(x, dtype=float)
     return np.exp(-(x**2) / 2.0) / _SQRT_2PI
 
 
@@ -103,7 +110,7 @@ def EI(predictor, training, test, fmax=None):
 
     temp1 = fmean - fmax
     temp2 = temp1 / fstd
-    score = temp1 * scipy.special.ndtr(temp2) + fstd * _norm_pdf(temp2)
+    score = temp1 * _norm_cdf(temp2) + fstd * _norm_pdf(temp2)
     return score
 
 
@@ -135,7 +142,7 @@ def PI(predictor, training, test, fmax=None):
         fmax = np.max(predictor.get_post_fmean(training, training))
 
     temp = (fmean - fmax) / fstd
-    score = scipy.special.ndtr(temp)
+    score = _norm_cdf(temp)
     return score
 
 
