@@ -149,6 +149,12 @@ def make_oracle_problem(name):
 def test_EHVI_against_monte_carlo(name):
     pareto, rmin, rmax, fmean, fstd = make_oracle_problem(name)
     res = score_multi.EHVI(fmean, fstd, pareto)
+    # HVPI is the volume dominated by fmean in the non-dominated region
+    # (without upper reference point) times the probability of improvement
+    no_max = np.full(rmax.shape, np.inf)
+    hv = hvi_exact(fmean, pareto.front, rmin, no_max)
+    has_hv = hv > 1e-12  # (inclusion-exclusion leaves rounding errors of about 1e-16)
+    poi = score_multi.HVPI(fmean, fstd, pareto)[has_hv] / hv[has_hv]
     rng = np.random.default_rng(0)
     n = 200000
     for i in range(fmean.shape[0]):
@@ -157,29 +163,38 @@ def test_EHVI_against_monte_carlo(name):
         stderr = np.std(hvi) / np.sqrt(n)
         assert np.mean(hvi) > 10 * stderr  # the case is not trivially zero
         assert abs(res[i] - np.mean(hvi)) < 4 * stderr
+        if has_hv[i]:
+            improved = np.mean(hvi_exact(y, pareto.front, rmin, no_max) > 1e-12)
+            # binomial standard error at the HVPI probability, floored so
+            # that a probability close to 1 is not compared exactly
+            p = poi[np.sum(has_hv[:i])]
+            stderr = np.sqrt(max(p * (1 - p), 1 / n) / n)
+            assert abs(p - improved) < 4 * stderr
+    assert poi.size >= 3 and np.min(poi) < 0.99  # the factor matters
 
 
 @pytest.mark.parametrize("name", sorted(EHVI_ORACLE_CASES))
 def test_EHVI_deterministic_limit(name):
     # for fstd -> 0 the EHVI tends to the hypervolume improvement of fmean
     pareto, rmin, rmax, fmean, _ = make_oracle_problem(name)
-    beyond_max = np.full(rmax.shape, 0.5)
-    beyond_max[0] = rmax[0] + 0.2
+    beyond_max = np.full((2, rmax.size), 0.5)
+    beyond_max[:, 0] = rmax[0] + np.array([0.2, 1e-3])
     below_min = np.full(rmin.shape, 2.5)
     below_min[0] = rmin[0] - 0.5
     # add a dominated candidate and non-dominated ones beyond reference_max
     # and below reference_min, which do not contribute
-    fmean = np.r_[fmean, pareto.front[:1] - 0.1, [beyond_max], [below_min]]
+    fmean = np.r_[fmean, pareto.front[:1] - 0.1, beyond_max, [below_min]]
     fstd = np.full(fmean.shape, 1e-9)
     expected = hvi_exact(fmean, pareto.front, rmin, rmax)
     # (inclusion-exclusion leaves rounding errors of about 1e-16)
-    assert np.all(np.abs(expected[-3:]) < 1e-12) and np.sum(expected[:-3] > 1e-3) >= 3
+    assert np.all(np.abs(expected[-4:]) < 1e-12) and np.sum(expected[:-4] > 1e-3) >= 3
     numpy.testing.assert_allclose(
         score_multi.EHVI(fmean, fstd, pareto), expected, rtol=1e-6, atol=1e-12
     )
     # HVPI multiplies the volume dominated by fmean in the non-dominated
     # region (without upper reference point) by the probability of
-    # improvement, which tends to 1 for a non-dominated fmean
+    # improvement, which tends to 1 for a non-dominated fmean above
+    # reference_min (the candidate below it has no such volume)
     numpy.testing.assert_allclose(
         score_multi.HVPI(fmean, fstd, pareto),
         hvi_exact(fmean, pareto.front, rmin, np.full(rmax.shape, np.inf)),

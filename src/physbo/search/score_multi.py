@@ -133,11 +133,11 @@ def EHVI(fmean, fstd, pareto):
         Pareto object.  The non-dominated region is divided into cells and
         the reference points are set by default if not done yet.
 
-    The result is the expectation of the hypervolume improvement over the
-    objectives, independent normal variables, where predictions beyond
-    reference_max in any objective contribute zero (they are not clipped).
-    It holds only while the front lies between reference_min and
-    reference_max.
+    The result is the expected hypervolume improvement when the objectives
+    are independent normal variables with mean fmean and standard deviation
+    fstd, where predictions beyond reference_max in any objective contribute
+    zero (they are not clipped).  It holds only while the front lies between
+    reference_min and reference_max.
 
     Returns
     -------
