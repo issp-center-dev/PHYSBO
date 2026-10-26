@@ -7,7 +7,154 @@
 
 import numpy as np
 import scipy
+from scipy.linalg import lapack
+from scipy.spatial import distance
+
 from ... import misc
+from .. import cov, lik, mean
+
+# largest noise variance handled by the fast path
+_MAX_NOISE_VARIANCE = np.finfo(float).max / 4
+
+
+def _uses_gauss_fast_path(gp, params=None):
+    """
+    True for the default model: Gaussian likelihood, constant or zero mean and
+    Gaussian kernel (with or without ARD).  Subclasses use the generic path,
+    and so does a noise variance close to overflow (or not finite), whose
+    floating-point exceptions the generic path defines.
+
+    The fast path (_gauss_factorize, _eval_marlik_gauss and
+    _get_grad_marlik_gauss) inlines the noise covariance and the derivatives
+    of lik.Gauss, mean.Const, mean.Zero and cov.Gauss, and the 1e-8 jitter of
+    the generic path; keep them consistent when any of these change.
+    tests/unit/test_exact_fast_path.py compares both paths.
+
+    Under NumPy's default floating-point error handling, both paths give the
+    same values up to roundoff and raise the same exceptions.  When
+    underflow or overflow is turned into an exception with np.errstate, the
+    two paths may raise for different inputs, since they do not perform
+    exactly the same elementwise operations.
+    """
+    if not (
+        type(gp.lik) is lik.Gauss
+        and type(gp.prior.cov) is cov.Gauss
+        and type(gp.prior.mean) in (mean.Const, mean.Zero)
+    ):
+        return False
+    lik_params, _ = gp.decomp_params(params)
+    var = np.asarray(gp.lik.trans_params(lik_params)) ** 2
+    # compared, not multiplied: the generic path computes 2 * var
+    return bool(np.all(var < _MAX_NOISE_VARIANCE))
+
+
+def _gauss_factorize(gp, X, t, params):
+    """
+    Cholesky factor of the covariance of the default model.
+
+    The kernel matrix and the parameter bounds are those of the generic path
+    (gp.prior.get_cov), but the identity matrices of the generic path are
+    avoided.
+
+    Returns
+    -------
+    A: numpy.ndarray
+        A = G + (noise variance + 1e-8) I
+    U: numpy.ndarray
+        upper Cholesky factor of A
+    res: numpy.ndarray
+        t minus the prior mean
+    G: numpy.ndarray
+        kernel matrix
+    width: numpy.ndarray
+        kernel width(s) after applying the parameter bounds
+    var: numpy.float64
+        noise variance
+    """
+    ndata = X.shape[0]
+    lik_params, prior_params = gp.decomp_params(params)
+    fmu = gp.prior.get_mean(ndata, params=prior_params)
+    G = gp.prior.get_cov(X, params=prior_params)
+    # the bounds were applied in place by get_cov; prepare is idempotent
+    _, width, _ = gp.prior.cov.prepare(prior_params[gp.prior.mean.num_params :])
+    # squared in the dtype of the parameters, as gp.lik.get_cov does, then
+    # promoted as by the product with the float64 identity of the generic path
+    var = np.float64((np.asarray(gp.lik.trans_params(lik_params)) ** 2).reshape(-1)[0])
+
+    A = G.copy()
+    diag = np.diag_indices(ndata)
+    A[diag] += var
+    A[diag] += 1e-8
+    # the same factorization as the generic path, also when it fails
+    U = scipy.linalg.cholesky(A, check_finite=False)
+    return A, U, t - fmu, G, width, var
+
+
+def _check_lapack_info(name, info):
+    if info != 0:
+        raise np.linalg.LinAlgError("%s failed with info = %d" % (name, info))
+
+
+def _eval_marlik_gauss(gp, X, t, params):
+    """Marginal likelihood of the default model (see _gauss_factorize)."""
+    ndata = X.shape[0]
+    _, U, res, _, _, _ = _gauss_factorize(gp, X, t, params)
+    # solve U^T alpha = res
+    alpha, info = lapack.dtrtrs(U, res, lower=0, trans=1)
+    _check_lapack_info("dtrtrs", info)
+    return (
+        0.5 * ndata * np.log(2 * np.pi)
+        + np.sum(np.log(np.diag(U)))
+        + 0.5 * np.inner(alpha, alpha)
+    )
+
+
+def _get_grad_marlik_gauss(gp, X, t, params):
+    """
+    Gradient of the marginal likelihood of the default model.
+
+    The same contractions as in the generic path, without forming its
+    (num_params, N, N) tensor of derivatives.
+    """
+    A, U, res, G, width, var = _gauss_factorize(gp, X, t, params)
+    alpha, info = lapack.dpotrs(U, res, lower=0)
+    _check_lapack_info("dpotrs", info)
+    # inverted as in the generic path, which may also fail for a nearly
+    # singular A that has a Cholesky factor
+    invA = scipy.linalg.inv(A, overwrite_a=True, check_finite=False)
+
+    # each derivative is 0.5 * (tr(A^-1 dA) - alpha^T dA alpha), with the two
+    # terms evaluated separately as in the generic path (forming
+    # A^-1 - alpha alpha^T first loses accuracy for nearly singular A)
+    grad = np.zeros(gp.num_params)
+    # likelihood: dA/dlog(std) = 2 var I, applied to alpha first as in the
+    # generic path (alpha^T alpha alone may overflow)
+    with np.errstate(over="ignore"):  # like the generic matrix product
+        dA_alpha = (2 * var) * alpha
+    grad[0] = 0.5 * np.einsum("i,->", np.diag(invA), 2 * var) - 0.5 * np.dot(dA_alpha, alpha)
+    n = gp.lik.num_params
+    # mean: d(t - mean)/dmean = -1
+    if gp.prior.mean.num_params != 0:
+        # an inner product with ones, as mean.Const.get_grad in the generic path
+        grad[n] = -np.inner(alpha, np.ones(alpha.shape[0]))
+        n += gp.prior.mean.num_params
+    # kernel: dG/dlog(width_d) = G * ((x_i,d - x_j,d) / width_d)^2 and
+    # dG/dlog(scale) = 2 G.  The squared distances and the products are
+    # computed as in cov.Gauss.get_grad and cov._gauss.grad_width, and the
+    # traces with misc.traceAB2 (einsum) as in the generic path, so that
+    # the floating-point exceptions are the same
+    if gp.prior.cov.ard:
+        for d in range(X.shape[1]):
+            sq = ((X[:, d, None] - X[None, :, d]) / width[d]) ** 2
+            dG = np.einsum("ij,ij->ij", sq, G)
+            grad[n + d] = 0.5 * misc.traceAB2(invA, dG) - 0.5 * np.dot(dG.dot(alpha), alpha)
+    else:
+        dist = distance.pdist(X / width, "euclidean")
+        dG = G * distance.squareform(dist**2)
+        grad[n] = 0.5 * misc.traceAB2(invA, dG) - 0.5 * np.dot(dG.dot(alpha), alpha)
+    dG = 2 * G
+    grad[-1] = 0.5 * misc.traceAB2(invA, dG) - 0.5 * np.dot(dG.dot(alpha), alpha)
+    return grad
 
 
 def eval_marlik(gp, X, t, params=None):
@@ -31,6 +178,10 @@ def eval_marlik(gp, X, t, params=None):
     marlik: float
         Marginal likelihood.
     """
+    # the default model takes a faster path with the same result
+    if X.shape[0] > 0 and _uses_gauss_fast_path(gp, params):
+        return _eval_marlik_gauss(gp, X, t, params)
+
     ndata, ndims = X.shape
     lik_params, prior_params = gp.decomp_params(params)
 
@@ -73,6 +224,10 @@ def get_grad_marlik(gp, X, t, params=None):
     grad_marlik: numpy.ndarray
         Gradiant of marginal likelihood.
     """
+    # the default model takes a faster path with the same result
+    if X.shape[0] > 0 and _uses_gauss_fast_path(gp, params):
+        return _get_grad_marlik_gauss(gp, X, t, params)
+
     ndata, ndims = X.shape
     lik_params, prior_params = gp.decomp_params(params)
 
