@@ -52,10 +52,11 @@ def HVPI(fmean, fstd, pareto):
     Parameters
     ----------
     fmean: numpy.ndarray
-        mean of the predictive distribution, shape (N, n_obj)
-        (any shape with N * n_obj elements is reshaped to it)
+        mean of the predictive distribution, shape (N, n_obj); the first
+        axis must be the N candidates, the rest is reshaped to (N, n_obj)
     fstd: numpy.ndarray
-        standard deviation of the predictive distribution, shape as fmean
+        standard deviation of the predictive distribution, any shape with
+        N * n_obj elements (reshaped to (N, n_obj))
     pareto: Pareto object
         Pareto object.  The non-dominated region is divided into cells and
         the reference points are set by default if not done yet.
@@ -121,13 +122,16 @@ def EHVI(fmean, fstd, pareto):
     Parameters
     ----------
     fmean: numpy.ndarray
-        mean of the predictive distribution, shape (N, n_obj)
-        (any shape with N * n_obj elements is reshaped to it)
+        mean of the predictive distribution, shape (N, n_obj); the first
+        axis must be the N candidates, the rest is reshaped to (N, n_obj)
     fstd: numpy.ndarray
-        standard deviation of the predictive distribution, shape as fmean
+        standard deviation of the predictive distribution, any shape with
+        N * n_obj elements (reshaped to (N, n_obj))
     pareto: Pareto object
         Pareto object.  The non-dominated region is divided into cells and
-        the reference points are set by default if not done yet.
+        the reference points are set by default if not done yet.  The
+        result is the expected hypervolume improvement only while the front
+        lies between reference_min and reference_max.
 
     Returns
     -------
@@ -169,7 +173,8 @@ def EHVI(fmean, fstd, pareto):
     # over the objectives: each cell costs n_obj closed-form terms, i.e.,
     # O(N * n_cell * n_obj) instead of the O(N * n_cell**2 * n_obj) of
     # summing over all pairs of cells.
-    # lo is -reference_max: points beyond reference_max do not contribute
+    # lo is -reference_max (when the front lies between the reference
+    # points): points beyond reference_max do not contribute
     lo = np.min(l, axis=0)  # shape: (n_obj,)
     width = u - l
 
