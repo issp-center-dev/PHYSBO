@@ -328,7 +328,7 @@ Returned shape is (num_points, num_objectives).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>str</em>) – The type of aquisition funciton. TS, EI and PI are available.
+<li><p><strong>mode</strong> (<em>str</em>) – The type of aquisition funciton. TS, EI, PI and UCB are available.
 These functions are defined in score.py.</p></li>
 <li><p><strong>actions</strong> (<em>array</em><em> of </em><em>int</em>) – actions to calculate score</p></li>
 <li><p><strong>xs</strong> (<a class="reference internal" href="physbo.html#physbo.Variable" title="physbo.Variable"><em>physbo.Variable</em></a><em> or </em><em>np.ndarray</em>) – input parameters to calculate score</p></li>
@@ -339,6 +339,8 @@ If not given, self.training will be used.</p></li>
 <li><p><strong>parallel</strong> (<em>bool</em>) – Calculate scores in parallel by MPI (default: True)</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) – Tuning parameter which is used if mode = TS.
 In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p></li>
+<li><p><strong>ucb_beta</strong> (<em>float</em>) – Trade-off parameter between exploitation and exploration used if mode = UCB.
+The score is <code class="docutils literal notranslate"><span class="pre">fmean</span> <span class="pre">+</span> <span class="pre">ucb_beta</span> <span class="pre">*</span> <span class="pre">fstd</span></code>. Default is 1.0.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -108,7 +108,7 @@
 <span class="sd">    mode: str</span>
 <span class="sd">        Kind of score.</span>
 
-<span class="sd">        "EI", "PI", and "TS" are available.</span>
+<span class="sd">        "EI", "PI", "TS", and "UCB" are available.</span>
 
 <span class="sd">    predictor: predictor object</span>
 <span class="sd">        Base class is defined in physbo.predictor.</span>
@@ -130,6 +130,11 @@
 <span class="sd">    alpha: float</span>
 <span class="sd">        noise for sampling source (default: 1.0)</span>
 <span class="sd">        Used only for mode == "TS"</span>
+
+<span class="sd">    ucb_beta: float</span>
+<span class="sd">        Trade-off parameter between exploitation and exploration (default: 1.0).</span>
+<span class="sd">        The score is ``fmean + ucb_beta * fstd``; larger values favor</span>
+<span class="sd">        exploration. Used only for mode == "UCB".</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -153,8 +158,11 @@
     <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"UCB"</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ucb_beta"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UCB</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ERROR: mode must be EI, PI or TS."</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ERROR: mode must be EI, PI, TS or UCB."</span><span class="p">)</span></div>
 
 
 
@@ -252,6 +260,41 @@
 <span class="sd">    score: numpy.ndarray</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="UCB">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.UCB">[ドキュメント]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">UCB</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Upper Confidence Bound (UCB).</span>
+
+<span class="sd">    The score is ``fmean + beta * fstd``, where ``fmean`` and ``fstd`` are the</span>
+<span class="sd">    mean and the standard deviation of the posterior predictive distribution.</span>
+<span class="sd">    Since PHYSBO maximizes the objective, larger ``beta`` puts more weight on</span>
+<span class="sd">    exploration (high-variance candidates), while ``beta == 0`` reduces to</span>
+<span class="sd">    greedy exploitation of the posterior mean.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictor: predictor object</span>
+<span class="sd">        Base class is defined in physbo.predictor.</span>
+<span class="sd">    training: physbo.variable</span>
+<span class="sd">        Training dataset.</span>
+<span class="sd">        If the predictor is not trained, use this for training.</span>
+<span class="sd">    test: physbo.variable</span>
+<span class="sd">        Inputs</span>
+<span class="sd">    beta: float</span>
+<span class="sd">        Trade-off parameter between exploitation and exploration.</span>
+<span class="sd">        (default: 1.0)</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score: numpy.ndarray</span>
+<span class="sd">    """</span>
+    <span class="n">fmean</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="n">fcov</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="n">fstd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">fmean</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">fstd</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
 
 </pre></div>
 

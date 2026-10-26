@@ -427,6 +427,7 @@
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Performing Bayesian optimization.</span>
@@ -449,7 +450,8 @@
 <span class="sd">            Here, action is an integer which represents the index of the candidate.</span>
 <span class="sd">        score: str</span>
 <span class="sd">            The type of aquision funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
+<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement), PI (Probability of Improvement)</span>
+<span class="sd">            and UCB (Upper Confidence Bound) are available.</span>
 <span class="sd">        interval: int</span>
 <span class="sd">            The interval number of learning the hyper parameter.</span>
 <span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
@@ -462,6 +464,10 @@
 <span class="sd">        ard: bool</span>
 <span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
 <span class="sd">            Default is False.</span>
+<span class="sd">        ucb_beta: float</span>
+<span class="sd">            Trade-off parameter between exploitation and exploration used when</span>
+<span class="sd">            ``score == "UCB"``. The score is ``fmean + ucb_beta * fstd``;</span>
+<span class="sd">            larger values favor exploration. Default is 1.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -513,7 +519,7 @@
             <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">multi_probe_num_sampling</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_actions</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_actions</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">)</span>
             <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_get_action</span>
 
             <span class="n">N_indeed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
@@ -718,6 +724,7 @@
         <span class="n">training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calcualte score (acquisition function)</span>
@@ -725,7 +732,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        mode: str</span>
-<span class="sd">            The type of aquisition funciton. TS, EI and PI are available.</span>
+<span class="sd">            The type of aquisition funciton. TS, EI, PI and UCB are available.</span>
 <span class="sd">            These functions are defined in score.py.</span>
 <span class="sd">        actions: array of int</span>
 <span class="sd">            actions to calculate score</span>
@@ -742,6 +749,9 @@
 <span class="sd">        alpha: float</span>
 <span class="sd">            Tuning parameter which is used if mode = TS.</span>
 <span class="sd">            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</span>
+<span class="sd">        ucb_beta: float</span>
+<span class="sd">            Trade-off parameter between exploitation and exploration used if mode = UCB.</span>
+<span class="sd">            The score is ``fmean + ucb_beta * fstd``. Default is 1.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -795,7 +805,12 @@
             <span class="n">test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
 
         <span class="n">f</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">score</span><span class="p">(</span>
-            <span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span>
+            <span class="n">mode</span><span class="p">,</span>
+            <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
+            <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
+            <span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">parallel</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -803,7 +818,7 @@
         <span class="k">return</span> <span class="n">f</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Getting marginal scores.</span>
 
@@ -857,11 +872,15 @@
             <span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">virtual_train</span><span class="p">)</span>
 
             <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">train</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">mode</span><span class="p">,</span>
+                <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
+                <span class="n">training</span><span class="o">=</span><span class="n">train</span><span class="p">,</span>
+                <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
+                <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Getting next candidates</span>
 
@@ -889,6 +908,7 @@
             <span class="n">predictor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span>
             <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
             <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -899,7 +919,7 @@
 
         <span class="n">chosen_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">champion</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_marginal_score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_marginal_score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">)</span>
             <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="k">break</span>

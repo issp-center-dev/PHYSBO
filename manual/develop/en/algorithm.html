@@ -138,6 +138,29 @@ In addition, the EI score is the expected value of the difference between the pr
 <div class="math notranslate nohighlight">
 \[\text{EI} (\mathbf{x}) = [\mu_c (\mathbf{x})-y_{\max}] \Phi (z (\mathbf{x})) + \sigma_c (\mathbf{x}) \phi (z (\mathbf{x})), \ \ \ z(\mathbf{x}) = \frac{\mu_c (\mathbf{x}) - y_{\max}}{\sigma_c (\mathbf{x})},\]</div>
 <p>where <span class="math notranslate nohighlight">\(\phi(\cdot)\)</span> is a probability density function.</p>
+<p>The Upper Confidence Bound (UCB) is also available. Its score is given by</p>
+<div class="math notranslate nohighlight">
+\[\text{UCB} (\mathbf{x}) = \mu_c (\mathbf{x}) + \beta \, \sigma_c (\mathbf{x}),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\beta \geq 0\)</span> is a trade-off parameter between exploitation and
+exploration. A larger <span class="math notranslate nohighlight">\(\beta\)</span> puts more weight on the uncertainty
+<span class="math notranslate nohighlight">\(\sigma_c (\mathbf{x})\)</span> (exploration), while <span class="math notranslate nohighlight">\(\beta = 0\)</span> reduces to
+greedy exploitation of the posterior mean <span class="math notranslate nohighlight">\(\mu_c (\mathbf{x})\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The acquisition function is selected by the <code class="docutils literal notranslate"><span class="pre">score</span></code> argument of
+<code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> / <code class="docutils literal notranslate"><span class="pre">get_score</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;EI&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;PI&quot;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&quot;UCB&quot;</span></code>). For UCB, the trade-off parameter <span class="math notranslate nohighlight">\(\beta\)</span> is set by the
+<code class="docutils literal notranslate"><span class="pre">ucb_beta</span></code> argument (default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># discrete search space</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"UCB"</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">2.0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>UCB is available for single-objective optimization (the <code class="docutils literal notranslate"><span class="pre">discrete</span></code>,
+<code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code> and <code class="docutils literal notranslate"><span class="pre">range</span></code> policies).</p>
+</div>
 <ul class="simple">
 <li><p>Step3: Experiment (Simulation)</p></li>
 </ul>
