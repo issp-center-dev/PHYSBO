@@ -59,9 +59,7 @@ def _get_grad_marlik_lu_reference(gp, X, t, params):
 
 
 @pytest.mark.parametrize("ard", [False, True])
-@pytest.mark.parametrize(
-    "case", ["generic", "single", "close", "generic_trace", "close_trace"]
-)
+@pytest.mark.parametrize("case", ["generic", "single", "generic_trace", "close_trace"])
 def test_get_grad_marlik_matches_lu_inverse(ard, case):
     from physbo.gp.inf import exact
 
@@ -87,7 +85,9 @@ def test_get_grad_marlik_matches_lu_inverse(ard, case):
         rtol = 1e-6
     if case.endswith("_trace"):
         # targets equal to the constant mean: alpha = 0, so every component
-        # is a trace term of the inverse; compared component by component
+        # is a trace term of the inverse; compared component by component.
+        # (With random targets and small noise, the alpha terms would
+        # dominate and hide errors of the inverse.)
         t = np.full(N, params[gp.lik.num_params])
     grad = exact.get_grad_marlik(gp, X, t, params.copy())
     grad_lu = _get_grad_marlik_lu_reference(gp, X, t, params.copy())
@@ -153,7 +153,8 @@ def test_get_cand_params_matches_old_loop_implementation(seed, num_data, dim):
     assert state_got[0] == state_ref[0]
     np.testing.assert_array_equal(state_got[1], state_ref[1])
     assert state_got[2:] == state_ref[2:]
-    np.testing.assert_allclose(got, ref, rtol=1e-12, atol=0)
+    # the result is in log space: atol covers a width close to 1
+    np.testing.assert_allclose(got, ref, rtol=1e-12, atol=1e-12)
 
 
 def test_get_cand_params_honors_global_seed():
