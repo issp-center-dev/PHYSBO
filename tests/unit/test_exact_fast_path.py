@@ -102,6 +102,11 @@ def test_fast_path_input_shapes_follow_generic(num_dim, ard, X, monkeypatch):
             numpy.testing.assert_array_equal(fast, gen)
 
 
+LONGDOUBLE_IS_DOUBLE = pytest.mark.skipif(
+    np.dtype(np.longdouble).itemsize <= 8, reason="longdouble is float64 on this platform"
+)
+
+
 @pytest.mark.parametrize(
     "make_X, make_t",
     [
@@ -112,8 +117,8 @@ def test_fast_path_input_shapes_follow_generic(num_dim, ard, X, monkeypatch):
         (np.asarray, lambda t: t[None, :]),
         (np.matrix, np.asarray),
         # extended precision: SciPy warns about it in the generic path
-        (np.asarray, lambda t: t.astype(np.longdouble)),
-        (lambda X: X.astype(np.longdouble), np.asarray),
+        pytest.param(np.asarray, lambda t: t.astype(np.longdouble), marks=LONGDOUBLE_IS_DOUBLE),
+        pytest.param(lambda X: X.astype(np.longdouble), np.asarray, marks=LONGDOUBLE_IS_DOUBLE),
     ],
 )
 def test_fast_path_input_types_follow_generic(make_X, make_t, monkeypatch):
@@ -501,7 +506,7 @@ def test_fast_path_underflow_follows_generic(ard, log_scale, monkeypatch):
 
 
 def run_with_warnings(fn):
-    """Result (or exception type) and the set of warning messages."""
+    """Result (or exception type) and the set of warnings (category, message)."""
     import warnings
 
     with warnings.catch_warnings(record=True) as caught:
@@ -510,7 +515,7 @@ def run_with_warnings(fn):
             result = fn()
         except Exception as e:  # compared by the caller
             result = type(e)
-    return result, sorted({str(w.message) for w in caught})
+    return result, sorted({(w.category.__name__, str(w.message)) for w in caught})
 
 
 @pytest.mark.parametrize(
@@ -520,6 +525,12 @@ def run_with_warnings(fn):
         ("zero", [[0.0]], [1.7e308], [np.log(2.0), 0.0, 0.0]),
         # alpha ~ 1e308 twice: the mean term overflows in both paths
         ("const", [[0.0], [100.0]], [1e308, 1e308], [0.0, 0.0, 0.0, np.log(1e-6)]),
+        # coordinates whose ratio to the width overflows
+        ("zero", [[0.0], [1e308]], [0.0, 1.0], [0.0, np.log(1e-6), 0.0]),
+        # non-finite targets and coordinates
+        ("const", [[0.0], [0.5], [1.0]], [0.0, np.inf, 0.3], [np.log(0.1), 0.0, 0.0, 0.0]),
+        ("const", [[0.0], [0.5], [1.0]], [0.0, np.nan, 0.3], [np.log(0.1), 0.0, 0.0, 0.0]),
+        ("const", [[0.0], [np.nan], [1.0]], [0.0, 0.2, 0.3], [np.log(0.1), 0.0, 0.0, 0.0]),
         # no data
         ("zero", np.zeros((0, 1)), np.zeros(0), [0.0, 0.0, 0.0]),
         ("const", np.zeros((0, 1)), np.zeros(0), [0.0, 0.0, 0.0, 0.0]),
