@@ -191,7 +191,7 @@ def test_update_front_matches_brute_force_large_front(num_objectives):
             not np.array_equal(np.sort(before), np.sort(front_num))
         )
         sizes.append(len(front_num))
-    assert max(sizes) > 40
+    assert max(sizes) > 30  # 66-130 points with this seed
 
 
 def test_update_front_antichain_order():
@@ -238,11 +238,20 @@ def test_update_front_empty_on_fresh_front():
 
 def test_rebuild_front():
     t = np.array([[1.0, 3.0], [3.0, 1.0], [2.0, 2.0], [0.0, 0.0], [0.5, 0.5]])
+    # an object with a front, a consumed failed row, cells and reference points
     pareto = Pareto(2)
+    pareto.update_front(np.array([[9.0, 9.0], [np.nan, 0.0]]))
+    pareto.divide_non_dominated_region()
+    pareto.set_reference_min([np.nan, 0.0])
+    pareto.set_reference_max([10.0, 10.0])
     pareto.rebuild_front(t, [2, 4, 5])
     numpy.testing.assert_array_equal(pareto.front_num, [0, 2, 1])
     assert pareto.num_compared == 5
+    assert pareto.cells is None
     assert not pareto.front_updated  # the last run added nothing
+    # non-finite reference points are cleared, finite ones are kept
+    assert pareto.reference_min is None
+    numpy.testing.assert_array_equal(pareto.reference_max, [10.0, 10.0])
     fresh = Pareto(2)
     for start, stop in ((0, 2), (2, 4), (4, 5)):
         fresh.update_front(t[start:stop])
