@@ -49,9 +49,22 @@ class Optimizer:
                 result_fx = fx
                 result_x = x
         if mpisize > 1:
-            result_fx_all = np.zeros(mpisize)
-            mpicomm.Allgather(np.array([result_fx]), result_fx_all)
-            best_rank = np.argmax(result_fx_all)
+            # gathered as objects, so that scores of any type (e.g. float32,
+            # or integers beyond 2**53) are compared as they are
+            result_fx_all = mpicomm.allgather(result_fx)
+            if all(fx == -np.inf for fx in result_fx_all):
+                # no process kept a sample (all scores nan or -inf): the same
+                # result as a single process, on every process
+                return None
+            # the first of equally good processes, like np.argmax
+            best_rank = max(range(mpisize), key=lambda rank: result_fx_all[rank])
+            # a process that kept no sample (it had none, or only scores of
+            # nan or -inf) still needs a buffer to receive the point
+            if result_x is None:
+                # of the type of the samples, as on the sending process
+                result_x = np.empty(
+                    self.dim, dtype=np.result_type(self.min_X, self.max_X, float)
+                )
             mpicomm.Bcast(result_x, root=best_rank)
 
         return result_x
