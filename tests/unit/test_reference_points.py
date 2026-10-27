@@ -20,10 +20,13 @@ from physbo.search.pareto import Pareto
 
 
 def estimated_reference_points(front):
-    """The documented estimates: front_min - 2 w / n and front_max + 100 w."""
+    """The documented estimates: front_min - 2 w / n and front_max + 100 w,
+    where an objective without extent takes the largest width of the others
+    (1 for a front without any extent)."""
     front_min = front.min(axis=0)
     front_max = front.max(axis=0)
     w = front_max - front_min
+    w = np.where(w > 0, w, w.max() if np.any(w > 0) else 1.0)
     return front_min - 2 * w / front.shape[0], front_max + 100 * w
 
 
@@ -41,10 +44,10 @@ def hvi(y, front, lower, upper):
 
 
 GROWN_FRONTS = [
-    # a first front of a single point: both estimates coincide with it
+    # a first front of a single point, then points beyond both estimates
     (
         [[1.0, 1.0]],
-        [[2.0, 0.5], [0.5, 2.0]],
+        [[150.0, -5.0], [-5.0, 150.0]],
         [[1.5, 1.2], [0.8, 1.6], [1.8, 0.2]],
     ),
     # a new Pareto point below the estimated reference_min (3 objectives)
@@ -156,7 +159,7 @@ def test_hvpi_needs_only_reference_min():
     fstd = np.full(fmean.shape, 0.3)
     score_multi.HVPI(fmean, fstd, p)
     assert p.reference_max is None
-    p.update_front(np.array([[2.0, 0.5], [0.5, 2.0]]))
+    p.update_front(np.array([[150.0, -5.0], [-5.0, 150.0]]))
 
     score_multi.HVPI(fmean, fstd, p)
 
@@ -236,7 +239,7 @@ def test_score_prepares_the_reference_points_without_candidates(mode):
     p = Pareto(2)
     p.update_front(np.array([[1.0, 1.0]]))
     p.prepare_reference_points()
-    p.update_front(np.array([[2.0, 0.5], [0.5, 2.0]]))
+    p.update_front(np.array([[150.0, -5.0], [-5.0, 150.0]]))
     empty = SimpleNamespace(X=np.zeros((0, 2)))
     out = score_multi.score(mode, None, empty, None, pareto=p)
     assert out.shape == (0,)
@@ -247,7 +250,7 @@ def test_score_prepares_the_reference_points_without_candidates(mode):
     else:
         # HVPI does not use reference_max: it is neither estimated again
         # nor warned about
-        numpy.testing.assert_allclose(np.ravel(p.reference_max), [1.0, 1.0])
+        numpy.testing.assert_allclose(np.ravel(p.reference_max), [101.0, 101.0])
 
     q = Pareto(2)
     q.update_front(np.array([[0.0, 2.0], [2.0, 0.0]]))
@@ -260,15 +263,13 @@ def test_score_prepares_the_reference_points_without_candidates(mode):
 
 
 def test_a_front_point_on_a_reference_point_is_not_beyond_it():
-    # with a front of a single point both estimates coincide with it
     p = Pareto(2)
-    p.update_front(np.array([[1.0, 1.0]]))
-    p.prepare_reference_points()
-    reference_min, reference_max = p.reference_min, p.reference_max
-    numpy.testing.assert_array_equal(reference_min, reference_max)
-    p.prepare_reference_points()
-    assert p.reference_min is reference_min
-    assert p.reference_max is reference_max
+    p.update_front(np.array([[0.0, 2.0], [2.0, 0.0]]))
+    p.set_reference_min(np.array([[0.0, 0.0]]))
+    p.set_reference_max(np.array([[2.0, 2.0]]))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        p.prepare_reference_points()
 
 
 def test_estimates_follow_the_front_after_loading_a_history(tmp_path):
@@ -315,7 +316,7 @@ def test_range_policy_prepares_the_reference_points_before_the_optimizer(mode):
     policy.write(np.array([[0.2, 0.3]]), np.array([[1.0, 1.0]]))
     policy.history.pareto.prepare_reference_points()
     policy.write(
-        np.array([[0.5, 0.1], [0.9, 0.7]]), np.array([[2.0, 0.5], [0.5, 2.0]])
+        np.array([[0.5, 0.1], [0.9, 0.7]]), np.array([[150.0, -5.0], [-5.0, 150.0]])
     )
 
     pareto = policy.history.pareto
@@ -329,7 +330,7 @@ def test_range_policy_prepares_the_reference_points_before_the_optimizer(mode):
             numpy.testing.assert_allclose(np.ravel(pareto.reference_max), upper)
         else:
             # HVPI does not use reference_max
-            numpy.testing.assert_allclose(np.ravel(pareto.reference_max), [1.0, 1.0])
+            numpy.testing.assert_allclose(np.ravel(pareto.reference_max), [101.0, 101.0])
         called.append(True)
         return np.array([0.4, 0.6])
 
@@ -368,3 +369,76 @@ def test_warning_location_does_not_depend_on_the_caller(mode, empty):
                 getattr(score_multi, mode)(fmean, fstd, p)
         with pytest.raises(RuntimeWarning, match="reference_min"):
             p.prepare_reference_points(upper=(mode == "EHVI"))
+
+
+ZERO_WIDTH_FRONTS = [
+    # a single point: no extent in any objective
+    ([[1.0, 1.0]], [[2.0, 2.0], [1.5, 0.5], [0.5, 1.5]], [[-1.0, -1.0]], [[101.0, 101.0]]),
+    # three objectives, the front shares the third one
+    (
+        [[0.0, 1.0, 5.0], [1.0, 0.0, 5.0]],
+        [[1.0, 1.0, 6.0], [0.5, 0.5, 5.5]],
+        [[-1.0, -1.0, 4.0]],
+        [[101.0, 101.0, 105.0]],
+    ),
+    # unequal widths of the other objectives (1 and 3): the largest is taken
+    (
+        [[0.0, 3.0, 5.0], [1.0, 0.0, 5.0]],
+        [[1.0, 3.0, 6.0], [0.5, 1.5, 5.5]],
+        [[-1.0, -3.0, 2.0]],
+        [[101.0, 303.0, 305.0]],
+    ),
+]
+
+
+@pytest.mark.parametrize("front, fmean, lower, upper", ZERO_WIDTH_FRONTS)
+def test_estimates_of_a_front_without_extent(front, fmean, lower, upper):
+    # an objective without extent takes the largest width of the others (1
+    # when there is none), so the box between the reference points has a
+    # volume and EHVI does not vanish
+    fmean = np.array(fmean)
+    fstd = np.full(fmean.shape, 0.2)
+    p = Pareto(fmean.shape[1])
+    p.update_front(np.array(front))
+
+    ehvi = score_multi.EHVI(fmean, fstd, p)
+
+    numpy.testing.assert_allclose(p.reference_min, lower)
+    numpy.testing.assert_allclose(p.reference_max, upper)
+    assert np.all(ehvi > 0)
+    rng = np.random.default_rng(1)
+    n = 40000
+    for m, s, e in zip(fmean, fstd, ehvi):
+        y = m + s * rng.standard_normal((n, len(m)))
+        h = hvi(y, p.front, np.ravel(lower), np.ravel(upper))
+        assert abs(e - h.mean()) < 5 * h.std() / np.sqrt(n) + 1e-12
+
+
+def test_hvpi_with_a_front_of_a_single_point():
+    # HVPI uses the estimated reference_min, as if it were given
+    fmean = np.array([[2.0, 2.0], [1.5, 0.5], [0.5, 1.5]])
+    fstd = np.full(fmean.shape, 0.2)
+    p = Pareto(2)
+    p.update_front(np.array([[1.0, 1.0]]))
+    q = Pareto(2)
+    q.update_front(np.array([[1.0, 1.0]]))
+    q.set_reference_min(np.array([[-1.0, -1.0]]))
+
+    hvpi = score_multi.HVPI(fmean, fstd, p)
+
+    numpy.testing.assert_allclose(p.reference_min, [[-1.0, -1.0]])
+    assert p.reference_max is None
+    assert np.all(hvpi > 0)
+    numpy.testing.assert_array_equal(hvpi, score_multi.HVPI(fmean, fstd, q))
+
+
+def test_a_front_point_on_an_estimate_is_not_beyond_it():
+    p = Pareto(2)
+    p.update_front(np.array([[0.0, 2.0], [2.0, 0.0]]))
+    p.prepare_reference_points()
+    reference_min = p.reference_min
+    numpy.testing.assert_allclose(reference_min, [[-2.0, -2.0]])
+    p.update_front(np.array([[-2.0, 3.0]]))  # on reference_min in the first objective
+    assert p.front_updated
+    p.prepare_reference_points()
+    assert p.reference_min is reference_min
