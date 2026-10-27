@@ -205,7 +205,8 @@ def eval_marlik(gp, X, t, params=None):
     marlik: float
         Marginal likelihood.
     """
-    # the default model takes a faster path with the same result
+    # the default model avoids the dense identity matrices (and, for the
+    # gradient, the tensor of derivatives); the result is the same
     if _inputs_allow_fast_path(gp, X, t) and _uses_gauss_fast_path(gp, params):
         return _eval_marlik_gauss(gp, X, t, params)
 
@@ -251,7 +252,8 @@ def get_grad_marlik(gp, X, t, params=None):
     grad_marlik: numpy.ndarray
         Gradiant of marginal likelihood.
     """
-    # the default model takes a faster path with the same result
+    # the default model avoids the dense identity matrices (and, for the
+    # gradient, the tensor of derivatives); the result is the same
     if _inputs_allow_fast_path(gp, X, t) and _uses_gauss_fast_path(gp, params):
         return _get_grad_marlik_gauss(gp, X, t, params)
 
