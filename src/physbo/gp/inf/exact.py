@@ -43,9 +43,9 @@ def _uses_gauss_fast_path(gp, params=None):
     ):
         return False
     lik_params, _ = gp.decomp_params(params)
-    # an overflow here only selects the generic path, which then warns or
-    # raises as it always did
-    with np.errstate(over="ignore", invalid="ignore"):
+    # this only selects the path: the selected path then warns or raises on
+    # overflow or underflow as the generic path always did
+    with np.errstate(all="ignore"):
         var = np.asarray(gp.lik.trans_params(lik_params)) ** 2
     # compared, not multiplied: the generic path computes 2 * var
     return bool(np.all(var < _MAX_NOISE_VARIANCE))
@@ -53,13 +53,18 @@ def _uses_gauss_fast_path(gp, params=None):
 
 def _inputs_allow_fast_path(gp, X, t):
     """
-    True when the data have the shapes and types the fast path assumes:
-    X of shape (N, num_dim) with N > 0 (for ARD; the isotropic kernel
-    accepts any number of columns) and real targets.  Other inputs, which the
+    True when the data are what the fast path assumes: plain arrays (not
+    subclasses such as np.matrix or masked arrays), X of shape (N, num_dim)
+    with N > 0 (for ARD; the isotropic kernel accepts any number of columns)
+    and t of shape (N,) with a real numeric dtype.  Other inputs, which the
     generic path broadcasts, returns or rejects in its own way, use the
     generic path.
     """
-    if np.ndim(X) != 2 or X.shape[0] == 0 or np.iscomplexobj(t):
+    if type(X) is not np.ndarray or type(t) is not np.ndarray:
+        return False
+    if X.ndim != 2 or X.shape[0] == 0 or t.shape != (X.shape[0],):
+        return False
+    if t.dtype.kind not in "biuf":
         return False
     c = gp.prior.cov
     return not getattr(c, "ard", False) or X.shape[1] == getattr(c, "num_dim", None)
@@ -162,7 +167,9 @@ def _get_grad_marlik_gauss(gp, X, t, params):
     # the floating-point exceptions are the same
     if gp.prior.cov.ard:
         for d in range(X.shape[1]):
-            sq = ((X[:, d, None] - X[None, :, d]) / width[d]) ** 2
+            # divided by an array, not a scalar, so that the dtype is promoted
+            # as in grad_width also under the NumPy 1 casting rules
+            sq = ((X[:, d, None] - X[None, :, d]) / width[d : d + 1]) ** 2
             dG = np.einsum("ij,ij->ij", sq, G)
             grad[n + d] = 0.5 * misc.traceAB2(invA, dG) - 0.5 * np.dot(dG.dot(alpha), alpha)
     else:

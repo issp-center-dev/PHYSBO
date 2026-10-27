@@ -102,6 +102,48 @@ def test_fast_path_input_shapes_follow_generic(num_dim, ard, X, monkeypatch):
             numpy.testing.assert_array_equal(fast, gen)
 
 
+@pytest.mark.parametrize(
+    "make_X, make_t",
+    [
+        # targets of another dtype, shape or array class, and np.matrix X:
+        # the generic path rejects them (on some NumPy/SciPy versions)
+        (np.asarray, lambda t: t.astype(object)),
+        (np.asarray, lambda t: np.ma.masked_array(t, mask=[0, 1, 0, 0])),
+        (np.asarray, lambda t: t[None, :]),
+        (np.matrix, np.asarray),
+    ],
+)
+def test_fast_path_input_types_follow_generic(make_X, make_t, monkeypatch):
+    gp = make_model(True, "const", 2)
+    X = make_X(np.array([[0.0, 1.0], [0.2, 0.4], [0.9, 0.1], [0.5, 0.5]]))
+    t = make_t(np.array([0.3, -0.1, 0.4, 0.0]))
+    params = np.array([np.log(0.1), 0.0, 0.0, 0.0, 0.0])
+    assert not exact._inputs_allow_fast_path(gp, X, t)
+    for method in ("eval_marlik", "get_grad_marlik"):
+        fast = run_with_warnings(lambda: getattr(gp, method)(params.copy(), X, t))
+        gen = generic(
+            lambda: run_with_warnings(lambda: getattr(gp, method)(params.copy(), X, t)),
+            monkeypatch,
+        )
+        assert fast[1] == gen[1]
+        if isinstance(gen[0], type):
+            assert fast[0] is gen[0]
+        else:
+            numpy.testing.assert_array_equal(fast[0], gen[0])
+
+
+def test_fast_path_float16_inputs_ard(monkeypatch):
+    # the differences of float16 coordinates are promoted to float64 when
+    # divided by the widths, as in the generic path (also with NumPy 1)
+    gp = make_model(True, "const", 2)
+    X = np.array([[0.0, 1.0], [0.2, 0.4], [0.9, 0.1], [0.5, 0.5], [0.33, 0.71]], dtype=np.float16)
+    t = np.array([0.3, -0.1, 0.4, 0.0, 0.2])
+    params = np.array([np.log(0.1), 0.0, np.log(0.5), np.log(2.0), 0.2])
+    (f_fast, g_fast), (f_gen, g_gen) = compare_both_paths(gp, X, t, params, monkeypatch)
+    assert f_fast == pytest.approx(f_gen, rel=1e-12)
+    numpy.testing.assert_allclose(g_fast, g_gen, rtol=1e-10)
+
+
 def test_fast_path_isotropic_any_number_of_columns(monkeypatch):
     # the isotropic kernel takes the distance over all columns of X in both
     # paths, whatever num_dim is
