@@ -50,7 +50,8 @@ def _uses_gauss_fast_path(gp, params=None):
     with np.errstate(all="ignore"):
         var = np.asarray(gp.lik.trans_params(lik_params)) ** 2
     # compared, not multiplied: the generic path computes 2 * var
-    return bool(np.all(var < _MAX_NOISE_VARIANCE))
+    # the method, not np.all, which costs more than the comparison here
+    return bool((var < _MAX_NOISE_VARIANCE).all())
 
 
 def _inputs_allow_fast_path(gp, X, t):
@@ -91,8 +92,8 @@ def _gauss_factorize(gp, X, t, params):
         t minus the prior mean
     G: numpy.ndarray
         kernel matrix
-    width: numpy.ndarray
-        kernel width(s) after applying the parameter bounds
+    prior_params: numpy.ndarray
+        parameters of the prior, after get_cov applied the bounds in place
     var: numpy.float64
         noise variance
     """
@@ -100,8 +101,6 @@ def _gauss_factorize(gp, X, t, params):
     lik_params, prior_params = gp.decomp_params(params)
     fmu = gp.prior.get_mean(ndata, params=prior_params)
     G = gp.prior.get_cov(X, params=prior_params)
-    # the bounds were applied in place by get_cov; prepare is idempotent
-    _, width, _ = gp.prior.cov.prepare(prior_params[gp.prior.mean.num_params :])
     # squared in the dtype of the parameters, as gp.lik.get_cov does, then
     # promoted as by the product with the float64 identity of the generic path
     var = np.float64((np.asarray(gp.lik.trans_params(lik_params)) ** 2).reshape(-1)[0])
@@ -112,7 +111,7 @@ def _gauss_factorize(gp, X, t, params):
     A[diag] += 1e-8
     # the same factorization as the generic path, also when it fails
     U = scipy.linalg.cholesky(A, check_finite=False)
-    return A, U, t - fmu, G, width, var
+    return A, U, t - fmu, G, prior_params, var
 
 
 def _check_lapack_info(name, info):
@@ -141,7 +140,10 @@ def _get_grad_marlik_gauss(gp, X, t, params):
     The same contractions as in the generic path, without forming its
     (num_params, N, N) tensor of derivatives.
     """
-    A, U, res, G, width, var = _gauss_factorize(gp, X, t, params)
+    A, U, res, G, prior_params, var = _gauss_factorize(gp, X, t, params)
+    # kernel width(s) after the bounds, which get_cov applied in place
+    # (prepare is idempotent)
+    _, width, _ = gp.prior.cov.prepare(prior_params[gp.prior.mean.num_params :])
     alpha, info = lapack.dpotrs(U, res, lower=0)
     _check_lapack_info("dpotrs", info)
     # inverted as in the generic path, which may also fail for a nearly
