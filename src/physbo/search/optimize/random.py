@@ -5,6 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
+
 import numpy as np
 
 
@@ -48,18 +50,20 @@ class Optimizer:
             if fx > result_fx:
                 result_fx = fx
                 result_x = x
+            elif result_x is None:
+                # kept in case no score is larger than -inf
+                result_x = x
         if mpisize > 1:
             # gathered as objects, so that scores of any type (e.g. float32,
             # or integers beyond 2**53) are compared as they are
             result_fx_all = mpicomm.allgather(result_fx)
-            if all(fx == -np.inf for fx in result_fx_all):
-                # no process kept a sample (all scores nan or -inf): the same
-                # result as a single process, on every process
-                return None
-            # the first of equally good processes, like np.argmax
+            # the first of equally good processes, like np.argmax; with no
+            # score larger than -inf anywhere, the first process, which has
+            # at least one sample
             best_rank = max(range(mpisize), key=lambda rank: result_fx_all[rank])
-            # a process that kept no sample (it had none, or only scores of
-            # nan or -inf) still needs a buffer to receive the point
+            result_fx = result_fx_all[best_rank]
+            # a process without samples still needs a buffer to receive the
+            # point
             if result_x is None:
                 # of the type of the samples, as on the sending process
                 result_x = np.empty(
@@ -67,4 +71,12 @@ class Optimizer:
                 )
             mpicomm.Bcast(result_x, root=best_rank)
 
+        if result_fx == -np.inf:
+            # the same on every process, as result_fx is the best of all
+            warnings.warn(
+                "No sample of the acquisition function has a score larger than"
+                " -inf (all scores are nan or -inf); the first sample is"
+                " returned.",
+                RuntimeWarning,
+            )
         return result_x

@@ -16,6 +16,7 @@ invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
 import sys
+import warnings
 from itertools import product
 
 import numpy as np
@@ -169,9 +170,23 @@ def check_random_optimizer():
     expected = comm.bcast(first[0] if comm.rank == 0 else None, root=0)
     assert np.array_equal(x, expected)
 
-    # scores of nan everywhere: None on every process, as on a single one
-    x = opt(lambda x: np.nan, mpicomm=comm)
-    assert comm.allgather(x is None) == [True] * comm.size
+    # no score larger than -inf anywhere (nan on rank 0, -inf elsewhere):
+    # the first sample of the first process, with a warning on every process
+    first.clear()
+
+    def no_score(x):
+        if comm.rank == 0:
+            first.append(x.copy())
+            return np.nan
+        return -np.inf
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        x = opt(no_score, mpicomm=comm)
+    expected = comm.bcast(first[0] if comm.rank == 0 else None, root=0)
+    assert np.array_equal(x, expected)
+    assert [w.category for w in caught] == [RuntimeWarning]
+    assert_identical_over_ranks(x, "random optimizer result, no finite score")
     log("random optimizer: OK")
 
 
