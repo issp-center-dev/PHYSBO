@@ -305,6 +305,52 @@ def test_fast_path_default_params(monkeypatch):
     numpy.testing.assert_allclose(g_fast, g_gen, rtol=1e-10, atol=1e-12)
 
 
+@pytest.mark.parametrize("ard", [False, True])
+@pytest.mark.parametrize("mean_name", ["const", "zero"])
+def test_fast_path_gradient_clips_like_generic(ard, mean_name, monkeypatch):
+    # the gradient alone, with kernel parameters beyond their bounds: the
+    # same clipping of the parameter array and the same widths
+    rng = np.random.default_rng(11)
+    X = rng.random((6, 2))
+    t = rng.normal(size=6)
+    gp = make_model(ard, mean_name, 2)
+    n = gp.lik.num_params + gp.prior.mean.num_params
+    params = np.zeros(gp.num_params)
+    params[0] = np.log(0.1)
+    params[n] = 20.0  # width beyond its upper bound
+    params[-1] = -50.0  # scale beyond its lower bound
+    p_fast, p_gen = params.copy(), params.copy()
+    g_fast = gp.get_grad_marlik(p_fast, X, t)
+    g_gen = generic(lambda: gp.get_grad_marlik(p_gen, X, t), monkeypatch)
+    numpy.testing.assert_allclose(g_fast, g_gen, rtol=1e-10, atol=1e-12)
+    # the derivative for the clipped width is tiny (the width is 1e6), so
+    # it is compared relatively: an unclipped width would change it entirely
+    assert g_gen[n] != 0
+    assert g_fast[n] == pytest.approx(g_gen[n], rel=1e-8, abs=0)
+    numpy.testing.assert_array_equal(p_fast, p_gen)
+    assert not np.array_equal(p_fast, params)
+
+
+@pytest.mark.parametrize("ard", [False, True])
+@pytest.mark.parametrize("mean_name", ["const", "zero"])
+def test_fast_path_stored_params_beyond_bounds(ard, mean_name, monkeypatch):
+    # params=None uses a copy of the stored parameters, clipped by both paths
+    # and left unchanged in the model
+    rng = np.random.default_rng(12)
+    X = rng.random((6, 2))
+    t = rng.normal(size=6)
+    gp = make_model(ard, mean_name, 2)
+    stored = np.zeros(gp.num_params)
+    stored[0] = np.log(0.1)
+    stored[gp.lik.num_params + gp.prior.mean.num_params] = 20.0
+    stored[-1] = -50.0
+    gp.params = stored.copy()
+    (f_fast, g_fast), (f_gen, g_gen) = compare_both_paths(gp, X, t, None, monkeypatch)
+    assert f_fast == pytest.approx(f_gen, rel=1e-12)
+    numpy.testing.assert_allclose(g_fast, g_gen, rtol=1e-10, atol=1e-12)
+    numpy.testing.assert_array_equal(gp.params, stored)
+
+
 def test_fast_path_noise_overflow_follows_numpy(monkeypatch):
     # exp(400) is finite but its square overflows; both paths use NumPy
     gp = make_model(False, "zero", 1)
