@@ -66,7 +66,8 @@ def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
     return mask
 
 
-# maximum number of elements of the (block, front_size, n_obj) temporaries
+# target number of elements of the (block, front_size, n_obj) temporaries;
+# a block holds at least one new point
 _CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
 
 

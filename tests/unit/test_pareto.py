@@ -170,6 +170,86 @@ def test_update_front_matches_brute_force(seed):
         )
 
 
+@pytest.mark.parametrize("num_objectives", [3, 4, 5, 8])
+def test_update_front_matches_brute_force_large_front(num_objectives):
+    # points near a simplex: large fronts with many ties on the first
+    # objective, so that the tie order is checked beyond tiny fronts
+    rng = np.random.default_rng(num_objectives)
+    pareto = Pareto(num_objectives)
+    seen = np.zeros((0, num_objectives))
+    sizes = []
+    for n in (5, 40, 0, 60, 25):
+        t = rng.integers(0, 5, size=(n, num_objectives)).astype(float)
+        t[:, -1] = 4 * (num_objectives - 1) - t[:, :-1].sum(axis=1) - rng.integers(0, 2, n)
+        before = pareto.front_num.copy()
+        pareto.update_front(t)
+        seen = np.r_[seen, t]
+        front, front_num = front_brute_force(seen)
+        numpy.testing.assert_array_equal(pareto.front, front)
+        numpy.testing.assert_array_equal(pareto.front_num, front_num)
+        assert pareto.front_updated == (
+            not np.array_equal(np.sort(before), np.sort(front_num))
+        )
+        sizes.append(len(front_num))
+    assert max(sizes) > 40
+
+
+def test_update_front_antichain_order():
+    # one batch of mutually incomparable points in shuffled order: all of
+    # them stay, sorted stably on the first objective
+    # (x, y, -y) with distinct y are incomparable; x has ties
+    rng = np.random.default_rng(0)
+    x = rng.permutation(np.repeat(np.arange(150.0), 2))
+    y = rng.permutation(len(x)).astype(float)
+    t = np.c_[x, y, -y]
+    pareto = Pareto(3)
+    pareto.update_front(t)
+    numpy.testing.assert_array_equal(pareto.front_num, np.argsort(x, kind="stable"))
+
+
+def test_update_front_signed_zero_lexicographic():
+    # -0.0 and 0.0 are equal in the first objective, so only the point with
+    # the larger second objective survives, whatever the row order
+    for t in ([[0.0, 1.0], [-0.0, 2.0]], [[-0.0, 1.0], [0.0, 2.0]]):
+        for rows in (t, t[::-1]):
+            pareto = Pareto(2)
+            pareto.update_front(np.array(rows))
+            numpy.testing.assert_array_equal(pareto.front[:, 1], [2.0])
+
+
+def test_update_front_one_objective_many_ties():
+    pareto = Pareto(1)
+    pareto.update_front(np.r_[np.full((10, 1), 2.0), [[1.0]], np.full((10, 1), 2.0)])
+    pareto.update_front(np.r_[[[0.0]], np.full((10, 1), 2.0)])
+    numpy.testing.assert_array_equal(
+        pareto.front_num, np.r_[np.arange(10), np.arange(11, 21), np.arange(22, 32)]
+    )
+
+
+def test_update_front_empty_on_fresh_front():
+    for t in (np.zeros((0, 2)), np.full((3, 2), np.nan)):
+        pareto = Pareto(2)
+        pareto.update_front(t)
+        assert not pareto.front_updated
+        assert pareto.cells is None
+        assert pareto.front.shape == (0, 2)
+        assert pareto.num_compared == t.shape[0]
+
+
+def test_rebuild_front():
+    t = np.array([[1.0, 3.0], [3.0, 1.0], [2.0, 2.0], [0.0, 0.0], [0.5, 0.5]])
+    pareto = Pareto(2)
+    pareto.rebuild_front(t, [2, 4, 5])
+    numpy.testing.assert_array_equal(pareto.front_num, [0, 2, 1])
+    assert pareto.num_compared == 5
+    assert not pareto.front_updated  # the last run added nothing
+    fresh = Pareto(2)
+    for start, stop in ((0, 2), (2, 4), (4, 5)):
+        fresh.update_front(t[start:stop])
+    numpy.testing.assert_array_equal(pareto.front, fresh.front)
+    numpy.testing.assert_array_equal(pareto.front_num, fresh.front_num)
+
+
 def test_update_front_without_new_front_points():
     pareto = Pareto(2)
     pareto.update_front(np.array([[1.0, 3.0], [3.0, 1.0]]))
