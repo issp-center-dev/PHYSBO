@@ -259,6 +259,22 @@ def test_rebuild_front():
     numpy.testing.assert_array_equal(pareto.front_num, fresh.front_num)
 
 
+def test_rebuild_front_without_observations():
+    # nothing is replayed, so only rebuild_front itself resets the state
+    pareto = Pareto(2)
+    pareto.update_front(np.array([[1.0, 3.0], [3.0, 1.0]]))
+    pareto.divide_non_dominated_region()
+    pareto.set_reference_min([0.0, 0.0])
+    pareto.set_reference_max([np.inf, 10.0])
+    pareto.rebuild_front(np.zeros((0, 2)), [])
+    assert pareto.cells is None
+    assert pareto.front.shape == (0, 2) and pareto.front_num.size == 0
+    assert pareto.num_compared == 0
+    assert not pareto.front_updated
+    numpy.testing.assert_array_equal(pareto.reference_min, [0.0, 0.0])
+    assert pareto.reference_max is None
+
+
 def test_update_front_without_new_front_points():
     pareto = Pareto(2)
     pareto.update_front(np.array([[1.0, 3.0], [3.0, 1.0]]))
