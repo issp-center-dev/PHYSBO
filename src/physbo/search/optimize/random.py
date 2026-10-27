@@ -11,6 +11,17 @@ import numpy as np
 
 
 class Optimizer:
+    """Random search for the maximum of a function within bounds.
+
+    Parameters
+    ----------
+    min_X, max_X : array_like
+        Lower and upper bounds of each dimension.
+    nsamples : int
+        The number of points sampled uniformly within the bounds, divided
+        among the processes in a parallel run.
+    """
+
     def __init__(self, min_X, max_X, nsamples):
         min_X = np.array(min_X)
         max_X = np.array(max_X)
@@ -31,6 +42,27 @@ class Optimizer:
         self.nsamples = nsamples
 
     def __call__(self, fn, mpicomm=None):
+        """
+        Return the sample with the largest value of ``fn``.
+
+        Parameters
+        ----------
+        fn : callable
+            The function to maximize. Takes a numpy array of shape (dim,) and
+            returns a score; scores of ``nan`` are ignored.
+        mpicomm : MPI.Comm, optional
+            MPI communicator; the samples are divided among its processes,
+            and every process returns the same point.
+
+        Returns
+        -------
+        numpy.ndarray
+            The first sample with the largest score, of shape (dim,); in a
+            parallel run, of the process of the lowest rank among equally good
+            ones. If no sample has a score larger than ``-inf`` (all scores
+            are ``nan`` or ``-inf``), the first sample (of rank 0) is returned
+            and a ``RuntimeWarning`` is issued on every process.
+        """
         if mpicomm is not None:
             mpisize = mpicomm.Get_size()
             mpirank = mpicomm.Get_rank()
