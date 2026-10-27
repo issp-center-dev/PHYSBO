@@ -46,6 +46,8 @@ def run(scores, nsamples=None):
         [-np.inf, -np.inf],
         [np.nan, -np.inf, np.nan],
         [-np.inf, np.nan],
+        [np.float32(np.nan), np.float16(-np.inf)],
+        [np.array([np.nan]), np.array([-np.inf])],
     ],
 )
 def test_no_score_larger_than_minus_inf_returns_first_sample(scores):
@@ -63,6 +65,9 @@ def test_no_score_larger_than_minus_inf_returns_first_sample(scores):
         ([np.nan, 2.0, 3.0, 1.0], 2),
         ([1.0, 1.0], 0),
         ([np.inf, np.nan, np.inf], 0),
+        ([np.float32(np.nan), np.float32(1.0), np.float16(2.0)], 2),
+        ([np.array([np.nan]), np.array([1.0]), np.array([0.5])], 1),
+        ([np.longdouble(-np.inf), 3, np.int64(4)], 2),
     ],
 )
 def test_best_sample_without_warning(scores, best):
