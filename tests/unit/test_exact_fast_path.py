@@ -75,6 +75,62 @@ def test_fast_path_not_used_for_subclasses():
     assert not exact._uses_gauss_fast_path(gp)
 
 
+@pytest.mark.parametrize(
+    "num_dim, ard, X",
+    [
+        # ARD with fewer or more columns than widths: the generic path
+        # broadcasts X against the widths (or rejects it)
+        (2, True, [[0.0], [1.0], [0.3]]),
+        (1, True, [[0.0, 1.0], [1.0, 0.5], [0.3, 0.2]]),
+        (2, True, [[0.0, 1.0, 2.0], [1.0, 0.5, 0.1]]),
+        # X not two-dimensional
+        (1, False, [0.0, 1.0, 0.3]),
+        (1, True, [0.0, 1.0, 0.3]),
+    ],
+)
+def test_fast_path_input_shapes_follow_generic(num_dim, ard, X, monkeypatch):
+    gp = make_model(ard, "const", num_dim)
+    X = np.array(X)
+    t = np.array([0.0, 0.4, -0.2])[: X.shape[0]]
+    params = np.zeros(gp.num_params)
+    assert not exact._inputs_allow_fast_path(gp, X, t)
+    (f_fast, g_fast), (f_gen, g_gen) = compare_both_paths(gp, X, t, params, monkeypatch)
+    for fast, gen in ((f_fast, f_gen), (g_fast, g_gen)):
+        if isinstance(gen, type):
+            assert fast is gen
+        else:
+            numpy.testing.assert_array_equal(fast, gen)
+
+
+def test_fast_path_isotropic_any_number_of_columns(monkeypatch):
+    # the isotropic kernel takes the distance over all columns of X in both
+    # paths, whatever num_dim is
+    gp = make_model(False, "const", 1)
+    X = np.array([[0.0, 1.0, 2.0], [1.0, 0.5, 0.1], [0.3, 0.2, 0.9]])
+    t = np.array([0.0, 0.4, -0.2])
+    params = np.array([np.log(0.1), 0.0, 0.0, 0.0])
+    assert exact._inputs_allow_fast_path(gp, X, t)
+    (f_fast, g_fast), (f_gen, g_gen) = compare_both_paths(gp, X, t, params, monkeypatch)
+    assert f_fast == pytest.approx(f_gen, rel=1e-12)
+    numpy.testing.assert_allclose(g_fast, g_gen, rtol=1e-10)
+
+
+def test_fast_path_complex_targets_follow_generic(monkeypatch):
+    gp = make_model(False, "const", 1)
+    X = np.array([[0.0], [1.0]])
+    t = np.array([0.0, 1.0 + 0.5j])
+    params = np.zeros(gp.num_params)
+    assert not exact._inputs_allow_fast_path(gp, X, t)
+    for method in ("eval_marlik", "get_grad_marlik"):
+        fast = run_with_warnings(lambda: getattr(gp, method)(params.copy(), X, t))
+        gen = generic(
+            lambda: run_with_warnings(lambda: getattr(gp, method)(params.copy(), X, t)),
+            monkeypatch,
+        )
+        assert fast[1] == gen[1]
+        numpy.testing.assert_array_equal(fast[0], gen[0])
+
+
 def compare_both_paths(gp, X, t, params, monkeypatch):
     """Value, gradient or exception type of both paths."""
 
@@ -145,8 +201,12 @@ def test_fast_path_nearly_singular(ard, mean_name, lik_cov_params, monkeypatch):
     # 1e18-1e19), whether the factorization or the inversion fails and the
     # values otherwise depend on the LAPACK rounding and differ between SciPy
     # versions, so only the failure or the finiteness of both is compared
+    # (test_fast_path_gradient_near_cutoff checks the accuracy below the
+    # cutoff).  A is built as in the generic path; the noise parameter is not
+    # bounded there, unlike the kernel parameters
     G = gp.prior.get_cov(X, params=params[gp.lik.num_params :].copy())
-    cond = np.linalg.cond(G + (np.exp(2 * params[0]) + 1e-8) * np.identity(X.shape[0]))
+    eye = np.identity(X.shape[0])
+    cond = np.linalg.cond(G + np.exp(2 * params[0]) * eye + 1e-8 * eye)
     if isinstance(g_gen, type):
         assert g_fast is g_gen
     elif not cond < 1e12:
@@ -201,8 +261,10 @@ def test_fast_path_huge_noise_follows_numpy(log_std, policy, monkeypatch):
             numpy.testing.assert_array_equal(fast, gen)
 
 
-# gradients computed with 60-digit arithmetic (mpmath), for A built from the
-# same kernel, noise variance and 1e-8 jitter
+# gradients computed with 60-digit arithmetic (mpmath, numerical
+# differentiation of the marginal likelihood) from the float64 values of X, t
+# and the parameters, for A built from the same kernel, noise variance and
+# 1e-8 jitter; the digits beyond the tolerances are not significant
 HIGH_PRECISION_CASES = [
     # kernel-dominated: duplicated points and noise std 1e-6; the accuracy of
     # both paths is limited by the condition number of A
@@ -264,6 +326,43 @@ def test_fast_path_gradient_against_high_precision(X, t, params, mean_name, ard,
     # component by component; exact zeros are compared absolutely
     for g, r in zip(grad, ref):
         assert g == pytest.approx(r, rel=rtol, abs=1e-30 if r != 0 else 1e-15)
+
+
+# just below the cutoff of test_fast_path_nearly_singular (references computed
+# as above); the error of both paths grows like cond(A) * eps (about 1e-5 here)
+# relative to the largest component, and is about 1e-1 at cond(A) = 1e12
+NEAR_CUTOFF_CASES = [
+    # duplicated points, scale e^2.5: cond(A) = 5.7e10
+    (
+        [[0.0], [0.0], [1e-9], [0.5]],
+        [0.0, 0.1, 0.2, 0.3],
+        [np.log(1e-6), 0.1, 0.0, 2.5],
+        "const",
+        False,
+        [-199.95980486595488, 0.0016278666284814715, -0.875693815592253, 1.9970039703859708],
+    ),
+    # close points with ARD, scale e^3: cond(A) = 9.5e10
+    (
+        [[0.0, 1.0], [1e-5, 1.0], [0.9, 0.1], [0.9, 0.1 + 1e-6]],
+        [0.3, 0.31, 0.4, 0.41],
+        [np.log(1e-6), 0.05, np.log(0.5), np.log(2.0), 3.0],
+        "const",
+        True,
+        [-0.4982778828765635, 0.3384366593483278, 618.4655674438284, 68.61546552954869, -560.4588577075933],
+    ),
+]
+
+
+@pytest.mark.parametrize("X, t, params, mean_name, ard, ref", NEAR_CUTOFF_CASES)
+def test_fast_path_gradient_near_cutoff(X, t, params, mean_name, ard, ref, monkeypatch):
+    X = np.array(X)
+    t = np.array(t)
+    ref = np.array(ref)
+    gp = make_model(ard, mean_name, X.shape[1])
+    g_fast = gp.get_grad_marlik(np.array(params), X, t)
+    g_gen = generic(lambda: gp.get_grad_marlik(np.array(params), X, t), monkeypatch)
+    for grad in (g_fast, g_gen):
+        numpy.testing.assert_allclose(grad, ref, rtol=0, atol=1e-4 * np.max(np.abs(ref)))
 
 
 @pytest.mark.parametrize("ard", [False, True])

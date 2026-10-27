@@ -43,9 +43,26 @@ def _uses_gauss_fast_path(gp, params=None):
     ):
         return False
     lik_params, _ = gp.decomp_params(params)
-    var = np.asarray(gp.lik.trans_params(lik_params)) ** 2
+    # an overflow here only selects the generic path, which then warns or
+    # raises as it always did
+    with np.errstate(over="ignore", invalid="ignore"):
+        var = np.asarray(gp.lik.trans_params(lik_params)) ** 2
     # compared, not multiplied: the generic path computes 2 * var
     return bool(np.all(var < _MAX_NOISE_VARIANCE))
+
+
+def _inputs_allow_fast_path(gp, X, t):
+    """
+    True when the data have the shapes and types the fast path assumes:
+    X of shape (N, num_dim) with N > 0 (for ARD; the isotropic kernel
+    accepts any number of columns) and real targets.  Other inputs, which the
+    generic path broadcasts, returns or rejects in its own way, use the
+    generic path.
+    """
+    if np.ndim(X) != 2 or X.shape[0] == 0 or np.iscomplexobj(t):
+        return False
+    c = gp.prior.cov
+    return not getattr(c, "ard", False) or X.shape[1] == getattr(c, "num_dim", None)
 
 
 def _gauss_factorize(gp, X, t, params):
@@ -179,7 +196,7 @@ def eval_marlik(gp, X, t, params=None):
         Marginal likelihood.
     """
     # the default model takes a faster path with the same result
-    if X.shape[0] > 0 and _uses_gauss_fast_path(gp, params):
+    if _inputs_allow_fast_path(gp, X, t) and _uses_gauss_fast_path(gp, params):
         return _eval_marlik_gauss(gp, X, t, params)
 
     ndata, ndims = X.shape
@@ -225,7 +242,7 @@ def get_grad_marlik(gp, X, t, params=None):
         Gradiant of marginal likelihood.
     """
     # the default model takes a faster path with the same result
-    if X.shape[0] > 0 and _uses_gauss_fast_path(gp, params):
+    if _inputs_allow_fast_path(gp, X, t) and _uses_gauss_fast_path(gp, params):
         return _get_grad_marlik_gauss(gp, X, t, params)
 
     ndata, ndims = X.shape
