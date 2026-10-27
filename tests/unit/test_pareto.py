@@ -139,9 +139,10 @@ def test_volume_random_2d_binary_search_consistency():
 
 def test_binary_search_cells_regression():
     # cells of a three-objective front, in the order the binary search finds
-    # them; the order matters for the summation order of EHVI/HVPI.  lb/ub
-    # are indices into the front padded with the reference points,
-    # [reference_min, *front, reference_max], hence 0 to 5
+    # them; the order matters for the summation order of EHVI/HVPI, so it is
+    # pinned on purpose (regenerate the arrays only for an intended change of
+    # the order).  lb/ub are indices into the front padded with the reference
+    # points, [reference_min, *front, reference_max], hence 0 to 5
     pareto = Pareto(3)
     pareto.update_front(
         np.array([[0.0, 1.0, 2.0], [1.0, 2.0, 0.0], [2.0, 0.0, 1.0], [1.0, 1.0, 1.0]])
