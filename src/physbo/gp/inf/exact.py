@@ -31,10 +31,12 @@ def _uses_gauss_fast_path(gp, params=None):
     tests/unit/test_exact_fast_path.py compares both paths.
 
     Under NumPy's default floating-point error handling, both paths give the
-    same values up to roundoff and raise the same exceptions.  When
-    underflow or overflow is turned into an exception with np.errstate, the
-    two paths may raise for different inputs, since they do not perform
-    exactly the same elementwise operations.
+    same values up to roundoff, raise the same exceptions and emit the same
+    warnings, although a warning may be repeated a different number of times
+    (the generic path evaluates some terms more than once).  When underflow
+    or overflow is turned into an exception with np.errstate, the two paths
+    may raise for different inputs, since they do not perform exactly the
+    same elementwise operations.
     """
     if not (
         type(gp.lik) is lik.Gauss
@@ -56,16 +58,17 @@ def _inputs_allow_fast_path(gp, X, t):
     True when the data are what the fast path assumes: plain arrays (not
     subclasses such as np.matrix or masked arrays), X of shape (N, num_dim)
     with N > 0 (for ARD; the isotropic kernel accepts any number of columns)
-    and t of shape (N,) with a real numeric dtype.  Other inputs, which the
-    generic path broadcasts, returns or rejects in its own way, use the
-    generic path.
+    and t of shape (N,), both of a real numeric dtype of at most 64 bits.
+    Other inputs, which the generic path broadcasts, returns or rejects in its
+    own way (or for which SciPy warns differently), use the generic path.
     """
     if type(X) is not np.ndarray or type(t) is not np.ndarray:
         return False
     if X.ndim != 2 or X.shape[0] == 0 or t.shape != (X.shape[0],):
         return False
-    if t.dtype.kind not in "biuf":
-        return False
+    for a in (X, t):
+        if a.dtype.kind not in "biuf" or a.dtype.itemsize > 8:
+            return False
     c = gp.prior.cov
     return not getattr(c, "ard", False) or X.shape[1] == getattr(c, "num_dim", None)
 

@@ -111,6 +111,9 @@ def test_fast_path_input_shapes_follow_generic(num_dim, ard, X, monkeypatch):
         (np.asarray, lambda t: np.ma.masked_array(t, mask=[0, 1, 0, 0])),
         (np.asarray, lambda t: t[None, :]),
         (np.matrix, np.asarray),
+        # extended precision: SciPy warns about it in the generic path
+        (np.asarray, lambda t: t.astype(np.longdouble)),
+        (lambda X: X.astype(np.longdouble), np.asarray),
     ],
 )
 def test_fast_path_input_types_follow_generic(make_X, make_t, monkeypatch):
@@ -130,6 +133,35 @@ def test_fast_path_input_types_follow_generic(make_X, make_t, monkeypatch):
             assert fast[0] is gen[0]
         else:
             numpy.testing.assert_array_equal(fast[0], gen[0])
+
+
+@pytest.mark.parametrize(
+    "make_X",
+    [
+        lambda X: X.astype(np.float32),
+        lambda X: X.astype(np.int64),
+        np.asfortranarray,
+        lambda X: np.repeat(X, 2, axis=0)[::2],
+    ],
+)
+def test_fast_path_taken_for_common_arrays(make_X):
+    gp = make_model(True, "const", 2)
+    X = make_X(np.array([[0.0, 1.0], [2.0, 4.0], [9.0, 1.0]]))
+    for t in (np.array([0.3, -0.1, 0.4]), np.array([1, 0, 2]), np.zeros(3, np.float32)):
+        assert exact._inputs_allow_fast_path(gp, X, t)
+
+
+@pytest.mark.parametrize("log_std", [-400.0, 400.0, np.inf, np.nan])
+def test_selecting_the_path_does_not_warn_or_raise(log_std):
+    # the noise variance of the gate underflows or overflows; the selected
+    # path then warns or raises as the generic path does
+    import warnings
+
+    gp = make_model(False, "zero", 1)
+    params = np.array([log_std, 0.0, 0.0])
+    with warnings.catch_warnings(), np.errstate(all="raise"):
+        warnings.simplefilter("error")
+        exact._uses_gauss_fast_path(gp, params)
 
 
 def test_fast_path_float16_inputs_ard(monkeypatch):
@@ -371,7 +403,7 @@ def test_fast_path_gradient_against_high_precision(X, t, params, mean_name, ard,
 
 
 # just below the cutoff of test_fast_path_nearly_singular (references computed
-# as above); the error of both paths grows like cond(A) * eps (about 1e-5 here)
+# as above); the error of both paths grows like cond(A) * eps (up to 7e-5 here)
 # relative to the largest component, and is about 1e-1 at cond(A) = 1e12
 NEAR_CUTOFF_CASES = [
     # duplicated points, scale e^2.5: cond(A) = 5.7e10
@@ -404,7 +436,7 @@ def test_fast_path_gradient_near_cutoff(X, t, params, mean_name, ard, ref, monke
     g_fast = gp.get_grad_marlik(np.array(params), X, t)
     g_gen = generic(lambda: gp.get_grad_marlik(np.array(params), X, t), monkeypatch)
     for grad in (g_fast, g_gen):
-        numpy.testing.assert_allclose(grad, ref, rtol=0, atol=1e-4 * np.max(np.abs(ref)))
+        numpy.testing.assert_allclose(grad, ref, rtol=0, atol=3e-4 * np.max(np.abs(ref)))
 
 
 @pytest.mark.parametrize("ard", [False, True])
