@@ -34,6 +34,7 @@ MPIEXEC = shutil.which("mpirun") or shutil.which("mpiexec")
     [
         ("run_mpi_check.py", 2),
         ("run_failed_observation_check.py", 2),
+        ("run_error_check.py", 2),
         ("run_odatse_check.py", 1),
         ("run_odatse_check.py", 2),
     ],

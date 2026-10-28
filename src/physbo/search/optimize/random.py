@@ -9,6 +9,8 @@ import warnings
 
 import numpy as np
 
+from ... import _mpi
+
 
 class Optimizer:
     """Random search for the maximum of a function within bounds.
@@ -52,7 +54,8 @@ class Optimizer:
             returns a score; scores of ``nan`` are ignored.
         mpicomm : MPI.Comm, optional
             MPI communicator; the samples are divided among its processes,
-            and every process returns the same point.
+            and every process returns the same point. An exception raised by
+            ``fn`` on some processes is raised on every process.
 
         Returns
         -------
@@ -74,21 +77,26 @@ class Optimizer:
         if mpirank < self.nsamples % mpisize:
             nsamples_local += 1
 
-        result_fx = -np.inf
-        result_x = None
-        for i in range(nsamples_local):
-            x = self.min_X + (self.max_X - self.min_X) * np.random.rand(self.dim)
-            fx = fn(x)
-            if fx > result_fx:
-                result_fx = fx
-                result_x = x
-            elif result_x is None:
-                # kept in case no score is larger than -inf
-                result_x = x
+        def sample():
+            result_fx = -np.inf
+            result_x = None
+            for i in range(nsamples_local):
+                x = self.min_X + (self.max_X - self.min_X) * np.random.rand(self.dim)
+                fx = fn(x)
+                if fx > result_fx:
+                    result_fx = fx
+                    result_x = x
+                elif result_x is None:
+                    # kept in case no score is larger than -inf
+                    result_x = x
+            return result_fx, result_x
+
+        result, error = _mpi.call(mpicomm if mpisize > 1 else None, sample)
+        result_fx, result_x = (None, None) if error is not None else result
         if mpisize > 1:
             # gathered as objects, so that scores of any type (e.g. float32,
             # or integers beyond 2**53) are compared as they are
-            result_fx_all = mpicomm.allgather(result_fx)
+            result_fx_all = _mpi.allgather(mpicomm, result_fx, error)
             # the first of equally good processes, like np.argmax; with no
             # score larger than -inf anywhere, the first process, which has
             # at least one sample
