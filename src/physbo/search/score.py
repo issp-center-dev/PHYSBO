@@ -309,8 +309,13 @@ def resolve(score, *, alpha=1.0, ucb_beta=1.0):
     NotImplementedError
         If the score name is unknown.
     TypeError
-        If score is neither a string nor a callable.
+        If score is a class rather than an instance, or is neither a string
+        nor a callable.
     """
+    if isinstance(score, type):
+        raise TypeError(
+            f"score must be an instance, not a class. Pass {score.__name__}() instead."
+        )
     if isinstance(score, str):
         if score == "EI":
             return ExpectedImprovement()
