@@ -348,10 +348,12 @@ class Policy:
         simulator: callable
             Callable (function or object with ``__call__``)
             Here, action is an integer which represents the index of the candidate.
-        score: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement), PI (Probability of Improvement)
-            and UCB (Upper Confidence Bound) are available.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
         interval: int
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -373,6 +375,10 @@ class Policy:
         -------
         history: history object (physbo.search.discrete.results.history)
         """
+
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta
+        )
 
         if self.mpirank != 0:
             is_disp = False
@@ -414,7 +420,9 @@ class Policy:
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -613,9 +621,13 @@ class Policy:
 
         Parameters
         ----------
-        mode: str
-            The type of aquisition funciton. TS, EI, PI and UCB are available.
-            These functions are defined in score.py.
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
         actions: array of int
             actions to calculate score
         xs: physbo.Variable or np.ndarray
@@ -652,6 +664,8 @@ class Policy:
         When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
         If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
+        mode = search_score.resolve(mode, alpha=alpha, ucb_beta=ucb_beta)
+
         if training is None:
             training = self.training
 
@@ -686,14 +700,10 @@ class Policy:
                     actions = np.array_split(actions, self.mpisize)[self.mpirank]
             test = self.test.get_subset(actions)
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-        )
+        if test.X.shape[0] == 0:
+            f = np.zeros(0)
+        else:
+            f = mode(predictor, training, test)
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
