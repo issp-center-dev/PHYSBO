@@ -225,9 +225,14 @@ class Policy(discrete.Policy):
             If true, Pareto set is displayed.
         simulator: callable, optional
             The simulator function.
-        score: str, optional
-            The type of acquisition function.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        score: str or callable
+            EHVI, HVPI, TS, or a callable called positionally as
+            ``score(predictor_list, training, test, pareto)`` returning a
+            numpy.ndarray of shape (test.X.shape[0],), with larger values
+            preferred. pareto is self.history.pareto and must be treated as
+            read-only; marginal scores do not update it with virtual data.
+            Empty test data skips the callable. Under MPI, the callable
+            evaluates local points and must not perform collective communication.
         interval: int, optional
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -246,6 +251,12 @@ class Policy(discrete.Policy):
         -------
         history: history object (physbo.search.discrete_multi.results.history)
         """
+        score = search_score.resolve(
+            score,
+            alpha=self.config.search.alpha,
+            reduced_candidate_num=self.TS_candidate_num,
+        )
+
         if self.mpirank != 0:
             is_disp = False
 
@@ -292,7 +303,9 @@ class Policy(discrete.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -468,6 +481,58 @@ class Policy(discrete.Policy):
         parallel=True,
         alpha=1,
     ):
+        """
+        Calculate multi-objective scores (acquisition function).
+
+        Parameters
+        ----------
+        mode: str or callable
+            EHVI, HVPI, TS, or a callable called positionally as
+            ``mode(predictor_list, training, test, pareto)`` returning a
+            numpy.ndarray of shape (test.X.shape[0],), with larger values
+            preferred. Empty test data skips the callable but still
+            participates in MPI gathering. The callable must not perform
+            collective communication. alpha and self.TS_candidate_num apply
+            only to string modes.
+        actions: array of int, optional
+            Candidate indices to evaluate. If neither actions nor xs is given,
+            evaluate candidates not yet searched.
+        xs: physbo.Variable or numpy.ndarray, optional
+            Input parameters to calculate scores.
+        predictor_list: list of predictor objects, optional
+            Predictors for each objective. Defaults to self.predictor_list.
+        training_list: physbo.Variable, optional
+            Training dataset containing all objectives. Defaults to self.training.
+        pareto: Pareto, optional
+            Passed unchanged when provided; otherwise self.history.pareto is
+            used. Treat it as read-only. Marginal scores use the observed
+            history's Pareto front without adding virtual observations.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True).
+        alpha: float
+            Posterior sampling scale for string "TS" (default: 1).
+            Ignored for callable modes.
+
+        Returns
+        -------
+        f: numpy.ndarray
+            Acquisition scores of shape (num_points,).
+
+        Raises
+        ------
+        RuntimeError
+            If both actions and xs are given.
+
+        Notes
+        -----
+        When parallel is True, all ranks must receive the same input. To
+        supply separate local inputs, set parallel=False and gather results
+        yourself.
+        """
+        mode = search_score.resolve(
+            mode, alpha=alpha, reduced_candidate_num=self.TS_candidate_num
+        )
+
         if training_list is None:
             training = self.training
         else:
@@ -513,15 +578,10 @@ class Policy(discrete.Policy):
                     actions = np.array_split(actions, self.mpisize)[self.mpirank]
             test = self.test.get_subset(actions)
 
-        f = search_score.score(
-            mode,
-            predictor_list=predictor_list,
-            training=training,
-            test=test,
-            pareto=pareto,
-            reduced_candidate_num=self.TS_candidate_num,
-            alpha=alpha,
-        )
+        if test.X.shape[0] == 0:
+            f = np.zeros(0)
+        else:
+            f = mode(predictor_list, training, test, pareto)
         if parallel and self.mpisize > 1:
             fs = self.mpicomm.allgather(f)
             f = np.hstack(fs)
