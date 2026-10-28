@@ -15,10 +15,11 @@ def score(mode, predictor, test, training=None, **kwargs):
 
     Parameters
     ----------
-    mode: str
+    mode: str or callable
         Kind of score.
 
-        "EI", "PI", "TS", and "UCB" are available.
+        "EI", "PI", "TS", and "UCB" are available. A callable is called as
+        ``mode(predictor, training, test)`` and ignores score parameters.
 
     predictor: predictor object
         Base class is defined in physbo.predictor.
@@ -59,20 +60,14 @@ def score(mode, predictor, test, training=None, **kwargs):
     if test.X.shape[0] == 0:
         return np.zeros(0)
 
-    if mode == "EI":
-        fmax = kwargs.get("fmax", None)
-        return EI(predictor, training, test, fmax)
-    elif mode == "PI":
-        fmax = kwargs.get("fmax", None)
-        return PI(predictor, training, test, fmax)
-    elif mode == "TS":
-        alpha = kwargs.get("alpha", 1.0)
-        return TS(predictor, training, test, alpha)
-    elif mode == "UCB":
-        beta = kwargs.get("ucb_beta", 1.0)
-        return UCB(predictor, training, test, beta)
-    else:
-        raise NotImplementedError("ERROR: mode must be EI, PI, TS or UCB.")
+    score_fn = resolve(
+        mode,
+        alpha=kwargs.get("alpha", 1.0),
+        ucb_beta=kwargs.get("ucb_beta", 1.0),
+    )
+    if isinstance(mode, str) and mode in ("EI", "PI"):
+        score_fn.fmax = kwargs.get("fmax", None)
+    return score_fn(predictor, training, test)
 
 
 def EI(predictor, training, test, fmax=None):
@@ -193,3 +188,139 @@ def UCB(predictor, training, test, beta=1.0):
     fcov = predictor.get_post_fcov(training, test)
     fstd = np.sqrt(fcov)
     return (fmean + beta * fstd).flatten()
+
+
+class ExpectedImprovement:
+    """Callable acquisition function wrapping :func:`EI`.
+
+    Parameters
+    ----------
+    fmax : float, optional
+        Maximum posterior mean; None uses the training data.
+        Default is None.
+
+    See Also
+    --------
+    EI : Acquisition function with predictor, training and test arguments.
+    """
+
+    name = "EI"
+
+    def __init__(self, fmax=None):
+        self.fmax = fmax
+
+    def __call__(self, predictor, training, test):
+        """Return acquisition scores of shape ``(test.X.shape[0],)``."""
+        return EI(predictor, training, test, self.fmax)
+
+
+class ProbabilityOfImprovement:
+    """Callable acquisition function wrapping :func:`PI`.
+
+    Parameters
+    ----------
+    fmax : float, optional
+        Maximum posterior mean; None uses the training data.
+        Default is None.
+
+    See Also
+    --------
+    PI : Acquisition function with predictor, training and test arguments.
+    """
+
+    name = "PI"
+
+    def __init__(self, fmax=None):
+        self.fmax = fmax
+
+    def __call__(self, predictor, training, test):
+        """Return acquisition scores of shape ``(test.X.shape[0],)``."""
+        return PI(predictor, training, test, self.fmax)
+
+
+class ThompsonSampling:
+    """Callable acquisition function wrapping :func:`TS`.
+
+    Parameters
+    ----------
+    alpha : float, optional
+        Scaling parameter for posterior sampling.
+        Default is 1.0.
+
+    See Also
+    --------
+    TS : Acquisition function with predictor, training and test arguments.
+    """
+
+    name = "TS"
+
+    def __init__(self, alpha=1.0):
+        self.alpha = alpha
+
+    def __call__(self, predictor, training, test):
+        """Return acquisition scores of shape ``(test.X.shape[0],)``."""
+        return TS(predictor, training, test, self.alpha)
+
+
+class UpperConfidenceBound:
+    """Callable acquisition function wrapping :func:`UCB`.
+
+    Parameters
+    ----------
+    beta : float, optional
+        Weight of the posterior standard deviation.
+        Default is 1.0.
+
+    See Also
+    --------
+    UCB : Acquisition function with predictor, training and test arguments.
+    """
+
+    name = "UCB"
+
+    def __init__(self, beta=1.0):
+        self.beta = beta
+
+    def __call__(self, predictor, training, test):
+        """Return acquisition scores of shape ``(test.X.shape[0],)``."""
+        return UCB(predictor, training, test, self.beta)
+
+
+def resolve(score, *, alpha=1.0, ucb_beta=1.0):
+    """Resolve a score name or return a callable unchanged.
+
+    Parameters
+    ----------
+    score : str or callable
+        "EI", "PI", "TS", "UCB", or a callable accepting predictor, training
+        and test as positional arguments.
+    alpha : float, optional
+        Posterior sampling scale for "TS". Default is 1.0.
+    ucb_beta : float, optional
+        Exploration weight for "UCB". Default is 1.0.
+
+    Returns
+    -------
+    callable
+        Acquisition function. Existing callables are returned unchanged.
+
+    Raises
+    ------
+    NotImplementedError
+        If the score name is unknown.
+    TypeError
+        If score is neither a string nor a callable.
+    """
+    if isinstance(score, str):
+        if score == "EI":
+            return ExpectedImprovement()
+        elif score == "PI":
+            return ProbabilityOfImprovement()
+        elif score == "TS":
+            return ThompsonSampling(alpha=alpha)
+        elif score == "UCB":
+            return UpperConfidenceBound(beta=ucb_beta)
+        raise NotImplementedError("ERROR: mode must be EI, PI, TS or UCB.")
+    if callable(score):
+        return score
+    raise TypeError("score must be a string or callable.")
