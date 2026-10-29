@@ -137,6 +137,27 @@ def test_volume_random_2d_binary_search_consistency():
     assert v1 == pytest.approx(dominated.mean(), abs=0.01)
 
 
+def test_binary_search_cells_regression():
+    # cells of a three-objective front, in the order the binary search finds
+    # them; the order matters for the summation order of EHVI/HVPI, so it is
+    # pinned on purpose (regenerate the arrays only for an intended change of
+    # the order).  lb/ub are indices into the front padded with the reference
+    # points, [reference_min, *front, reference_max], hence 0 to 5
+    pareto = Pareto(3)
+    pareto.update_front(
+        np.array([[0.0, 1.0, 2.0], [1.0, 2.0, 0.0], [2.0, 0.0, 1.0], [1.0, 1.0, 1.0]])
+    )
+    pareto.divide_non_dominated_region()
+    lb = [[2, 1, 0], [2, 0, 3], [4, 0, 0], [3, 4, 0], [2, 4, 0], [0, 1, 3], [0, 2, 0],
+          [1, 3, 2], [1, 1, 2], [0, 3, 2], [0, 1, 2], [0, 0, 1], [1, 0, 3]]
+    ub = [[5, 5, 5], [5, 1, 5], [5, 1, 3], [4, 1, 3], [3, 1, 3], [2, 5, 5], [2, 5, 3],
+          [2, 2, 3], [2, 3, 3], [1, 2, 3], [1, 3, 3], [2, 1, 5], [2, 1, 1]]
+    assert np.issubdtype(pareto.cells.lb.dtype, np.integer)
+    assert np.issubdtype(pareto.cells.ub.dtype, np.integer)
+    numpy.testing.assert_array_equal(pareto.cells.lb, lb)
+    numpy.testing.assert_array_equal(pareto.cells.ub, ub)
+
+
 def front_brute_force(t, num_compared=0):
     """Non-dominated rows of t, sorted stably on the first objective."""
     keep = [

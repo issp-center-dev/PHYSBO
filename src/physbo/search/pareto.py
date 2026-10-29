@@ -333,6 +333,11 @@ class Pareto(object):
 
         rect_candidates = [[np.copy(front_idx[0]), np.copy(front_idx[-1])]]
 
+        # the cells are collected in lists and added at once at the end;
+        # appending them one by one to the arrays costs O(n_cells**2)
+        cells_lb = []
+        cells_ub = []
+
         call_time = 0
 
         start_time = time.time()
@@ -349,7 +354,8 @@ class Pareto(object):
 
             # first check if lb is in the non-dominated region, if so, add it to the cells
             if self.__included_in_non_dom_region(lb):
-                self.cells.add([lb_idx], [ub_idx])
+                cells_lb.append(lb_idx)
+                cells_ub.append(ub_idx)
                 call_time += 1
                 continue
 
@@ -376,6 +382,9 @@ class Pareto(object):
                 right_lb_idx = np.copy(rect[0])
                 right_lb_idx[div_dim] = div_point
                 rect_candidates.append([right_lb_idx, np.copy(rect[1])])
+
+        if cells_lb:
+            self.cells.add(cells_lb, cells_ub)
 
         end_time = time.time()
 
