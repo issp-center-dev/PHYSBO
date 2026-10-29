@@ -92,12 +92,25 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 
 <div class="viewcode-block" id="Optimizer">
 <a class="viewcode-back" href="../../../../api/physbo.search.optimize.random.html#physbo.search.optimize.random.Optimizer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Random search for the maximum of a function within bounds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    min_X, max_X : array_like</span>
+<span class="sd">        Lower and upper bounds of each dimension.</span>
+<span class="sd">    nsamples : int</span>
+<span class="sd">        The number of points sampled uniformly within the bounds, divided</span>
+<span class="sd">        among the processes in a parallel run.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">):</span>
         <span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
         <span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span>
@@ -118,6 +131,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">nsamples</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Return the sample with the largest value of ``fn``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fn : callable</span>
+<span class="sd">            The function to maximize. Takes a numpy array of shape (dim,) and</span>
+<span class="sd">            returns a score; scores of ``nan`` are ignored while some sample</span>
+<span class="sd">            has a score larger than ``-inf`` (see Returns for the case</span>
+<span class="sd">            without one).</span>
+<span class="sd">        mpicomm : MPI.Comm, optional</span>
+<span class="sd">            MPI communicator; the samples are divided among its processes,</span>
+<span class="sd">            and every process returns the same point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The first sample with the largest score, of shape (dim,); in a</span>
+<span class="sd">            parallel run, of the process of the lowest rank among equally good</span>
+<span class="sd">            ones. If no sample has a score larger than ``-inf`` (all scores</span>
+<span class="sd">            are ``nan`` or ``-inf``), the first sample (of rank 0) is returned</span>
+<span class="sd">            and a ``RuntimeWarning`` is issued on every process.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">mpicomm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mpisize</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
             <span class="n">mpirank</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
@@ -137,18 +173,20 @@
             <span class="k">if</span> <span class="n">fx</span> <span class="o">&gt;</span> <span class="n">result_fx</span><span class="p">:</span>
                 <span class="n">result_fx</span> <span class="o">=</span> <span class="n">fx</span>
                 <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">elif</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># kept in case no score is larger than -inf</span>
+                <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
         <span class="k">if</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># gathered as objects, so that scores of any type (e.g. float32,</span>
             <span class="c1"># or integers beyond 2**53) are compared as they are</span>
             <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">result_fx</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">fx</span> <span class="o">==</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">for</span> <span class="n">fx</span> <span class="ow">in</span> <span class="n">result_fx_all</span><span class="p">):</span>
-                <span class="c1"># no process kept a sample (all scores nan or -inf): the same</span>
-                <span class="c1"># result as a single process, on every process</span>
-                <span class="k">return</span> <span class="kc">None</span>
-            <span class="c1"># the first of equally good processes, like np.argmax</span>
+            <span class="c1"># the first of equally good processes, like np.argmax; with no</span>
+            <span class="c1"># score larger than -inf anywhere, the first process, which has</span>
+            <span class="c1"># at least one sample</span>
             <span class="n">best_rank</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">mpisize</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rank</span><span class="p">:</span> <span class="n">result_fx_all</span><span class="p">[</span><span class="n">rank</span><span class="p">])</span>
-            <span class="c1"># a process that kept no sample (it had none, or only scores of</span>
-            <span class="c1"># nan or -inf) still needs a buffer to receive the point</span>
+            <span class="n">result_fx</span> <span class="o">=</span> <span class="n">result_fx_all</span><span class="p">[</span><span class="n">best_rank</span><span class="p">]</span>
+            <span class="c1"># a process without samples still needs a buffer to receive the</span>
+            <span class="c1"># point</span>
             <span class="k">if</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># of the type of the samples, as on the sending process</span>
                 <span class="n">result_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span>
@@ -156,6 +194,14 @@
                 <span class="p">)</span>
             <span class="n">mpicomm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">result_x</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">best_rank</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">result_fx</span> <span class="o">==</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+            <span class="c1"># the same on every process, as result_fx is the best of all</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">"No sample of the acquisition function has a score larger than"</span>
+                <span class="s2">" -inf (all scores are nan or -inf); the first sample is"</span>
+                <span class="s2">" returned."</span><span class="p">,</span>
+                <span class="ne">RuntimeWarning</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">result_x</span></div>
 
 </pre></div>
