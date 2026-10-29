@@ -48,11 +48,13 @@ def score(mode, predictor_list, test, training, **kwargs):
         Acquisition scores of shape ``(test.X.shape[0],)``.
     """
     if test.X.shape[0] == 0:
-        if mode in ("EHVI", "HVPI") and kwargs["pareto"].front.shape[0] > 0:
+        upper = _reference_points_upper(mode)
+        pareto = kwargs.get("pareto")
+        if upper is not None and pareto is not None and pareto.front.shape[0] > 0:
             # as EHVI/HVPI do on the other processes of a parallel run, so
             # that they all use the same reference points and warn (or raise)
             # together
-            kwargs["pareto"].prepare_reference_points(upper=(mode == "EHVI"))
+            pareto.prepare_reference_points(upper=upper)
         return np.zeros(0)
 
     if isinstance(mode, str) and mode == "TS":
@@ -64,6 +66,22 @@ def score(mode, predictor_list, test, training, **kwargs):
     else:
         score_fn = resolve(mode)
     return score_fn(predictor_list, training, test, kwargs.get("pareto"))
+
+
+def _reference_points_upper(mode):
+    """Whether ``mode`` needs both reference points (EHVI: True), only the
+    lower one (HVPI: False), or none (None), as a name or a built-in instance.
+
+    A user callable gets None even if its name is "EHVI"; it prepares the
+    reference points itself if it needs them.
+    """
+    if isinstance(mode, str):
+        return {"EHVI": True, "HVPI": False}.get(mode)
+    if isinstance(mode, ExpectedHypervolumeImprovement):
+        return True
+    if isinstance(mode, HypervolumeProbabilityOfImprovement):
+        return False
+    return None
 
 
 def HVPI(fmean, fstd, pareto):
