@@ -173,3 +173,61 @@ def test_policy_search_is_bit_compatible_with_global_stream():
     np.random.seed(SEED)
     index = np.random.choice(50, 5, replace=False)
     np.testing.assert_array_equal(actions, np.arange(50)[index])
+
+
+def _multi_sim(X):
+    def sim(actions):
+        return np.column_stack(
+            [-((X[actions, 0] - 0.3) ** 2), -((X[actions, 0] - 0.7) ** 2)]
+        )
+
+    return sim
+
+
+def _run_unified_parego_search(rng, unify_method):
+    X = np.linspace(0, 1, 60).reshape(-1, 1)
+    sim = _multi_sim(X)
+    policy = physbo.search.discrete_unified.Policy(
+        test_X=X, num_objectives=2, rng=rng
+    )
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=3, simulator=sim, score="EI", unify_method=unify_method,
+        interval=0, is_disp=False,
+    )
+    return policy, res.chosen_actions[: res.total_num_search]
+
+
+def test_unified_policy_lends_its_generator_to_the_unify_method():
+    # ParEGO draws its weights through an rng attribute; without a generator
+    # of its own it follows the policy, so the Generator mode covers it and
+    # the search does not depend on the global numpy.random state
+    np.random.seed(1)
+    unify = physbo.search.unify.ParEGO(2)
+    policy, a = _run_unified_parego_search(777, unify)
+    assert unify.rng is policy.rng
+    assert isinstance(policy.rng, np.random.Generator)
+
+    np.random.seed(2)  # a different global state must not matter
+    _, b = _run_unified_parego_search(777, physbo.search.unify.ParEGO(2))
+    np.testing.assert_array_equal(a, b)
+
+
+def test_unify_method_with_its_own_generator_is_left_alone():
+    own = np.random.default_rng(5)
+    unify = physbo.search.unify.ParEGO(2, rng=own)
+    _run_unified_parego_search(777, unify)
+    assert unify.rng is own
+
+
+def test_unify_method_in_legacy_mode_keeps_the_legacy_adapter():
+    unify = physbo.search.unify.ParEGO(2)
+    policy, _ = _run_unified_parego_search(None, unify)
+    assert isinstance(unify.rng, LegacyRNG)
+    assert unify.rng is policy.rng
+
+
+def test_unify_method_without_rng_attribute_is_accepted():
+    unify = physbo.search.unify.NDS(2)
+    _run_unified_parego_search(777, unify)
+    assert not hasattr(unify, "rng")

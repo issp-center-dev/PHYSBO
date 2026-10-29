@@ -70,6 +70,10 @@ class ParEGO:
             The weights are generated as :math:`w_i = \frac{a_i}{s}`, where :math:`a_i` is random integer in :math:`[0, s)` such that :math:`\sum_{i=1}^{num_objectives} a_i = s`.
             (See Equation (1) in [1] for details.)
             If 0 (default), each weight is generated randomly from :math:`[0, 1)` and normalized to sum to 1.
+        rng: rng object, optional
+            Random number generator for the weights (default: the global numpy.random state).
+            When ParEGO is given to a unified policy as ``unify_method`` without this argument,
+            it uses the random number generator of the policy.
 
         References
         ----------

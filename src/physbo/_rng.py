@@ -95,3 +95,26 @@ def make_rng(rng=None):
     if isinstance(rng, (int, np.integer, np.random.SeedSequence)):
         return np.random.default_rng(rng)
     return rng
+
+
+def attach_rng(obj, rng):
+    """Let a helper object draw from the policy's random number generator.
+
+    Objects that draw random numbers on behalf of a policy (for example
+    ``physbo.search.unify.ParEGO``) hold their generator in an ``rng``
+    attribute. When that attribute is the legacy default, it is replaced
+    by ``rng`` so that the object follows the mode of the policy: in the
+    Generator mode its draws then come from the policy-owned generator
+    and are covered by the policy's pickled state. An object without an
+    ``rng`` attribute, or one that was given a generator of its own, is
+    left unchanged.
+
+    Parameters
+    ----------
+    obj: object
+        The helper object (e.g. a unify_method).
+    rng: rng object
+        The policy's random number generator.
+    """
+    if isinstance(getattr(obj, "rng", None), LegacyRNG):
+        obj.rng = rng

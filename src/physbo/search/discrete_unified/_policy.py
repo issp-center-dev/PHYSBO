@@ -16,7 +16,7 @@ from .. import utility
 from .. import score as search_score
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
-from ..._rng import make_rng
+from ..._rng import make_rng, attach_rng
 
 
 class Policy(discrete.Policy):
@@ -253,6 +253,9 @@ class Policy(discrete.Policy):
         unify_method: callable
             The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
             See physbo.search.unify for examples.
+            If it draws random numbers through an ``rng`` attribute (as
+            ``ParEGO`` does) and was not given a generator of its own, it
+            uses the random number generator of the policy.
         optimizer: Optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
@@ -277,6 +280,7 @@ class Policy(discrete.Policy):
             simulator = None
 
         self.unify_method = unify_method
+        attach_rng(unify_method, self.rng)
         if num_rand_basis < 0:
             raise ValueError("num_rand_basis must be non-negative")
         is_rand_expans = (num_rand_basis > 0)
