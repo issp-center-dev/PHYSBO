@@ -93,6 +93,31 @@ class TestDiscrete:
         assert best_fx[-1] == pytest.approx(best_fx_ref, abs=0.001)
         assert best_action[-1] == best_action_ref
 
+    @pytest.mark.parametrize("ucb_beta", [0.5, 2.0])
+    def test_bayes_search_ucb(self, ucb_beta):
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        res = self.policy.bayes_search(
+            max_num_probes=self.nsearch,
+            simulator=self.sim,
+            score="UCB",
+            ucb_beta=ucb_beta,
+        )
+        best_fx, best_action = res.export_all_sequence_best_fx()
+        print(best_fx[-1], best_action[-1])
+        # UCB should converge to the optimum (action 60, f == 0) on this convex grid.
+        assert best_fx[-1] == pytest.approx(0.0, abs=0.001)
+        assert best_action[-1] == 60
+
+    def test_get_score_ucb_beta(self):
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        self.policy.bayes_search(max_num_probes=0, simulator=None, score="UCB")
+        f_low = self.policy.get_score("UCB", xs=self.sim.X, ucb_beta=0.0)
+        f_high = self.policy.get_score("UCB", xs=self.sim.X, ucb_beta=5.0)
+        # With beta == 0 the score is the posterior mean; a positive beta adds
+        # the (non-negative) std, so every score must be >= the greedy one.
+        assert np.all(f_high >= f_low - 1e-8)
+        assert not np.allclose(f_low, f_high)
+
     def test_interactive(self):
         actions = self.policy.random_search(
             max_num_probes=1, num_search_each_probe=self.nrand, simulator=None

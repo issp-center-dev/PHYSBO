@@ -260,7 +260,107 @@ def check_random_optimizer():
     np.random.seed(12345 + comm.rank)  # deliberately different streams
     x = opt(lambda x: f(x), mpicomm=comm)
     assert_identical_over_ranks(x, "random optimizer result")
+
+    # fewer samples than processes: some processes evaluate none
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=1
+    )
+    x = opt(lambda x: f(x), mpicomm=comm)
+    assert x is not None and x.shape == (2,)
+    assert_identical_over_ranks(x, "random optimizer result, one sample")
+
+    # scores of nan on all processes but rank 0: they keep no sample
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=10
+    )
+    x = opt(lambda x: f(x) if comm.rank == 0 else np.nan, mpicomm=comm)
+    assert x is not None and np.all(np.isfinite(x))
+    assert_identical_over_ranks(x, "random optimizer result, nan elsewhere")
+
+    # the point returned is the best sample over all processes, also when it
+    # lies on a process other than rank 0 (which here keeps no sample)
+    best = [-np.inf]
+
+    def score(x):
+        fx = np.nan if comm.rank == 0 else f(x)
+        if fx > best[0]:
+            best[0] = fx
+        return fx
+
+    x = opt(score, mpicomm=comm)
+    assert f(x) == max(comm.allgather(best[0]))
+    assert_identical_over_ranks(x, "random optimizer result, nan on rank 0")
+
+    # extended precision bounds and a score of another type: the point is
+    # received in the type of the samples
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=np.zeros(2, dtype=np.longdouble),
+        max_X=np.ones(2, dtype=np.longdouble),
+        nsamples=1,
+    )
+    x = opt(lambda x: np.float32(f(x)), mpicomm=comm)
+    assert x.dtype == np.longdouble
+    assert_identical_over_ranks(x, "random optimizer result, longdouble")
+
+    # integer scores, larger on the last rank by 1 beyond 2**53 (equal as
+    # float64): its point wins
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=comm.size
+    )
+    last = comm.size - 1
+    sample = []
+
+    def integer_score(x):
+        if comm.rank == last:
+            sample.append(x.copy())  # x itself is overwritten by the broadcast
+        return 2**53 + 1 if comm.rank == last else 2**53
+
+    x = opt(integer_score, mpicomm=comm)
+    expected = comm.bcast(sample[0] if comm.rank == last else None, root=last)
+    assert np.array_equal(x, expected)
+    assert_identical_over_ranks(x, "random optimizer result, integer scores")
+
+    # equal scores everywhere: the point of the first process, like argmax
+    first = []
+
+    def equal_score(x):
+        if comm.rank == 0:
+            first.append(x.copy())
+        return 0.0
+
+    x = opt(equal_score, mpicomm=comm)
+    expected = comm.bcast(first[0] if comm.rank == 0 else None, root=0)
+    assert np.array_equal(x, expected)
+
+    # scores of nan everywhere: None on every process, as on a single one
+    x = opt(lambda x: np.nan, mpicomm=comm)
+    assert comm.allgather(x is None) == [True] * comm.size
     log("random optimizer: OK")
+
+
+def check_range_few_samples():
+    """A range search whose optimizer has fewer samples than processes."""
+    policy = physbo.search.range.Policy(
+        min_X=np.array([0.0, 0.0]), max_X=np.array([1.0, 1.0]), comm=comm
+    )
+    policy.set_seed(12345)
+    sim = lambda x: f(np.atleast_2d(x))
+    policy.random_search(max_num_probes=3, simulator=sim, is_disp=False)
+    optimizer = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=1
+    )
+    res = policy.bayes_search(
+        max_num_probes=2,
+        simulator=sim,
+        score="EI",
+        is_disp=False,
+        interval=0,
+        optimizer=optimizer,
+    )
+    N = res.total_num_search
+    assert N == 5
+    assert_identical_over_ranks(res.action_X[:N], "range action_X, one sample")
+    log("range with one optimizer sample: OK")
 
 
 def check_range():
@@ -278,6 +378,57 @@ def check_range():
     assert_identical_over_ranks(res.action_X[:N], "range action_X")
     assert_identical_over_ranks(res.fx[:N], "range fx")
     log("range (EI): OK")
+
+
+def f_multi(x):
+    x = np.atleast_2d(x)
+    return np.stack(
+        [-np.sum((x - 0.25) ** 2, axis=-1), -np.sum((x - 0.75) ** 2, axis=-1)],
+        axis=-1,
+    )
+
+
+def check_range_multi():
+    """Parallel multi-objective range search: ranks must agree on the history."""
+    policy = physbo.search.range_multi.Policy(
+        num_objectives=2,
+        min_X=np.array([0.0, 0.0]),
+        max_X=np.array([1.0, 1.0]),
+        comm=comm,
+    )
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=5, simulator=f_multi, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=2, simulator=f_multi, score="HVPI", is_disp=False, interval=0
+    )
+    N = res.total_num_search
+    assert_identical_over_ranks(res.action_X[:N], "range_multi action_X")
+    assert_identical_over_ranks(res.fx[:N], "range_multi fx")
+    log("range_multi (HVPI): OK")
+
+
+def check_range_unified():
+    """Parallel unified-objective range search: ranks must agree on the history."""
+    policy = physbo.search.range_unified.Policy(
+        num_objectives=2,
+        min_X=np.array([0.0, 0.0]),
+        max_X=np.array([1.0, 1.0]),
+        comm=comm,
+    )
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=5, simulator=f_multi, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=2,
+        simulator=f_multi,
+        score="EI",
+        unify_method=physbo.search.unify.ParEGO(num_objectives=2),
+        is_disp=False,
+        interval=0,
+    )
+    N = res.total_num_search
+    assert_identical_over_ranks(res.action_X[:N], "range_unified action_X")
+    assert_identical_over_ranks(res.fx[:N], "range_unified fx")
+    log("range_unified (EI, ParEGO): OK")
 
 
 def main():
@@ -298,7 +449,10 @@ def main():
     check_checkpoint_resume(97531, "generator")
     check_checkpoint_with_dup_comm()
     check_random_optimizer()
+    check_range_few_samples()
     check_range()
+    check_range_multi()
+    check_range_unified()
     log("all MPI checks passed")
 
 

@@ -9,9 +9,12 @@
 
 For the single-objective functions, the value at the reported global
 minimum is compared with the documented optimum, and random points inside
-the search domain are verified never to go below it. All functions are
-defined as minimization problems and negated when test_maximizer=True
-(the default).
+the search domain are verified never to go below it.
+
+Each function is written in the sense (minimization or maximization) of the
+reference it follows, declared by ``is_maximization``; with
+test_maximizer=True (the default) the returned values always describe a
+maximization problem, and with test_maximizer=False a minimization problem.
 """
 
 import numpy as np
@@ -119,10 +122,35 @@ MULTI_NAMES = [
     "ZDT6",
     "OsyczkaKundu",
     "ConstrEX",
+    "SRN",
     "VLMOP1",
     "VLMOP2",
     "VLMOP3",
 ]
+
+# functions whose reference defines a maximization problem
+MULTI_MAXIMIZATION = {"KitaYabumotoMoriNishikawa", "Binh4", "Poloni"}
+
+# functions with (non-trivial) constraints
+MULTI_CONSTRAINED = [
+    "BinhKorn",
+    "ChankongHaimes",
+    "KitaYabumotoMoriNishikawa",
+    "OsyczkaKundu",
+    "ConstrEX",
+]
+
+
+def _nondominated_mask(Y):
+    """Boolean mask of the non-dominated rows of Y (maximization)."""
+    n = Y.shape[0]
+    mask = np.ones(n, dtype=bool)
+    for i in range(n):
+        ge = np.all(Y >= Y[i], axis=1)
+        gt = np.any(Y > Y[i], axis=1)
+        if np.any(ge & gt):
+            mask[i] = False
+    return mask
 
 
 @pytest.mark.parametrize("name", MULTI_NAMES)
@@ -151,6 +179,270 @@ def test_multi_objective_smoke(name):
     assert ref_min.shape == (fn.nobj,)
     assert ref_max.shape == (fn.nobj,)
     assert np.all(ref_min < ref_max)
+
+
+@pytest.mark.parametrize("name", MULTI_NAMES)
+def test_multi_objective_maximizer_flag(name):
+    # test_maximizer only selects the sense of the returned values:
+    # True gives a maximization problem, False the negated (minimization) one,
+    # whichever sense the function is written in.
+    fn_max = getattr(multi_objective, name)()
+    fn_min = getattr(multi_objective, name)(test_maximizer=False)
+    assert fn_max.test_maximizer is True
+    assert fn_min.test_maximizer is False
+    assert fn_max.is_maximization == (name in MULTI_MAXIMIZATION)
+
+    rng = np.random.RandomState(0)
+    X = rng.uniform(fn_max.min_X, fn_max.max_X, size=(100, fn_max.dim))
+    np.testing.assert_allclose(fn_max(X), -fn_min(X))
+
+    # f itself is written in the declared sense
+    if fn_max.is_maximization:
+        np.testing.assert_allclose(fn_max(X), fn_max.f(X))
+    else:
+        np.testing.assert_allclose(fn_min(X), fn_min.f(X))
+
+    # the reference box is flipped and swapped together with the values
+    np.testing.assert_allclose(fn_max.reference_min, -fn_min.reference_max)
+    np.testing.assert_allclose(fn_max.reference_max, -fn_min.reference_min)
+
+
+@pytest.mark.parametrize("name", MULTI_CONSTRAINED)
+def test_multi_objective_constraint_is_active(name):
+    # the constraints must actually cut the default search space; otherwise
+    # the problem degenerates into an unconstrained box problem
+    fn = getattr(multi_objective, name)()
+    num = 11
+    X = fn.make_grid(num)
+    assert 0 < len(X) < num**fn.dim
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "KitaYabumotoMoriNishikawa",
+        "Binh1",
+        "Binh8",
+        "BinhKorn",
+        "Poloni",
+        "FonsecaFleming",
+        "Schaffer1",
+        "Schaffer2",
+        "Viennet",
+    ],
+)
+def test_multi_objective_reference_box_covers_range(name):
+    # for these functions the reference box is the range of the objectives
+    # over the (feasible) search space, so every feasible value lies inside
+    fn = getattr(multi_objective, name)()
+    X = fn.make_grid(41)
+    f = fn(X)
+    assert np.all(f >= fn.reference_min - 1e-9)
+    assert np.all(f <= fn.reference_max + 1e-9)
+
+
+@pytest.mark.parametrize("name", MULTI_NAMES)
+def test_multi_objective_reference_box_contains_samples(name):
+    # Pareto.volume_in_dominance does not clip the front to the reference box,
+    # so every value that can be observed must lie inside it
+    fn = getattr(multi_objective, name)()
+    rng = np.random.RandomState(2024)
+    X = rng.uniform(fn.min_X, fn.max_X, size=(5000, fn.dim))
+    # faces and corners of the search space, where the extremes usually are
+    Y = rng.uniform(fn.min_X, fn.max_X, size=(5000, fn.dim))
+    snap = rng.randint(0, 3, size=Y.shape)
+    Y = np.where(snap == 0, fn.min_X, np.where(snap == 1, fn.max_X, Y))
+    X = np.r_[X, Y]
+    X = X[np.asarray(fn.constraint(X)).reshape(-1)]
+    f = fn(X)
+    assert np.all(f >= fn.reference_min - 1e-9)
+    assert np.all(f <= fn.reference_max + 1e-9)
+
+
+@pytest.mark.parametrize(
+    "name, rest, f2_max",
+    [
+        ("ZDT1", 1.0, 10.0),
+        ("ZDT2", 1.0, 10.0),
+        ("ZDT3", 1.0, 10.0),
+        # x^2 - 10 cos(4 pi x) is largest at |x| = 4.7560 (32.5911)
+        ("ZDT4", 4.7560, 1.0 + 9.0 * (10.0 + 32.5911)),
+    ],
+)
+def test_zdt_reference_box_covers_range(name, rest, f2_max):
+    # the extremes of f2 = g h are out of reach of random sampling in 10-30
+    # dimensions: the largest value is at f1 = 0 with the largest g, the
+    # smallest on the Pareto-optimal front (g = 1)
+    fn = getattr(multi_objective, name)(test_maximizer=False)
+    x_max = np.r_[0.0, np.full(fn.dim - 1, rest)]
+    x1 = np.linspace(0.0, 1.0, 1001)
+    X_front = np.c_[x1, np.zeros((len(x1), fn.dim - 1))]
+    Y = fn(np.r_[[x_max], X_front])
+    np.testing.assert_allclose(Y[0], [0.0, f2_max], rtol=1e-6)
+    assert np.all(Y >= fn.reference_min)
+    assert np.all(Y <= fn.reference_max)
+    # the box is not much larger than the range
+    span = Y.max(axis=0) - Y.min(axis=0)
+    assert np.all(fn.reference_max - fn.reference_min <= 1.05 * span)
+
+
+def test_schaffer1_reference_box_follows_domain():
+    # Deb (2001) uses -A <= x <= A with A up to 1e5; the box must follow A
+    fn = multi_objective.Schaffer1(min_X=-1000.0, max_X=1000.0, test_maximizer=False)
+    np.testing.assert_allclose(fn.reference_min, [0.0, 0.0])
+    np.testing.assert_allclose(fn.reference_max, [1000.0**2, 1002.0**2])
+
+
+def test_kita_pareto_set():
+    # Kita et al. (1996): both objectives increase with x2, so the
+    # Pareto-optimal set lies on the boundary g1: x2 = 6.5 - x1/6, x1 in [0, 3]
+    fn = multi_objective.KitaYabumotoMoriNishikawa()
+    num = 71  # grid spacing 0.1 on [0, 7]
+    h = 7.0 / (num - 1)
+    X = fn.make_grid(num)
+    Y = fn(X)
+    P = X[_nondominated_mask(Y)]
+    assert len(P) > 0
+    assert np.all(P[:, 0] <= 3.0 + h + 1e-12)
+    assert np.all(P[:, 1] >= 6.5 - P[:, 0] / 6.0 - h - 1e-12)
+    # the Pareto-optimal set is outside the box [-7, 4]^2 used by the
+    # widely circulated variant of this problem
+    assert P[:, 1].max() > 6.0
+
+
+def test_kita_nonnegativity_is_a_constraint():
+    # x1, x2 >= 0 belong to the problem, so they must hold even when the
+    # search space is widened to negative values; otherwise the problem
+    # silently turns into the variant on [-7, 4]^2 and the objective values
+    # leave the reference box
+    fn = multi_objective.KitaYabumotoMoriNishikawa(min_X=-7.0)
+    X = fn.make_grid(29)
+    assert len(X) > 0
+    assert np.all(X >= 0.0)
+    f = fn(X)
+    assert np.all(f >= fn.reference_min - 1e-9)
+    assert np.all(f <= fn.reference_max + 1e-9)
+
+    # the feasible set does not depend on the lower bound
+    X0 = multi_objective.KitaYabumotoMoriNishikawa().make_grid(15)
+    assert np.all(fn.constraint(X0))
+    assert not np.any(fn.constraint(np.array([[-0.5, 1.0], [1.0, -0.5]])))
+
+
+def test_binh1_pareto_set():
+    # Binh (1999) case 1 (unconstrained): the Pareto-optimal set is the
+    # segment x1 = x2 in [0, 5]
+    fn = multi_objective.Binh1()
+    num = 61  # grid spacing 0.25 on [-5, 10]
+    h = 15.0 / (num - 1)
+    X = fn.make_grid(num)
+    P = X[_nondominated_mask(fn(X))]
+    assert len(P) > 0
+    np.testing.assert_allclose(P[:, 0], P[:, 1], atol=h + 1e-12)
+    assert np.all(P[:, 0] >= -h - 1e-12)
+    assert np.all(P[:, 0] <= 5.0 + h + 1e-12)
+    assert P[:, 0].max() > 4.0  # the segment is not truncated like BinhKorn
+
+
+def test_binh6_pareto_front():
+    # Binh (1999) case 6: f2 = g / f1 with g = Rosenbrock + 2, so the
+    # Pareto-optimal front is f1 f2 = 2, attained at x3 = x4 = 1
+    fn = multi_objective.Binh6(test_maximizer=False)
+    # the search space is not stated in Binh (1999); the front drawn in its
+    # Figure 6 ends at f1 = sqrt(19), i.e. max |x1| = max |x2| = 3
+    assert np.all(fn.min_X == -3.0)
+    assert np.all(fn.max_X == 3.0)
+    # end of the front (largest f1) and the point with the largest f2
+    X_ext = np.array([[3.0, -3.0, 1.0, 1.0], [0.0, 0.0, 3.0, -3.0]])
+    np.testing.assert_allclose(fn(X_ext)[0], [np.sqrt(19.0), 2.0 / np.sqrt(19.0)])
+    rng = np.random.RandomState(0)
+    X = rng.uniform(fn.min_X, fn.max_X, size=(1000, fn.dim))
+    # the reference box covers the range of the objectives (extremes included)
+    X = np.r_[X, X_ext]
+    Y = fn(X)
+    assert np.all(Y >= fn.reference_min)
+    assert np.all(Y <= fn.reference_max)
+    assert np.all(Y[:, 0] * Y[:, 1] >= 2.0 - 1e-12)
+    X[:, 2:] = 1.0
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 0] * Y[:, 1], 2.0)
+
+
+def test_binh8_follows_deb():
+    # Binh (1999) case 8 is the problem of Deb (1999) with h = 1 - (f1 / g)^4;
+    # g = 1 + 10 x2 is given in Deb (2001).  The formulas printed in
+    # Binh (1999) (f1 = x1 + x2) contradict Figure 8 of the same report.
+    fn = multi_objective.Binh8(test_maximizer=False)
+    # values read from Figure 8 (left) of Binh (1999): (x1, f1)
+    X = np.array([[0.095, 0.0], [0.6, 0.0], [0.697, 0.0]])
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 0], [0.325, 1.0, 0.939], atol=2e-3)
+    # on the Pareto-optimal set x2 = 0 the front is f2 = 1 - f1^4
+    X = np.c_[np.linspace(0.0, 1.0, 101), np.zeros(101)]
+    Y = fn(X)
+    np.testing.assert_allclose(Y[:, 1], 1.0 - Y[:, 0] ** 4)
+    assert Y[:, 0].min() > 0.32
+    # independent transcription off the front
+    Y = fn(np.array([[0.3, 0.5]]))
+    f1 = 1.0 - np.exp(-1.2) * np.sin(1.5 * np.pi) ** 4
+    np.testing.assert_allclose(Y[0], [f1, 6.0 * (1.0 - (f1 / 6.0) ** 4)])
+
+    # the Pareto-optimal set is x2 = 0 (_nondominated_mask assumes maximization)
+    fn = multi_objective.Binh8()
+    X = fn.make_grid(41)
+    P = X[_nondominated_mask(fn(X))]
+    assert len(P) > 0
+    np.testing.assert_allclose(P[:, 1], 0.0)
+
+
+def test_fonseca_fleming_domains():
+    assert np.all(multi_objective.FonsecaFleming().min_X == -4.0)
+    assert np.all(multi_objective.FonsecaFleming().max_X == 4.0)
+    # VLMOP2 uses the search space of Van Veldhuizen and Lamont (1999)
+    fn = multi_objective.VLMOP2()
+    assert fn.name == "VLMOP2"
+    assert np.all(fn.min_X == -2.0)
+    assert np.all(fn.max_X == 2.0)
+    # explicit arguments still win
+    fn = multi_objective.VLMOP2(dim=3, min_X=-1.0, max_X=1.5)
+    assert fn.dim == 3
+    assert np.all(fn.min_X == -1.0)
+    assert np.all(fn.max_X == 1.5)
+    fn = multi_objective.VLMOP2(3, -1.0)
+    assert np.all(fn.min_X == -1.0)
+    assert np.all(fn.max_X == 2.0)
+
+
+def _zdt_reference(name, X):
+    # independent transcription of Zitzler, Deb, Thiele (2000)
+    n = X.shape[1]
+    x1 = X[:, 0]
+    rest = X[:, 1:]
+    if name == "ZDT4":
+        g = 1.0 + 10.0 * (n - 1) + np.sum(rest**2 - 10.0 * np.cos(4.0 * np.pi * rest), axis=1)
+    elif name == "ZDT6":
+        g = 1.0 + 9.0 * (np.sum(rest, axis=1) / (n - 1)) ** 0.25
+    else:
+        g = 1.0 + 9.0 * np.sum(rest, axis=1) / (n - 1)
+    if name == "ZDT6":
+        f1 = 1.0 - np.exp(-4.0 * x1) * np.sin(6.0 * np.pi * x1) ** 6
+    else:
+        f1 = x1
+    if name in ("ZDT1", "ZDT4"):
+        h = 1.0 - np.sqrt(f1 / g)
+    elif name in ("ZDT2", "ZDT6"):
+        h = 1.0 - (f1 / g) ** 2
+    elif name == "ZDT3":
+        h = 1.0 - np.sqrt(f1 / g) - (f1 / g) * np.sin(10.0 * np.pi * f1)
+    return np.c_[f1, g * h]
+
+
+@pytest.mark.parametrize("name", ["ZDT1", "ZDT2", "ZDT3", "ZDT4", "ZDT6"])
+def test_zdt_matches_definition(name):
+    fn = getattr(multi_objective, name)(test_maximizer=False)
+    rng = np.random.RandomState(7)
+    X = rng.uniform(fn.min_X, fn.max_X, size=(200, fn.dim))
+    np.testing.assert_allclose(fn(X), _zdt_reference(name, X), rtol=1e-12, atol=1e-12)
 
 
 def test_multi_objective_gaussian():

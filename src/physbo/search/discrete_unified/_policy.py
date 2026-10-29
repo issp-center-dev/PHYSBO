@@ -127,16 +127,24 @@ class Policy(discrete.Policy):
         else:
             Z = None
 
-        if self.new_data is None:
-            self.new_data = Variable(X=X, t=t, Z=Z)
-        else:
-            self.new_data.add(X=X, t=t, Z=Z)
+        # Failed observations (any non-finite objective) are kept in the
+        # history and their actions are consumed, but they are not used
+        # for training.
+        valid = utility.finite_mask(t)
+        if np.any(valid):
+            X_ok = np.asarray(X)[valid]
+            t_ok = t[valid]
+            Z_ok = utility.mask_rows(Z, valid)
+            if self.new_data is None:
+                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
 
-        # Add to single training Variable with full 2D t matrix and (k, N, n) Z
-        if self.training.X is None:
-            self.training = Variable(X=X, t=t, Z=Z)
-        else:
-            self.training.add(X=X, t=t, Z=Z)
+            # Add to single training Variable with full 2D t matrix and (k, N, n) Z
+            if self.training.X is None:
+                self.training = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove action from candidates if exists
         if len(self.actions) > 0:
@@ -212,6 +220,7 @@ class Policy(discrete.Policy):
         unify_method=None,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization by using unified objective function
@@ -281,6 +290,9 @@ class Policy(discrete.Policy):
         else:
             self.predictor = predictor
 
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
+
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
 
@@ -301,7 +313,7 @@ class Policy(discrete.Policy):
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha, ucb_beta)
             time_get_action = time.time() - time_get_action
 
             N_indeed = len(action)
@@ -337,7 +349,7 @@ class Policy(discrete.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
         self._update_predictor()
         f = search_score.score(
             mode,
@@ -345,6 +357,7 @@ class Policy(discrete.Policy):
             training=self.training_unified,
             test=self.test.get_subset(self.actions),
             alpha=alpha,
+            ucb_beta=ucb_beta,
             rng=self.rng,
             comm=self.mpicomm,
         )
@@ -356,7 +369,7 @@ class Policy(discrete.Policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
@@ -432,6 +445,7 @@ class Policy(discrete.Policy):
         training=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calculate score (acquisition function)
@@ -514,6 +528,7 @@ class Policy(discrete.Policy):
             training=training,
             test=test,
             alpha=alpha,
+            ucb_beta=ucb_beta,
             rng=self.rng,
             comm=self.mpicomm if (parallel and self.mpisize > 1) else None,
         )
@@ -564,7 +579,7 @@ class Policy(discrete.Policy):
                 rng=self.rng,
             )
 
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
         """
         Getting marginal scores.
 
@@ -621,6 +636,7 @@ class Policy(discrete.Policy):
                 predictor=predictor,
                 training=train,
                 test=self.test.get_subset(self.actions),
+                ucb_beta=ucb_beta,
                 rng=self.rng,
                 comm=self.mpicomm,
             )
@@ -675,9 +691,9 @@ class Policy(discrete.Policy):
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.test.X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            actions, t = self.history.export_valid()
+            X = self.test.X[actions, :]
             self.training = Variable(X=X, t=t)
         else:
             self.training = Variable()

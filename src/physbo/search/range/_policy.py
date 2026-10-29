@@ -142,6 +142,8 @@ class Policy(CheckpointMixin):
             N dimensional array (1D) or N x 1 dimensional array (2D).
             The negative energy of each search candidate (value of the objective function to be optimized).
             Will be normalized to (N, 1) shape internally.
+            All the values must be finite. Failed evaluations are not
+            supported in continuous search spaces.
         time_total: numpy.ndarray
             N dimenstional array. The total elapsed time in each step.
             If None (default), filled by 0.0.
@@ -158,9 +160,16 @@ class Policy(CheckpointMixin):
         Returns
         -------
 
+        Raises
+        ------
+        ValueError
+            If t contains a non-finite value (NaN or +-Inf).
+            Nothing is written to the history in this case.
         """
         # Normalize t to (N, 1) shape
         t_normalized = normalize_t(t, k=1)
+
+        utility.require_finite(X, t_normalized)
 
         self.history.write(
             t.flatten(),
@@ -263,6 +272,7 @@ class Policy(CheckpointMixin):
         num_rand_basis=0,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization.
@@ -325,6 +335,9 @@ class Policy(CheckpointMixin):
         elif self.predictor is None:
             self._init_predictor(is_rand_expans)
 
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
+
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
 
@@ -352,7 +365,13 @@ class Policy(CheckpointMixin):
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
             action = self._get_actions(
-                score, N, K, alpha, optimizer, num_rand_basis=num_rand_basis
+                score,
+                N,
+                K,
+                alpha,
+                optimizer,
+                num_rand_basis=num_rand_basis,
+                ucb_beta=ucb_beta,
             )
             time_get_action = time.time() - time_get_action
 
@@ -481,7 +500,15 @@ class Policy(CheckpointMixin):
         return self.dim
 
     def get_score(
-        self, mode, *, xs=None, predictor=None, training=None, parallel=True, alpha=1
+        self,
+        mode,
+        *,
+        xs=None,
+        predictor=None,
+        training=None,
+        parallel=True,
+        alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calcualte score (acquisition function)
@@ -553,6 +580,7 @@ class Policy(CheckpointMixin):
             training=training,
             test=test,
             alpha=alpha,
+            ucb_beta=ucb_beta,
             rng=self.rng,
         )
         if parallel and self.mpisize > 1:
@@ -560,14 +588,20 @@ class Policy(CheckpointMixin):
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
+    def _argmax_score(
+        self, mode, predictor, training, extra_trainings, optimizer, ucb_beta=1.0
+    ):
         K = len(extra_trainings)
         if K == 0:
             predictor.prepare(training, objective_index=0)
 
             def fn(x):
                 return self.get_score(
-                    mode, xs=x.reshape(1, -1), predictor=predictor, parallel=False
+                    mode,
+                    xs=x.reshape(1, -1),
+                    predictor=predictor,
+                    ucb_beta=ucb_beta,
+                    parallel=False,
                 )[0]
         else:  # marginal score
             trains = [copy.deepcopy(training) for _ in range(K)]
@@ -588,6 +622,7 @@ class Policy(CheckpointMixin):
                         xs=x.reshape(1, -1),
                         predictor=predictors[k],
                         training=trains[k],
+                        ucb_beta=ucb_beta,
                         parallel=False,
                     )[0]
                 return np.mean(f)
@@ -595,7 +630,9 @@ class Policy(CheckpointMixin):
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
-    def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
+    def _get_actions(
+        self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
+    ):
         """
         Getting next candidates
 
@@ -625,7 +662,7 @@ class Policy(CheckpointMixin):
         predictor = copy.deepcopy(self.predictor)
         predictor.config.is_disp = False
         X[0, :] = self._argmax_score(
-            mode, predictor, self.training, [], optimizer=optimizer
+            mode, predictor, self.training, [], optimizer=optimizer, ucb_beta=ucb_beta
         )
 
         for n in range(1, N):
@@ -639,7 +676,12 @@ class Policy(CheckpointMixin):
                 t_normalized = normalize_t(t[k, :], k=1)
                 extra_trainings[k].t = t_normalized
             X[n, :] = self._argmax_score(
-                mode, predictor, self.training, extra_trainings, optimizer=optimizer
+                mode,
+                predictor,
+                self.training,
+                extra_trainings,
+                optimizer=optimizer,
+                ucb_beta=ucb_beta,
             )
 
         return X
@@ -713,9 +755,8 @@ class Policy(CheckpointMixin):
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.history.action_X[0:N, :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            X, t = self.history.export_valid()
             # Normalize t to (N, 1) shape
             t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)

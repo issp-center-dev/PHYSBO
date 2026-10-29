@@ -186,6 +186,10 @@ class Policy(CheckpointMixin):
             N dimensional array (1D) or N x k dimensional array (2D).
             The negative energy of each search candidate (value of the objective function to be optimized).
             Will be normalized to (N, 1) shape internally.
+            A non-finite value (NaN or +-Inf) marks a failed evaluation:
+            the action is recorded in the history and consumed, but the
+            observation is excluded from the training data and the
+            best-value tracking.
         X:  numpy.ndarray
             N x d dimensional matrix. Each row of X denotes the d-dimensional feature vector of each search candidate.
         time_total: numpy.ndarray
@@ -236,7 +240,15 @@ class Policy(CheckpointMixin):
             time_get_action=time_get_action,
             time_run_simulator=time_run_simulator,
         )
-        self.training.add(X=X, t=t_normalized, Z=Z)
+
+        # Failed observations (non-finite t) are kept in the history and
+        # their actions are consumed, but they are not used for training.
+        valid = utility.finite_mask(t_normalized)
+        X_ok = np.asarray(X)[valid]
+        t_ok = t_normalized[valid]
+        Z_ok = utility.mask_rows(Z, valid)
+        if np.any(valid):
+            self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove the selected actions from the list of candidates if exists
         if len(self.actions) > 0:
@@ -246,10 +258,11 @@ class Policy(CheckpointMixin):
             ]
             self.actions = self._delete_actions(local_index)
 
-        if self.new_data is None:
-            self.new_data = Variable(X=X, t=t_normalized, Z=Z)
-        else:
-            self.new_data.add(X=X, t=t_normalized, Z=Z)
+        if np.any(valid):
+            if self.new_data is None:
+                self.new_data = Variable(X=X_ok, t=t_ok, Z=Z_ok)
+            else:
+                self.new_data.add(X=X_ok, t=t_ok, Z=Z_ok)
 
     def random_search(
         self, max_num_probes, num_search_each_probe=1, simulator=None, is_disp=True
@@ -332,6 +345,7 @@ class Policy(CheckpointMixin):
         optimizer=None,
         unify_method=None,
         ard=False,
+        ucb_beta=1.0,
     ):
         """
         Performing Bayesian optimization.
@@ -354,7 +368,8 @@ class Policy(CheckpointMixin):
             Here, action is an integer which represents the index of the candidate.
         score: str
             The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+            TS (Thompson Sampling), EI (Expected Improvement), PI (Probability of Improvement)
+            and UCB (Upper Confidence Bound) are available.
         interval: int
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -367,6 +382,10 @@ class Policy(CheckpointMixin):
         ard: bool
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
             Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used when
+            ``score == "UCB"``. The score is ``fmean + ucb_beta * fstd``;
+            larger values favor exploration. Default is 1.0.
 
         Returns
         -------
@@ -394,6 +413,9 @@ class Policy(CheckpointMixin):
         elif self.predictor is None:
             self._init_predictor(is_rand_expans)
 
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
+
         if max_num_probes == 0 and interval >= 0:
             self._learn_hyperparameter(num_rand_basis)
 
@@ -415,7 +437,7 @@ class Policy(CheckpointMixin):
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
             alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha)
+            action = self._get_actions(score, N, K, alpha, ucb_beta)
             time_get_action = time.time() - time_get_action
 
             N_indeed = len(action)
@@ -604,6 +626,7 @@ class Policy(CheckpointMixin):
         training=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
         """
         Calcualte score (acquisition function)
@@ -611,7 +634,7 @@ class Policy(CheckpointMixin):
         Parameters
         ----------
         mode: str
-            The type of aquisition funciton. TS, EI and PI are available.
+            The type of aquisition funciton. TS, EI, PI and UCB are available.
             These functions are defined in score.py.
         actions: array of int
             actions to calculate score
@@ -628,6 +651,9 @@ class Policy(CheckpointMixin):
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used if mode = UCB.
+            The score is ``fmean + ucb_beta * fstd``. Default is 1.0.
 
         Returns
         -------
@@ -686,6 +712,7 @@ class Policy(CheckpointMixin):
             training=training,
             test=test,
             alpha=alpha,
+            ucb_beta=ucb_beta,
             rng=self.rng,
             comm=self.mpicomm if (parallel and self.mpisize > 1) else None,
         )
@@ -694,7 +721,7 @@ class Policy(CheckpointMixin):
             f = np.hstack(fs)
         return f
 
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
+    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
         """
         Getting marginal scores.
 
@@ -751,12 +778,13 @@ class Policy(CheckpointMixin):
                 predictor=predictor,
                 training=train,
                 test=self.test.get_subset(self.actions),
+                ucb_beta=ucb_beta,
                 rng=self.rng,
                 comm=self.mpicomm,
             )
         return np.mean(f, axis=0)
 
-    def _get_actions(self, mode, N, K, alpha):
+    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
         """
         Getting next candidates
 
@@ -785,6 +813,7 @@ class Policy(CheckpointMixin):
             training=self.training,
             test=self.test.get_subset(self.actions),
             alpha=alpha,
+            ucb_beta=ucb_beta,
             rng=self.rng,
             comm=self.mpicomm,
         )
@@ -796,7 +825,7 @@ class Policy(CheckpointMixin):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
             champion, local_champion, local_index = self._find_champion(f)
             if champion == -1:
                 break
@@ -924,9 +953,9 @@ class Policy(CheckpointMixin):
         self.history.load(file_history)
 
         if file_training is None:
-            N = self.history.total_num_search
-            X = self.test.X[self.history.chosen_actions[0:N], :]
-            t = self.history.fx[0:N]
+            # rebuild the training data from the valid observations only
+            actions, t = self.history.export_valid()
+            X = self.test.X[actions, :]
             # Normalize t to (N, 1) shape
             t_normalized = normalize_t(t, k=1)
             self.training = Variable(X=X, t=t_normalized)

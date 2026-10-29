@@ -24,6 +24,7 @@ Welcome to PHYSBO's documentation!
 
    algorithm
    checkpoint
+   test_functions
 
 .. toctree::
    :maxdepth: 1
