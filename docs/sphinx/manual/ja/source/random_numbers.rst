@@ -33,7 +33,7 @@ PHYSBO と同じくグローバルな ``numpy.random`` の状態から乱数を�
 グローバルな ``numpy.random`` の状態は読みも書きもしないので、
 プロセスの他の部分が ``numpy.random`` をどう使っても探索は再現され、
 生成器は policy オブジェクトの一部になります。policy を pickle すると
-その状態も保存されます。
+その状態も保存されます(:ref:`chap_checkpoint` を参照)。
 このモードでは ``set_seed(seed)`` は seed から生成器を作り直します。
 乱数列は legacy モードとは異なるので、Generator モードでの実行は
 同じ seed を使っても以前のバージョンの実行を再現しません。

@@ -1,3 +1,5 @@
+.. _chap_checkpoint:
+
 Checkpoint and restart
 ==================================
 
@@ -19,7 +21,8 @@ Random number generator modes
 ----------------------------------
 
 The checkpoint mechanism interacts with the ``rng`` argument of the
-policies:
+policies, whose two modes are described in :ref:`chap_random_numbers`.
+In short:
 
 .. code-block:: python
 
@@ -32,7 +35,9 @@ policies:
     policy = physbo.search.discrete.Policy(test_X=X, rng=12345)
 
 In the Generator mode the RNG state is part of the policy object, so
-pickling the policy captures everything needed for exact resumption.
+pickling the policy captures everything needed for exact resumption;
+this includes the generator that the policy lends to a ``unify_method``
+such as ``ParEGO`` when that object was not given a generator of its own.
 In the legacy mode the RNG state lives in the global ``numpy.random``
 module; the checkpoint API captures and restores it explicitly (note
 that loading a legacy-mode checkpoint therefore *sets the global
@@ -66,6 +71,15 @@ The checkpoint file records the PHYSBO version (a mismatch emits a
 warning: bit-exact resumption is guaranteed only within the same
 version) and the checkpoint format version.
 
+A checkpoint holds the complete policy. Besides the history, the
+training data and the predictor, this includes the candidate set of a
+discrete policy (``test_X`` and, with the Bayesian linear model, the
+values of the basis functions at every candidate), so the size of the
+file grows with the number of candidates times the number of basis
+functions: for 100,000 candidates and ``num_rand_basis=500`` the basis
+values alone take 400 MB. ``policy.save()`` does not store the
+candidate set.
+
 Usage under MPI
 ----------------------------------
 
@@ -73,7 +87,11 @@ Usage under MPI
 operations: every rank must call them. The rank-local state (the
 remaining candidates of each rank and its RNG state) is gathered, and
 rank 0 writes a single file; on load, rank 0 reads the file and
-broadcasts it.
+broadcasts it. ``save_checkpoint`` returns on the other ranks as soon
+as their state has been gathered, possibly before the file is complete;
+a program that reads or copies the file on another rank must wait on a
+barrier first. A following ``load_checkpoint`` needs no barrier, since
+only rank 0 reads the file.
 
 .. code-block:: python
 
