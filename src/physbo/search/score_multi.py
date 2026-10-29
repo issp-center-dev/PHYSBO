@@ -18,6 +18,11 @@ _EHVI_BLOCK_ELEMENTS = 1 << 18
 
 def score(mode, predictor_list, test, training, **kwargs):
     if test.X.shape[0] == 0:
+        if mode in ("EHVI", "HVPI") and kwargs["pareto"].front.shape[0] > 0:
+            # as EHVI/HVPI do on the other processes of a parallel run, so
+            # that they all use the same reference points and warn (or raise)
+            # together
+            kwargs["pareto"].prepare_reference_points(upper=(mode == "EHVI"))
         return np.zeros(0)
 
     if mode == "EHVI":
@@ -75,8 +80,7 @@ def HVPI(fmean, fstd, pareto):
     N = fmean.shape[0]
     n_obj = pareto.num_objectives
 
-    if pareto.reference_min is None:
-        pareto.set_reference_min()
+    pareto.prepare_reference_points(upper=False)
     reference_min = pareto.reference_min
 
     # Pareto front with reference points
@@ -151,10 +155,7 @@ def EHVI(fmean, fstd, pareto):
     N = fmean.shape[0]
     n_obj = pareto.num_objectives
 
-    if pareto.reference_min is None:
-        pareto.set_reference_min()
-    if pareto.reference_max is None:
-        pareto.set_reference_max()
+    pareto.prepare_reference_points()
     reference_min = pareto.reference_min
     reference_max = pareto.reference_max
 

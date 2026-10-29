@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import time
 
@@ -110,6 +112,10 @@ class Pareto(object):
         self.cells = None
         self.reference_min = None
         self.reference_max = None
+        # the reference points last estimated from the front; a reference
+        # point is treated as estimated while it is this very object
+        self._estimated_reference_min = None
+        self._estimated_reference_max = None
 
     def update_front(self, t):
         return self.__update_front_new(t)
@@ -247,22 +253,93 @@ class Pareto(object):
         return self.front, self.front_num
 
     def set_reference_min(self, reference_min=None):
+        """
+        Set the lower reference point.
+
+        Without an argument, it is estimated from the current front, and
+        prepare_reference_points estimates it again when the front no
+        longer lies above it.  A given reference point is kept as it is.
+        """
         if reference_min is None:
             # estimate reference min point
             front_min = np.min(self.front, axis=0, keepdims=True)
             w = np.max(self.front, axis=0, keepdims=True) - front_min
             reference_min = front_min - w * 2 / self.front.shape[0]
+            self._estimated_reference_min = reference_min
+        else:
+            self._estimated_reference_min = None
 
         self.reference_min = reference_min
 
     def set_reference_max(self, reference_max=None):
+        """
+        Set the upper reference point.
+
+        Without an argument, it is estimated from the current front, and
+        prepare_reference_points estimates it again when the front no
+        longer lies below it.  A given reference point is kept as it is.
+        """
         if reference_max is None:
             # estimate reference max point
             front_max = np.max(self.front, axis=0, keepdims=True)
             w = front_max - np.min(self.front, axis=0, keepdims=True)
             reference_max = front_max + w * 100
+            self._estimated_reference_max = reference_max
+        else:
+            self._estimated_reference_max = None
 
         self.reference_max = reference_max
+
+    def prepare_reference_points(self, upper=True):
+        """
+        Make the reference points valid for the current front.
+
+        EHVI needs the front between reference_min and reference_max, and
+        HVPI needs it above reference_min.  A reference point that is not
+        set is estimated from the front.  An estimated reference point that
+        the front has grown beyond is estimated again; a reference point set
+        by the user is kept, with a warning.  The warning is always issued
+        from this module, whichever function calls this method, so that
+        warning filters treat all calls alike (and all processes of a
+        parallel run alike).
+
+        Parameters
+        ----------
+        upper: bool
+            Whether reference_max is needed as well.
+        """
+        if self.reference_min is None:
+            self.set_reference_min()
+        elif self._front_beyond(self.reference_min, lower=True):
+            # getattr: objects pickled by older versions lack the attribute
+            if self.reference_min is getattr(self, "_estimated_reference_min", None):
+                self.set_reference_min()
+            else:
+                warnings.warn(
+                    "the Pareto front is not above reference_min; "
+                    "the hypervolume-based scores are not reliable",
+                    RuntimeWarning,
+                )
+        if not upper:
+            return
+        if self.reference_max is None:
+            self.set_reference_max()
+        elif self._front_beyond(self.reference_max, lower=False):
+            if self.reference_max is getattr(self, "_estimated_reference_max", None):
+                self.set_reference_max()
+            else:
+                warnings.warn(
+                    "the Pareto front is not below reference_max; "
+                    "EHVI is not reliable",
+                    RuntimeWarning,
+                )
+
+    def _front_beyond(self, reference, lower):
+        """Whether a point of the front lies beyond the reference point."""
+        reference = np.asarray(reference, dtype=float).reshape(-1)
+        if lower:
+            return bool(np.any(self.front < reference))
+        return bool(np.any(self.front > reference))
 
     def volume_in_dominance(self, ref_min, ref_max, dominance_ratio=False):
         if self.cells is None:
