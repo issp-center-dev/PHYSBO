@@ -11,6 +11,7 @@ import pickle as pickle
 import time
 
 from ._history import History
+from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score as search_score
@@ -284,34 +285,56 @@ class Policy(range_single.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
-        K = len(extra_trainings)
-        if K == 0:
+    def _argmax_score(
+        self,
+        mode,
+        predictor,
+        training,
+        extra_trainings,
+        optimizer,
+        error=None,
+        samples_drawn=False,
+    ):
+        """``error``: an exception raised on this process while drawing the
+        samples in ``extra_trainings`` (see :func:`physbo._mpi.call`);
+        ``samples_drawn``: whether they were drawn (on every process alike),
+        so that the processes exchange whether one of them raised."""
+        if error is None and len(extra_trainings) == 0:
             predictor.prepare(training, objective_index=0)
 
             def fn(x):
                 return self.get_score(
                     mode, xs=x.reshape(1, -1), predictor=predictor, parallel=False
                 )[0]
-        else:  # marginal score
-            trains = [copy.deepcopy(training) for _ in range(K)]
-            predictors = [copy.deepcopy(predictor) for _ in range(K)]
-            for k in range(K):
-                extra_train = extra_trainings[k]
-                trains[k].add(X=extra_train.X, t=extra_train.t)
-                predictors[k].update(trains[k], extra_train, objective_index=0)
+        elif error is None:  # marginal score
 
-            def fn(x):
-                f = np.zeros(K)
+            def marginal_score_function():
+                K = len(extra_trainings)
+                trains = [copy.deepcopy(training) for _ in range(K)]
+                predictors = [copy.deepcopy(predictor) for _ in range(K)]
                 for k in range(K):
-                    f[k] = self.get_score(
-                        mode,
-                        xs=x.reshape(1, -1),
-                        predictor=predictors[k],
-                        training=trains[k],
-                        parallel=False,
-                    )[0]
-                return np.mean(f)
+                    extra_train = extra_trainings[k]
+                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    predictors[k].update(trains[k], extra_train, objective_index=0)
+
+                def fn(x):
+                    f = np.zeros(K)
+                    for k in range(K):
+                        f[k] = self.get_score(
+                            mode,
+                            xs=x.reshape(1, -1),
+                            predictor=predictors[k],
+                            training=trains[k],
+                            parallel=False,
+                        )[0]
+                    return np.mean(f)
+
+                return fn
+
+            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
+        if self.mpisize > 1 and (samples_drawn or len(extra_trainings) > 0):
+            # the samples, and so the predictors, differ between the processes
+            _mpi.allgather(self.mpicomm, None, error)
 
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
@@ -350,20 +373,27 @@ class Policy(range_single.Policy):
         )
 
         for n in range(1, N):
-            extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(
-                self.training_unified, extra_training, K, objective_index=0
-            )
-            extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
-            for k in range(K):
-                # Normalize t to (N, 1) shape
-                extra_trainings[k].t = t[k, :].reshape(-1, 1)
+
+            def draw_samples():
+                extra_training = Variable(X=X[0:n, :])
+                t = self.predictor.get_predict_samples(
+                    self.training_unified, extra_training, K, objective_index=0
+                )
+                extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
+                for k in range(K):
+                    # Normalize t to (N, 1) shape
+                    extra_trainings[k].t = t[k, :].reshape(-1, 1)
+                return extra_trainings
+
+            extra_trainings, error = _mpi.call(self.mpicomm, draw_samples)
             X[n, :] = self._argmax_score(
                 mode,
                 predictor,
                 self.training_unified,
                 extra_trainings,
                 optimizer=optimizer,
+                error=error,
+                samples_drawn=True,
             )
 
         return X
@@ -468,26 +498,32 @@ class Policy(range_single.Policy):
                 self._update_predictor()
                 predictor = self.predictor
 
-        if xs is not None:
-            if isinstance(xs, Variable):
-                test = xs
+        def scores():
+            # the share of this process of the candidates
+            if xs is not None:
+                if isinstance(xs, Variable):
+                    test = xs
+                else:
+                    test = Variable(X=xs)
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
             else:
-                test = Variable(X=xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            raise RuntimeError("ERROR: xs is not given")
+                raise RuntimeError("ERROR: xs is not given")
+            return search_score.score(
+                mode,
+                predictor=predictor,
+                training=training,
+                test=test,
+                alpha=alpha,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -614,7 +650,7 @@ def _run_simulator(simulator, action_X, comm=None):
     if comm is None:
         return simulator(action_X)
     if comm.rank == 0:
-        t = simulator(action_X)
+        t, error = _mpi.call(comm, simulator, action_X)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        t, error = 0.0, None
+    return _mpi.bcast(comm, t, error, root=0)

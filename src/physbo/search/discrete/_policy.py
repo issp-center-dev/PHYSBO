@@ -15,6 +15,7 @@ from typing import Optional, Any
 from ._history import History
 from .. import utility
 from .. import score as search_score
+from ... import _mpi
 from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
@@ -669,33 +670,41 @@ class Policy:
                 self._update_predictor()
                 predictor = self.predictor
 
-        if xs is not None:
-            if actions is not None:
-                raise RuntimeError("ERROR: both actions and xs are given")
-            test = self._make_variable_X(xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            if actions is None:
-                actions = self.actions
-            else:
-                if isinstance(actions, int):
-                    actions = [actions]
+        def scores(actions):
+            # the share of this process of the candidates
+            if xs is not None:
+                if actions is not None:
+                    raise RuntimeError("ERROR: both actions and xs are given")
+                test = self._make_variable_X(xs)
                 if parallel and self.mpisize > 1:
-                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
-            test = self.test.get_subset(actions)
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
+            else:
+                if actions is None:
+                    actions = self.actions
+                else:
+                    if isinstance(actions, int):
+                        actions = [actions]
+                    if parallel and self.mpisize > 1:
+                        actions = np.array_split(actions, self.mpisize)[
+                            self.mpirank
+                        ]
+                test = self.test.get_subset(actions)
+            return search_score.score(
+                mode,
+                predictor=predictor,
+                training=training,
+                test=test,
+                alpha=alpha,
+                ucb_beta=ucb_beta,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores, actions)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -718,26 +727,41 @@ class Policy:
 
         Returns
         -------
-        f: list
-            N dimensional scores (score is defined in each mode)
+        f: numpy.ndarray or None
+            The marginal scores of the candidates of this process (score is
+            defined in each mode), or None if ``error`` is not None.
+        error: Exception or None
+            An exception raised on this process while computing ``f`` in a
+            parallel run, to be passed to :meth:`_find_champion` (in a serial
+            run it is raised).
         """
-        f = np.zeros((K, len(self.actions)), dtype=float)
 
-        # draw K samples of the values of objective function of chosen actions
-        new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = self.predictor.get_predict_samples(
-            self.training, new_test_local, K
-        )
+        def predict_samples():
+            # draw K samples of the values of objective function of chosen
+            # actions
+            new_test_local = self.test.get_subset(chosen_actions)
+            virtual_t_local = self.predictor.get_predict_samples(
+                self.training, new_test_local, K
+            )
+            return new_test_local, virtual_t_local
+
+        samples, error = _mpi.call(self.mpicomm, predict_samples)
+        if self.mpisize > 1:
+            samples = _mpi.allgather(self.mpicomm, samples, error)
+        return _mpi.call(self.mpicomm, self._marginal_score, mode, samples, K, ucb_beta)
+
+    def _marginal_score(self, mode, samples, K, ucb_beta):
+        """The marginal scores of this process's candidates for the samples
+        (of every process in a parallel run) from :meth:`_get_marginal_score`."""
         if self.mpisize == 1:
-            new_test = new_test_local
-            virtual_t = virtual_t_local
+            new_test, virtual_t = samples
         else:
             new_test = Variable()
-            for nt in self.mpicomm.allgather(new_test_local):
+            for nt, _ in samples:
                 new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            virtual_t = np.concatenate(self.mpicomm.allgather(virtual_t_local), axis=1)
-        # virtual_t = self.predictor.get_predict_samples(self.training, new_test, K)
+            virtual_t = np.concatenate([vt for _, vt in samples], axis=1)
 
+        f = np.zeros((K, len(self.actions)), dtype=float)
         for k in range(K):
             predictor = copy.deepcopy(self.predictor)
             train = copy.deepcopy(self.training)
@@ -784,7 +808,9 @@ class Policy:
         chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
-        f = self.get_score(
+        f, error = _mpi.call(
+            self.mpicomm,
+            self.get_score,
             mode,
             predictor=self.predictor,
             training=self.training,
@@ -792,7 +818,7 @@ class Policy:
             ucb_beta=ucb_beta,
             parallel=False,
         )
-        champion, local_champion, local_index = self._find_champion(f)
+        champion, local_champion, local_index = self._find_champion(f, error)
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
@@ -800,8 +826,10 @@ class Policy:
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
-            champion, local_champion, local_index = self._find_champion(f)
+            f, error = self._get_marginal_score(
+                mode, chosen_actions[0:n], K, alpha, ucb_beta
+            )
+            champion, local_champion, local_index = self._find_champion(f, error)
             if champion == -1:
                 break
             if champion == local_champion:
@@ -809,8 +837,20 @@ class Policy:
             chosen_actions.append(champion)
         return np.array(chosen_actions)
 
-    def _find_champion(self, f):
-        if len(f) == 0:
+    def _find_champion(self, f, error=None):
+        """The best candidate over all processes.
+
+        ``error`` is an exception raised on this process while computing the
+        scores ``f`` of its candidates (see :func:`physbo._mpi.call`), raised
+        then on every process.
+        """
+        if error is not None and self.mpisize == 1:
+            raise error
+        if error is not None:
+            local_fmax = None
+            local_index = None
+            local_champion = None
+        elif len(f) == 0:
             local_fmax = -float("inf")
             local_index = -1
             local_champion = -1
@@ -821,7 +861,7 @@ class Policy:
         if self.mpisize == 1:
             champion = local_champion
         else:
-            local_champions = self.mpicomm.allgather(local_champion)
+            local_champions = _mpi.allgather(self.mpicomm, local_champion, error)
             local_fs = self.mpicomm.allgather(local_fmax)
             champion_rank = np.argmax(local_fs)
             champion = local_champions[champion_rank]
@@ -1089,9 +1129,9 @@ def _run_simulator(simulator, action, comm=None):
         t = simulator(action)
     else:
         if comm.rank == 0:
-            t = simulator(action)
+            t, error = _mpi.call(comm, simulator, action)
         else:
-            t = 0.0
-        t = comm.bcast(t, root=0)
+            t, error = 0.0, None
+        t = _mpi.bcast(comm, t, error, root=0)
 
     return normalize_t(t, k=1)

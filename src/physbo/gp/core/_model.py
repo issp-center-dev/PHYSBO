@@ -8,6 +8,7 @@
 import numpy as np
 import scipy.linalg
 
+from ... import _mpi
 from ... import blm
 from .. import cov, inf, lik, mean
 from . import learning
@@ -222,9 +223,13 @@ class Model:
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
 
-        basis_params = self.prior.cov.rand_expans(num_basis)
         if comm is not None:
-            basis_params = comm.bcast(basis_params, root=0)
+            # the basis of rank 0 is used; the random draws differ between
+            # the processes
+            basis_params, error = _mpi.call(comm, self.prior.cov.rand_expans, num_basis)
+            basis_params = _mpi.bcast(comm, basis_params, error, root=0)
+        else:
+            basis_params = self.prior.cov.rand_expans(num_basis)
         basis = blm.basis.Fourier(basis_params)
         prior = blm.prior.Gauss(num_basis)
         lik = blm.lik.Gauss(
@@ -513,16 +518,23 @@ class Model:
         """
         method = config.learning.method
 
-        if method == "adam":
-            adam = learning.Adam(self, config)
-            params = adam.run(X, t)
+        def learn():
+            if method == "adam":
+                adam = learning.Adam(self, config)
+                params = adam.run(X, t)
 
-        if method in ("bfgs", "batch"):
-            bfgs = learning.Batch(self, config)
-            params = bfgs.run(X, t)
+            if method in ("bfgs", "batch"):
+                bfgs = learning.Batch(self, config)
+                params = bfgs.run(X, t)
+            return params
 
         if comm is not None:
-            params = comm.bcast(params, root=0)
+            # the parameters of rank 0 are used; learning starts from random
+            # parameters, which differ between the processes
+            params, error = _mpi.call(comm, learn)
+            params = _mpi.bcast(comm, params, error, root=0)
+        else:
+            params = learn()
 
         self.set_params(params)
 

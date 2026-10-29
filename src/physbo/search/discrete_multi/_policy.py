@@ -11,6 +11,7 @@ import pickle as pickle
 import time
 
 from ._history import History
+from ... import _mpi
 from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
@@ -334,8 +335,10 @@ class Policy(discrete.Policy):
         return copy.deepcopy(self.history)
 
     def _get_actions(self, mode, N, K, alpha):
-        f = self.get_score(mode=mode, alpha=alpha, parallel=False)
-        champion, local_champion, local_index = self._find_champion(f)
+        f, error = _mpi.call(
+            self.mpicomm, self.get_score, mode=mode, alpha=alpha, parallel=False
+        )
+        champion, local_champion, local_index = self._find_champion(f, error)
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
@@ -343,8 +346,8 @@ class Policy(discrete.Policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
-            champion, local_champion, local_index = self._find_champion(f)
+            f, error = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
+            champion, local_champion, local_index = self._find_champion(f, error)
             if champion == -1:
                 break
             if champion == local_champion:
@@ -493,37 +496,45 @@ class Policy(discrete.Policy):
                 self._update_predictor()
                 predictor_list = self.predictor_list
 
-        if xs is not None:
-            if actions is not None:
-                raise RuntimeError("ERROR: both actions and xs are given")
-            if isinstance(xs, Variable):
-                test = xs
-            else:
-                test = Variable(X=xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            if actions is None:
-                actions = self.actions
-            else:
-                if isinstance(actions, int):
-                    actions = [actions]
+        def scores(actions):
+            # the share of this process of the candidates
+            if xs is not None:
+                if actions is not None:
+                    raise RuntimeError("ERROR: both actions and xs are given")
+                if isinstance(xs, Variable):
+                    test = xs
+                else:
+                    test = Variable(X=xs)
                 if parallel and self.mpisize > 1:
-                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
-            test = self.test.get_subset(actions)
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
+            else:
+                if actions is None:
+                    actions = self.actions
+                else:
+                    if isinstance(actions, int):
+                        actions = [actions]
+                    if parallel and self.mpisize > 1:
+                        actions = np.array_split(actions, self.mpisize)[
+                            self.mpirank
+                        ]
+                test = self.test.get_subset(actions)
+            return search_score.score(
+                mode,
+                predictor_list=predictor_list,
+                training=training,
+                test=test,
+                pareto=pareto,
+                reduced_candidate_num=self.TS_candidate_num,
+                alpha=alpha,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor_list=predictor_list,
-            training=training,
-            test=test,
-            pareto=pareto,
-            reduced_candidate_num=self.TS_candidate_num,
-            alpha=alpha,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores, actions)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -593,31 +604,45 @@ class Policy(discrete.Policy):
 
         Returns
         -------
-        f: list
-            N dimensional scores (score is defined in each mode)
+        f: numpy.ndarray or None
+            The marginal scores of the candidates of this process (score is
+            defined in each mode), or None if ``error`` is not None.
+        error: Exception or None
+            An exception raised on this process while computing ``f`` in a
+            parallel run, to be passed to :meth:`_find_champion` (in a serial
+            run it is raised).
         """
-        f = np.zeros((K, len(self.actions)), dtype=float)
 
-        N = len(chosen_actions)
-        # draw K samples of the values of objective function of chosen actions
-        new_test_local = self.test.get_subset(chosen_actions)
-        virtual_t_local = np.zeros((K, N, self.num_objectives))
-        for i in range(self.num_objectives):
-            virtual_t_local[:, :, i] = self.predictor_list[i].get_predict_samples(
-                self.training, new_test_local, K, objective_index=i
-            )
+        def predict_samples():
+            N = len(chosen_actions)
+            # draw K samples of the values of objective function of chosen
+            # actions
+            new_test_local = self.test.get_subset(chosen_actions)
+            virtual_t_local = np.zeros((K, N, self.num_objectives))
+            for i in range(self.num_objectives):
+                virtual_t_local[:, :, i] = self.predictor_list[i].get_predict_samples(
+                    self.training, new_test_local, K, objective_index=i
+                )
+            return new_test_local, virtual_t_local
 
+        samples, error = _mpi.call(self.mpicomm, predict_samples)
+        if self.mpisize > 1:
+            samples = _mpi.allgather(self.mpicomm, samples, error)
+        return _mpi.call(self.mpicomm, self._marginal_score, mode, samples, K)
+
+    def _marginal_score(self, mode, samples, K):
+        """The marginal scores of this process's candidates for the samples
+        (of every process in a parallel run) from :meth:`_get_marginal_score`."""
         if self.mpisize == 1:
-            new_test = new_test_local
-            virtual_t = virtual_t_local
+            new_test, virtual_t = samples
         else:
             new_test = Variable()
             virtual_t = np.zeros((K, 0, self.num_objectives))
-            for nt in self.mpicomm.allgather(new_test_local):
+            for nt, vt in samples:
                 new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            for vt in self.mpicomm.allgather(virtual_t_local):
                 virtual_t = np.concatenate((virtual_t, vt), axis=1)
 
+        f = np.zeros((K, len(self.actions)), dtype=float)
         for k in range(K):
             predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
 
@@ -745,7 +770,7 @@ def _run_simulator(simulator, action, comm=None):
     if comm is None:
         return simulator(action)
     if comm.rank == 0:
-        t = simulator(action)
+        t, error = _mpi.call(comm, simulator, action)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        t, error = 0.0, None
+    return _mpi.bcast(comm, t, error, root=0)
