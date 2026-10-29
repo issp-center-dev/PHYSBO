@@ -96,6 +96,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy.linalg</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">blm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">cov</span><span class="p">,</span> <span class="n">inf</span><span class="p">,</span> <span class="n">lik</span><span class="p">,</span> <span class="n">mean</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning</span>
@@ -329,9 +330,13 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="p">,</span> <span class="s2">"rand_expans"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The kernel must be."</span><span class="p">)</span>
 
-        <span class="n">basis_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">rand_expans</span><span class="p">(</span><span class="n">num_basis</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">basis_params</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">basis_params</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># the basis of rank 0 is used; the random draws differ between</span>
+            <span class="c1"># the processes</span>
+            <span class="n">basis_params</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">rand_expans</span><span class="p">,</span> <span class="n">num_basis</span><span class="p">)</span>
+            <span class="n">basis_params</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">basis_params</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">basis_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">rand_expans</span><span class="p">(</span><span class="n">num_basis</span><span class="p">)</span>
         <span class="n">basis</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">basis</span><span class="o">.</span><span class="n">Fourier</span><span class="p">(</span><span class="n">basis_params</span><span class="p">)</span>
         <span class="n">prior</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span><span class="n">num_basis</span><span class="p">)</span>
         <span class="n">lik</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">Gauss</span><span class="p">(</span>
@@ -653,16 +658,23 @@
 <span class="sd">        """</span>
         <span class="n">method</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">method</span>
 
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"adam"</span><span class="p">:</span>
-            <span class="n">adam</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">adam</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">learn</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"adam"</span><span class="p">:</span>
+                <span class="n">adam</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">adam</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"bfgs"</span><span class="p">,</span> <span class="s2">"batch"</span><span class="p">):</span>
-            <span class="n">bfgs</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">Batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">bfgs</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"bfgs"</span><span class="p">,</span> <span class="s2">"batch"</span><span class="p">):</span>
+                <span class="n">bfgs</span> <span class="o">=</span> <span class="n">learning</span><span class="o">.</span><span class="n">Batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">bfgs</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span>
 
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># the parameters of rank 0 are used; learning starts from random</span>
+            <span class="c1"># parameters, which differ between the processes</span>
+            <span class="n">params</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">learn</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">learn</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 

@@ -524,6 +524,7 @@
 <h2>並列化<a class="headerlink" href="#並列化" title="Link to this heading"></a></h2>
 <p>PHYSBO は全候補点に対する獲得関数の計算をMPI を用いて並列化出来ます。 MPI 並列には <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> を用います。</p>
 <p>並列化を有効化するには、 <code class="docutils literal notranslate"><span class="pre">policy</span></code> のコンストラクタのキーワード引数 <code class="docutils literal notranslate"><span class="pre">comm</span></code> に MPI コミュニケータ、たとえば <code class="docutils literal notranslate"><span class="pre">MPI.COMM_WORLD</span></code> を渡してください。</p>
+<p>探索中に一部のプロセスだけで起きた例外 (たとえばランク 0 のプロセスで実行されるシミュレータが送出した例外) は、すべてのプロセスで送出され、プロセスはそろって停止します。利用者自身のコードで捕捉されない例外に備えるには、スクリプトを <code class="docutils literal notranslate"><span class="pre">mpiexec</span> <span class="pre">-n</span> <span class="pre">4</span> <span class="pre">python</span> <span class="pre">-m</span> <span class="pre">mpi4py</span> <span class="pre">script.py</span></code> のように実行してください。このとき <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> は、ほかのプロセスを待たせたままにせず、すべてのプロセスを終了させます。</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>

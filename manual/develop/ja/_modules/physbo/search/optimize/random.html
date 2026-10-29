@@ -97,6 +97,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
+
 
 <div class="viewcode-block" id="Optimizer">
 <a class="viewcode-back" href="../../../../api/physbo.search.optimize.random.html#physbo.search.optimize.random.Optimizer">[ドキュメント]</a>
@@ -144,7 +146,8 @@
 <span class="sd">            without one).</span>
 <span class="sd">        mpicomm : MPI.Comm, optional</span>
 <span class="sd">            MPI communicator; the samples are divided among its processes,</span>
-<span class="sd">            and every process returns the same point.</span>
+<span class="sd">            and every process returns the same point. An exception raised by</span>
+<span class="sd">            ``fn`` on some processes is raised on every process.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -166,21 +169,26 @@
         <span class="k">if</span> <span class="n">mpirank</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">%</span> <span class="n">mpisize</span><span class="p">:</span>
             <span class="n">nsamples_local</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="n">result_fx</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="n">result_x</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsamples_local</span><span class="p">):</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-            <span class="n">fx</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">fx</span> <span class="o">&gt;</span> <span class="n">result_fx</span><span class="p">:</span>
-                <span class="n">result_fx</span> <span class="o">=</span> <span class="n">fx</span>
-                <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
-            <span class="k">elif</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># kept in case no score is larger than -inf</span>
-                <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">():</span>
+            <span class="n">result_fx</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">result_x</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsamples_local</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+                <span class="n">fx</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">fx</span> <span class="o">&gt;</span> <span class="n">result_fx</span><span class="p">:</span>
+                    <span class="n">result_fx</span> <span class="o">=</span> <span class="n">fx</span>
+                    <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
+                <span class="k">elif</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># kept in case no score is larger than -inf</span>
+                    <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">return</span> <span class="n">result_fx</span><span class="p">,</span> <span class="n">result_x</span>
+
+        <span class="n">result</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+        <span class="n">result_fx</span><span class="p">,</span> <span class="n">result_x</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">result</span>
         <span class="k">if</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># gathered as objects, so that scores of any type (e.g. float32,</span>
             <span class="c1"># or integers beyond 2**53) are compared as they are</span>
-            <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">result_fx</span><span class="p">)</span>
+            <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">result_fx</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
             <span class="c1"># the first of equally good processes, like np.argmax; with no</span>
             <span class="c1"># score larger than -inf anywhere, the first process, which has</span>
             <span class="c1"># at least one sample</span>
