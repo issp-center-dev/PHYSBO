@@ -116,13 +116,22 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) – mean of the predictive distribution</p></li>
-<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) – standard deviation of the predictive distribution</p></li>
-<li><p><strong>pareto</strong> (<em>Pareto object</em>) – Pareto object</p></li>
+<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) – mean of the predictive distribution, shape (N, n_obj); the first
+axis must be the N candidates, the rest is reshaped to (N, n_obj)</p></li>
+<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) – standard deviation of the predictive distribution, any shape with
+N * n_obj elements (reshaped to (N, n_obj))</p></li>
+<li><p><strong>pareto</strong> (<em>Pareto object</em>) – Pareto object.  The non-dominated region is divided into cells and
+the reference points are set by default if not done yet.</p></li>
+<li><p><strong>objectives</strong> (<em>The result is the expected hypervolume improvement when the</em>)</p></li>
+<li><p><strong>deviation</strong> (<em>are independent normal variables with mean fmean and standard</em>)</p></li>
+<li><p><strong>fstd</strong></p></li>
+<li><p><strong>contribute</strong> (<em>where predictions beyond reference_max in any objective</em>)</p></li>
+<li><p><strong>between</strong> (<em>zero</em><em> (</em><em>they are not clipped</em><em>)</em><em>.  It holds only while the front lies</em>)</p></li>
+<li><p><strong>reference_max.</strong> (<em>reference_min and</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>score</strong> – score of the candidate</p>
+<dd class="field-even"><p><strong>score</strong> – score of the candidates, shape (N,)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>numpy.ndarray</p>
@@ -138,13 +147,17 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) – mean of the predictive distribution</p></li>
-<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) – standard deviation of the predictive distribution</p></li>
-<li><p><strong>pareto</strong> (<em>Pareto object</em>) – Pareto object</p></li>
+<li><p><strong>fmean</strong> (<em>numpy.ndarray</em>) – mean of the predictive distribution, shape (N, n_obj); the first
+axis must be the N candidates, the rest is reshaped to (N, n_obj)</p></li>
+<li><p><strong>fstd</strong> (<em>numpy.ndarray</em>) – standard deviation of the predictive distribution, any shape with
+N * n_obj elements (reshaped to (N, n_obj))</p></li>
+<li><p><strong>pareto</strong> (<em>Pareto object</em>) – Pareto object.  The non-dominated region is divided into cells and
+reference_min is set by default if not done yet.</p></li>
+<li><p><strong>reference_min.</strong> (<em>The result holds only while the front lies above</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>score</strong> – score of the candidate</p>
+<dd class="field-even"><p><strong>score</strong> – score of the candidates, shape (N,)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>numpy.ndarray</p>
