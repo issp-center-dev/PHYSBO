@@ -16,6 +16,7 @@ invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
 import sys
+import warnings
 from itertools import product
 
 import numpy as np
@@ -97,7 +98,179 @@ def check_random_optimizer():
     np.random.seed(12345 + comm.rank)  # deliberately different streams
     x = opt(lambda x: f(x), mpicomm=comm)
     assert_identical_over_ranks(x, "random optimizer result")
+
+    # fewer samples than processes: some processes evaluate none
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=1
+    )
+    x = opt(lambda x: f(x), mpicomm=comm)
+    assert x is not None and x.shape == (2,)
+    assert_identical_over_ranks(x, "random optimizer result, one sample")
+
+    # scores of nan on all processes but rank 0
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=10
+    )
+    x = opt(lambda x: f(x) if comm.rank == 0 else np.nan, mpicomm=comm)
+    assert x is not None and np.all(np.isfinite(x))
+    assert_identical_over_ranks(x, "random optimizer result, nan elsewhere")
+
+    # the point returned is the best sample over all processes, also when it
+    # lies on a process other than rank 0 (whose scores are all nan)
+    best = [-np.inf]
+
+    def score(x):
+        fx = np.nan if comm.rank == 0 else f(x)
+        if fx > best[0]:
+            best[0] = fx
+        return fx
+
+    x = opt(score, mpicomm=comm)
+    assert f(x) == max(comm.allgather(best[0]))
+    assert_identical_over_ranks(x, "random optimizer result, nan on rank 0")
+
+    # extended precision bounds and a score of another type: the point is
+    # received in the type of the samples
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=np.zeros(2, dtype=np.longdouble),
+        max_X=np.ones(2, dtype=np.longdouble),
+        nsamples=1,
+    )
+    x = opt(lambda x: np.float32(f(x)), mpicomm=comm)
+    assert x.dtype == np.longdouble
+    assert_identical_over_ranks(x, "random optimizer result, longdouble")
+
+    # integer scores, larger on the last rank by 1 beyond 2**53 (equal as
+    # float64): its point wins
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=comm.size
+    )
+    last = comm.size - 1
+    sample = []
+
+    def integer_score(x):
+        if comm.rank == last:
+            sample.append(x.copy())  # x itself is overwritten by the broadcast
+        return 2**53 + 1 if comm.rank == last else 2**53
+
+    x = opt(integer_score, mpicomm=comm)
+    expected = comm.bcast(sample[0] if comm.rank == last else None, root=last)
+    assert np.array_equal(x, expected)
+    assert_identical_over_ranks(x, "random optimizer result, integer scores")
+
+    # equal scores everywhere: the point of the first process, like argmax
+    first = []
+
+    def equal_score(x):
+        if comm.rank == 0:
+            first.append(x.copy())
+        return 0.0
+
+    x = opt(equal_score, mpicomm=comm)
+    expected = comm.bcast(first[0] if comm.rank == 0 else None, root=0)
+    assert np.array_equal(x, expected)
+
+    check_random_optimizer_without_score()
     log("random optimizer: OK")
+
+
+def run_recording_warnings(opt, fn):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        x = opt(fn, mpicomm=comm)
+    return x, [w.category for w in caught]
+
+
+def recording(score_of):
+    """fn(x) = score_of(x), recording copies of the samples of this process."""
+    samples = []
+
+    def fn(x):
+        samples.append(x.copy())  # x itself may be overwritten by the broadcast
+        return score_of(x)
+
+    return fn, samples
+
+
+def first_sample_of(samples, rank=0):
+    return comm.bcast(samples[0] if comm.rank == rank else None, root=rank)
+
+
+def check_random_optimizer_without_score():
+    """No score larger than -inf on any process: the first sample of rank 0,
+    with a warning on every process; otherwise no warning anywhere."""
+    Optimizer = physbo.search.optimize.random.Optimizer
+    np.random.seed(777 + comm.rank)
+
+    # several samples per process: nan on rank 0, -inf elsewhere
+    fn, samples = recording(lambda x: np.nan if comm.rank == 0 else -np.inf)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[RuntimeWarning]] * comm.size
+    assert_identical_over_ranks(x, "random optimizer result, no score")
+
+    # fewer samples than processes: processes without samples warn too
+    fn, samples = recording(lambda x: np.nan)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 1), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[RuntimeWarning]] * comm.size
+
+    # the warning turned into an error is raised on every process
+    for nsamples in [1, 2 * comm.size]:
+        opt = Optimizer([0, 0], [1, 1], nsamples)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            try:
+                opt(lambda x: np.nan, mpicomm=comm)
+                raised = False
+            except RuntimeWarning:
+                raised = True
+        assert comm.allgather(raised) == [True] * comm.size
+
+    # a score larger than -inf on some process: no warning on any process,
+    # also not on rank 0, whose scores are all nan
+    x, caught = run_recording_warnings(
+        Optimizer([0, 0], [1, 1], 10), lambda x: np.nan if comm.rank == 0 else f(x)
+    )
+    assert comm.allgather(caught) == [[]] * comm.size
+
+    # +inf on the last process only: its first sample wins
+    last = comm.size - 1
+    fn, samples = recording(lambda x: np.inf if comm.rank == last else f(x))
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples, last))
+    assert comm.allgather(caught) == [[]] * comm.size
+
+    # equal scores, several samples per process: the first sample of rank 0
+    fn, samples = recording(lambda x: 0.0)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[]] * comm.size
+
+
+def check_range_few_samples():
+    """A range search whose optimizer has fewer samples than processes."""
+    policy = physbo.search.range.Policy(
+        min_X=np.array([0.0, 0.0]), max_X=np.array([1.0, 1.0]), comm=comm
+    )
+    policy.set_seed(12345)
+    sim = lambda x: f(np.atleast_2d(x))
+    policy.random_search(max_num_probes=3, simulator=sim, is_disp=False)
+    optimizer = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=1
+    )
+    res = policy.bayes_search(
+        max_num_probes=2,
+        simulator=sim,
+        score="EI",
+        is_disp=False,
+        interval=0,
+        optimizer=optimizer,
+    )
+    N = res.total_num_search
+    assert N == 5
+    assert_identical_over_ranks(res.action_X[:N], "range action_X, one sample")
+    log("range with one optimizer sample: OK")
 
 
 def check_range():
@@ -170,10 +343,14 @@ def check_range_unified():
 
 def main():
     log(f"running on {comm.size} MPI process(es)")
+    if comm.size < 2:
+        # several checks give some processes other scores than rank 0
+        raise RuntimeError("run with at least 2 MPI processes")
     check_discrete("EI")
     check_discrete("PI")
     check_discrete("TS")
     check_random_optimizer()
+    check_range_few_samples()
     check_range()
     check_range_multi()
     check_range_unified()

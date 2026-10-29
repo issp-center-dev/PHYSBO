@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import copy
+import warnings
 
 import numpy as np
 import time
@@ -43,92 +43,57 @@ def dominate(t1, t2):
     return np.all(t1 >= t2) and np.any(t1 > t2)
 
 
-def _merge_fronts(
-    front1: np.ndarray,
-    front2: np.ndarray,
-    indices1: np.ndarray,
-    indices2: np.ndarray,
-    maximize: bool = True,
-) -> tuple[np.ndarray, np.ndarray]:
-    assert front1.ndim == 2
-    assert front2.ndim == 2
-    N1, D = front1.shape
-    N2, D2 = front2.shape
-    assert D == D2
-    if N1 == 0:
-        return front2, indices2
-    if N2 == 0:
-        return front1, indices1
+def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
+    """
+    Mask of the points of t not dominated by any other point (maximization).
 
-    diff = np.zeros((N2, N1, D))
-    for i2 in range(N2):
-        diff[i2, :, :] = front2[i2, :] - front1
-    # dominated_1[i2, i1] = True if front1[i1] is dominated by front2[i2]
-    # dominated_2[i2, j1] = True if front2[i2] is dominated by front1[i1]
-    if maximize:
-        dominated_1 = np.all(diff >= 0, axis=2) & np.any(diff > 0, axis=2)
-        dominated_2 = np.all(diff <= 0, axis=2) & np.any(diff < 0, axis=2)
-    else:
-        dominated_1 = np.all(diff <= 0, axis=2) & np.any(diff < 0, axis=2)
-        dominated_2 = np.all(diff >= 0, axis=2) & np.any(diff > 0, axis=2)
-
-
-    undominated_1 = ~(dominated_1.any(axis=0))
-    undominated_2 = ~(dominated_2.any(axis=1))
-
-    new_front1 = front1[undominated_1]
-    new_indices1 = indices1[undominated_1]
-    new_front2 = front2[undominated_2]
-    new_indices2 = indices2[undominated_2]
-    new_N1 = len(new_front1)
-    new_N2 = len(new_front2)
-
-    i1 = 0
-    i2 = 0
-    new_front = []
-    new_indices = []
-    while i1 < new_N1 or i2 < new_N2:
-        if i1 == new_N1:
-            new_front.append(new_front2[i2])
-            new_indices.append(new_indices2[i2])
-            i2 += 1
-        elif i2 == new_N2:
-            new_front.append(new_front1[i1])
-            new_indices.append(new_indices1[i1])
-            i1 += 1
-        elif new_front1[i1, 0] > new_front2[i2, 0]:
-            new_front.append(new_front2[i2])
-            new_indices.append(new_indices2[i2])
-            i2 += 1
-        else:
-            new_front.append(new_front1[i1])
-            new_indices.append(new_indices1[i1])
-            i1 += 1
-    res_front = np.array(new_front).reshape(-1, D)
-    res_indices = np.array(new_indices).reshape(-1)
-    return res_front, res_indices
-
-
-def _extract_non_dominated_points(t: np.ndarray, indices: np.ndarray, maximize: bool = True):
-    assert t.ndim == 2
+    The points are visited in descending lexicographic order.  The first
+    remaining point cannot be dominated by any later point, so it is
+    non-dominated; the points it dominates are removed at once.  This costs
+    O(N * front_size * n_obj) vectorized operations.
+    """
     N = t.shape[0]
-    if N < 2:
-        return t, indices
+    mask = np.zeros(N, dtype=bool)
+    # np.lexsort uses the last key as the primary one
+    order = np.lexsort(t.T[::-1])[::-1]
+    rest = t[order]
+    rest_idx = order
+    while rest_idx.size > 0:
+        p = rest[0]
+        mask[rest_idx[0]] = True
+        others = rest[1:]
+        dominated = np.all(others <= p, axis=1) & np.any(others < p, axis=1)
+        rest = others[~dominated]
+        rest_idx = rest_idx[1:][~dominated]
+    return mask
 
-    Nleft = N // 2
 
-    tleft = copy.deepcopy(t[:Nleft, :])
-    ileft = copy.deepcopy(indices[:Nleft])
+# target number of elements of the (block, front_size, n_obj) temporaries;
+# a block holds at least one new point
+_CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
 
-    tleft, ileft = _extract_non_dominated_points(tleft, ileft, maximize)
 
-    tright = copy.deepcopy(t[Nleft:, :])
-    iright = copy.deepcopy(indices[Nleft:])
-
-    tright, iright = _extract_non_dominated_points(tright, iright, maximize)
-
-    merged_front, merged_indices = _merge_fronts(tleft, tright, ileft, iright, maximize)
-    return merged_front, merged_indices
+def _cross_dominance(front: np.ndarray, t: np.ndarray):
+    """
+    Masks of the points of front not dominated by any point of t, and of the
+    points of t not dominated by any point of front (maximization).
+    """
+    keep_front = np.ones(front.shape[0], dtype=bool)
+    keep_new = np.ones(t.shape[0], dtype=bool)
+    if front.shape[0] == 0 or t.shape[0] == 0:
+        return keep_front, keep_new
+    block = max(1, _CROSS_DOMINANCE_BLOCK_ELEMENTS // front.size)
+    for start in range(0, t.shape[0], block):
+        stop = min(start + block, t.shape[0])
+        # compared directly: the difference of the values may overflow
+        ge = t[start:stop, None, :] >= front[None, :, :]
+        le = t[start:stop, None, :] <= front[None, :, :]
+        # new point dominates front point: all(ge) and any(t > front)
+        dominates = np.all(ge, axis=2) & ~np.all(le, axis=2)
+        dominated = np.all(le, axis=2) & ~np.all(ge, axis=2)
+        keep_front &= ~np.any(dominates, axis=0)
+        keep_new[start:stop] = ~np.any(dominated, axis=1)
+    return keep_front, keep_new
 
 
 class Pareto(object):
@@ -147,6 +112,10 @@ class Pareto(object):
         self.cells = None
         self.reference_min = None
         self.reference_max = None
+        # the reference points last estimated from the front; a reference
+        # point is treated as estimated while it is this very object
+        self._estimated_reference_min = None
+        self._estimated_reference_max = None
 
     def update_front(self, t):
         return self.__update_front_new(t)
@@ -155,7 +124,10 @@ class Pareto(object):
         """
         Update the non-dominated set of points.
 
-        Pareto set is sorted on the first objective in ascending order.
+        Pareto set is sorted on the first objective in ascending order; on
+        ties, the points of the current front come first and then the new
+        points in the order of the rows of t.  front_updated tells whether
+        any of the new points joined the front.
         """
         t = np.array(t, dtype=float)
         if t.ndim == 1:
@@ -173,20 +145,29 @@ class Pareto(object):
             t = t[valid]
             indices = indices[valid]
 
-        right_front, right_indices = _extract_non_dominated_points(t, indices, maximize=True)
-        new_front, new_indices = _merge_fronts(self.front, right_front, self.front_num, right_indices, maximize=True)
+        # non-dominated points among the new points
+        mask = _non_dominated_mask(t)
+        t = t[mask]
+        indices = indices[mask]
 
-        updated = False
-        for i in new_indices:
-            if i in right_indices:
-                updated = True
-                break
-        self.front_updated = updated
+        # remove the points of the current front dominated by a new point and
+        # the new points dominated by a point of the current front
+        keep_front, keep_new = _cross_dominance(self.front, t)
+        # the front is updated if any of the new points joins it; a point of
+        # the current front can be removed only by a new point that joins
+        self.front_updated = bool(np.any(keep_new))
         self.num_compared += N
-        if self.front_updated:
-            self.cells = None
-            self.front = new_front
-            self.front_num = new_indices
+        if not self.front_updated:
+            return
+
+        # sorted on the first objective in ascending order; ties keep the
+        # current front first and then the order of the rows of t
+        all_t = np.r_[self.front[keep_front], t[keep_new]]
+        all_indices = np.r_[self.front_num[keep_front], indices[keep_new]]
+        sorted_idx = np.argsort(all_t[:, 0], kind="stable")
+        self.front = all_t[sorted_idx]
+        self.front_num = all_indices[sorted_idx]
+        self.cells = None
 
     def rebuild_front(self, t, terminal_num_run):
         """
@@ -272,22 +253,119 @@ class Pareto(object):
         return self.front, self.front_num
 
     def set_reference_min(self, reference_min=None):
+        """
+        Set the lower reference point.
+
+        Without an argument, it is estimated from the current front as
+        front_min - 2 w / n, with w the width of the front in each objective
+        (an objective in which the front has no extent takes the largest
+        width of the others, or 1) and n the number of points of the front;
+        prepare_reference_points estimates it again when the front no longer
+        lies above it.  A given reference point is kept as it is.
+        """
         if reference_min is None:
             # estimate reference min point
             front_min = np.min(self.front, axis=0, keepdims=True)
-            w = np.max(self.front, axis=0, keepdims=True) - front_min
+            w = self._front_width()
             reference_min = front_min - w * 2 / self.front.shape[0]
+            self._estimated_reference_min = reference_min
+        else:
+            self._estimated_reference_min = None
 
         self.reference_min = reference_min
 
     def set_reference_max(self, reference_max=None):
+        """
+        Set the upper reference point.
+
+        Without an argument, it is estimated from the current front as
+        front_max + 100 w, with w as for set_reference_min;
+        prepare_reference_points estimates it again when the front no longer
+        lies below it.  A given reference point is kept as it is.
+        """
         if reference_max is None:
             # estimate reference max point
             front_max = np.max(self.front, axis=0, keepdims=True)
-            w = front_max - np.min(self.front, axis=0, keepdims=True)
+            w = self._front_width()
             reference_max = front_max + w * 100
+            self._estimated_reference_max = reference_max
+        else:
+            self._estimated_reference_max = None
 
         self.reference_max = reference_max
+
+    def _front_width(self):
+        """
+        Width of the front in each objective, for estimating the reference
+        points.
+
+        An objective in which the front has no extent (all its points share
+        the value, e.g. a front of a single point) would give reference
+        points of zero width there, and EHVI would vanish for every
+        candidate; it gets the largest width of the other objectives, or 1
+        when the front has no extent at all.  (For values so large that the
+        resulting offsets are below their resolution, a reference point may
+        still round to the front; such objectives need given reference
+        points.)
+        """
+        w = np.max(self.front, axis=0, keepdims=True) - np.min(
+            self.front, axis=0, keepdims=True
+        )
+        if np.all(w > 0):
+            return w
+        fill = np.max(w) if np.any(w > 0) else 1.0
+        return np.where(w > 0, w, fill)
+
+    def prepare_reference_points(self, upper=True):
+        """
+        Make the reference points valid for the current front.
+
+        EHVI needs the front between reference_min and reference_max, and
+        HVPI needs it above reference_min.  A reference point that is not
+        set is estimated from the front.  An estimated reference point that
+        the front has grown beyond is estimated again; a reference point set
+        by the user is kept, with a warning.  The warning is always issued
+        from this module, whichever function calls this method, so that
+        warning filters treat all calls alike (and all processes of a
+        parallel run alike).
+
+        Parameters
+        ----------
+        upper: bool
+            Whether reference_max is needed as well.
+        """
+        if self.reference_min is None:
+            self.set_reference_min()
+        elif self._front_beyond(self.reference_min, lower=True):
+            # getattr: objects pickled by older versions lack the attribute
+            if self.reference_min is getattr(self, "_estimated_reference_min", None):
+                self.set_reference_min()
+            else:
+                warnings.warn(
+                    "the Pareto front is not above reference_min; "
+                    "the hypervolume-based scores are not reliable",
+                    RuntimeWarning,
+                )
+        if not upper:
+            return
+        if self.reference_max is None:
+            self.set_reference_max()
+        elif self._front_beyond(self.reference_max, lower=False):
+            if self.reference_max is getattr(self, "_estimated_reference_max", None):
+                self.set_reference_max()
+            else:
+                warnings.warn(
+                    "the Pareto front is not below reference_max; "
+                    "EHVI is not reliable",
+                    RuntimeWarning,
+                )
+
+    def _front_beyond(self, reference, lower):
+        """Whether a point of the front lies beyond the reference point."""
+        reference = np.asarray(reference, dtype=float).reshape(-1)
+        if lower:
+            return bool(np.any(self.front < reference))
+        return bool(np.any(self.front > reference))
 
     def volume_in_dominance(self, ref_min, ref_max, dominance_ratio=False):
         if self.cells is None:
@@ -358,6 +436,11 @@ class Pareto(object):
 
         rect_candidates = [[np.copy(front_idx[0]), np.copy(front_idx[-1])]]
 
+        # the cells are collected in lists and added at once at the end;
+        # appending them one by one to the arrays costs O(n_cells**2)
+        cells_lb = []
+        cells_ub = []
+
         call_time = 0
 
         start_time = time.time()
@@ -374,7 +457,8 @@ class Pareto(object):
 
             # first check if lb is in the non-dominated region, if so, add it to the cells
             if self.__included_in_non_dom_region(lb):
-                self.cells.add([lb_idx], [ub_idx])
+                cells_lb.append(lb_idx)
+                cells_ub.append(ub_idx)
                 call_time += 1
                 continue
 
@@ -401,6 +485,9 @@ class Pareto(object):
                 right_lb_idx = np.copy(rect[0])
                 right_lb_idx[div_dim] = div_point
                 rect_candidates.append([right_lb_idx, np.copy(rect[1])])
+
+        if cells_lb:
+            self.cells.add(cells_lb, cells_ub)
 
         end_time = time.time()
 

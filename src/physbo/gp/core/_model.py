@@ -6,13 +6,75 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import scipy.linalg
 
+from ... import _mpi
 from ... import blm
 from .. import cov, inf, lik, mean
 from . import learning
 from ._prior import Prior
 
 from physbo.misc.permutation_importance import get_permutation_importance
+
+
+def draw_multivariate_normal(mean, cov, N=1):
+    """
+    Draw samples from a multivariate normal distribution
+    by using the Cholesky decomposition.
+
+    Parameters
+    ----------
+    mean: numpy.ndarray
+        mean vector (ndata)
+    cov: numpy.ndarray
+        covariance matrix (ndata x ndata).
+        NOTE: this matrix is destroyed after calling this function
+        because it is used as workspace of the in-place Cholesky
+        decomposition (with a jitter term added to the diagonal elements
+        to keep the matrix positive definite).
+    N: int
+        number of samples
+        (default: 1)
+
+    Returns
+    -------
+    numpy.ndarray (N x ndata)
+    """
+    ndata = mean.shape[0]
+    if ndata == 0:
+        return np.zeros((N, 0))
+
+    # The covariance matrix is often numerically not positive definite,
+    # and hence a jitter term is added to the diagonal elements.
+    # When the Cholesky decomposition fails, the jitter term is increased.
+    #
+    # The decomposition is performed in place (cov is used as workspace)
+    # to avoid allocating another (ndata x ndata) matrix.
+    # A failed decomposition destroys the lower triangle and the diagonal
+    # but keeps the strict upper triangle intact, so that the matrix can be
+    # restored from the upper triangle and the saved diagonal for retrying.
+    diag = np.diag_indices_from(cov)
+    diag_cov = cov[diag].copy()
+    scale = np.mean(diag_cov)
+    if not scale > 0:
+        scale = 1.0
+    jitter = 1e-10 * scale
+    max_jitter = 1e-3 * scale
+    while True:
+        cov[diag] = diag_cov + jitter
+        try:
+            L = scipy.linalg.cholesky(
+                cov, lower=True, overwrite_a=True, check_finite=False
+            )
+            break
+        except np.linalg.LinAlgError:
+            if jitter > max_jitter:
+                raise
+            for i in range(1, ndata):
+                cov[i, :i] = cov[:i, i]
+            jitter *= 100
+    z = np.random.standard_normal((N, ndata))
+    return mean + z @ L.T
 
 
 class Model:
@@ -161,9 +223,13 @@ class Model:
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
 
-        basis_params = self.prior.cov.rand_expans(num_basis)
         if comm is not None:
-            basis_params = comm.bcast(basis_params, root=0)
+            # the basis of rank 0 is used; the random draws differ between
+            # the processes
+            basis_params, error = _mpi.call(comm, self.prior.cov.rand_expans, num_basis)
+            basis_params = _mpi.bcast(comm, basis_params, error, root=0)
+        else:
+            basis_params = self.prior.cov.rand_expans(num_basis)
         basis = blm.basis.Fourier(basis_params)
         prior = blm.prior.Gauss(num_basis)
         lik = blm.lik.Gauss(
@@ -346,7 +412,9 @@ class Model:
 
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        if alpha != 1:
+            fcov *= alpha**2
+        return draw_multivariate_normal(fmean, fcov, N)
 
     def predict_sampling(self, X, Z, params=None, N=1):
         """
@@ -375,12 +443,12 @@ class Model:
         if ndata == 0:
             return np.zeros((N, 0))
         fmean = self.get_post_fmean(X, Z, params=None)
-        fcov = self.get_post_fcov(X, Z, params=None, diag=False) + self.lik.get_cov(
-            ndata
-        )
+        fcov = self.get_post_fcov(X, Z, params=None, diag=False)
+        # add the noise variance to the diagonal elements in place
+        # instead of adding the dense matrix self.lik.get_cov(ndata)
+        fcov[np.diag_indices_from(fcov)] += self.lik.trans_params() ** 2
 
-        res = np.random.multivariate_normal(fmean, fcov, N)
-        return res
+        return draw_multivariate_normal(fmean, fcov, N)
 
     def print_params(self):
         """
@@ -450,16 +518,23 @@ class Model:
         """
         method = config.learning.method
 
-        if method == "adam":
-            adam = learning.Adam(self, config)
-            params = adam.run(X, t)
+        def learn():
+            if method == "adam":
+                adam = learning.Adam(self, config)
+                params = adam.run(X, t)
 
-        if method in ("bfgs", "batch"):
-            bfgs = learning.Batch(self, config)
-            params = bfgs.run(X, t)
+            if method in ("bfgs", "batch"):
+                bfgs = learning.Batch(self, config)
+                params = bfgs.run(X, t)
+            return params
 
         if comm is not None:
-            params = comm.bcast(params, root=0)
+            # the parameters of rank 0 are used; learning starts from random
+            # parameters, which differ between the processes
+            params, error = _mpi.call(comm, learn)
+            params = _mpi.bcast(comm, params, error, root=0)
+        else:
+            params = learn()
 
         self.set_params(params)
 
