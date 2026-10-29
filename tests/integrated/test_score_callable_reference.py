@@ -9,12 +9,8 @@
 
 The reference proposals and objective values in REFERENCE were recorded
 with the implementation before callable scores were introduced
-(develop, commit b08d3424), by running ``_run_case`` for every case in
-CASES. The 8 discrete cases that draw samples from the multivariate GP
-posterior (TS, and discrete_unified EI with 2 proposals per step) were
-recorded again with develop at b714f276, as #101 changed that sampling to
-a Cholesky factorization; the other 31 cases give the same values there.
-Recording environment:
+(develop, commit b714f276), by running ``_run_case`` for every case in
+CASES. Recording environment:
 
     macOS 27.0.1 (arm64), Python 3.15.1, numpy 2.5.4, scipy 1.18.1
 
@@ -38,7 +34,11 @@ from .conftest import STRICT_STOCHASTIC_REFERENCE
 
 MIN_X = np.array([0.0, 0.0])
 MAX_X = np.array([1.0, 1.0])
-INITIAL_ACTIONS = np.array([0, 7, 13, 24])
+# Not 24 = (1, 1) in place of 19: with 24, the map x -> (1 - x2, 1 - x1)
+# swapping the two objectives of f_multi keeps the initial data, so the
+# mirrored candidates 6 and 18 get mathematically equal scores, and which
+# one is proposed first depends on rounding (it differed between CI runners).
+INITIAL_ACTIONS = np.array([0, 7, 13, 19])
 INITIAL_X_RANGE = np.array([[0.1, 0.1], [0.9, 0.2], [0.3, 0.8], [0.5, 0.5]])
 SEED = 12345
 MAX_NUM_PROBES = 2
@@ -183,24 +183,24 @@ def _case_id(case):
     return "-".join(str(c) for c in case)
 
 
-# Recorded with b08d3424, 8 cases with b714f276 (see the module docstring).
+# Recorded with b714f276 (see the module docstring).
 # value: (proposals, fx); proposals are action indices (discrete) or X (range).
 REFERENCE = {
     ('discrete', 'EI', 1, 'gp'): (
-        [9, 17],
-        [-0.28250000000000003, -0.0325],
+        [4, 17],
+        [-0.52, -0.0325],
     ),
     ('discrete', 'EI', 2, 'gp'): (
-        [9, 17, 12, 21],
-        [-0.28250000000000003, -0.0325, -0.01999999999999999, -0.28250000000000003],
+        [4, 17, 12, 20],
+        [-0.52, -0.0325, -0.01999999999999999, -0.52],
     ),
     ('discrete', 'PI', 1, 'gp'): (
         [8, 12],
         [-0.145, -0.01999999999999999],
     ),
     ('discrete', 'PI', 2, 'gp'): (
-        [8, 12, 17, 14],
-        [-0.145, -0.01999999999999999, -0.0325, -0.17000000000000004],
+        [8, 12, 17, 20],
+        [-0.145, -0.01999999999999999, -0.0325, -0.52],
     ),
     ('discrete', 'TS', 1, 'gp'): (
         [8, 16],
@@ -215,12 +215,12 @@ REFERENCE = {
         [-0.52, -0.145],
     ),
     ('discrete', 'UCB', 2, 'gp'): (
-        [4, 16, 22, 12],
-        [-0.52, -0.145, -0.17000000000000004, -0.01999999999999999],
+        [4, 21, 17, 15],
+        [-0.52, -0.28250000000000003, -0.0325, -0.3825],
     ),
     ('discrete', 'EI', 1, 'blm'): (
-        [9, 17],
-        [-0.28250000000000003, -0.0325],
+        [4, 17],
+        [-0.52, -0.0325],
     ),
     ('range', 'EI', 1, 'gp'): (
         [[0.8622751162317551, 0.7418882012536725], [0.6931656540195079, 0.663384716182645]],
@@ -287,36 +287,36 @@ REFERENCE = {
         [[-0.011097199652762442, -0.5801610413550555], [-0.0014209701944036587, -0.4536405137184817], [-0.021144191803499066, -0.48027637279534857], [-0.05500338826095781, -0.49495097328588616]],
     ),
     ('discrete_multi', 'EHVI', 1, 'gp'): (
-        [4, 16],
-        [[-0.625, -0.625], [-0.25, -0.25]],
+        [4, 17],
+        [[-0.625, -0.625], [-0.3125, -0.0625]],
     ),
     ('discrete_multi', 'EHVI', 2, 'gp'): (
-        [4, 9, 16, 20],
-        [[-0.625, -0.625], [-0.5625, -0.3125], [-0.25, -0.25], [-0.625, -0.625]],
+        [4, 9, 12, 16],
+        [[-0.625, -0.625], [-0.5625, -0.3125], [-0.125, -0.125], [-0.25, -0.25]],
     ),
     ('discrete_multi', 'HVPI', 1, 'gp'): (
         [8, 12],
         [[-0.25, -0.25], [-0.125, -0.125]],
     ),
     ('discrete_multi', 'HVPI', 2, 'gp'): (
-        [8, 4, 12, 16],
-        [[-0.25, -0.25], [-0.625, -0.625], [-0.125, -0.125], [-0.25, -0.25]],
+        [8, 4, 12, 17],
+        [[-0.25, -0.25], [-0.625, -0.625], [-0.125, -0.125], [-0.3125, -0.0625]],
     ),
     ('discrete_multi', 'TS', 1, 'gp'): (
-        [9, 10],
-        [[-0.5625, -0.3125], [-0.125, -0.625]],
+        [9, 6],
+        [[-0.5625, -0.3125], [-0.0, -0.5]],
     ),
     ('discrete_multi', 'TS', 2, 'gp'): (
-        [9, 4, 6, 2],
-        [[-0.5625, -0.3125], [-0.625, -0.625], [-0.0, -0.5], [-0.125, -0.625]],
+        [9, 4, 1, 17],
+        [[-0.5625, -0.3125], [-0.625, -0.625], [-0.0625, -0.8125], [-0.3125, -0.0625]],
     ),
     ('discrete_multi', 'TS', 1, 'reduced'): (
-        [8, 17],
-        [[-0.25, -0.25], [-0.3125, -0.0625]],
+        [8, 21],
+        [[-0.25, -0.25], [-0.5625, -0.3125]],
     ),
     ('discrete_multi', 'TS', 2, 'reduced'): (
-        [8, 12, 3, 1],
-        [[-0.25, -0.25], [-0.125, -0.125], [-0.3125, -0.5625], [-0.0625, -0.8125]],
+        [8, 11, 3, 12],
+        [[-0.25, -0.25], [-0.0625, -0.3125], [-0.3125, -0.5625], [-0.125, -0.125]],
     ),
     ('range_multi', 'EHVI', 1, 'gp'): (
         [[0.36915688268789115, 0.39058979865232757], [0.24392168541812498, 0.4151960233189085]],
