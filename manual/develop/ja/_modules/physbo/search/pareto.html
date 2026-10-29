@@ -453,6 +453,11 @@
 
         <span class="n">rect_candidates</span> <span class="o">=</span> <span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">front_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">front_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]]</span>
 
+        <span class="c1"># the cells are collected in lists and added at once at the end;</span>
+        <span class="c1"># appending them one by one to the arrays costs O(n_cells**2)</span>
+        <span class="n">cells_lb</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cells_ub</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="n">call_time</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -469,7 +474,8 @@
 
             <span class="c1"># first check if lb is in the non-dominated region, if so, add it to the cells</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__included_in_non_dom_region</span><span class="p">(</span><span class="n">lb</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">lb_idx</span><span class="p">],</span> <span class="p">[</span><span class="n">ub_idx</span><span class="p">])</span>
+                <span class="n">cells_lb</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lb_idx</span><span class="p">)</span>
+                <span class="n">cells_ub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ub_idx</span><span class="p">)</span>
                 <span class="n">call_time</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
@@ -496,6 +502,9 @@
                 <span class="n">right_lb_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="n">right_lb_idx</span><span class="p">[</span><span class="n">div_dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">div_point</span>
                 <span class="n">rect_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">right_lb_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rect</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+
+        <span class="k">if</span> <span class="n">cells_lb</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cells_lb</span><span class="p">,</span> <span class="n">cells_ub</span><span class="p">)</span>
 
         <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
