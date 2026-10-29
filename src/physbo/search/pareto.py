@@ -256,14 +256,17 @@ class Pareto(object):
         """
         Set the lower reference point.
 
-        Without an argument, it is estimated from the current front, and
-        prepare_reference_points estimates it again when the front no
-        longer lies above it.  A given reference point is kept as it is.
+        Without an argument, it is estimated from the current front as
+        front_min - 2 w / n, with w the width of the front in each objective
+        (an objective in which the front has no extent takes the largest
+        width of the others, or 1) and n the number of points of the front;
+        prepare_reference_points estimates it again when the front no longer
+        lies above it.  A given reference point is kept as it is.
         """
         if reference_min is None:
             # estimate reference min point
             front_min = np.min(self.front, axis=0, keepdims=True)
-            w = np.max(self.front, axis=0, keepdims=True) - front_min
+            w = self._front_width()
             reference_min = front_min - w * 2 / self.front.shape[0]
             self._estimated_reference_min = reference_min
         else:
@@ -275,20 +278,43 @@ class Pareto(object):
         """
         Set the upper reference point.
 
-        Without an argument, it is estimated from the current front, and
-        prepare_reference_points estimates it again when the front no
-        longer lies below it.  A given reference point is kept as it is.
+        Without an argument, it is estimated from the current front as
+        front_max + 100 w, with w as for set_reference_min;
+        prepare_reference_points estimates it again when the front no longer
+        lies below it.  A given reference point is kept as it is.
         """
         if reference_max is None:
             # estimate reference max point
             front_max = np.max(self.front, axis=0, keepdims=True)
-            w = front_max - np.min(self.front, axis=0, keepdims=True)
+            w = self._front_width()
             reference_max = front_max + w * 100
             self._estimated_reference_max = reference_max
         else:
             self._estimated_reference_max = None
 
         self.reference_max = reference_max
+
+    def _front_width(self):
+        """
+        Width of the front in each objective, for estimating the reference
+        points.
+
+        An objective in which the front has no extent (all its points share
+        the value, e.g. a front of a single point) would give reference
+        points of zero width there, and EHVI would vanish for every
+        candidate; it gets the largest width of the other objectives, or 1
+        when the front has no extent at all.  (For values so large that the
+        resulting offsets are below their resolution, a reference point may
+        still round to the front; such objectives need given reference
+        points.)
+        """
+        w = np.max(self.front, axis=0, keepdims=True) - np.min(
+            self.front, axis=0, keepdims=True
+        )
+        if np.all(w > 0):
+            return w
+        fill = np.max(w) if np.any(w > 0) else 1.0
+        return np.where(w > 0, w, fill)
 
     def prepare_reference_points(self, upper=True):
         """
