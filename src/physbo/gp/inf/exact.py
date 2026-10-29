@@ -7,6 +7,7 @@
 
 import numpy as np
 import scipy
+import scipy.linalg
 from ... import misc
 
 
@@ -84,7 +85,13 @@ def get_grad_marlik(gp, X, t, params=None):
     U = scipy.linalg.cholesky(A, check_finite=False)
     res = t - fmu
     alpha = misc.gauss_elim(U, res)
-    invA = scipy.linalg.inv(A, check_finite=False)
+    # Invert A from its Cholesky factor U (A = U^T U, upper) with dpotri
+    # (~2n^3/3 flops) instead of an LU-based inverse with scipy.linalg.inv;
+    # dpotri fills the upper triangle only.
+    invA, info = scipy.linalg.lapack.dpotri(U, lower=0)
+    if info != 0:
+        raise np.linalg.LinAlgError("dpotri failed with info = %d" % info)
+    invA = np.triu(invA) + np.triu(invA, 1).T
 
     grad_marlik = np.zeros(gp.num_params)
 
