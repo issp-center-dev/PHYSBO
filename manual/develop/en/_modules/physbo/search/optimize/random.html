@@ -138,9 +138,22 @@
                 <span class="n">result_fx</span> <span class="o">=</span> <span class="n">fx</span>
                 <span class="n">result_x</span> <span class="o">=</span> <span class="n">x</span>
         <span class="k">if</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mpisize</span><span class="p">)</span>
-            <span class="n">mpicomm</span><span class="o">.</span><span class="n">Allgather</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">result_fx</span><span class="p">]),</span> <span class="n">result_fx_all</span><span class="p">)</span>
-            <span class="n">best_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">result_fx_all</span><span class="p">)</span>
+            <span class="c1"># gathered as objects, so that scores of any type (e.g. float32,</span>
+            <span class="c1"># or integers beyond 2**53) are compared as they are</span>
+            <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">result_fx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">fx</span> <span class="o">==</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">for</span> <span class="n">fx</span> <span class="ow">in</span> <span class="n">result_fx_all</span><span class="p">):</span>
+                <span class="c1"># no process kept a sample (all scores nan or -inf): the same</span>
+                <span class="c1"># result as a single process, on every process</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="c1"># the first of equally good processes, like np.argmax</span>
+            <span class="n">best_rank</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">mpisize</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rank</span><span class="p">:</span> <span class="n">result_fx_all</span><span class="p">[</span><span class="n">rank</span><span class="p">])</span>
+            <span class="c1"># a process that kept no sample (it had none, or only scores of</span>
+            <span class="c1"># nan or -inf) still needs a buffer to receive the point</span>
+            <span class="k">if</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># of the type of the samples, as on the sending process</span>
+                <span class="n">result_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">result_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+                <span class="p">)</span>
             <span class="n">mpicomm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">result_x</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">best_rank</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result_x</span></div>
