@@ -84,22 +84,49 @@ def test_warning_can_be_turned_into_error():
             opt(lambda x: np.nan)
 
 
+class NanScoreOptimizer(Optimizer):
+    """The random optimizer, with every score of the policy replaced by nan.
+
+    The policy's score is still evaluated, so that its path runs as usual.
+    """
+
+    ncalls = 0
+
+    def __call__(self, fn, mpicomm=None):
+        NanScoreOptimizer.ncalls += 1
+        return super().__call__(lambda x: (fn(x), np.nan)[1], mpicomm=mpicomm)
+
+
 def test_range_policy_gives_simulator_a_point_within_bounds():
-    """With objective values so large that every EI score is nan, the range
-    policy passes a point within the bounds to the simulator, not nan."""
+    """When every score is nan, the range policy passes a point within the
+    bounds to the simulator, not nan, and warns.
+
+    The scores are made nan through the optimizer, not through overflowing
+    objective values as in #125: where those overflow (in the GP learning or
+    in the score) depends on the BLAS/LAPACK build.
+    """
     np.random.seed(0)
     calls = []
 
     def sim(x):
         x = np.atleast_2d(x)
         calls.append(x.copy())
-        return 1e300 * np.sum(x, axis=1)
+        return -np.sum((x - 0.3) ** 2, axis=1)
 
     policy = physbo.search.range.Policy(min_X=np.zeros(2), max_X=np.ones(2))
     policy.random_search(max_num_probes=3, simulator=sim, is_disp=False)
+    optimizer = NanScoreOptimizer(min_X=np.zeros(2), max_X=np.ones(2), nsamples=20)
+    NanScoreOptimizer.ncalls = 0
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        policy.bayes_search(max_num_probes=2, simulator=sim, score="EI", is_disp=False)
+        policy.bayes_search(
+            max_num_probes=2,
+            simulator=sim,
+            score="EI",
+            optimizer=optimizer,
+            is_disp=False,
+        )
+    assert NanScoreOptimizer.ncalls == 2
     assert len(calls) == 5
     for x in calls[3:]:
         assert np.all(np.isfinite(x))

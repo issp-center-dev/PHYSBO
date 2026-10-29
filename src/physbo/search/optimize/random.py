@@ -49,7 +49,9 @@ class Optimizer:
         ----------
         fn : callable
             The function to maximize. Takes a numpy array of shape (dim,) and
-            returns a score; scores of ``nan`` are ignored.
+            returns a score; scores of ``nan`` are ignored while some sample
+            has a score larger than ``-inf`` (see Returns for the case
+            without one).
         mpicomm : MPI.Comm, optional
             MPI communicator; the samples are divided among its processes,
             and every process returns the same point.
