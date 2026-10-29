@@ -17,7 +17,7 @@ from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
-from ..._rng import make_rng
+from ..._rng import make_rng, attach_rng
 
 
 class Policy(range_single.Policy):
@@ -205,6 +205,9 @@ class Policy(range_single.Policy):
     ):
         assert unify_method is not None, "unify_method must be provided"
         self.unify_method = unify_method
+        # a unify_method without a generator of its own (e.g. ParEGO) draws
+        # from the policy's rng, so that the Generator mode covers it
+        attach_rng(unify_method, self.rng)
 
         if self.mpirank != 0:
             is_disp = False
