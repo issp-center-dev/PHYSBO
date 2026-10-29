@@ -366,14 +366,17 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the lower reference point.</span>
 
-<span class="sd">        Without an argument, it is estimated from the current front, and</span>
-<span class="sd">        prepare_reference_points estimates it again when the front no</span>
-<span class="sd">        longer lies above it.  A given reference point is kept as it is.</span>
+<span class="sd">        Without an argument, it is estimated from the current front as</span>
+<span class="sd">        front_min - 2 w / n, with w the width of the front in each objective</span>
+<span class="sd">        (an objective in which the front has no extent takes the largest</span>
+<span class="sd">        width of the others, or 1) and n the number of points of the front;</span>
+<span class="sd">        prepare_reference_points estimates it again when the front no longer</span>
+<span class="sd">        lies above it.  A given reference point is kept as it is.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># estimate reference min point</span>
             <span class="n">front_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="n">front_min</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front_width</span><span class="p">()</span>
             <span class="n">reference_min</span> <span class="o">=</span> <span class="n">front_min</span> <span class="o">-</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_min</span> <span class="o">=</span> <span class="n">reference_min</span>
         <span class="k">else</span><span class="p">:</span>
@@ -388,14 +391,15 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the upper reference point.</span>
 
-<span class="sd">        Without an argument, it is estimated from the current front, and</span>
-<span class="sd">        prepare_reference_points estimates it again when the front no</span>
-<span class="sd">        longer lies below it.  A given reference point is kept as it is.</span>
+<span class="sd">        Without an argument, it is estimated from the current front as</span>
+<span class="sd">        front_max + 100 w, with w as for set_reference_min;</span>
+<span class="sd">        prepare_reference_points estimates it again when the front no longer</span>
+<span class="sd">        lies below it.  A given reference point is kept as it is.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># estimate reference max point</span>
             <span class="n">front_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front_width</span><span class="p">()</span>
             <span class="n">reference_max</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">100</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_max</span> <span class="o">=</span> <span class="n">reference_max</span>
         <span class="k">else</span><span class="p">:</span>
@@ -403,6 +407,28 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="n">reference_max</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_front_width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Width of the front in each objective, for estimating the reference</span>
+<span class="sd">        points.</span>
+
+<span class="sd">        An objective in which the front has no extent (all its points share</span>
+<span class="sd">        the value, e.g. a front of a single point) would give reference</span>
+<span class="sd">        points of zero width there, and EHVI would vanish for every</span>
+<span class="sd">        candidate; it gets the largest width of the other objectives, or 1</span>
+<span class="sd">        when the front has no extent at all.  (For values so large that the</span>
+<span class="sd">        resulting offsets are below their resolution, a reference point may</span>
+<span class="sd">        still round to the front; such objectives need given reference</span>
+<span class="sd">        points.)</span>
+<span class="sd">        """</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">w</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Pareto.prepare_reference_points">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.prepare_reference_points">[ドキュメント]</a>
