@@ -6,7 +6,21 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import scipy.stats
+import scipy.special
+
+_SQRT_2PI = np.sqrt(2 * np.pi)
+
+
+def _norm_cdf(x):
+    """Standard normal CDF, as scipy.stats.norm.cdf without its overhead."""
+    # scipy.stats promotes the input to float64; so does this function
+    return scipy.special.ndtr(np.asarray(x, dtype=float))
+
+
+def _norm_pdf(x):
+    """Standard normal PDF, as scipy.stats.norm.pdf without its overhead."""
+    x = np.asarray(x, dtype=float)
+    return np.exp(-(x**2) / 2.0) / _SQRT_2PI
 
 
 def score(mode, predictor, test, training=None, **kwargs):
@@ -18,7 +32,7 @@ def score(mode, predictor, test, training=None, **kwargs):
     mode: str
         Kind of score.
 
-        "EI", "PI", and "TS" are available.
+        "EI", "PI", "TS", and "UCB" are available.
 
     predictor: predictor object
         Base class is defined in physbo.predictor.
@@ -52,6 +66,11 @@ def score(mode, predictor, test, training=None, **kwargs):
         candidates with the same sample. All ranks must call this
         function (collective operation).
 
+    ucb_beta: float
+        Trade-off parameter between exploitation and exploration (default: 1.0).
+        The score is ``fmean + ucb_beta * fstd``; larger values favor
+        exploration. Used only for mode == "UCB".
+
     Returns
     -------
     score: numpy.ndarray
@@ -80,8 +99,11 @@ def score(mode, predictor, test, training=None, **kwargs):
         alpha = kwargs.get("alpha", 1.0)
         rng = kwargs.get("rng", None)
         return TS(predictor, training, test, alpha, rng=rng, comm=comm)
+    elif mode == "UCB":
+        beta = kwargs.get("ucb_beta", 1.0)
+        return UCB(predictor, training, test, beta)
     else:
-        raise NotImplementedError("ERROR: mode must be EI, PI or TS.")
+        raise NotImplementedError("ERROR: mode must be EI, PI, TS or UCB.")
 
 
 def EI(predictor, training, test, fmax=None):
@@ -113,7 +135,7 @@ def EI(predictor, training, test, fmax=None):
 
     temp1 = fmean - fmax
     temp2 = temp1 / fstd
-    score = temp1 * scipy.stats.norm.cdf(temp2) + fstd * scipy.stats.norm.pdf(temp2)
+    score = temp1 * _norm_cdf(temp2) + fstd * _norm_pdf(temp2)
     return score
 
 
@@ -145,7 +167,7 @@ def PI(predictor, training, test, fmax=None):
         fmax = np.max(predictor.get_post_fmean(training, training))
 
     temp = (fmean - fmax) / fstd
-    score = scipy.stats.norm.cdf(temp)
+    score = _norm_cdf(temp)
     return score
 
 
@@ -206,3 +228,35 @@ def TS(predictor, training, test, alpha=1, rng=None, comm=None):
     return (
         predictor.get_post_samples(training, test, alpha=alpha, rng=rng)
     ).flatten()
+
+
+def UCB(predictor, training, test, beta=1.0):
+    """
+    Upper Confidence Bound (UCB).
+
+    The score is ``fmean + beta * fstd``, where ``fmean`` and ``fstd`` are the
+    mean and the standard deviation of the posterior predictive distribution.
+    Since PHYSBO maximizes the objective, larger ``beta`` puts more weight on
+    exploration (high-variance candidates), while ``beta == 0`` reduces to
+    greedy exploitation of the posterior mean.
+
+    Parameters
+    ----------
+    predictor: predictor object
+        Base class is defined in physbo.predictor.
+    training: physbo.variable
+        Training dataset.
+        If the predictor is not trained, use this for training.
+    test: physbo.variable
+        Inputs
+    beta: float
+        Trade-off parameter between exploitation and exploration.
+        (default: 1.0)
+    Returns
+    -------
+    score: numpy.ndarray
+    """
+    fmean = predictor.get_post_fmean(training, test)
+    fcov = predictor.get_post_fcov(training, test)
+    fstd = np.sqrt(fcov)
+    return (fmean + beta * fstd).flatten()

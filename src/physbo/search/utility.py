@@ -200,7 +200,8 @@ def plot_pareto_front(
     for i in range(steps_begin, steps_end):
         if i in front_num:
             undominated.append(i)
-        else:
+        elif np.all(np.isfinite(history.fx[i])):
+            # failed observations (non-finite values) are not plotted
             dominated.append(i)
         min_fx = np.minimum(min_fx, history.fx[i, [x, y]])
         max_fx = np.maximum(max_fx, history.fx[i, [x, y]])
@@ -411,6 +412,117 @@ def length_vector(t):
     """
     N = len(t) if hasattr(t, "__len__") else 1
     return N
+
+
+def finite_mask(t):
+    """Return the mask of valid (finite) observations.
+
+    An observation is valid when all of its objective values are finite;
+    a NaN or an infinite value marks a failed evaluation.
+
+    Parameters
+    ----------
+    t: numpy.ndarray
+        N dimensional array (single objective) or N x k dimensional array
+        (k objectives) of objective values.
+
+    Returns
+    -------
+    mask: numpy.ndarray of bool, shape (N,)
+        True for valid observations, False for failed ones.
+    """
+    t = np.asarray(t, dtype=float)
+    if t.ndim <= 1:
+        return np.isfinite(t).reshape(-1)
+    return np.all(np.isfinite(t), axis=tuple(range(1, t.ndim)))
+
+
+def mask_rows(Z, mask):
+    """Select the observations given by mask from a basis array Z.
+
+    Parameters
+    ----------
+    Z: numpy.ndarray or None
+        (N, n) array, or (k, N, n) array (one basis per objective), or None.
+    mask: numpy.ndarray of bool, shape (N,)
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Z restricted to the rows where mask is True (None if Z is None).
+    """
+    if Z is None:
+        return None
+    Z = np.asarray(Z)
+    if Z.ndim == 3:
+        return Z[:, mask, :]
+    return Z[mask]
+
+
+def require_finite(X, t, max_shown=5):
+    """Raise an error if t contains a failed (non-finite) observation.
+
+    For the policies with a continuous search space. A failed point cannot
+    be removed from a continuous search space, and hence it would be
+    proposed again and again if it were only excluded from the training data.
+
+    Parameters
+    ----------
+    X: numpy.ndarray
+        N x d dimensional array. The inputs of the observations.
+    t: numpy.ndarray
+        N x k dimensional array. The objective values of the observations.
+    max_shown: int
+        The maximum number of the failed observations shown in the message.
+
+    Raises
+    ------
+    ValueError
+        If any objective value is NaN or +-Inf.
+    """
+    valid = finite_mask(t)
+    if np.all(valid):
+        return
+
+    X = np.asarray(X)
+    t = np.asarray(t)
+    failed = np.where(~valid)[0]
+    lines = [f"  X = {X[i]}, t = {t[i]}" for i in failed[:max_shown]]
+    if len(failed) > max_shown:
+        lines.append(f"  ... ({len(failed) - max_shown} more)")
+    msg = (
+        "Non-finite objective value (NaN or +-Inf) is given for "
+        f"{len(failed)} of {len(valid)} point(s):\n"
+        + "\n".join(lines)
+        + "\nFailed evaluations are not supported in continuous search spaces"
+        " (range policies), because a failed point would be proposed again."
+        " Return a finite penalty value suitable for your problem"
+        " from the simulator instead."
+        " Nothing has been written to the history."
+    )
+    raise ValueError(msg)
+
+
+def require_training_data(training):
+    """Raise an error if there is no observation to train the predictor with.
+
+    Parameters
+    ----------
+    training: physbo.Variable
+        The training dataset.
+
+    Raises
+    ------
+    RuntimeError
+        If the training dataset is empty.
+    """
+    if training is None or training.X is None or training.X.shape[0] == 0:
+        msg = (
+            "No valid observation is available for Bayesian optimization."
+            " Add observations with finite objective values"
+            " (e.g., by random_search) before calling bayes_search."
+        )
+        raise RuntimeError(msg)
 
 
 def is_learning(n, interval):
