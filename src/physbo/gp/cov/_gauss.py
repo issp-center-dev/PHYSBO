@@ -194,15 +194,17 @@ class Gauss:
             if diag:
                 G = scale2 * np.ones(X.shape[0])
             else:
-                pairwise_dists = spatial.distance.squareform(
-                    spatial.distance.pdist(X / width, "euclidean") ** 2
-                )
-                G = np.exp(-0.5 * pairwise_dists) * scale2
+                Xw = X / width
+                G = spatial.distance.cdist(Xw, Xw, "sqeuclidean")
         else:
-            pairwise_dists = (
-                spatial.distance.cdist(X / width, Z / width, "euclidean") ** 2
-            )
-            G = np.exp(-0.5 * pairwise_dists) * scale2
+            G = spatial.distance.cdist(X / width, Z / width, "sqeuclidean")
+
+        if not diag:
+            # G = exp(-0.5 * G) * scale2, computed in place
+            # to avoid allocating temporary matrices
+            G *= -0.5
+            np.exp(G, out=G)
+            G *= scale2
 
         return G
 
@@ -409,11 +411,10 @@ class Gauss:
             num_data = X.shape[0]
             M = max(2000, int(np.floor(num_data / 5)))
 
-            dist = np.zeros(M)
-
-            for m in range(M):
-                a = np.random.randint(0, X.shape[0], 2)
-                dist[m] = np.linalg.norm(X[a[0], :] - X[a[1], :])
+            # Sample M random pairs of points at once and compute the pairwise
+            # distances in a vectorized manner instead of a Python loop.
+            pairs = np.random.randint(0, num_data, (M, 2))
+            dist = np.linalg.norm(X[pairs[:, 0], :] - X[pairs[:, 1], :], axis=1)
 
             dist = np.sort(dist)
             tmp = int(np.floor(M / 10))

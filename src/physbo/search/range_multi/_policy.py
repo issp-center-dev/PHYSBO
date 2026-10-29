@@ -423,6 +423,12 @@ class Policy(range_single.Policy):
             # the samples, and so the predictors, differ between the processes
             _mpi.allgather(self.mpicomm, None, error)
 
+        pareto = self.history.pareto
+        if mode in ("EHVI", "HVPI") and pareto.front.shape[0] > 0:
+            # on every process before the optimizer, which may evaluate fn on
+            # some processes only, so that they all use the same reference
+            # points and warn (or raise) together
+            pareto.prepare_reference_points(upper=(mode == "EHVI"))
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
