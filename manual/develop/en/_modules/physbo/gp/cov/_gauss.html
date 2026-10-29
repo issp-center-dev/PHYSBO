@@ -294,15 +294,17 @@
             <span class="k">if</span> <span class="n">diag</span><span class="p">:</span>
                 <span class="n">G</span> <span class="o">=</span> <span class="n">scale2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">squareform</span><span class="p">(</span>
-                    <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">pdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"euclidean"</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="p">)</span>
-                <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pairwise_dists</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale2</span>
+                <span class="n">Xw</span> <span class="o">=</span> <span class="n">X</span> <span class="o">/</span> <span class="n">width</span>
+                <span class="n">G</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">Xw</span><span class="p">,</span> <span class="n">Xw</span><span class="p">,</span> <span class="s2">"sqeuclidean"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">pairwise_dists</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="n">Z</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"euclidean"</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="p">)</span>
-            <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pairwise_dists</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale2</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="n">Z</span> <span class="o">/</span> <span class="n">width</span><span class="p">,</span> <span class="s2">"sqeuclidean"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">diag</span><span class="p">:</span>
+            <span class="c1"># G = exp(-0.5 * G) * scale2, computed in place</span>
+            <span class="c1"># to avoid allocating temporary matrices</span>
+            <span class="n">G</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">0.5</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">G</span><span class="p">)</span>
+            <span class="n">G</span> <span class="o">*=</span> <span class="n">scale2</span>
 
         <span class="k">return</span> <span class="n">G</span></div>
 

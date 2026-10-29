@@ -94,6 +94,7 @@
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.linalg</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">blm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">cov</span><span class="p">,</span> <span class="n">inf</span><span class="p">,</span> <span class="n">lik</span><span class="p">,</span> <span class="n">mean</span>
@@ -101,6 +102,66 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">physbo.misc.permutation_importance</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_permutation_importance</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Draw samples from a multivariate normal distribution</span>
+<span class="sd">    by using the Cholesky decomposition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mean: numpy.ndarray</span>
+<span class="sd">        mean vector (ndata)</span>
+<span class="sd">    cov: numpy.ndarray</span>
+<span class="sd">        covariance matrix (ndata x ndata).</span>
+<span class="sd">        NOTE: this matrix is destroyed after calling this function</span>
+<span class="sd">        because it is used as workspace of the in-place Cholesky</span>
+<span class="sd">        decomposition (with a jitter term added to the diagonal elements</span>
+<span class="sd">        to keep the matrix positive definite).</span>
+<span class="sd">    N: int</span>
+<span class="sd">        number of samples</span>
+<span class="sd">        (default: 1)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray (N x ndata)</span>
+<span class="sd">    """</span>
+    <span class="n">ndata</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ndata</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># The covariance matrix is often numerically not positive definite,</span>
+    <span class="c1"># and hence a jitter term is added to the diagonal elements.</span>
+    <span class="c1"># When the Cholesky decomposition fails, the jitter term is increased.</span>
+    <span class="c1">#</span>
+    <span class="c1"># The decomposition is performed in place (cov is used as workspace)</span>
+    <span class="c1"># to avoid allocating another (ndata x ndata) matrix.</span>
+    <span class="c1"># A failed decomposition destroys the lower triangle and the diagonal</span>
+    <span class="c1"># but keeps the strict upper triangle intact, so that the matrix can be</span>
+    <span class="c1"># restored from the upper triangle and the saved diagonal for retrying.</span>
+    <span class="n">diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag_indices_from</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+    <span class="n">diag_cov</span> <span class="o">=</span> <span class="n">cov</span><span class="p">[</span><span class="n">diag</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">diag_cov</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">scale</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">jitter</span> <span class="o">=</span> <span class="mf">1e-10</span> <span class="o">*</span> <span class="n">scale</span>
+    <span class="n">max_jitter</span> <span class="o">=</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">scale</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">cov</span><span class="p">[</span><span class="n">diag</span><span class="p">]</span> <span class="o">=</span> <span class="n">diag_cov</span> <span class="o">+</span> <span class="n">jitter</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span>
+                <span class="n">cov</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite_a</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="k">break</span>
+        <span class="k">except</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">jitter</span> <span class="o">&gt;</span> <span class="n">max_jitter</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ndata</span><span class="p">):</span>
+                <span class="n">cov</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov</span><span class="p">[:</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">jitter</span> <span class="o">*=</span> <span class="mi">100</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">ndata</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span>
 
 
 <div class="viewcode-block" id="Model">
@@ -474,7 +535,9 @@
 
         <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
         <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span> <span class="o">*</span> <span class="n">alpha</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fcov</span> <span class="o">*=</span> <span class="n">alpha</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">return</span> <span class="n">draw_multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Model.predict_sampling">
@@ -506,12 +569,12 @@
         <span class="k">if</span> <span class="n">ndata</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_cov</span><span class="p">(</span>
-            <span class="n">ndata</span>
-        <span class="p">)</span>
+        <span class="n">fcov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># add the noise variance to the diagonal elements in place</span>
+        <span class="c1"># instead of adding the dense matrix self.lik.get_cov(ndata)</span>
+        <span class="n">fcov</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">diag_indices_from</span><span class="p">(</span><span class="n">fcov</span><span class="p">)]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">trans_params</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span>
 
-        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">res</span></div>
+        <span class="k">return</span> <span class="n">draw_multivariate_normal</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fcov</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Model.print_params">
