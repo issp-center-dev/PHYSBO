@@ -29,7 +29,8 @@ def score(mode, predictor_list, test, training, **kwargs):
     Other Parameters
     ----------------
     pareto : Pareto
-        Required for EHVI, HVPI and callable modes.
+        Required for EHVI and HVPI. Passed to callable modes, as None when
+        omitted.
     alpha : float
         Posterior sampling scale for string "TS". Default is 1.0.
     reduced_candidate_num : int or None
@@ -50,11 +51,9 @@ def score(mode, predictor_list, test, training, **kwargs):
             alpha=kwargs.get("alpha", 1.0),
             reduced_candidate_num=kwargs["reduced_candidate_num"],
         )
-        pareto = kwargs.get("pareto")
     else:
         score_fn = resolve(mode)
-        pareto = kwargs["pareto"]
-    return score_fn(predictor_list, training, test, pareto)
+    return score_fn(predictor_list, training, test, kwargs.get("pareto"))
 
 
 def HVPI(fmean, fstd, pareto):

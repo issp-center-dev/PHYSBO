@@ -712,3 +712,33 @@ def test_multi_score_callable_called_once_positionally(multi):
     assert args[1] is training
     assert args[2] is test
     assert args[3] is pareto
+
+
+def test_multi_score_callable_without_pareto_receives_none(multi):
+    """score_multi.score(callable) without pareto calls fn with pareto=None."""
+    predictor_list, training, test, _ = multi
+    fn = _Recorder(np.zeros(test.X.shape[0]))
+    score_multi.score(fn, predictor_list=predictor_list, test=test, training=training)
+    args, _ = fn.calls[0]
+    assert args[3] is None
+
+
+def test_multi_score_TS_instance_without_pareto_matches_string(multi):
+    """A ThompsonSampling instance needs no pareto, as the string "TS" does not."""
+    predictor_list, training, test, _ = multi
+    np.random.seed(3)
+    expected = score_multi.score(
+        "TS",
+        predictor_list=predictor_list,
+        test=test,
+        training=training,
+        reduced_candidate_num=None,
+    )
+    np.random.seed(3)
+    actual = score_multi.score(
+        score_multi.ThompsonSampling(),
+        predictor_list=predictor_list,
+        test=test,
+        training=training,
+    )
+    np.testing.assert_array_equal(actual, expected)
