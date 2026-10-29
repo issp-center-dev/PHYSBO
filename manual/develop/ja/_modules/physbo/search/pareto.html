@@ -95,8 +95,6 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
@@ -140,92 +138,57 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_merge_fronts</span><span class="p">(</span>
-    <span class="n">front1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">front2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">indices1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">indices2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">maximize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-    <span class="k">assert</span> <span class="n">front1</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
-    <span class="k">assert</span> <span class="n">front2</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
-    <span class="n">N1</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">front1</span><span class="o">.</span><span class="n">shape</span>
-    <span class="n">N2</span><span class="p">,</span> <span class="n">D2</span> <span class="o">=</span> <span class="n">front2</span><span class="o">.</span><span class="n">shape</span>
-    <span class="k">assert</span> <span class="n">D</span> <span class="o">==</span> <span class="n">D2</span>
-    <span class="k">if</span> <span class="n">N1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">front2</span><span class="p">,</span> <span class="n">indices2</span>
-    <span class="k">if</span> <span class="n">N2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">front1</span><span class="p">,</span> <span class="n">indices1</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_non_dominated_mask</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Mask of the points of t not dominated by any other point (maximization).</span>
 
-    <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N2</span><span class="p">,</span> <span class="n">N1</span><span class="p">,</span> <span class="n">D</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N2</span><span class="p">):</span>
-        <span class="n">diff</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">front2</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">front1</span>
-    <span class="c1"># dominated_1[i2, i1] = True if front1[i1] is dominated by front2[i2]</span>
-    <span class="c1"># dominated_2[i2, j1] = True if front2[i2] is dominated by front1[i1]</span>
-    <span class="k">if</span> <span class="n">maximize</span><span class="p">:</span>
-        <span class="n">dominated_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diff</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">dominated_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diff</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">dominated_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diff</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">dominated_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diff</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-
-    <span class="n">undominated_1</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">dominated_1</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-    <span class="n">undominated_2</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">dominated_2</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-    <span class="n">new_front1</span> <span class="o">=</span> <span class="n">front1</span><span class="p">[</span><span class="n">undominated_1</span><span class="p">]</span>
-    <span class="n">new_indices1</span> <span class="o">=</span> <span class="n">indices1</span><span class="p">[</span><span class="n">undominated_1</span><span class="p">]</span>
-    <span class="n">new_front2</span> <span class="o">=</span> <span class="n">front2</span><span class="p">[</span><span class="n">undominated_2</span><span class="p">]</span>
-    <span class="n">new_indices2</span> <span class="o">=</span> <span class="n">indices2</span><span class="p">[</span><span class="n">undominated_2</span><span class="p">]</span>
-    <span class="n">new_N1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_front1</span><span class="p">)</span>
-    <span class="n">new_N2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_front2</span><span class="p">)</span>
-
-    <span class="n">i1</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">i2</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">new_front</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">new_indices</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">while</span> <span class="n">i1</span> <span class="o">&lt;</span> <span class="n">new_N1</span> <span class="ow">or</span> <span class="n">i2</span> <span class="o">&lt;</span> <span class="n">new_N2</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">i1</span> <span class="o">==</span> <span class="n">new_N1</span><span class="p">:</span>
-            <span class="n">new_front</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_front2</span><span class="p">[</span><span class="n">i2</span><span class="p">])</span>
-            <span class="n">new_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_indices2</span><span class="p">[</span><span class="n">i2</span><span class="p">])</span>
-            <span class="n">i2</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">elif</span> <span class="n">i2</span> <span class="o">==</span> <span class="n">new_N2</span><span class="p">:</span>
-            <span class="n">new_front</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_front1</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
-            <span class="n">new_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_indices1</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
-            <span class="n">i1</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">elif</span> <span class="n">new_front1</span><span class="p">[</span><span class="n">i1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">new_front2</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
-            <span class="n">new_front</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_front2</span><span class="p">[</span><span class="n">i2</span><span class="p">])</span>
-            <span class="n">new_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_indices2</span><span class="p">[</span><span class="n">i2</span><span class="p">])</span>
-            <span class="n">i2</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_front</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_front1</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
-            <span class="n">new_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_indices1</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
-            <span class="n">i1</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="n">res_front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_front</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
-    <span class="n">res_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_indices</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">res_front</span><span class="p">,</span> <span class="n">res_indices</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_extract_non_dominated_points</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">maximize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-    <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="sd">    The points are visited in descending lexicographic order.  The first</span>
+<span class="sd">    remaining point cannot be dominated by any later point, so it is</span>
+<span class="sd">    non-dominated; the points it dominates are removed at once.  This costs</span>
+<span class="sd">    O(N * front_size * n_obj) vectorized operations.</span>
+<span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">N</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">indices</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="c1"># np.lexsort uses the last key as the primary one</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">T</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">rest</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="n">rest_idx</span> <span class="o">=</span> <span class="n">order</span>
+    <span class="k">while</span> <span class="n">rest_idx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">rest</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mask</span><span class="p">[</span><span class="n">rest_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">others</span> <span class="o">=</span> <span class="n">rest</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">dominated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">others</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">others</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="n">others</span><span class="p">[</span><span class="o">~</span><span class="n">dominated</span><span class="p">]</span>
+        <span class="n">rest_idx</span> <span class="o">=</span> <span class="n">rest_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:][</span><span class="o">~</span><span class="n">dominated</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mask</span>
 
-    <span class="n">Nleft</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span>
 
-    <span class="n">tleft</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">t</span><span class="p">[:</span><span class="n">Nleft</span><span class="p">,</span> <span class="p">:])</span>
-    <span class="n">ileft</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">indices</span><span class="p">[:</span><span class="n">Nleft</span><span class="p">])</span>
+<span class="c1"># target number of elements of the (block, front_size, n_obj) temporaries;</span>
+<span class="c1"># a block holds at least one new point</span>
+<span class="n">_CROSS_DOMINANCE_BLOCK_ELEMENTS</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">20</span>
 
-    <span class="n">tleft</span><span class="p">,</span> <span class="n">ileft</span> <span class="o">=</span> <span class="n">_extract_non_dominated_points</span><span class="p">(</span><span class="n">tleft</span><span class="p">,</span> <span class="n">ileft</span><span class="p">,</span> <span class="n">maximize</span><span class="p">)</span>
 
-    <span class="n">tright</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">Nleft</span><span class="p">:,</span> <span class="p">:])</span>
-    <span class="n">iright</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="n">Nleft</span><span class="p">:])</span>
-
-    <span class="n">tright</span><span class="p">,</span> <span class="n">iright</span> <span class="o">=</span> <span class="n">_extract_non_dominated_points</span><span class="p">(</span><span class="n">tright</span><span class="p">,</span> <span class="n">iright</span><span class="p">,</span> <span class="n">maximize</span><span class="p">)</span>
-
-    <span class="n">merged_front</span><span class="p">,</span> <span class="n">merged_indices</span> <span class="o">=</span> <span class="n">_merge_fronts</span><span class="p">(</span><span class="n">tleft</span><span class="p">,</span> <span class="n">tright</span><span class="p">,</span> <span class="n">ileft</span><span class="p">,</span> <span class="n">iright</span><span class="p">,</span> <span class="n">maximize</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">merged_front</span><span class="p">,</span> <span class="n">merged_indices</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cross_dominance</span><span class="p">(</span><span class="n">front</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Masks of the points of front not dominated by any point of t, and of the</span>
+<span class="sd">    points of t not dominated by any point of front (maximization).</span>
+<span class="sd">    """</span>
+    <span class="n">keep_front</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">keep_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">keep_front</span><span class="p">,</span> <span class="n">keep_new</span>
+    <span class="n">block</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_CROSS_DOMINANCE_BLOCK_ELEMENTS</span> <span class="o">//</span> <span class="n">front</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">block</span><span class="p">):</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">block</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># compared directly: the difference of the values may overflow</span>
+        <span class="n">ge</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&gt;=</span> <span class="n">front</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">le</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;=</span> <span class="n">front</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="c1"># new point dominates front point: all(ge) and any(t &gt; front)</span>
+        <span class="n">dominates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ge</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">le</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">dominated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">le</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ge</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">keep_front</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dominates</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">keep_new</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dominated</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">keep_front</span><span class="p">,</span> <span class="n">keep_new</span>
 
 
 <div class="viewcode-block" id="Pareto">
@@ -257,7 +220,10 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update the non-dominated set of points.</span>
 
-<span class="sd">        Pareto set is sorted on the first objective in ascending order.</span>
+<span class="sd">        Pareto set is sorted on the first objective in ascending order; on</span>
+<span class="sd">        ties, the points of the current front come first and then the new</span>
+<span class="sd">        points in the order of the rows of t.  front_updated tells whether</span>
+<span class="sd">        any of the new points joined the front.</span>
 <span class="sd">        """</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -275,20 +241,29 @@
             <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
             <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
 
-        <span class="n">right_front</span><span class="p">,</span> <span class="n">right_indices</span> <span class="o">=</span> <span class="n">_extract_non_dominated_points</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">new_front</span><span class="p">,</span> <span class="n">new_indices</span> <span class="o">=</span> <span class="n">_merge_fronts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">right_front</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span><span class="p">,</span> <span class="n">right_indices</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># non-dominated points among the new points</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_non_dominated_mask</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
 
-        <span class="n">updated</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_indices</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">right_indices</span><span class="p">:</span>
-                <span class="n">updated</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="k">break</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span> <span class="o">=</span> <span class="n">updated</span>
+        <span class="c1"># remove the points of the current front dominated by a new point and</span>
+        <span class="c1"># the new points dominated by a point of the current front</span>
+        <span class="n">keep_front</span><span class="p">,</span> <span class="n">keep_new</span> <span class="o">=</span> <span class="n">_cross_dominance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="c1"># the front is updated if any of the new points joins it; a point of</span>
+        <span class="c1"># the current front can be removed only by a new point that joins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">keep_new</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_compared</span> <span class="o">+=</span> <span class="n">N</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">new_front</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">new_indices</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">front_updated</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># sorted on the first objective in ascending order; ties keep the</span>
+        <span class="c1"># current front first and then the order of the rows of t</span>
+        <span class="n">all_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">keep_front</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="n">keep_new</span><span class="p">]]</span>
+        <span class="n">all_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">front_num</span><span class="p">[</span><span class="n">keep_front</span><span class="p">],</span> <span class="n">indices</span><span class="p">[</span><span class="n">keep_new</span><span class="p">]]</span>
+        <span class="n">sorted_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">all_t</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"stable"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">all_t</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">front_num</span> <span class="o">=</span> <span class="n">all_indices</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Pareto.rebuild_front">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.rebuild_front">[ドキュメント]</a>
