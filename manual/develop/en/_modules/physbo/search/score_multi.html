@@ -107,6 +107,11 @@
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.score">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EHVI"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># as EHVI/HVPI do on the other processes of a parallel run, so</span>
+            <span class="c1"># that they all use the same reference points and warn (or raise)</span>
+            <span class="c1"># together</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">:</span>
@@ -167,8 +172,7 @@
     <span class="n">N</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">n_obj</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">num_objectives</span>
 
-    <span class="k">if</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">pareto</span><span class="o">.</span><span class="n">set_reference_min</span><span class="p">()</span>
+    <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">reference_min</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_min</span>
 
     <span class="c1"># Pareto front with reference points</span>
@@ -246,10 +250,7 @@
     <span class="n">N</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">n_obj</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">num_objectives</span>
 
-    <span class="k">if</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">pareto</span><span class="o">.</span><span class="n">set_reference_min</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">pareto</span><span class="o">.</span><span class="n">set_reference_max</span><span class="p">()</span>
+    <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">()</span>
     <span class="n">reference_min</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_min</span>
     <span class="n">reference_max</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">reference_max</span>
 

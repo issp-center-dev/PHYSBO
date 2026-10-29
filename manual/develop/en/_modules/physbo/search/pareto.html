@@ -94,6 +94,8 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
@@ -208,6 +210,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># the reference points last estimated from the front; a reference</span>
+        <span class="c1"># point is treated as estimated while it is this very object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_min</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_max</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Pareto.update_front">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.update_front">[docs]</a>
@@ -356,11 +362,21 @@
 <div class="viewcode-block" id="Pareto.set_reference_min">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.set_reference_min">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_reference_min</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Set the lower reference point.</span>
+
+<span class="sd">        Without an argument, it is estimated from the current front, and</span>
+<span class="sd">        prepare_reference_points estimates it again when the front no</span>
+<span class="sd">        longer lies above it.  A given reference point is kept as it is.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># estimate reference min point</span>
             <span class="n">front_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="n">front_min</span>
             <span class="n">reference_min</span> <span class="o">=</span> <span class="n">front_min</span> <span class="o">-</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_min</span> <span class="o">=</span> <span class="n">reference_min</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_min</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="o">=</span> <span class="n">reference_min</span></div>
 
@@ -368,14 +384,78 @@
 <div class="viewcode-block" id="Pareto.set_reference_max">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.set_reference_max">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_reference_max</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_max</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Set the upper reference point.</span>
+
+<span class="sd">        Without an argument, it is estimated from the current front, and</span>
+<span class="sd">        prepare_reference_points estimates it again when the front no</span>
+<span class="sd">        longer lies below it.  A given reference point is kept as it is.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># estimate reference max point</span>
             <span class="n">front_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">reference_max</span> <span class="o">=</span> <span class="n">front_max</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="mi">100</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_max</span> <span class="o">=</span> <span class="n">reference_max</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reference_max</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="o">=</span> <span class="n">reference_max</span></div>
 
+
+<div class="viewcode-block" id="Pareto.prepare_reference_points">
+<a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.prepare_reference_points">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_reference_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Make the reference points valid for the current front.</span>
+
+<span class="sd">        EHVI needs the front between reference_min and reference_max, and</span>
+<span class="sd">        HVPI needs it above reference_min.  A reference point that is not</span>
+<span class="sd">        set is estimated from the front.  An estimated reference point that</span>
+<span class="sd">        the front has grown beyond is estimated again; a reference point set</span>
+<span class="sd">        by the user is kept, with a warning.  The warning is always issued</span>
+<span class="sd">        from this module, whichever function calls this method, so that</span>
+<span class="sd">        warning filters treat all calls alike (and all processes of a</span>
+<span class="sd">        parallel run alike).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        upper: bool</span>
+<span class="sd">            Whether reference_max is needed as well.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_reference_min</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front_beyond</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="c1"># getattr: objects pickled by older versions lack the attribute</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_min</span> <span class="ow">is</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_estimated_reference_min"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_reference_min</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">"the Pareto front is not above reference_min; "</span>
+                    <span class="s2">"the hypervolume-based scores are not reliable"</span><span class="p">,</span>
+                    <span class="ne">RuntimeWarning</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">upper</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_reference_max</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front_beyond</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_max</span> <span class="ow">is</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_estimated_reference_max"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_reference_max</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">"the Pareto front is not below reference_max; "</span>
+                    <span class="s2">"EHVI is not reliable"</span><span class="p">,</span>
+                    <span class="ne">RuntimeWarning</span><span class="p">,</span>
+                <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_front_beyond</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">lower</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Whether a point of the front lies beyond the reference point."""</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">&lt;</span> <span class="n">reference</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span> <span class="o">&gt;</span> <span class="n">reference</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Pareto.volume_in_dominance">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.volume_in_dominance">[docs]</a>

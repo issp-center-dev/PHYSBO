@@ -494,6 +494,12 @@
                     <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
+        <span class="n">pareto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EHVI"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># on every process before the optimizer, which may evaluate fn on</span>
+            <span class="c1"># some processes only, so that they all use the same reference</span>
+            <span class="c1"># points and warn (or raise) together</span>
+            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">))</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">X</span>
 

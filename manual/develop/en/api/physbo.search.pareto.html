@@ -123,6 +123,25 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="physbo.search.pareto.Pareto.prepare_reference_points">
+<span class="sig-name descname"><span class="pre">prepare_reference_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.prepare_reference_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.prepare_reference_points" title="Link to this definition"></a></dt>
+<dd><p>Make the reference points valid for the current front.</p>
+<p>EHVI needs the front between reference_min and reference_max, and
+HVPI needs it above reference_min.  A reference point that is not
+set is estimated from the front.  An estimated reference point that
+the front has grown beyond is estimated again; a reference point set
+by the user is kept, with a warning.  The warning is always issued
+from this module, whichever function calls this method, so that
+warning filters treat all calls alike (and all processes of a
+parallel run alike).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>upper</strong> (<em>bool</em>) – Whether reference_max is needed as well.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.rebuild_front">
 <span class="sig-name descname"><span class="pre">rebuild_front</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminal_num_run</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.rebuild_front"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.rebuild_front" title="Link to this definition"></a></dt>
 <dd><p>Recompute the non-dominated set of points from the observations.</p>
@@ -141,12 +160,20 @@ written. The reference points are kept unless they are not finite.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.set_reference_max">
 <span class="sig-name descname"><span class="pre">set_reference_max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.set_reference_max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.set_reference_max" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Set the upper reference point.</p>
+<p>Without an argument, it is estimated from the current front, and
+prepare_reference_points estimates it again when the front no
+longer lies below it.  A given reference point is kept as it is.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.set_reference_min">
 <span class="sig-name descname"><span class="pre">set_reference_min</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.set_reference_min"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.set_reference_min" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Set the lower reference point.</p>
+<p>Without an argument, it is estimated from the current front, and
+prepare_reference_points estimates it again when the front no
+longer lies above it.  A given reference point is kept as it is.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.update_front">
