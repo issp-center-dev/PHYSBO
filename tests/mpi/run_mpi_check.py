@@ -16,6 +16,7 @@ invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
 import sys
+import warnings
 from itertools import product
 
 import numpy as np
@@ -138,16 +139,23 @@ def check_ts_sample_coherence():
     policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
     policy.bayes_search(max_num_probes=0, num_rand_basis=100, is_disp=False)
     test = policy.test.get_subset([10, 50, 100])
-    fscore = search_score.score(
-        "TS",
-        predictor=policy.predictor,
-        training=policy.training,
-        test=test,
-        alpha=1.0,
-        rng=policy.rng,
-        comm=comm,
+    # as the policies do: the sample of rank 0 is shared, and the returned
+    # score evaluates it
+    mode = search_score.share_sample(
+        search_score.resolve("TS", rng=policy.rng),
+        policy.predictor,
+        policy.training,
+        comm,
     )
+    fscore = mode(policy.predictor, policy.training, test)
     assert_identical_over_ranks(fscore, "TS scores of identical candidates")
+    # without sharing, each rank draws its own sample
+    own = search_score.resolve("TS", rng=policy.rng)(
+        policy.predictor, policy.training, test
+    )
+    gathered = comm.allgather(np.asarray(own))
+    if all(np.array_equal(gathered[0], other) for other in gathered[1:]):
+        raise AssertionError("TS scores without a shared sample agree by chance")
     log("TS sample coherence: OK")
 
 
@@ -168,7 +176,7 @@ def check_random_optimizer():
     assert x is not None and x.shape == (2,)
     assert_identical_over_ranks(x, "random optimizer result, one sample")
 
-    # scores of nan on all processes but rank 0: they keep no sample
+    # scores of nan on all processes but rank 0
     opt = physbo.search.optimize.random.Optimizer(
         min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=10
     )
@@ -177,7 +185,7 @@ def check_random_optimizer():
     assert_identical_over_ranks(x, "random optimizer result, nan elsewhere")
 
     # the point returned is the best sample over all processes, also when it
-    # lies on a process other than rank 0 (which here keeps no sample)
+    # lies on a process other than rank 0 (whose scores are all nan)
     best = [-np.inf]
 
     def score(x):
@@ -231,10 +239,82 @@ def check_random_optimizer():
     expected = comm.bcast(first[0] if comm.rank == 0 else None, root=0)
     assert np.array_equal(x, expected)
 
-    # scores of nan everywhere: None on every process, as on a single one
-    x = opt(lambda x: np.nan, mpicomm=comm)
-    assert comm.allgather(x is None) == [True] * comm.size
+    check_random_optimizer_without_score()
     log("random optimizer: OK")
+
+
+def run_recording_warnings(opt, fn):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        x = opt(fn, mpicomm=comm)
+    return x, [w.category for w in caught]
+
+
+def recording(score_of):
+    """fn(x) = score_of(x), recording copies of the samples of this process."""
+    samples = []
+
+    def fn(x):
+        samples.append(x.copy())  # x itself may be overwritten by the broadcast
+        return score_of(x)
+
+    return fn, samples
+
+
+def first_sample_of(samples, rank=0):
+    return comm.bcast(samples[0] if comm.rank == rank else None, root=rank)
+
+
+def check_random_optimizer_without_score():
+    """No score larger than -inf on any process: the first sample of rank 0,
+    with a warning on every process; otherwise no warning anywhere."""
+    Optimizer = physbo.search.optimize.random.Optimizer
+    np.random.seed(777 + comm.rank)
+
+    # several samples per process: nan on rank 0, -inf elsewhere
+    fn, samples = recording(lambda x: np.nan if comm.rank == 0 else -np.inf)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[RuntimeWarning]] * comm.size
+    assert_identical_over_ranks(x, "random optimizer result, no score")
+
+    # fewer samples than processes: processes without samples warn too
+    fn, samples = recording(lambda x: np.nan)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 1), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[RuntimeWarning]] * comm.size
+
+    # the warning turned into an error is raised on every process
+    for nsamples in [1, 2 * comm.size]:
+        opt = Optimizer([0, 0], [1, 1], nsamples)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            try:
+                opt(lambda x: np.nan, mpicomm=comm)
+                raised = False
+            except RuntimeWarning:
+                raised = True
+        assert comm.allgather(raised) == [True] * comm.size
+
+    # a score larger than -inf on some process: no warning on any process,
+    # also not on rank 0, whose scores are all nan
+    x, caught = run_recording_warnings(
+        Optimizer([0, 0], [1, 1], 10), lambda x: np.nan if comm.rank == 0 else f(x)
+    )
+    assert comm.allgather(caught) == [[]] * comm.size
+
+    # +inf on the last process only: its first sample wins
+    last = comm.size - 1
+    fn, samples = recording(lambda x: np.inf if comm.rank == last else f(x))
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples, last))
+    assert comm.allgather(caught) == [[]] * comm.size
+
+    # equal scores, several samples per process: the first sample of rank 0
+    fn, samples = recording(lambda x: 0.0)
+    x, caught = run_recording_warnings(Optimizer([0, 0], [1, 1], 2 * comm.size), fn)
+    assert np.array_equal(x, first_sample_of(samples))
+    assert comm.allgather(caught) == [[]] * comm.size
 
 
 def check_range_few_samples():
@@ -332,6 +412,9 @@ def check_range_unified():
 
 def main():
     log(f"running on {comm.size} MPI process(es)")
+    if comm.size < 2:
+        # several checks give some processes other scores than rank 0
+        raise RuntimeError("run with at least 2 MPI processes")
     check_discrete("EI")
     check_discrete("PI")
     check_discrete("TS")

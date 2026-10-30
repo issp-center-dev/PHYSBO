@@ -11,6 +11,7 @@ import pickle as pickle
 import time
 
 from ._history import History
+from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
@@ -232,9 +233,14 @@ class Policy(range_single.Policy):
             If true, Pareto set is displayed.
         simulator: callable, optional
             The simulator function.
-        score: str, optional
-            The type of acquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        score: str or callable
+            EHVI, HVPI, TS, or a callable called positionally as
+            ``score(predictor_list, training, test, pareto)`` returning a
+            numpy.ndarray of shape (test.X.shape[0],), with larger values
+            preferred. pareto is self.history.pareto and must be treated as
+            read-only; marginal scores do not update it with virtual data.
+            Empty test data skips the callable. Under MPI, the callable
+            evaluates local points and must not perform collective communication.
         interval: int, optional
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -255,6 +261,13 @@ class Policy(range_single.Policy):
         -------
         history: history object (physbo.search.range_multi.results.history)
         """
+
+        score = search_score.resolve(
+            score,
+            alpha=self.config.search.alpha,
+            reduced_candidate_num=self.TS_candidate_num,
+            rng=self.rng,
+        )
 
         if self.mpirank != 0:
             is_disp = False
@@ -308,7 +321,9 @@ class Policy(range_single.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -342,7 +357,16 @@ class Policy(range_single.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _argmax_score(self, mode, predictors, training, virtual_trainings, optimizer):
+    def _argmax_score(
+        self,
+        mode,
+        predictors,
+        training,
+        virtual_trainings,
+        optimizer,
+        error=None,
+        samples_drawn=False,
+    ):
         """
         Get the action that maximizes the score.
 
@@ -360,10 +384,15 @@ class Policy(range_single.Policy):
             List of extra training data.
         optimizer: Function or Optimizer object
             Optimizer object for optimizing the acquisition function.
+        error: Exception or None
+            An exception raised on this process while drawing the samples in
+            ``virtual_trainings`` (see :func:`physbo._mpi.call`).
+        samples_drawn: bool
+            Whether the samples were drawn (on every process alike), so that
+            the processes exchange whether one of them raised.
         """
 
-        K = len(virtual_trainings)
-        if K == 0:
+        if error is None and len(virtual_trainings) == 0:
             for i, predictor in enumerate(predictors):
                 predictor.prepare(training, objective_index=i)
 
@@ -375,36 +404,49 @@ class Policy(range_single.Policy):
                     training_list=training,
                     parallel=False,
                 )[0]
-        else:  # marginal score
-            trains_k = [copy.deepcopy(training) for _ in range(K)]
-            predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-            for predictor, training, virtual_training in zip(
-                predictors_k, trains_k, virtual_trainings
-            ):
-                training.add(
-                    X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
-                )
-                for i in range(self.num_objectives):
-                    predictor[i].update(training, virtual_training, objective_index=i)
+        elif error is None:  # marginal score
 
-            def fn(x):
-                f = np.zeros(K)
-                for k in range(K):
-                    f[k] = self.get_score(
-                        mode,
-                        xs=x.reshape(1, -1),
-                        predictor_list=predictors_k[k],
-                        training_list=trains_k[k],
-                        parallel=False,
-                    )[0]
-                return np.mean(f)
+            def marginal_score_function():
+                K = len(virtual_trainings)
+                trains_k = [copy.deepcopy(training) for _ in range(K)]
+                predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
+                for predictor_k, training_k, virtual_training in zip(
+                    predictors_k, trains_k, virtual_trainings
+                ):
+                    training_k.add(
+                        X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
+                    )
+                    for i in range(self.num_objectives):
+                        predictor_k[i].update(
+                            training_k, virtual_training, objective_index=i
+                        )
+
+                def fn(x):
+                    f = np.zeros(K)
+                    for k in range(K):
+                        f[k] = self.get_score(
+                            mode,
+                            xs=x.reshape(1, -1),
+                            predictor_list=predictors_k[k],
+                            training_list=trains_k[k],
+                            parallel=False,
+                        )[0]
+                    return np.mean(f)
+
+                return fn
+
+            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
+        if self.mpisize > 1 and (samples_drawn or len(virtual_trainings) > 0):
+            # the samples, and so the predictors, differ between the processes
+            _mpi.allgather(self.mpicomm, None, error)
 
         pareto = self.history.pareto
-        if mode in ("EHVI", "HVPI") and pareto.front.shape[0] > 0:
+        upper = search_score._reference_points_upper(mode)
+        if upper is not None and pareto.front.shape[0] > 0:
             # on every process before the optimizer, which may evaluate fn on
             # some processes only, so that they all use the same reference
             # points and warn (or raise) together
-            pareto.prepare_reference_points(upper=(mode == "EHVI"))
+            pareto.prepare_reference_points(upper=upper)
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
 
@@ -421,21 +463,31 @@ class Policy(range_single.Policy):
         )
 
         for n in range(1, N):
-            virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
-            virtual_t = np.zeros((K, n, self.num_objectives))
-            for i in range(self.num_objectives):
-                virtual_t[:, :, i] = predictors[i].get_predict_samples(
-                    self.training, virtual_trainings[0], K, objective_index=i,
-                    rng=self.rng,
-                )
-            for k in range(K):
-                virtual_trainings[k].t = virtual_t[k, :, :]
+
+            def draw_samples():
+                virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
+                virtual_t = np.zeros((K, n, self.num_objectives))
+                for i in range(self.num_objectives):
+                    virtual_t[:, :, i] = predictors[i].get_predict_samples(
+                        self.training,
+                        virtual_trainings[0],
+                        K,
+                        objective_index=i,
+                        rng=self.rng,
+                    )
+                for k in range(K):
+                    virtual_trainings[k].t = virtual_t[k, :, :]
+                return virtual_trainings
+
+            virtual_trainings, error = _mpi.call(self.mpicomm, draw_samples)
             X[n, :] = self._argmax_score(
                 mode,
                 predictors,
                 self.training,
                 virtual_trainings,
                 optimizer=optimizer,
+                error=error,
+                samples_drawn=True,
             )
         return X
 
@@ -555,6 +607,58 @@ class Policy(range_single.Policy):
         parallel=True,
         alpha=1,
     ):
+        """
+        Calculate multi-objective scores (acquisition function).
+
+        Parameters
+        ----------
+        mode: str or callable
+            EHVI, HVPI, TS, or a callable called positionally as
+            ``mode(predictor_list, training, test, pareto)`` returning a
+            numpy.ndarray of shape (test.X.shape[0],), with larger values
+            preferred. Empty test data skips the callable but still
+            participates in MPI gathering. The callable must not perform
+            collective communication. alpha and self.TS_candidate_num apply
+            only to string modes.
+        xs: physbo.Variable or numpy.ndarray, optional
+            Input parameters to calculate scores.
+        predictor_list: list of predictor objects, optional
+            Predictors for each objective. Defaults to self.predictor_list.
+        training_list: physbo.Variable, optional
+            Training dataset containing all objectives. Defaults to self.training.
+        pareto: Pareto, optional
+            Passed unchanged when provided; otherwise self.history.pareto is
+            used. Treat it as read-only. Marginal scores use the observed
+            history's Pareto front without adding virtual observations.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True).
+        alpha: float
+            Posterior sampling scale for string "TS" (default: 1).
+            Ignored for callable modes.
+
+        Returns
+        -------
+        f: numpy.ndarray
+            Acquisition scores of shape (num_points,).
+
+        Raises
+        ------
+        RuntimeError
+            If xs is not given.
+
+        Notes
+        -----
+        When parallel is True, all ranks must receive the same input. To
+        supply separate local inputs, set parallel=False and gather results
+        yourself.
+        """
+        mode = search_score.resolve(
+            mode,
+            alpha=alpha,
+            reduced_candidate_num=self.TS_candidate_num,
+            rng=self.rng,
+        )
+
         if training_list is None:
             training = self.training
         else:
@@ -580,29 +684,34 @@ class Policy(range_single.Policy):
                 self._update_predictor()
                 predictor_list = self.predictor_list
 
-        if xs is not None:
-            if isinstance(xs, Variable):
-                test = xs
+        def scores():
+            # the share of this process of the candidates
+            if xs is not None:
+                if isinstance(xs, Variable):
+                    test = xs
+                else:
+                    test = Variable(X=xs)
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
             else:
-                test = Variable(X=xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            raise RuntimeError("ERROR: xs is not given")
+                raise RuntimeError("ERROR: xs is not given")
+            return search_score.score(
+                mode,
+                predictor_list=predictor_list,
+                training=training,
+                test=test,
+                pareto=pareto,
+                reduced_candidate_num=self.TS_candidate_num,
+                alpha=alpha,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor_list=predictor_list,
-            training=training,
-            test=test,
-            pareto=pareto,
-            reduced_candidate_num=self.TS_candidate_num,
-            alpha=alpha,
-            rng=self.rng,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -749,7 +858,7 @@ def _run_simulator(simulator, action_X, comm=None):
     if comm is None:
         return simulator(action_X)
     if comm.rank == 0:
-        t = simulator(action_X)
+        t, error = _mpi.call(comm, simulator, action_X)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        t, error = 0.0, None
+    return _mpi.bcast(comm, t, error, root=0)
