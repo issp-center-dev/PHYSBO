@@ -567,12 +567,13 @@ def check_random_optimizer_constraint():
     log("random optimizer (constraint): OK")
 
 
-def make_range_policy(kind, constraint):
+def make_range_policy(kind, constraint, **kwargs):
     kwargs = dict(
         min_X=np.array([0.0, 0.0]),
         max_X=np.array([1.0, 1.0]),
         constraint=constraint,
         comm=comm,
+        **kwargs,
     )
     if kind == "range":
         return physbo.search.range.Policy(**kwargs)
@@ -618,6 +619,36 @@ def check_range_constraint(kind):
     assert N == 9
     assert_identical_over_ranks(res.action_X[:N], f"constrained {kind} action_X")
     assert np.all(in_disk(res.action_X[:N]))
+
+    # an error while judging the optimizer's result on rank 0 is raised on
+    # every rank (no deadlock in the broadcast of the verdict)
+    try:
+        policy.bayes_search(
+            max_num_probes=1,
+            simulator=sim,
+            is_disp=False,
+            interval=-1,
+            **search_args,
+            optimizer=lambda fn, mpicomm=None: (
+                np.array(["a", "b"]) if mpicomm.rank == 0 else np.array([0.5, 0.5])
+            ),
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a non-numeric optimizer result did not raise")
+    comm.Barrier()
+
+    # the generators of all the ranks stay in step: rank 0 draws the random
+    # points, the other ranks draw the same number of points
+    policy = make_range_policy(kind, in_disk, rng=4321)
+    policy.random_search(
+        max_num_probes=3, num_search_each_probe=2, simulator=sim, is_disp=False
+    )
+    states = comm.allgather(policy.rng.bit_generator.state["state"])
+    assert all(s == states[0] for s in states), (
+        f"{kind}: rng states differ between ranks after a constrained random_search"
+    )
 
     # an empty feasible region must raise on all ranks (no deadlock)
     policy = make_range_policy(kind, never)

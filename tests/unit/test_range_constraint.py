@@ -48,10 +48,15 @@ class Disk:
         return np.c_[f1, f2]
 
 
-def make_policy(kind, fn, constraint="default"):
+def in_unit_disk(X):
+    """A constraint defined at module level, so that it can be pickled."""
+    return np.sum(X**2, axis=1) <= 0.25
+
+
+def make_policy(kind, fn, constraint="default", **kwargs):
     if constraint == "default":
         constraint = fn.constraint
-    kwargs = dict(min_X=fn.min_X, max_X=fn.max_X, constraint=constraint)
+    kwargs = dict(min_X=fn.min_X, max_X=fn.max_X, constraint=constraint, **kwargs)
     if kind == "single":
         return physbo.search.range.Policy(**kwargs)
     if kind == "multi":
@@ -192,6 +197,93 @@ def test_bayes_search_is_feasible(kind, score):
     X = searched_X(policy)
     assert X.shape == (7, 2)
     assert np.all(fn.constraint(X))
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_bayes_search_is_feasible_in_generator_mode(kind):
+    """The sampling under a constraint draws from the policy's Generator, reproducibly."""
+    fn = Disk()
+    runs = []
+    for _ in range(2):
+        policy = make_policy(kind, fn, rng=7)
+        sim = make_simulator(kind, fn)
+        policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+        policy.bayes_search(
+            max_num_probes=2,
+            num_search_each_probe=2,
+            simulator=sim,
+            score=SCORES[kind][0],
+            is_disp=False,
+            **bayes_kwargs(kind, fn),
+        )
+        runs.append(searched_X(policy))
+    assert runs[0].shape == (9, 2)
+    assert np.all(fn.constraint(runs[0]))
+    np.testing.assert_array_equal(runs[0], runs[1])
+
+
+def test_checkpoint_keeps_the_constraint(tmp_path):
+    """A picklable constraint survives save_checkpoint / load_checkpoint, and the
+    resumed search proposes the same feasible points as the uninterrupted one."""
+    fn = Disk()
+    sim = make_simulator("single", fn)
+    policy = make_policy("single", fn, constraint=in_unit_disk, rng=11)
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    policy.save_checkpoint(tmp_path / "policy.ckpt")
+    restored = physbo.search.range.Policy.load_checkpoint(tmp_path / "policy.ckpt")
+    assert restored.constraint is in_unit_disk
+
+    for p in (policy, restored):
+        p.bayes_search(max_num_probes=2, simulator=sim, score="EI", is_disp=False)
+    X, X_restored = searched_X(policy), searched_X(restored)
+    assert X.shape == (6, 2)
+    assert np.all(in_unit_disk(X))
+    np.testing.assert_array_equal(X, X_restored)
+
+
+def test_constraint_must_return_booleans():
+    """The values g(X) of a constraint (instead of g(X) <= 0) are rejected."""
+    X = np.array([[0.2, 0.0], [0.7, 0.0]])
+    with pytest.raises(ValueError, match="boolean"):
+        is_feasible(lambda X: X[:, 0] - 0.5, X)
+    fn = Disk()
+    policy = make_policy("single", fn, constraint=lambda X: X[:, 0] - 0.5)
+    with pytest.raises(ValueError, match="boolean"):
+        policy.random_search(max_num_probes=1, simulator=make_simulator("single", fn))
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_max_trials_per_point_reaches_the_default_optimizer(kind):
+    fn = Disk()
+    policy = make_policy(kind, fn)
+    assert policy._default_optimizer().max_trials_per_point == 10000
+    policy.max_trials_per_point = 7
+    assert policy._default_optimizer().max_trials_per_point == 7
+    assert RandomOptimizer.max_trials_per_point == 10000
+    assert (
+        RandomOptimizer([0.0], [1.0], 1, max_trials_per_point=3).max_trials_per_point
+        == 3
+    )
+
+
+def test_default_optimizer_does_not_judge_its_samples_twice():
+    """The default optimizer draws feasible samples, so the policy does not wrap
+    the acquisition function: the constraint is called for the batch of samples
+    and once for the returned point."""
+    fn = Disk()
+    calls = []
+
+    def constraint(X):
+        calls.append(X.shape[0])
+        return np.ones(X.shape[0], dtype=bool)
+
+    policy = make_policy("single", fn, constraint=constraint)
+    sim = make_simulator("single", fn)
+    policy.set_seed(0)
+    policy.random_search(max_num_probes=3, simulator=sim, is_disp=False)
+    calls.clear()
+    policy.bayes_search(max_num_probes=1, simulator=sim, score="EI", is_disp=False)
+    assert calls == [1000, 1]
 
 
 @pytest.mark.parametrize("kind", KINDS)
@@ -378,13 +470,13 @@ def test_random_optimizer_with_constraint():
 
 
 @pytest.mark.parametrize("kind", KINDS)
-def test_never_satisfied_constraint_raises(kind, monkeypatch):
+def test_never_satisfied_constraint_raises(kind):
     fn = Disk()
     policy = make_policy(
         kind, fn, constraint=lambda X: np.zeros(X.shape[0], dtype=bool)
     )
+    # also the limit of the default optimizer of bayes_search
     policy.max_trials_per_point = 100
-    monkeypatch.setattr(RandomOptimizer, "max_trials_per_point", 10)
     with pytest.raises(RuntimeError, match="feasible"):
         policy.random_search(max_num_probes=1, simulator=make_simulator(kind, fn))
 
