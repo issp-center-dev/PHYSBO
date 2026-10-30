@@ -222,19 +222,26 @@ def test_bayes_search_is_feasible_in_generator_mode(kind):
     np.testing.assert_array_equal(runs[0], runs[1])
 
 
-def test_checkpoint_keeps_the_constraint(tmp_path):
+@pytest.mark.parametrize("kind", KINDS)
+def test_checkpoint_keeps_the_constraint(kind, tmp_path):
     """A picklable constraint survives save_checkpoint / load_checkpoint, and the
     resumed search proposes the same feasible points as the uninterrupted one."""
     fn = Disk()
-    sim = make_simulator("single", fn)
-    policy = make_policy("single", fn, constraint=in_unit_disk, rng=11)
+    sim = make_simulator(kind, fn)
+    policy = make_policy(kind, fn, constraint=in_unit_disk, rng=11)
     policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
     policy.save_checkpoint(tmp_path / "policy.ckpt")
-    restored = physbo.search.range.Policy.load_checkpoint(tmp_path / "policy.ckpt")
+    restored = type(policy).load_checkpoint(tmp_path / "policy.ckpt")
     assert restored.constraint is in_unit_disk
 
     for p in (policy, restored):
-        p.bayes_search(max_num_probes=2, simulator=sim, score="EI", is_disp=False)
+        p.bayes_search(
+            max_num_probes=2,
+            simulator=sim,
+            score=SCORES[kind][0],
+            is_disp=False,
+            **bayes_kwargs(kind, fn),
+        )
     X, X_restored = searched_X(policy), searched_X(restored)
     assert X.shape == (6, 2)
     assert np.all(in_unit_disk(X))
@@ -284,6 +291,56 @@ def test_default_optimizer_does_not_judge_its_samples_twice():
     calls.clear()
     policy.bayes_search(max_num_probes=1, simulator=sim, score="EI", is_disp=False)
     assert calls == [1000, 1]
+
+
+class CountingDisk(Disk):
+    """Disk whose constraint (a bound method) counts its calls."""
+
+    def __init__(self):
+        super().__init__()
+        self.calls = []
+
+    def constraint(self, X):
+        self.calls.append(X.shape[0])
+        return super().constraint(X)
+
+
+def test_user_random_optimizer_with_the_same_constraint_is_not_judged_twice():
+    """fn.constraint is a new bound-method object at every access, so the
+    optimizer's constraint and the policy's are equal but not identical."""
+    fn = CountingDisk()
+    policy = make_policy("single", fn, constraint=fn.constraint)
+    optimizer = RandomOptimizer(fn.min_X, fn.max_X, 100, constraint=fn.constraint)
+    assert optimizer.constraint is not policy.constraint
+    sim = make_simulator("single", fn)
+    policy.set_seed(0)
+    policy.random_search(max_num_probes=3, simulator=sim, is_disp=False)
+    fn.calls.clear()
+    policy.bayes_search(
+        max_num_probes=1, simulator=sim, score="EI", optimizer=optimizer, is_disp=False
+    )
+    # the batches of the rejection sampling, then the check of the result
+    assert len(fn.calls) <= 3 and fn.calls[-1] == 1 and sum(fn.calls[:-1]) >= 100
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_optimizer_result_of_wrong_dimension_raises(kind):
+    """A point of the wrong dimension is a bug of the optimizer, not an
+    infeasible point: no silent fallback to a random point."""
+    fn = Disk()
+    policy = make_policy(kind, fn)
+    sim = make_simulator(kind, fn)
+    policy.set_seed(0)
+    policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+    with pytest.raises(ValueError, match="dimension"):
+        policy.bayes_search(
+            max_num_probes=1,
+            simulator=sim,
+            score=SCORES[kind][0],
+            optimizer=lambda f, mpicomm=None: np.zeros(fn.dim + 1),
+            is_disp=False,
+            **bayes_kwargs(kind, fn),
+        )
 
 
 @pytest.mark.parametrize("kind", KINDS)

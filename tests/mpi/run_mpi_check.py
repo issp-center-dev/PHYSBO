@@ -639,6 +639,18 @@ def check_range_constraint(kind):
         raise AssertionError("a non-numeric optimizer result did not raise")
     comm.Barrier()
 
+    # an error of the constraint itself (here: values instead of booleans)
+    # during random_search is raised on every rank, although only rank 0
+    # evaluates it
+    policy = make_range_policy(kind, lambda X: X[:, 0] - 0.5)
+    try:
+        policy.random_search(max_num_probes=1, simulator=sim, is_disp=False)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a constraint returning values did not raise")
+    comm.Barrier()
+
     # the generators of all the ranks stay in step: rank 0 draws the random
     # points, the other ranks draw the same number of points
     policy = make_range_policy(kind, in_disk, rng=4321)
@@ -648,6 +660,18 @@ def check_range_constraint(kind):
     states = comm.allgather(policy.rng.bit_generator.state["state"])
     assert all(s == states[0] for s in states), (
         f"{kind}: rng states differ between ranks after a constrained random_search"
+    )
+    # the same in the legacy mode (global numpy.random state)
+    np.random.seed(2468)
+    policy = make_range_policy(kind, in_disk)
+    policy.random_search(
+        max_num_probes=3, num_search_each_probe=2, simulator=sim, is_disp=False
+    )
+    key, pos = np.random.get_state()[1:3]
+    states = comm.allgather((key.tobytes(), pos))
+    assert all(s == states[0] for s in states), (
+        f"{kind}: global numpy.random states differ between ranks after a "
+        "constrained random_search"
     )
 
     # an empty feasible region must raise on all ranks (no deadlock)

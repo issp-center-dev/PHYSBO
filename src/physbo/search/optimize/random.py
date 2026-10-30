@@ -102,8 +102,9 @@ class Optimizer:
             are ``nan`` or ``-inf``), the first sample (of the lowest rank
             with a sample) is returned and a ``RuntimeWarning`` is issued on
             every process. None, on every process, only with a
-            ``constraint`` for which no feasible sample was found within
-            ``max_trials_per_point * nsamples`` draws.
+            ``constraint`` for which no process found a feasible sample
+            within about ``max_trials_per_point`` draws per sample of its
+            share.
         """
         if mpicomm is not None:
             mpisize = mpicomm.Get_size()

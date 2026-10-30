@@ -743,10 +743,14 @@ class Policy(CheckpointMixin):
         Infeasible points are hidden from the optimizer by -inf, but the optimizer can
         still fail to return a feasible point (no feasible sample, or a local search
         started from an infeasible point). The returned point is therefore checked,
-        and replaced with a feasible random point if it is not feasible.
+        and replaced with a feasible random point if it is None, not finite or not
+        feasible. A point of the wrong dimension is an error of the optimizer and
+        raises ValueError, as without a constraint.
         """
         if isinstance(optimizer, RandomOptimizer) and (
-            optimizer.constraint is self.constraint
+            # == rather than "is": a bound method (fn.constraint) is a new
+            # object at every attribute access
+            optimizer.constraint == self.constraint
         ):
             # the optimizer draws feasible samples only; no need to judge
             # them one by one again
@@ -759,11 +763,15 @@ class Policy(CheckpointMixin):
         def check():
             if X is None:
                 return False
-            x = np.asarray(X, dtype=float).reshape(1, -1)
+            x = np.asarray(X, dtype=float).reshape(-1)
+            if x.shape[0] != self.dim:
+                raise ValueError(
+                    f"ERROR: the optimizer returned a point of {x.shape[0]} "
+                    f"dimension(s), but the search space has {self.dim}"
+                )
+            x = x.reshape(1, -1)
             return bool(
-                x.shape[1] == self.dim
-                and np.all(np.isfinite(x))
-                and utility.is_feasible(self.constraint, x)[0]
+                np.all(np.isfinite(x)) and utility.is_feasible(self.constraint, x)[0]
             )
 
         # the verdict of rank 0 decides, so that all the ranks take the same
@@ -872,28 +880,35 @@ class Policy(CheckpointMixin):
         # Only rank 0 samples, since the number of trials depends on the random
         # numbers; the other ranks then draw the same number of points, so that
         # the generators of all the ranks stay in step as without a constraint.
-        action = None
         num_drawn = 0
-        if self.mpirank == 0:
 
-            def draw(n):
-                nonlocal num_drawn
-                num_drawn += n
-                return self._sample_uniform(n)
+        def draw(n):
+            nonlocal num_drawn
+            num_drawn += n
+            return self._sample_uniform(n)
 
-            action = utility.sample_feasible(
-                draw, N, self.constraint, max_trials_per_point=self.max_trials_per_point
+        comm = self.mpicomm if self.mpisize > 1 else None
+        action, error = None, None
+        if comm is None or self.mpirank == 0:
+            # an exception of the constraint is raised on every rank below
+            action, error = _mpi.call(
+                comm,
+                utility.sample_feasible,
+                draw,
+                N,
+                self.constraint,
+                max_trials_per_point=self.max_trials_per_point,
             )
-        if self.mpisize > 1:
+        if comm is not None:
             # all the ranks must raise the error together
-            found, num_drawn = self.mpicomm.bcast(
-                (action is not None, num_drawn), root=0
+            found, num_drawn = _mpi.bcast(
+                comm, (action is not None, num_drawn), error, root=0
             )
             if found:
                 if self.mpirank != 0:
                     self._sample_uniform(num_drawn)
                     action = np.zeros((N, self.dim))
-                self.mpicomm.Bcast(action, root=0)
+                comm.Bcast(action, root=0)
             else:
                 action = None
         if action is None:
