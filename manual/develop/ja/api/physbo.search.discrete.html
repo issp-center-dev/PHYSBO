@@ -287,9 +287,11 @@ If None, blm_predictor is defined.</p></li>
 <li><p><strong>is_disp</strong> (<em>bool</em>) -- If true, process messages are outputted.</p></li>
 <li><p><strong>simulator</strong> (<em>callable</em>) -- Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>)
 Here, action is an integer which represents the index of the candidate.</p></li>
-<li><p><strong>score</strong> (<em>str</em>) -- The type of aquision funciton.
-TS (Thompson Sampling), EI (Expected Improvement), PI (Probability of Improvement)
-and UCB (Upper Confidence Bound) are available.</p></li>
+<li><p><strong>score</strong> (<em>str</em><em> or </em><em>callable</em>) -- TS, EI, PI, UCB, or a callable called positionally as
+<code class="docutils literal notranslate"><span class="pre">score(predictor,</span> <span class="pre">training,</span> <span class="pre">test)</span></code> returning a numpy.ndarray of
+shape (test.X.shape[0],), with larger values preferred. Empty test
+data skips the callable. Under MPI, the callable evaluates local
+points and must not perform collective communication.</p></li>
 <li><p><strong>interval</strong> (<em>int</em>) -- The interval number of learning the hyper parameter.
 If you set the negative value to interval, the hyper parameter learning is not performed.
 If you set zero to interval, the hyper parameter learning is performed only at the first step.</p></li>
@@ -435,8 +437,12 @@ Returned shape is (num_points).</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>str</em>) -- The type of aquisition funciton. TS, EI, PI and UCB are available.
-These functions are defined in score.py.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> or </em><em>callable</em>) -- TS, EI, PI, UCB, or a callable called positionally as
+<code class="docutils literal notranslate"><span class="pre">mode(predictor,</span> <span class="pre">training,</span> <span class="pre">test)</span></code> returning a numpy.ndarray of
+shape (test.X.shape[0],), with larger values preferred. Empty test
+data skips the callable but still participates in MPI gathering.
+The callable must not perform collective communication. alpha and
+ucb_beta apply only to string modes.</p></li>
 <li><p><strong>actions</strong> (<em>array</em><em> of </em><em>int</em>) -- actions to calculate score</p></li>
 <li><p><strong>xs</strong> (<a class="reference internal" href="physbo.html#physbo.Variable" title="physbo.Variable"><em>physbo.Variable</em></a><em> or </em><em>np.ndarray</em>) -- input parameters to calculate score</p></li>
 <li><p><strong>predictor</strong> (<em>predictor object</em>) -- predictor used to calculate score.

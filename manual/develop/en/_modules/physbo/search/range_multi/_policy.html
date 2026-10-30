@@ -327,9 +327,14 @@
 <span class="sd">            If true, Pareto set is displayed.</span>
 <span class="sd">        simulator: callable, optional</span>
 <span class="sd">            The simulator function.</span>
-<span class="sd">        score: str, optional</span>
-<span class="sd">            The type of acquisition funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
+<span class="sd">        score: str or callable</span>
+<span class="sd">            EHVI, HVPI, TS, or a callable called positionally as</span>
+<span class="sd">            ``score(predictor_list, training, test, pareto)`` returning a</span>
+<span class="sd">            numpy.ndarray of shape (test.X.shape[0],), with larger values</span>
+<span class="sd">            preferred. pareto is self.history.pareto and must be treated as</span>
+<span class="sd">            read-only; marginal scores do not update it with virtual data.</span>
+<span class="sd">            Empty test data skips the callable. Under MPI, the callable</span>
+<span class="sd">            evaluates local points and must not perform collective communication.</span>
 <span class="sd">        interval: int, optional</span>
 <span class="sd">            The interval number of learning the hyper parameter.</span>
 <span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
@@ -350,6 +355,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        history: history object (physbo.search.range_multi.results.history)</span>
 <span class="sd">        """</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
+            <span class="n">score</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TS_candidate_num</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
@@ -403,7 +414,9 @@
             <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_update_predictor</span>
 
             <span class="k">if</span> <span class="n">num_search_each_probe</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">utility</span><span class="o">.</span><span class="n">score_name</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+                <span class="p">)</span>
 
             <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">multi_probe_num_sampling</span>
@@ -522,11 +535,12 @@
             <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
         <span class="n">pareto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EHVI"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">_reference_points_upper</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># on every process before the optimizer, which may evaluate fn on</span>
             <span class="c1"># some processes only, so that they all use the same reference</span>
             <span class="c1"># points and warn (or raise) together</span>
-            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">))</span>
+            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">X</span>
 
@@ -694,6 +708,55 @@
         <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Calculate multi-objective scores (acquisition function).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mode: str or callable</span>
+<span class="sd">            EHVI, HVPI, TS, or a callable called positionally as</span>
+<span class="sd">            ``mode(predictor_list, training, test, pareto)`` returning a</span>
+<span class="sd">            numpy.ndarray of shape (test.X.shape[0],), with larger values</span>
+<span class="sd">            preferred. Empty test data skips the callable but still</span>
+<span class="sd">            participates in MPI gathering. The callable must not perform</span>
+<span class="sd">            collective communication. alpha and self.TS_candidate_num apply</span>
+<span class="sd">            only to string modes.</span>
+<span class="sd">        xs: physbo.Variable or numpy.ndarray, optional</span>
+<span class="sd">            Input parameters to calculate scores.</span>
+<span class="sd">        predictor_list: list of predictor objects, optional</span>
+<span class="sd">            Predictors for each objective. Defaults to self.predictor_list.</span>
+<span class="sd">        training_list: physbo.Variable, optional</span>
+<span class="sd">            Training dataset containing all objectives. Defaults to self.training.</span>
+<span class="sd">        pareto: Pareto, optional</span>
+<span class="sd">            Passed unchanged when provided; otherwise self.history.pareto is</span>
+<span class="sd">            used. Treat it as read-only. Marginal scores use the observed</span>
+<span class="sd">            history's Pareto front without adding virtual observations.</span>
+<span class="sd">        parallel: bool</span>
+<span class="sd">            Calculate scores in parallel by MPI (default: True).</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">            Posterior sampling scale for string "TS" (default: 1).</span>
+<span class="sd">            Ignored for callable modes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        f: numpy.ndarray</span>
+<span class="sd">            Acquisition scores of shape (num_points,).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If xs is not given.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        When parallel is True, all ranks must receive the same input. To</span>
+<span class="sd">        supply separate local inputs, set parallel=False and gather results</span>
+<span class="sd">        yourself.</span>
+<span class="sd">        """</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
+            <span class="n">mode</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TS_candidate_num</span>
+        <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">training_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span>
         <span class="k">else</span><span class="p">:</span>

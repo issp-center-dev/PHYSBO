@@ -278,8 +278,11 @@ If None, blm_predictor is defined.</p></li>
 <li><p><strong>is_disp</strong> (<em>bool</em>) -- If true, process messages are outputted.</p></li>
 <li><p><strong>simulator</strong> (<em>callable</em>) -- Callable (function or object with <code class="docutils literal notranslate"><span class="pre">__call__</span></code>)
 Here, action is an integer which represents the index of the candidate.</p></li>
-<li><p><strong>score</strong> (<em>str</em>) -- The type of aquision funciton.
-TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</p></li>
+<li><p><strong>score</strong> (<em>str</em><em> or </em><em>callable</em>) -- TS, EI, PI, UCB, or a callable called positionally as
+<code class="docutils literal notranslate"><span class="pre">score(predictor,</span> <span class="pre">training,</span> <span class="pre">test)</span></code> returning a numpy.ndarray of
+shape (test.X.shape[0],), with larger values preferred. Empty test
+data skips the callable. Under MPI, the callable evaluates local
+points and must not perform collective communication.</p></li>
 <li><p><strong>interval</strong> (<em>int</em>) -- The interval number of learning the hyper parameter.
 If you set the negative value to interval, the hyper parameter learning is not performed.
 If you set zero to interval, the hyper parameter learning is performed only at the first step.</p></li>
@@ -288,6 +291,9 @@ If you set zero to interval, the hyper parameter learning is performed only at t
 If None, the default optimizer is used.</p></li>
 <li><p><strong>ard</strong> (<em>bool</em>) -- If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
 Default is False.</p></li>
+<li><p><strong>ucb_beta</strong> (<em>float</em>) -- Trade-off parameter between exploitation and exploration used for
+string &quot;UCB&quot;. The score is <code class="docutils literal notranslate"><span class="pre">fmean</span> <span class="pre">+</span> <span class="pre">ucb_beta</span> <span class="pre">*</span> <span class="pre">fstd</span></code>.
+Default is 1.0; ignored for callable scores.</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値<span class="colon">:</span></dt>
@@ -395,8 +401,12 @@ Returned shape is (num_points).</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>str</em>) -- The type of aquisition funciton. TS, EI and PI are available.
-These functions are defined in score.py.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> or </em><em>callable</em>) -- TS, EI, PI, UCB, or a callable called positionally as
+<code class="docutils literal notranslate"><span class="pre">mode(predictor,</span> <span class="pre">training,</span> <span class="pre">test)</span></code> returning a numpy.ndarray of
+shape (test.X.shape[0],), with larger values preferred. Empty test
+data skips the callable but still participates in MPI gathering.
+The callable must not perform collective communication. alpha and
+ucb_beta apply only to string modes.</p></li>
 <li><p><strong>xs</strong> (<a class="reference internal" href="physbo.html#physbo.Variable" title="physbo.Variable"><em>physbo.Variable</em></a><em> or </em><em>np.ndarray</em>) -- input parameters to calculate score</p></li>
 <li><p><strong>predictor</strong> (<em>predictor object</em>) -- predictor used to calculate score.
 If not given, self.predictor will be used.</p></li>
@@ -405,6 +415,9 @@ If not given, self.training will be used.</p></li>
 <li><p><strong>parallel</strong> (<em>bool</em>) -- Calculate scores in parallel by MPI (default: True)</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) -- Tuning parameter which is used if mode = TS.
 In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</p></li>
+<li><p><strong>ucb_beta</strong> (<em>float</em>) -- Trade-off parameter between exploitation and exploration used for
+string &quot;UCB&quot;. The score is <code class="docutils literal notranslate"><span class="pre">fmean</span> <span class="pre">+</span> <span class="pre">ucb_beta</span> <span class="pre">*</span> <span class="pre">fstd</span></code>.
+Default is 1.0; ignored for callable scores.</p></li>
 </ul>
 </dd>
 <dt class="field-even">戻り値<span class="colon">:</span></dt>

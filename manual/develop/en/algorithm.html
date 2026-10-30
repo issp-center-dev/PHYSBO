@@ -147,19 +147,40 @@ exploration. A larger <span class="math notranslate nohighlight">\(\beta\)</span
 greedy exploitation of the posterior mean <span class="math notranslate nohighlight">\(\mu_c (\mathbf{x})\)</span>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The acquisition function is selected by the <code class="docutils literal notranslate"><span class="pre">score</span></code> argument of
-<code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> / <code class="docutils literal notranslate"><span class="pre">get_score</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;EI&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;PI&quot;</span></code> and
-<code class="docutils literal notranslate"><span class="pre">&quot;UCB&quot;</span></code>). For UCB, the trade-off parameter <span class="math notranslate nohighlight">\(\beta\)</span> is set by the
-<code class="docutils literal notranslate"><span class="pre">ucb_beta</span></code> argument (default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># discrete search space</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+<p>Select the acquisition function with <code class="docutils literal notranslate"><span class="pre">score</span></code> in <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> or
+<code class="docutils literal notranslate"><span class="pre">mode</span></code> in <code class="docutils literal notranslate"><span class="pre">get_score</span></code>: a built-in name (<code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;EI&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;PI&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;UCB&quot;</span></code>) or a callable. For string <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">config.search.alpha</span></code> sets
+the sampling scale in <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code>.</p>
+<p>The classes in <code class="docutils literal notranslate"><span class="pre">physbo.search.score</span></code> store parameters in their constructors:
+<code class="docutils literal notranslate"><span class="pre">ExpectedImprovement(fmax=None)</span></code>, <code class="docutils literal notranslate"><span class="pre">ProbabilityOfImprovement(fmax=None)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ThompsonSampling(alpha=1.0)</span></code> and <code class="docutils literal notranslate"><span class="pre">UpperConfidenceBound(beta=1.0)</span></code>.
+The following UCB specifications are equivalent (<code class="docutils literal notranslate"><span class="pre">ucb_beta</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">1.0</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
     <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"UCB"</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">2.0</span>
+<span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">UpperConfidenceBound</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>UCB is available for single-objective optimization (the <code class="docutils literal notranslate"><span class="pre">discrete</span></code>,
-<code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code> and <code class="docutils literal notranslate"><span class="pre">range</span></code> policies).</p>
+<p>UCB is available for single-objective optimization (<code class="docutils literal notranslate"><span class="pre">discrete</span></code>,
+<code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code>, <code class="docutils literal notranslate"><span class="pre">range</span></code> and <code class="docutils literal notranslate"><span class="pre">range_unified</span></code>).
+A custom callable returns a NumPy array of shape <code class="docutils literal notranslate"><span class="pre">(test.X.shape[0],)</span></code>;
+larger values are preferred:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">my_score</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mean</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">my_score</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For multi-objective optimization (<code class="docutils literal notranslate"><span class="pre">discrete_multi</span></code> / <code class="docutils literal notranslate"><span class="pre">range_multi</span></code>),
+the callable is invoked as <code class="docutils literal notranslate"><span class="pre">score(predictor_list,</span> <span class="pre">training,</span> <span class="pre">test,</span> <span class="pre">pareto)</span></code>;
+built-in classes are in <code class="docutils literal notranslate"><span class="pre">physbo.search.score_multi</span></code>.</p>
 </div>
 <ul class="simple">
 <li><p>Step3: Experiment (Simulation)</p></li>

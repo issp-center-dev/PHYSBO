@@ -378,9 +378,12 @@
 <span class="sd">        simulator: callable</span>
 <span class="sd">            Callable (function or object with ``__call__``)</span>
 <span class="sd">            Here, action is an integer which represents the index of the candidate.</span>
-<span class="sd">        score: str</span>
-<span class="sd">            The type of aquision funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
+<span class="sd">        score: str or callable</span>
+<span class="sd">            TS, EI, PI, UCB, or a callable called positionally as</span>
+<span class="sd">            ``score(predictor, training, test)`` returning a numpy.ndarray of</span>
+<span class="sd">            shape (test.X.shape[0],), with larger values preferred. Empty test</span>
+<span class="sd">            data skips the callable. Under MPI, the callable evaluates local</span>
+<span class="sd">            points and must not perform collective communication.</span>
 <span class="sd">        interval: int</span>
 <span class="sd">            The interval number of learning the hyper parameter.</span>
 <span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
@@ -393,11 +396,19 @@
 <span class="sd">        ard: bool</span>
 <span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
 <span class="sd">            Default is False.</span>
+<span class="sd">        ucb_beta: float</span>
+<span class="sd">            Trade-off parameter between exploitation and exploration used for</span>
+<span class="sd">            string "UCB". The score is ``fmean + ucb_beta * fstd``.</span>
+<span class="sd">            Default is 1.0; ignored for callable scores.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        history: history object (physbo.search.discrete.results.history)</span>
 <span class="sd">        """</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
+            <span class="n">score</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
@@ -444,7 +455,9 @@
             <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_update_predictor</span>
 
             <span class="k">if</span> <span class="n">num_search_each_probe</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">utility</span><span class="o">.</span><span class="n">score_name</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+                <span class="p">)</span>
 
             <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">multi_probe_num_sampling</span>
@@ -615,9 +628,13 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        mode: str</span>
-<span class="sd">            The type of aquisition funciton. TS, EI and PI are available.</span>
-<span class="sd">            These functions are defined in score.py.</span>
+<span class="sd">        mode: str or callable</span>
+<span class="sd">            TS, EI, PI, UCB, or a callable called positionally as</span>
+<span class="sd">            ``mode(predictor, training, test)`` returning a numpy.ndarray of</span>
+<span class="sd">            shape (test.X.shape[0],), with larger values preferred. Empty test</span>
+<span class="sd">            data skips the callable but still participates in MPI gathering.</span>
+<span class="sd">            The callable must not perform collective communication. alpha and</span>
+<span class="sd">            ucb_beta apply only to string modes.</span>
 <span class="sd">        xs: physbo.Variable or np.ndarray</span>
 <span class="sd">            input parameters to calculate score</span>
 <span class="sd">        predictor: predictor object</span>
@@ -631,6 +648,10 @@
 <span class="sd">        alpha: float</span>
 <span class="sd">            Tuning parameter which is used if mode = TS.</span>
 <span class="sd">            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</span>
+<span class="sd">        ucb_beta: float</span>
+<span class="sd">            Trade-off parameter between exploitation and exploration used for</span>
+<span class="sd">            string "UCB". The score is ``fmean + ucb_beta * fstd``.</span>
+<span class="sd">            Default is 1.0; ignored for callable scores.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -649,6 +670,8 @@
 <span class="sd">        When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.</span>
 <span class="sd">        If you want to split the input array itself, set *parallel* be False and merge results by yourself.</span>
 <span class="sd">        """</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span>
 

@@ -118,10 +118,11 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    mode: str</span>
+<span class="sd">    mode: str or callable</span>
 <span class="sd">        Kind of score.</span>
 
-<span class="sd">        "EI", "PI", "TS", and "UCB" are available.</span>
+<span class="sd">        "EI", "PI", "TS", and "UCB" are available. A callable is called as</span>
+<span class="sd">        ``mode(predictor, training, test)`` and ignores score parameters.</span>
 
 <span class="sd">    predictor: predictor object</span>
 <span class="sd">        Base class is defined in physbo.predictor.</span>
@@ -162,20 +163,14 @@
     <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"EI"</span><span class="p">:</span>
-        <span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fmax"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">EI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">fmax</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"PI"</span><span class="p">:</span>
-        <span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fmax"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">PI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">fmax</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
-        <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"UCB"</span><span class="p">:</span>
-        <span class="n">beta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ucb_beta"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">UCB</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ERROR: mode must be EI, PI, TS or UCB."</span><span class="p">)</span></div>
+    <span class="n">score_fn</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span>
+        <span class="n">mode</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">ucb_beta</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ucb_beta"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EI"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">):</span>
+        <span class="n">score_fn</span><span class="o">.</span><span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fmax"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span></div>
 
 
 
@@ -308,6 +303,162 @@
     <span class="n">fcov</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
     <span class="n">fstd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">fmean</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">fstd</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="ExpectedImprovement">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.ExpectedImprovement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExpectedImprovement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable acquisition function wrapping :func:`EI`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmax : float, optional</span>
+<span class="sd">        Maximum posterior mean; None uses the training data.</span>
+<span class="sd">        Default is None.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    EI : Acquisition function with predictor, training and test arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"EI"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmax</span> <span class="o">=</span> <span class="n">fmax</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores of shape ``(test.X.shape[0],)``."""</span>
+        <span class="k">return</span> <span class="n">EI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmax</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ProbabilityOfImprovement">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.ProbabilityOfImprovement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProbabilityOfImprovement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable acquisition function wrapping :func:`PI`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmax : float, optional</span>
+<span class="sd">        Maximum posterior mean; None uses the training data.</span>
+<span class="sd">        Default is None.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    PI : Acquisition function with predictor, training and test arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"PI"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmax</span> <span class="o">=</span> <span class="n">fmax</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores of shape ``(test.X.shape[0],)``."""</span>
+        <span class="k">return</span> <span class="n">PI</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmax</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ThompsonSampling">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.ThompsonSampling">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ThompsonSampling</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable acquisition function wrapping :func:`TS`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        Scaling parameter for posterior sampling.</span>
+<span class="sd">        Default is 1.0.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    TS : Acquisition function with predictor, training and test arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"TS"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores of shape ``(test.X.shape[0],)``."""</span>
+        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="UpperConfidenceBound">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.UpperConfidenceBound">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UpperConfidenceBound</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable acquisition function wrapping :func:`UCB`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    beta : float, optional</span>
+<span class="sd">        Weight of the posterior standard deviation.</span>
+<span class="sd">        Default is 1.0.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    UCB : Acquisition function with predictor, training and test arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"UCB"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores of shape ``(test.X.shape[0],)``."""</span>
+        <span class="k">return</span> <span class="n">UCB</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="resolve">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.resolve">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Resolve a score name or return a callable unchanged.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    score : str or callable</span>
+<span class="sd">        "EI", "PI", "TS", "UCB", or a callable accepting predictor, training</span>
+<span class="sd">        and test as positional arguments.</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        Posterior sampling scale for "TS". Default is 1.0.</span>
+<span class="sd">    ucb_beta : float, optional</span>
+<span class="sd">        Exploration weight for "UCB". Default is 1.0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        Acquisition function. Existing callables are returned unchanged.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        If the score name is unknown.</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If score is a class rather than an instance, or is neither a string</span>
+<span class="sd">        nor a callable.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"score must be an instance, not a class. Pass </span><span class="si">{</span><span class="n">score</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() instead."</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"EI"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ExpectedImprovement</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"PI"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ProbabilityOfImprovement</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ThompsonSampling</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"UCB"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">UpperConfidenceBound</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ERROR: mode must be EI, PI, TS or UCB."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">score</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"score must be a string or callable."</span><span class="p">)</span></div>
 
 </pre></div>
 

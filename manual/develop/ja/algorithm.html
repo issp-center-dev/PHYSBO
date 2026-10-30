@@ -145,18 +145,37 @@ PIスコアは、現在得られている <span class="math notranslate nohighli
 <span class="math notranslate nohighlight">\(\beta = 0\)</span> のときは予測平均 <span class="math notranslate nohighlight">\(\mu_c (\mathbf{x})\)</span> を貪欲に最大化する選択になります。</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>獲得関数は <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> / <code class="docutils literal notranslate"><span class="pre">get_score</span></code> の <code class="docutils literal notranslate"><span class="pre">score</span></code> 引数で選択します
-(<code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> (デフォルト)、 <code class="docutils literal notranslate"><span class="pre">&quot;EI&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;PI&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;UCB&quot;</span></code> )。
-UCBの場合、トレードオフパラメータ <span class="math notranslate nohighlight">\(\beta\)</span> は <code class="docutils literal notranslate"><span class="pre">ucb_beta</span></code> 引数で指定します
-(デフォルトは <code class="docutils literal notranslate"><span class="pre">1.0</span></code> )。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 離散空間の探索</span>
-<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+<p>獲得関数は <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> の <code class="docutils literal notranslate"><span class="pre">score</span></code> 引数、または <code class="docutils literal notranslate"><span class="pre">get_score</span></code> の <code class="docutils literal notranslate"><span class="pre">mode</span></code> 引数で選択します。
+組み込みの名前( <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;EI&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;PI&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;UCB&quot;</span></code> )のほか、callableも指定できます。
+文字列 <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> を指定した <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> では、サンプリングのスケールを <code class="docutils literal notranslate"><span class="pre">config.search.alpha</span></code> で設定します。</p>
+<p><code class="docutils literal notranslate"><span class="pre">physbo.search.score</span></code> の組み込みクラスは、コンストラクタでパラメータを保持します。
+<code class="docutils literal notranslate"><span class="pre">ExpectedImprovement(fmax=None)</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ProbabilityOfImprovement(fmax=None)</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">ThompsonSampling(alpha=1.0)</span></code> 、 <code class="docutils literal notranslate"><span class="pre">UpperConfidenceBound(beta=1.0)</span></code> が利用できます。
+次のUCBの指定は等価です( <code class="docutils literal notranslate"><span class="pre">ucb_beta</span></code> のデフォルトは <code class="docutils literal notranslate"><span class="pre">1.0</span></code> )。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
     <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"UCB"</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">2.0</span>
+<span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span>
+    <span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span>
+    <span class="n">score</span><span class="o">=</span><span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">UpperConfidenceBound</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>UCBは単目的最適化( <code class="docutils literal notranslate"><span class="pre">discrete</span></code> 、 <code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code> 、 <code class="docutils literal notranslate"><span class="pre">range</span></code> の各Policy)で利用できます。</p>
+<p>UCBは単目的最適化( <code class="docutils literal notranslate"><span class="pre">discrete</span></code> 、 <code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code> 、 <code class="docutils literal notranslate"><span class="pre">range</span></code> 、 <code class="docutils literal notranslate"><span class="pre">range_unified</span></code> の各Policy)で利用できます。
+自作のcallableは、形状が <code class="docutils literal notranslate"><span class="pre">(test.X.shape[0],)</span></code> のNumPy配列を返します。値が大きいほどよい候補とみなされます。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">my_score</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mean</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">my_score</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>多目的最適化( <code class="docutils literal notranslate"><span class="pre">discrete_multi</span></code> / <code class="docutils literal notranslate"><span class="pre">range_multi</span></code> )では、callableは
+<code class="docutils literal notranslate"><span class="pre">score(predictor_list,</span> <span class="pre">training,</span> <span class="pre">test,</span> <span class="pre">pareto)</span></code> として呼び出されます。
+組み込みクラスは <code class="docutils literal notranslate"><span class="pre">physbo.search.score_multi</span></code> にあります。</p>
 </div>
 <ul class="simple">
 <li><p>ステップ３：実験</p></li>

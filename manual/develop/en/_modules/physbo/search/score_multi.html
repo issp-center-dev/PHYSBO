@@ -106,36 +106,72 @@
 <div class="viewcode-block" id="score">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.score">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Calculate multi-objective acquisition scores for test data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mode : str or callable</span>
+<span class="sd">        "EHVI", "HVPI", "TS", or a callable called as</span>
+<span class="sd">        ``mode(predictor_list, training, test, pareto)``.</span>
+<span class="sd">    predictor_list : list of predictor objects</span>
+<span class="sd">        Predictor for each objective.</span>
+<span class="sd">    test : physbo.Variable</span>
+<span class="sd">        Test inputs.</span>
+<span class="sd">    training : physbo.Variable</span>
+<span class="sd">        Training dataset containing all objectives.</span>
+
+<span class="sd">    Other Parameters</span>
+<span class="sd">    ----------------</span>
+<span class="sd">    pareto : Pareto</span>
+<span class="sd">        Required for EHVI and HVPI. Passed to callable modes, as None when</span>
+<span class="sd">        omitted.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Posterior sampling scale for string "TS". Default is 1.0.</span>
+<span class="sd">    reduced_candidate_num : int or None</span>
+<span class="sd">        Required candidate limit for string "TS"; None uses all candidates.</span>
+<span class="sd">        Callable modes ignore this parameter and alpha.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Acquisition scores of shape ``(test.X.shape[0],)``.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EHVI"</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">_reference_points_upper</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pareto"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pareto</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># as EHVI/HVPI do on the other processes of a parallel run, so</span>
             <span class="c1"># that they all use the same reference points and warn (or raise)</span>
             <span class="c1"># together</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">))</span>
+            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">:</span>
-        <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span>
-        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">EHVI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"HVPI"</span><span class="p">:</span>
-        <span class="n">pareto</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span>
-        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">HVPI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
-        <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="n">reduced_candidate_num</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"reduced_candidate_num"</span><span class="p">]</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">TS</span><span class="p">(</span>
-            <span class="n">predictor_list</span><span class="p">,</span>
-            <span class="n">training</span><span class="p">,</span>
-            <span class="n">test</span><span class="p">,</span>
-            <span class="n">alpha</span><span class="p">,</span>
-            <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span><span class="p">,</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
+        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span>
+            <span class="n">mode</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">"reduced_candidate_num"</span><span class="p">],</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"mode must be EHVI, HVPI or TS."</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">f</span></div>
+        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pareto"</span><span class="p">))</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reference_points_upper</span><span class="p">(</span><span class="n">mode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Whether ``mode`` needs both reference points (EHVI: True), only the</span>
+<span class="sd">    lower one (HVPI: False), or none (None), as a name or a built-in instance.</span>
+
+<span class="sd">    A user callable gets None even if its name is "EHVI"; it prepares the</span>
+<span class="sd">    reference points itself if it needs them.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"EHVI"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"HVPI"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">ExpectedHypervolumeImprovement</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">HypervolumeProbabilityOfImprovement</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">None</span>
 
 
 <div class="viewcode-block" id="HVPI">
@@ -373,6 +409,138 @@
     <span class="n">fmean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fmean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
     <span class="n">fstd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
     <span class="k">return</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span>
+
+
+<div class="viewcode-block" id="ExpectedHypervolumeImprovement">
+<a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.ExpectedHypervolumeImprovement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExpectedHypervolumeImprovement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable hypervolume acquisition function wrapping :func:`EHVI`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Called with predictor_list, training, test and pareto as positional</span>
+<span class="sd">    arguments. Returns scores of shape ``(test.X.shape[0],)``.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    EHVI : Acquisition function using posterior means and standard deviations.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"EHVI"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">pareto</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores for test points."""</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">EHVI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="HypervolumeProbabilityOfImprovement">
+<a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.HypervolumeProbabilityOfImprovement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HypervolumeProbabilityOfImprovement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable hypervolume acquisition function wrapping :func:`HVPI`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Called with predictor_list, training, test and pareto as positional</span>
+<span class="sd">    arguments. Returns scores of shape ``(test.X.shape[0],)``.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    HVPI : Acquisition function using posterior means and standard deviations.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"HVPI"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">pareto</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return acquisition scores for test points."""</span>
+        <span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span> <span class="o">=</span> <span class="n">_get_fmean_fstd</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HVPI</span><span class="p">(</span><span class="n">fmean</span><span class="p">,</span> <span class="n">fstd</span><span class="p">,</span> <span class="n">pareto</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ThompsonSampling">
+<a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.ThompsonSampling">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ThompsonSampling</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Callable multi-objective Thompson sampling wrapping :func:`TS`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        Posterior sampling scale. Default is 1.0.</span>
+<span class="sd">    reduced_candidate_num : int, optional</span>
+<span class="sd">        Maximum number of candidates used for Pareto front calculation.</span>
+<span class="sd">        Default is None, which uses all candidates.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    TS : Multi-objective Thompson sampling acquisition function.</span>
+<span class="sd">    """</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"TS"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reduced_candidate_num</span> <span class="o">=</span> <span class="n">reduced_candidate_num</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">pareto</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return scores of shape ``(test.X.shape[0],)``; pareto is unused."""</span>
+        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span>
+            <span class="n">predictor_list</span><span class="p">,</span>
+            <span class="n">training</span><span class="p">,</span>
+            <span class="n">test</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reduced_candidate_num</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="resolve">
+<a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.resolve">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Resolve a multi-objective score name or return a callable unchanged.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    score : str or callable</span>
+<span class="sd">        "EHVI", "HVPI", "TS", or a callable accepting predictor_list,</span>
+<span class="sd">        training, test and pareto as positional arguments.</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        Posterior sampling scale for "TS". Default is 1.0.</span>
+<span class="sd">    reduced_candidate_num : int, optional</span>
+<span class="sd">        Candidate limit for "TS". Default is None, using all candidates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        Acquisition function. Existing callables are returned unchanged.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NotImplementedError</span>
+<span class="sd">        If the score name is unknown.</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If score is a class rather than an instance, or is neither a string</span>
+<span class="sd">        nor a callable.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"score must be an instance, not a class. Pass </span><span class="si">{</span><span class="n">score</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() instead."</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"EHVI"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ExpectedHypervolumeImprovement</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"HVPI"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">HypervolumeProbabilityOfImprovement</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ThompsonSampling</span><span class="p">(</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"mode must be EHVI, HVPI or TS."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">score</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"score must be a string or callable."</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
