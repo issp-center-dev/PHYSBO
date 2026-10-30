@@ -15,8 +15,17 @@ jobs:
       max-parallel: 4
       matrix:
         os: ['ubuntu-latest']
-        python-version: ['3.9', '3.13']
+        python-version: ['3.13']
         lang: ['en', 'ja']
+        include:
+          # ubuntu-latest is Ubuntu 26.04 since 2026-10, for which setup-python
+          # provides no Python 3.9 build; run 3.9 on Ubuntu 24.04.
+          - os: 'ubuntu-24.04'
+            python-version: '3.9'
+            lang: 'en'
+          - os: 'ubuntu-24.04'
+            python-version: '3.9'
+            lang: 'ja'
 
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
