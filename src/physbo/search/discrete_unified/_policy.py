@@ -234,9 +234,13 @@ class Policy(discrete.Policy):
             If true, Pareto set is displayed.
         simulator: callable, optional
             The simulator function.
-        score: str, optional
-            The type of acquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
+            training contains unified targets of shape (N, 1).
         interval: int, optional
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -252,11 +256,19 @@ class Policy(discrete.Policy):
         ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
             Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
         history: history object (physbo.search.discrete_unified.results.history)
         """
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta
+        )
+
         assert unify_method is not None, "unify_method must be provided"
 
         if self.mpirank != 0:
@@ -301,7 +313,9 @@ class Policy(discrete.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -444,9 +458,14 @@ class Policy(discrete.Policy):
 
         Parameters
         ----------
-        mode: str
-            The type of acquisition funciton. TS, EI and PI are available.
-            These functions are defined in score.py.
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
+            training contains unified targets of shape (N, 1).
         actions: array of int
             actions to calculate score
         xs: physbo.Variable or np.ndarray
@@ -462,6 +481,10 @@ class Policy(discrete.Policy):
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
@@ -480,6 +503,8 @@ class Policy(discrete.Policy):
         When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
         If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
+        mode = search_score.resolve(mode, alpha=alpha, ucb_beta=ucb_beta)
+
         if training is None:
             training = self.training_unified
 

@@ -200,7 +200,62 @@ class Policy(range_single.Policy):
         num_rand_basis=0,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
+        """
+        Performing Bayesian optimization by using unified objective function
+
+        Parameters
+        ----------
+        training_list: list of physbo.Variable, optional
+            The training datasets.
+        max_num_probes: int, optional
+            The maximum number of searching process by Bayesian optimization.
+        num_search_each_probe: int, optional
+            The number of searching by Bayesian optimization at each process.
+        predictor: predictor object, optional
+            The predictor object.
+        is_disp: bool, optional
+            If true, process messages are outputted.
+        disp_pareto_set: bool, optional
+            If true, Pareto set is displayed.
+        simulator: callable, optional
+            The simulator function.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
+            training contains unified targets of shape (N, 1).
+        interval: int, optional
+            The interval number of learning the hyper parameter.
+            If you set the negative value to interval, the hyper parameter learning is not performed.
+            If you set zero to interval, the hyper parameter learning is performed only at the first step.
+        num_rand_basis: int, optional
+            The number of basis function. If you choose 0, ordinary Gaussian process run.
+        unify_method: callable
+            The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
+            See physbo.search.unify for examples.
+        optimizer: Optimizer object, optional
+            Optimizer object for optimizing the acquisition function.
+            If None, the default optimizer is used.
+        ard: bool, optional
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
+
+        Returns
+        -------
+        history: history object (physbo.search.range_unified.results.history)
+        """
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta
+        )
+
         assert unify_method is not None, "unify_method must be provided"
         self.unify_method = unify_method
 
@@ -251,7 +306,9 @@ class Policy(range_single.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -474,7 +531,58 @@ class Policy(range_single.Policy):
         pareto=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
+        """
+        Calculate score (acquisition function)
+
+        Parameters
+        ----------
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
+            training contains unified targets of shape (N, 1).
+        xs: physbo.Variable or np.ndarray
+            input parameters to calculate score
+        predictor: predictor object
+            predictor used to calculate score.
+            If not given, self.predictor will be used.
+        training:physbo.Variable
+            Training dataset.
+            If not given, self.training_unified will be used.
+        pareto: Pareto, optional
+            Retained for API compatibility; unused for unified scoring.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True)
+        alpha: float
+            Tuning parameter which is used if mode = TS.
+            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
+
+        Returns
+        -------
+        f: numpy.ndarray
+            Acquisition scores of shape (num_points,).
+
+        Raises
+        ------
+        RuntimeError
+            If *xs* is not given
+
+        Notes
+        -----
+        When *parallel* is True, it is assumed that the function receives the same input (*xs*) for all the ranks.
+        If you want to split the input array itself, set *parallel* be False and merge results by yourself.
+        """
+        mode = search_score.resolve(mode, alpha=alpha, ucb_beta=ucb_beta)
+
         if training is None:
             training = self.training_unified
 

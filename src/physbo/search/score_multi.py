@@ -17,35 +17,71 @@ _EHVI_BLOCK_ELEMENTS = 1 << 18
 
 
 def score(mode, predictor_list, test, training, **kwargs):
+    """Calculate multi-objective acquisition scores for test data.
+
+    Parameters
+    ----------
+    mode : str or callable
+        "EHVI", "HVPI", "TS", or a callable called as
+        ``mode(predictor_list, training, test, pareto)``.
+    predictor_list : list of predictor objects
+        Predictor for each objective.
+    test : physbo.Variable
+        Test inputs.
+    training : physbo.Variable
+        Training dataset containing all objectives.
+
+    Other Parameters
+    ----------------
+    pareto : Pareto
+        Required for EHVI and HVPI. Passed to callable modes, as None when
+        omitted.
+    alpha : float
+        Posterior sampling scale for string "TS". Default is 1.0.
+    reduced_candidate_num : int or None
+        Required candidate limit for string "TS"; None uses all candidates.
+        Callable modes ignore this parameter and alpha.
+
+    Returns
+    -------
+    numpy.ndarray
+        Acquisition scores of shape ``(test.X.shape[0],)``.
+    """
     if test.X.shape[0] == 0:
-        if mode in ("EHVI", "HVPI") and kwargs["pareto"].front.shape[0] > 0:
+        upper = _reference_points_upper(mode)
+        pareto = kwargs.get("pareto")
+        if upper is not None and pareto is not None and pareto.front.shape[0] > 0:
             # as EHVI/HVPI do on the other processes of a parallel run, so
             # that they all use the same reference points and warn (or raise)
             # together
-            kwargs["pareto"].prepare_reference_points(upper=(mode == "EHVI"))
+            pareto.prepare_reference_points(upper=upper)
         return np.zeros(0)
 
-    if mode == "EHVI":
-        pareto = kwargs["pareto"]
-        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
-        f = EHVI(fmean, fstd, pareto)
-    elif mode == "HVPI":
-        pareto = kwargs["pareto"]
-        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
-        f = HVPI(fmean, fstd, pareto)
-    elif mode == "TS":
-        alpha = kwargs.get("alpha", 1.0)
-        reduced_candidate_num = kwargs["reduced_candidate_num"]
-        f = TS(
-            predictor_list,
-            training,
-            test,
-            alpha,
-            reduced_candidate_num=reduced_candidate_num,
+    if isinstance(mode, str) and mode == "TS":
+        score_fn = resolve(
+            mode,
+            alpha=kwargs.get("alpha", 1.0),
+            reduced_candidate_num=kwargs["reduced_candidate_num"],
         )
     else:
-        raise NotImplementedError("mode must be EHVI, HVPI or TS.")
-    return f
+        score_fn = resolve(mode)
+    return score_fn(predictor_list, training, test, kwargs.get("pareto"))
+
+
+def _reference_points_upper(mode):
+    """Whether ``mode`` needs both reference points (EHVI: True), only the
+    lower one (HVPI: False), or none (None), as a name or a built-in instance.
+
+    A user callable gets None even if its name is "EHVI"; it prepares the
+    reference points itself if it needs them.
+    """
+    if isinstance(mode, str):
+        return {"EHVI": True, "HVPI": False}.get(mode)
+    if isinstance(mode, ExpectedHypervolumeImprovement):
+        return True
+    if isinstance(mode, HypervolumeProbabilityOfImprovement):
+        return False
+    return None
 
 
 def HVPI(fmean, fstd, pareto):
@@ -274,3 +310,123 @@ def _get_fmean_fstd(predictor_list, training, test):
     fmean = np.array(fmean).T
     fstd = np.sqrt(np.array(fcov)).T
     return fmean, fstd
+
+
+class ExpectedHypervolumeImprovement:
+    """Callable hypervolume acquisition function wrapping :func:`EHVI`.
+
+    Notes
+    -----
+    Called with predictor_list, training, test and pareto as positional
+    arguments. Returns scores of shape ``(test.X.shape[0],)``.
+
+    See Also
+    --------
+    EHVI : Acquisition function using posterior means and standard deviations.
+    """
+
+    name = "EHVI"
+
+    def __call__(self, predictor_list, training, test, pareto):
+        """Return acquisition scores for test points."""
+        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
+        return EHVI(fmean, fstd, pareto)
+
+
+class HypervolumeProbabilityOfImprovement:
+    """Callable hypervolume acquisition function wrapping :func:`HVPI`.
+
+    Notes
+    -----
+    Called with predictor_list, training, test and pareto as positional
+    arguments. Returns scores of shape ``(test.X.shape[0],)``.
+
+    See Also
+    --------
+    HVPI : Acquisition function using posterior means and standard deviations.
+    """
+
+    name = "HVPI"
+
+    def __call__(self, predictor_list, training, test, pareto):
+        """Return acquisition scores for test points."""
+        fmean, fstd = _get_fmean_fstd(predictor_list, training, test)
+        return HVPI(fmean, fstd, pareto)
+
+
+class ThompsonSampling:
+    """Callable multi-objective Thompson sampling wrapping :func:`TS`.
+
+    Parameters
+    ----------
+    alpha : float, optional
+        Posterior sampling scale. Default is 1.0.
+    reduced_candidate_num : int, optional
+        Maximum number of candidates used for Pareto front calculation.
+        Default is None, which uses all candidates.
+
+    See Also
+    --------
+    TS : Multi-objective Thompson sampling acquisition function.
+    """
+
+    name = "TS"
+
+    def __init__(self, alpha=1.0, reduced_candidate_num=None):
+        self.alpha = alpha
+        self.reduced_candidate_num = reduced_candidate_num
+
+    def __call__(self, predictor_list, training, test, pareto):
+        """Return scores of shape ``(test.X.shape[0],)``; pareto is unused."""
+        return TS(
+            predictor_list,
+            training,
+            test,
+            self.alpha,
+            reduced_candidate_num=self.reduced_candidate_num,
+        )
+
+
+def resolve(score, *, alpha=1.0, reduced_candidate_num=None):
+    """Resolve a multi-objective score name or return a callable unchanged.
+
+    Parameters
+    ----------
+    score : str or callable
+        "EHVI", "HVPI", "TS", or a callable accepting predictor_list,
+        training, test and pareto as positional arguments.
+    alpha : float, optional
+        Posterior sampling scale for "TS". Default is 1.0.
+    reduced_candidate_num : int, optional
+        Candidate limit for "TS". Default is None, using all candidates.
+
+    Returns
+    -------
+    callable
+        Acquisition function. Existing callables are returned unchanged.
+
+    Raises
+    ------
+    NotImplementedError
+        If the score name is unknown.
+    TypeError
+        If score is a class rather than an instance, or is neither a string
+        nor a callable.
+    """
+    if isinstance(score, type):
+        raise TypeError(
+            f"score must be an instance, not a class. Pass {score.__name__}() instead."
+        )
+    if isinstance(score, str):
+        if score == "EHVI":
+            return ExpectedHypervolumeImprovement()
+        elif score == "HVPI":
+            return HypervolumeProbabilityOfImprovement()
+        elif score == "TS":
+            return ThompsonSampling(
+                alpha=alpha, reduced_candidate_num=reduced_candidate_num
+            )
+        raise NotImplementedError("mode must be EHVI, HVPI or TS.")
+    if callable(score):
+        return score
+    raise TypeError("score must be a string or callable.")
