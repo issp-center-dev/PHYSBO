@@ -1,0 +1,332 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkpoint and restart &mdash; PHYSBO 3.3-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5e09bc0c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Benchmark functions" href="test_functions.html" />
+    <link rel="prev" title="Random numbers and reproducibility" href="random_numbers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setconfig.html">Detailed Settings for Learning</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_numbers.html">Random numbers and reproducibility</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Checkpoint and restart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#random-number-generator-modes">Random number generator modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#saving-and-restoring-a-checkpoint">Saving and restoring a checkpoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-under-mpi">Usage under MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#embedding-physbo-in-another-application">Embedding PHYSBO in another application</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="test_functions.html">Benchmark functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Checkpoint and restart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/checkpoint.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="checkpoint-and-restart">
+<span id="chap-checkpoint"></span><h1>Checkpoint and restart<a class="headerlink" href="#checkpoint-and-restart" title="Link to this heading"></a></h1>
+<p>PHYSBO provides two ways to persist a search:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">policy.save()</span></code> / <code class="docutils literal notranslate"><span class="pre">policy.load()</span></code> save the search <em>results</em>
+(history, training data, and predictor) into portable files.
+They are suitable for analyzing results later or for warm-starting a
+new search, and the files can be loaded by runs with a different
+number of MPI processes. They do <strong>not</strong> save the random number
+generator state, so a restarted run does not reproduce the
+uninterrupted one.</p></li>
+<li><p>The checkpoint API described here saves the <em>complete execution
+state</em>, including the random number generator, so that a suspended
+run can be resumed <strong>bit-exactly</strong>: the continued search selects
+exactly the same candidates as if it had never stopped.</p></li>
+</ul>
+<section id="random-number-generator-modes">
+<h2>Random number generator modes<a class="headerlink" href="#random-number-generator-modes" title="Link to this heading"></a></h2>
+<p>The checkpoint mechanism interacts with the <code class="docutils literal notranslate"><span class="pre">rng</span></code> argument of the
+policies, whose two modes are described in <a class="reference internal" href="random_numbers.html#chap-random-numbers"><span class="std std-ref">Random numbers and reproducibility</span></a>.
+In short:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># legacy mode (default): uses the global numpy.random state.</span>
+<span class="c1"># set_seed() seeds the global state, as in previous versions.</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+
+<span class="c1"># Generator mode: the policy owns a numpy.random.Generator.</span>
+<span class="c1"># The state is stored on the policy itself.</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">12345</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the Generator mode the RNG state is part of the policy object, so
+pickling the policy captures everything needed for exact resumption;
+this includes the generator that the policy lends to a <code class="docutils literal notranslate"><span class="pre">unify_method</span></code>
+such as <code class="docutils literal notranslate"><span class="pre">ParEGO</span></code> when that object was not given a generator of its own.
+A built-in score object (<code class="docutils literal notranslate"><span class="pre">physbo.search.score.ThompsonSampling</span></code>)
+borrows the generator in the same way but is not part of the policy, so
+after <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> pass the name <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> or a new instance rather
+than one created before the checkpoint, which still holds the generator
+of the old policy object.
+In the legacy mode the RNG state lives in the global <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code>
+module; the checkpoint API captures and restores it explicitly (note
+that loading a legacy-mode checkpoint therefore <em>sets the global
+numpy.random state</em> as a side effect).</p>
+</section>
+<section id="saving-and-restoring-a-checkpoint">
+<h2>Saving and restoring a checkpoint<a class="headerlink" href="#saving-and-restoring-a-checkpoint" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">physbo</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"TS"</span><span class="p">,</span>
+                    <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="c1"># save the complete execution state into a single file</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="s2">"search.ckpt"</span><span class="p">)</span>
+
+<span class="c1"># ... later, possibly in a new process ...</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span><span class="s2">"search.ckpt"</span><span class="p">)</span>
+<span class="c1"># continues exactly as if the run had never stopped</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">bayes_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"TS"</span><span class="p">,</span>
+                    <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> is a class method of the policy class that saved
+the checkpoint; loading with a different policy class raises an error.
+The checkpoint file records the PHYSBO version (a mismatch emits a
+warning: bit-exact resumption is guaranteed only within the same
+version) and the checkpoint format version.</p>
+<p>A checkpoint holds the complete policy. Besides the history, the
+training data and the predictor, this includes the candidate set of a
+discrete policy (<code class="docutils literal notranslate"><span class="pre">test_X</span></code> and, with the Bayesian linear model, the
+values of the basis functions at every candidate), so the size of the
+file grows with the number of candidates times the number of basis
+functions: for 100,000 candidates and <code class="docutils literal notranslate"><span class="pre">num_rand_basis=500</span></code> the basis
+values alone take 400 MB. <code class="docutils literal notranslate"><span class="pre">policy.save()</span></code> does not store the
+candidate set.</p>
+</section>
+<section id="usage-under-mpi">
+<h2>Usage under MPI<a class="headerlink" href="#usage-under-mpi" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">save_checkpoint</span></code> and <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> are <em>collective</em>
+operations: every rank must call them. The rank-local state (the
+remaining candidates of each rank and its RNG state) is gathered, and
+rank 0 writes a single file; on load, rank 0 reads the file and
+broadcasts it. <code class="docutils literal notranslate"><span class="pre">save_checkpoint</span></code> returns on the other ranks as soon
+as their state has been gathered, possibly before the file is complete;
+a program that reads or copies the file on another rank must wait on a
+barrier first. A following <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> needs no barrier, since
+only rank 0 reads the file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">random_search</span><span class="p">(</span><span class="n">max_num_probes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="s2">"search.ckpt"</span><span class="p">)</span>     <span class="c1"># all ranks call this</span>
+
+<span class="c1"># ... restart with the SAME number of MPI processes ...</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span>
+    <span class="s2">"search.ckpt"</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>             <span class="c1"># all ranks call this</span>
+</pre></div>
+</div>
+<p>The resuming run must use the same number of MPI processes as the run
+that saved the checkpoint; <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> raises an error
+otherwise.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>With the BLM predictor (<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), Thompson sampling
+draws its posterior sample on rank 0 and broadcasts it, so the
+search result is independent of the number of ranks. With the GP
+predictor (<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">==</span> <span class="pre">0</span></code>), Thompson sampling under MPI is
+a rank-local approximation and the result depends on the number of
+ranks; the BLM predictor is recommended for TS under MPI.</p>
+</div>
+</section>
+<section id="embedding-physbo-in-another-application">
+<h2>Embedding PHYSBO in another application<a class="headerlink" href="#embedding-physbo-in-another-application" title="Link to this heading"></a></h2>
+<p>Applications that embed PHYSBO (such as ODAT-SE) and have their own
+checkpoint mechanism can simply pickle the policy as part of their own
+state. The MPI communicator is excluded from the pickled state
+automatically and must be re-attached with <code class="docutils literal notranslate"><span class="pre">set_comm()</span></code> after
+restoring:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># saving (inside the host application's own checkpoint routine)</span>
+<span class="n">state</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"step"</span><span class="p">:</span> <span class="n">step</span><span class="p">,</span>
+    <span class="s2">"policy"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span>     <span class="c1"># picklable; the communicator is excluded</span>
+    <span class="c1"># ... other host state ...</span>
+<span class="p">}</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># restoring</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">"policy"</span><span class="p">]</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">set_comm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>   <span class="c1"># re-attach the communicator</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">set_comm()</span></code> validates that the size and rank of the communicator
+match the stored state. If the policy uses the Generator mode
+(<code class="docutils literal notranslate"><span class="pre">rng=</span></code> given), its RNG state is included in the pickle
+automatically; in the legacy mode the host must additionally save and
+restore <code class="docutils literal notranslate"><span class="pre">numpy.random.get_state()</span></code> itself (as ODAT-SE already does).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="random_numbers.html" class="btn btn-neutral float-left" title="Random numbers and reproducibility" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="test_functions.html" class="btn btn-neutral float-right" title="Benchmark functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/checkpoint.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../3.3-dev/ja/checkpoint.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/en/checkpoint.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/en/checkpoint.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/checkpoint.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

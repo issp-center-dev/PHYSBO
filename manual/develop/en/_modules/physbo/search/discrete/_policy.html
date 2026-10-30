@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">Algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../random_numbers.html">Random numbers and reproducibility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../checkpoint.html">Checkpoint and restart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
@@ -111,11 +112,12 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">normalize_t</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span><span class="p">,</span> <span class="n">make_rng</span><span class="p">,</span> <span class="n">LegacyRNG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._checkpoint</span><span class="w"> </span><span class="kn">import</span> <span class="n">CheckpointMixin</span>
 
 
 <div class="viewcode-block" id="Policy">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">CheckpointMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Single objective Bayesian optimization with discrete search space"""</span>
 
     <span class="n">predictor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
@@ -1091,6 +1093,12 @@
 
 <span class="sd">        Saving history, training and predictor into the corresponding files.</span>
 
+<span class="sd">        This persists the search *results* in a portable form (the files</span>
+<span class="sd">        can be loaded by runs with a different number of MPI processes).</span>
+<span class="sd">        To suspend and later resume an execution bit-exactly (including</span>
+<span class="sd">        the random number generator state), use ``save_checkpoint`` /</span>
+<span class="sd">        ``load_checkpoint`` instead.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        file_history: str</span>
@@ -1121,6 +1129,9 @@
 <span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Loading files about history, training and predictor.</span>
+
+<span class="sd">        See ``save`` for the difference from the checkpoint API</span>
+<span class="sd">        (``save_checkpoint`` / ``load_checkpoint``).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>

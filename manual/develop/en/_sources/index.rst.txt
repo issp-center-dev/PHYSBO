@@ -24,6 +24,7 @@ Welcome to PHYSBO's documentation!
 
    algorithm
    random_numbers
+   checkpoint
    test_functions
 
 .. toctree::

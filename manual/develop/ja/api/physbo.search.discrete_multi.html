@@ -57,6 +57,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../random_numbers.html">乱数と再現性</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../checkpoint.html">チェックポイントと再開</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul class="current">
@@ -381,6 +382,8 @@ yourself.</p>
 <dt class="sig sig-object py" id="physbo.search.discrete_multi.Policy.load">
 <span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_training_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_predictor_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete_multi/_policy.html#Policy.load"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete_multi.Policy.load" title="Link to this definition"></a></dt>
 <dd><p>Loading files about history, training and predictor.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">save</span></code> for the difference from the checkpoint API
+(<code class="docutils literal notranslate"><span class="pre">save_checkpoint</span></code> / <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -429,6 +432,11 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 <dt class="sig sig-object py" id="physbo.search.discrete_multi.Policy.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_training_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_predictor_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete_multi/_policy.html#Policy.save"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete_multi.Policy.save" title="Link to this definition"></a></dt>
 <dd><p>Saving history, training and predictor into the corresponding files.</p>
+<p>This persists the search <em>results</em> in a portable form (the files
+can be loaded by runs with a different number of MPI processes).
+To suspend and later resume an execution bit-exactly (including
+the random number generator state), use <code class="docutils literal notranslate"><span class="pre">save_checkpoint</span></code> /
+<code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">パラメータ<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
