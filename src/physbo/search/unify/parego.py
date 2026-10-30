@@ -12,6 +12,7 @@ from typing import Optional
 import numpy as np
 
 from ...misc import min_max_scaling
+from ..._rng import get_rng
 
 class ParEGO:
 
@@ -41,6 +42,7 @@ class ParEGO:
         weight_max: Optional[float] = None,
         weights: Optional[np.ndarray] = None,
         weights_discrete: int = 0,
+        rng=None,
     ):
         r""" ParEGO unified objective function
 
@@ -68,6 +70,10 @@ class ParEGO:
             The weights are generated as :math:`w_i = \frac{a_i}{s}`, where :math:`a_i` is random integer in :math:`[0, s)` such that :math:`\sum_{i=1}^{num_objectives} a_i = s`.
             (See Equation (1) in [1] for details.)
             If 0 (default), each weight is generated randomly from :math:`[0, 1)` and normalized to sum to 1.
+        rng: rng object, optional
+            Random number generator for the weights (default: the global numpy.random state).
+            When ParEGO is given to a unified policy as ``unify_method`` without this argument,
+            it uses the random number generator of the policy.
 
         References
         ----------
@@ -75,6 +81,7 @@ class ParEGO:
         """
         self.num_objectives = num_objectives
         self.weight_sum = weight_sum
+        self.rng = get_rng(rng)
         if weight_min is None:
             if weight_max is None:
                 self.weight_min = 1.0
@@ -110,9 +117,11 @@ class ParEGO:
         """
         if self.weights is None:
             if self.weights_discrete > 0:
-                weights = sample_weights(self.num_objectives, self.weights_discrete)
+                weights = sample_weights(
+                    self.num_objectives, self.weights_discrete, rng=self.rng
+                )
             else:
-                weights = np.random.rand(self.num_objectives)
+                weights = self.rng.random(self.num_objectives)
                 weights /= np.sum(weights)
         else:
             weights = self.weights
@@ -130,7 +139,7 @@ class ParEGO:
 
 
 
-def sample_weights(num_objectives: int, s: int) -> np.ndarray:
+def sample_weights(num_objectives: int, s: int, rng=None) -> np.ndarray:
     """
     Sample weights for the objectives
 
@@ -140,11 +149,14 @@ def sample_weights(num_objectives: int, s: int) -> np.ndarray:
         Number of objectives
     s: int
         Number of discrete points to sample weights
+    rng: rng object, optional
+        random number generator (default: global numpy.random state)
     """
 
+    rng = get_rng(rng)
     ls = np.zeros(num_objectives, dtype=int)
     for d in range(num_objectives - 1):
-        ls[d] = np.random.randint(s + 1)
+        ls[d] = rng.integers(s + 1)
         s -= ls[d]
     ls[num_objectives - 1] = s
 

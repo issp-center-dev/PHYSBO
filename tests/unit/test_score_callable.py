@@ -292,7 +292,8 @@ _EMPTY = inspect.Parameter.empty
     [
         (lambda: score.EI, [("predictor", _EMPTY), ("training", _EMPTY), ("test", _EMPTY), ("fmax", None)]),
         (lambda: score.PI, [("predictor", _EMPTY), ("training", _EMPTY), ("test", _EMPTY), ("fmax", None)]),
-        (lambda: score.TS, [("predictor", _EMPTY), ("training", _EMPTY), ("test", _EMPTY), ("alpha", 1)]),
+        # the trailing rng argument (default None) was added by the RNG refactor
+        (lambda: score.TS, [("predictor", _EMPTY), ("training", _EMPTY), ("test", _EMPTY), ("alpha", 1), ("rng", None)]),
         (lambda: score.UCB, [("predictor", _EMPTY), ("training", _EMPTY), ("test", _EMPTY), ("beta", 1.0)]),
         (lambda: score_multi.EHVI, [("fmean", _EMPTY), ("fstd", _EMPTY), ("pareto", _EMPTY)]),
         (lambda: score_multi.HVPI, [("fmean", _EMPTY), ("fstd", _EMPTY), ("pareto", _EMPTY)]),
@@ -304,6 +305,7 @@ _EMPTY = inspect.Parameter.empty
                 ("test", _EMPTY),
                 ("alpha", 1),
                 ("reduced_candidate_num", None),
+                ("rng", None),
             ],
         ),
     ],

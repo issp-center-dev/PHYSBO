@@ -17,13 +17,20 @@ from .. import utility
 from .. import score as search_score
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
+from ..._rng import make_rng, attach_rng
 
 
 class Policy(discrete.Policy):
     """Multi objective Bayesian optimization with discrete search space by using unified objective function"""
 
     def __init__(
-        self, test_X, num_objectives, comm=None, config=None, initial_data=None
+        self,
+        test_X,
+        num_objectives,
+        comm=None,
+        config=None,
+        initial_data=None,
+        rng=None,
     ):
         """
         Initialize the Policy object
@@ -44,6 +51,7 @@ class Policy(discrete.Policy):
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives)
 
+        self.rng = make_rng(rng)
         self.training = Variable()
         self.training_unified = None
         self.predictor = None
@@ -250,6 +258,9 @@ class Policy(discrete.Policy):
         unify_method: callable
             The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
             See physbo.search.unify for examples.
+            If it draws random numbers through an ``rng`` attribute (as
+            ``ParEGO`` does) and was not given a generator of its own, it
+            uses the random number generator of the policy.
         optimizer: Optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
@@ -266,7 +277,7 @@ class Policy(discrete.Policy):
         history: history object (physbo.search.discrete_unified.results.history)
         """
         score = search_score.resolve(
-            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
         )
 
         assert unify_method is not None, "unify_method must be provided"
@@ -282,6 +293,7 @@ class Policy(discrete.Policy):
             simulator = None
 
         self.unify_method = unify_method
+        attach_rng(unify_method, self.rng)
         if num_rand_basis < 0:
             raise ValueError("num_rand_basis must be non-negative")
         is_rand_expans = (num_rand_basis > 0)
@@ -357,10 +369,16 @@ class Policy(discrete.Policy):
         return copy.deepcopy(self.history)
 
     def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
+        self._update_predictor()
+        comm = self.mpicomm if self.mpisize > 1 else None
+        # TS: one posterior sample for every process, drawn on rank 0
+        first_mode = search_score.share_sample(
+            mode, self.predictor, self.training_unified, comm
+        )
         f, error = _mpi.call(
             self.mpicomm,
             self.get_score,
-            mode=mode,
+            mode=first_mode,
             alpha=alpha,
             ucb_beta=ucb_beta,
             parallel=False,
@@ -404,7 +422,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fmean(self.training_unified, X)
         else:
@@ -433,7 +451,7 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0, comm=self.mpicomm)
+            predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_post_fcov(self.training_unified, X, diag)
         else:
@@ -503,7 +521,9 @@ class Policy(discrete.Policy):
         When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
         If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
-        mode = search_score.resolve(mode, alpha=alpha, ucb_beta=ucb_beta)
+        mode = search_score.resolve(
+            mode, alpha=alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
 
         if training is None:
             training = self.training_unified
@@ -516,7 +536,7 @@ class Policy(discrete.Policy):
             if self.predictor is None:
                 self._warn_no_predictor("get_score()")
                 predictor = self._make_gp_predictor()
-                predictor.fit(training, 0, comm=self.mpicomm)
+                predictor.fit(training, 0, comm=self.mpicomm, rng=self.rng)
                 predictor.prepare(training)
             else:
                 self._update_predictor()
@@ -554,6 +574,8 @@ class Policy(discrete.Policy):
             )
 
         comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        # TS: one posterior sample for every process, drawn on rank 0
+        mode = search_score.share_sample(mode, predictor, training, comm)
         f, error = _mpi.call(comm, scores, actions)
         if comm is not None:
             fs = _mpi.allgather(comm, f, error)
@@ -583,13 +605,14 @@ class Policy(discrete.Policy):
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0)
+            predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
             return predictor.get_permutation_importance(
                 self.training_unified,
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
         else:
             self._update_predictor()
@@ -598,6 +621,7 @@ class Policy(discrete.Policy):
                 n_perm,
                 comm=self.mpicomm,
                 split_features_parallel=split_features_parallel,
+                rng=self.rng,
             )
 
     def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
@@ -628,33 +652,30 @@ class Policy(discrete.Policy):
             run it is raised).
         """
 
-        def predict_samples():
-            # draw K samples of the values of objective function of chosen
-            # actions
-            new_test_local = self.test.get_subset(chosen_actions)
-            virtual_t_local = self.predictor.get_predict_samples(
-                self.training_unified, new_test_local, K
+        comm = self.mpicomm if self.mpisize > 1 else None
+
+        # Draw K samples of the values of objective function of chosen actions.
+        # self.test is not partitioned over ranks, so the chosen points are
+        # identical on every rank; the virtual values are drawn on rank 0 and
+        # broadcast so that all ranks fantasize the same observations.
+        new_test = self.test.get_subset(chosen_actions)
+        if comm is None or self.mpirank == 0:
+            virtual_t, error = _mpi.call(
+                comm,
+                self.predictor.get_predict_samples,
+                self.training_unified,
+                new_test,
+                K,
+                rng=self.rng,
             )
-            return new_test_local, virtual_t_local
-
-        samples, error = _mpi.call(self.mpicomm, predict_samples)
-        if self.mpisize > 1:
-            samples = _mpi.allgather(self.mpicomm, samples, error)
-        return _mpi.call(self.mpicomm, self._marginal_score, mode, samples, K, ucb_beta)
-
-    def _marginal_score(self, mode, samples, K, ucb_beta):
-        """The marginal scores of this process's candidates for the samples
-        (of every process in a parallel run) from :meth:`_get_marginal_score`."""
-        if self.mpisize == 1:
-            new_test, virtual_t = samples
         else:
-            new_test = Variable()
-            for nt, _ in samples:
-                new_test.add(X=nt.X, t=nt.t, Z=nt.Z)
-            virtual_t = np.concatenate([vt for _, vt in samples], axis=1)
+            virtual_t, error = None, None
+        if comm is not None:
+            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
 
-        f = np.zeros((K, len(self.actions)), dtype=float)
-        for k in range(K):
+        def model(k):
+            # the predictor and the training data with the k-th virtual
+            # observations added (the same on every process)
             predictor = copy.deepcopy(self.predictor)
             train = copy.deepcopy(self.training_unified)
             virtual_train = new_test
@@ -667,9 +688,24 @@ class Policy(discrete.Policy):
                 train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
             predictor.update(train, virtual_train)
+            return predictor, train
 
+        # TS: one posterior sample per virtual data set for every process,
+        # drawn on rank 0
+        samples = search_score.share_samples(mode, self.predictor, model, K, comm)
+        return _mpi.call(comm, self._marginal_score, mode, model, K, ucb_beta, samples)
+
+    def _marginal_score(self, mode, model, K, ucb_beta, samples=None):
+        """The marginal scores of this process's candidates: the mean of the
+        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.
+        ``samples`` are their posterior samples for Thompson sampling (see
+        :func:`physbo.search.score.share_samples`), or None."""
+        f = np.zeros((K, len(self.actions)), dtype=float)
+        for k in range(K):
+            predictor, train = model(k)
+            mode_k = mode if samples is None else mode.with_sample(samples[k])
             f[k, :] = self.get_score(
-                mode,
+                mode_k,
                 predictor=predictor,
                 training=train,
                 ucb_beta=ucb_beta,
@@ -751,7 +787,7 @@ class Policy(discrete.Policy):
         self.training_unified = self._unify_training(self.training)
 
         self.predictor.fit(
-            self.training_unified, num_rand_basis, comm=self.mpicomm
+            self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
         self.predictor.prepare(self.training_unified)
         Z = self.predictor.get_basis(self.training_unified.X)

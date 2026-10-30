@@ -8,6 +8,8 @@
 import numpy as np
 import scipy
 
+from ..._rng import get_rng
+
 
 class Prior:
     """prior of gaussian process"""
@@ -188,7 +190,7 @@ class Prior:
         self.params[self.mean.num_params :] = params
         self.cov.set_params(params)
 
-    def sampling(self, X, N=1):
+    def sampling(self, X, N=1, rng=None):
         """
         Sampling from GP prior
 
@@ -203,8 +205,9 @@ class Prior:
         float
 
         """
+        rng = get_rng(rng)
         num_data = X.shape[0]
         G = self.get_cov(X) + 1e-8 * np.identity(num_data)
         U = scipy.linalg.cholesky(G, check_finite=False)
-        Z = np.random.randn(N, num_data)
+        Z = rng.standard_normal((N, num_data))
         return np.dot(Z, U) + self.get_mean(num_data)

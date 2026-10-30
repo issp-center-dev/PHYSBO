@@ -23,6 +23,7 @@ Welcome to PHYSBO's documentation!
    :maxdepth: 2
 
    algorithm
+   random_numbers
    test_functions
 
 .. toctree::

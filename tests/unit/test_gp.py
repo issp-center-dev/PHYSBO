@@ -26,7 +26,7 @@ def get_post_fcov(training, test):
     return np.ones((N, 1))
 
 
-def get_post_samples(training, test, alpha=1.0):
+def get_post_samples(training, test, alpha=1.0, rng=None):
     print(test)
     N = test.shape[0]
     return random.randn(N, 1)

@@ -90,6 +90,75 @@ def check_discrete(score):
     log(f"discrete ({score}): OK")
 
 
+def _run_discrete_ts_blm(comm_, rng, num_search_each_probe=1):
+    """Run a fixed-seed random+bayes (TS, BLM) search and return chosen actions."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm_, rng=rng)
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=6, simulator=sim, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=3,
+        num_search_each_probe=num_search_each_probe,
+        simulator=sim,
+        score="TS",
+        interval=0,
+        num_rand_basis=100,
+        is_disp=False,
+    )
+    N = res.total_num_search
+    return res.chosen_actions[:N]
+
+
+def check_discrete_ts_blm_vs_serial(rng, num_search_each_probe, label):
+    """TS with the BLM predictor must reproduce the serial run exactly:
+    the posterior sample is drawn on rank 0 and broadcast, so the search
+    is independent of the number of ranks (single-sample Thompson
+    sampling). This also covers the multi-probe (marginal score) path,
+    where the virtual observations must not be duplicated over ranks."""
+    parallel = _run_discrete_ts_blm(comm, rng, num_search_each_probe)
+    assert_identical_over_ranks(parallel, f"chosen_actions ({label})")
+    serial = _run_discrete_ts_blm(None, rng, num_search_each_probe)
+    if not np.array_equal(parallel, serial):
+        raise AssertionError(f"parallel != serial ({label})")
+    log(f"{label}: OK")
+
+
+def check_ts_sample_coherence():
+    """All ranks must score identical candidates identically in TS:
+    they must share a single posterior sample (regression test for the
+    rank-divergent Thompson sampling bug)."""
+    import physbo.search.score as search_score
+
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm)
+    policy.set_seed(4321)
+    # rank 0 alone consumes RNG in random_search, so the global streams
+    # of the ranks diverge here; the broadcast must hide that.
+    policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+    policy.bayes_search(max_num_probes=0, num_rand_basis=100, is_disp=False)
+    test = policy.test.get_subset([10, 50, 100])
+    # as the policies do: the sample of rank 0 is shared, and the returned
+    # score evaluates it
+    mode = search_score.share_sample(
+        search_score.resolve("TS", rng=policy.rng),
+        policy.predictor,
+        policy.training,
+        comm,
+    )
+    fscore = mode(policy.predictor, policy.training, test)
+    assert_identical_over_ranks(fscore, "TS scores of identical candidates")
+    # without sharing, each rank draws its own sample
+    own = search_score.resolve("TS", rng=policy.rng)(
+        policy.predictor, policy.training, test
+    )
+    gathered = comm.allgather(np.asarray(own))
+    if all(np.array_equal(gathered[0], other) for other in gathered[1:]):
+        raise AssertionError("TS scores without a shared sample agree by chance")
+    log("TS sample coherence: OK")
+
+
 def check_random_optimizer():
     """The range random optimizer must return the same point on all ranks."""
     opt = physbo.search.optimize.random.Optimizer(
@@ -349,6 +418,15 @@ def main():
     check_discrete("EI")
     check_discrete("PI")
     check_discrete("TS")
+    check_discrete_ts_blm_vs_serial("legacy", 1, "discrete TS-BLM vs serial (legacy)")
+    check_discrete_ts_blm_vs_serial(9999, 1, "discrete TS-BLM vs serial (generator)")
+    check_discrete_ts_blm_vs_serial(
+        "legacy", 2, "discrete TS-BLM multi-probe vs serial (legacy)"
+    )
+    check_discrete_ts_blm_vs_serial(
+        9999, 2, "discrete TS-BLM multi-probe vs serial (generator)"
+    )
+    check_ts_sample_coherence()
     check_random_optimizer()
     check_range_few_samples()
     check_range()

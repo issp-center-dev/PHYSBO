@@ -8,6 +8,7 @@
 import numpy as np
 
 from .pareto import Pareto
+from .._rng import attach_rng, get_rng
 from .score import _norm_cdf, _norm_pdf
 
 # target number of elements of each (block, n_cell, n_obj) temporary array in
@@ -41,6 +42,9 @@ def score(mode, predictor_list, test, training, **kwargs):
     reduced_candidate_num : int or None
         Required candidate limit for string "TS"; None uses all candidates.
         Callable modes ignore this parameter and alpha.
+    rng : rng object
+        Random number generator for string "TS" (default: the global
+        ``numpy.random`` state); a callable mode draws from its own.
 
     Returns
     -------
@@ -62,9 +66,10 @@ def score(mode, predictor_list, test, training, **kwargs):
             mode,
             alpha=kwargs.get("alpha", 1.0),
             reduced_candidate_num=kwargs["reduced_candidate_num"],
+            rng=kwargs.get("rng", None),
         )
     else:
-        score_fn = resolve(mode)
+        score_fn = resolve(mode, rng=kwargs.get("rng", None))
     return score_fn(predictor_list, training, test, kwargs.get("pareto"))
 
 
@@ -246,7 +251,9 @@ def EHVI(fmean, fstd, pareto):
     return score
 
 
-def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
+def TS(
+    predictor_list, training, test, alpha=1, reduced_candidate_num=None, rng=None
+):
     """Thompson Sampling for multi-objective optimization.
 
     Parameters
@@ -271,8 +278,11 @@ def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
         Score array with 1 at the chosen index and 0 elsewhere.
     """
 
+    rng = get_rng(rng)
     score = [
-        predictor.get_post_samples(training, test, alpha=alpha, objective_index=i)
+        predictor.get_post_samples(
+            training, test, alpha=alpha, objective_index=i, rng=rng
+        )
         for i, predictor in enumerate(predictor_list)
     ]
     score = np.array(score).reshape((len(predictor_list), test.X.shape[0])).T
@@ -281,15 +291,13 @@ def TS(predictor_list, training, test, alpha=1, reduced_candidate_num=None):
     if reduced_candidate_num is None or score.shape[0] <= reduced_candidate_num:
         use_idx = np.arange(score.shape[0])
     else:
-        use_idx = np.random.choice(
-            score.shape[0], reduced_candidate_num, replace=False
-        )
+        use_idx = rng.choice(score.shape[0], reduced_candidate_num, replace=False)
 
     # pareto.update_front(score)
     pareto.update_front(score[use_idx, :])
 
     # randomly choose candidate from pareto frontiers
-    chosen_idx = np.random.choice(pareto.front_num)
+    chosen_idx = rng.choice(pareto.front_num)
     score_res = np.zeros(score.shape[0])
     score_res[use_idx[chosen_idx]] = 1  # only chosen_idx th value is one.
 
@@ -364,6 +372,12 @@ class ThompsonSampling:
     reduced_candidate_num : int, optional
         Maximum number of candidates used for Pareto front calculation.
         Default is None, which uses all candidates.
+    rng : rng object, optional
+        Random number generator for the posterior samples and the choice
+        among the Pareto front; None (default) draws from the global
+        ``numpy.random`` state. An instance given to a policy without a
+        generator of its own borrows the policy's (see
+        :func:`physbo._rng.attach_rng`).
 
     See Also
     --------
@@ -372,9 +386,10 @@ class ThompsonSampling:
 
     name = "TS"
 
-    def __init__(self, alpha=1.0, reduced_candidate_num=None):
+    def __init__(self, alpha=1.0, reduced_candidate_num=None, rng=None):
         self.alpha = alpha
         self.reduced_candidate_num = reduced_candidate_num
+        self.rng = get_rng(rng)
 
     def __call__(self, predictor_list, training, test, pareto):
         """Return scores of shape ``(test.X.shape[0],)``; pareto is unused."""
@@ -384,10 +399,11 @@ class ThompsonSampling:
             test,
             self.alpha,
             reduced_candidate_num=self.reduced_candidate_num,
+            rng=self.rng,
         )
 
 
-def resolve(score, *, alpha=1.0, reduced_candidate_num=None):
+def resolve(score, *, alpha=1.0, reduced_candidate_num=None, rng=None):
     """Resolve a multi-objective score name or return a callable unchanged.
 
     Parameters
@@ -399,6 +415,12 @@ def resolve(score, *, alpha=1.0, reduced_candidate_num=None):
         Posterior sampling scale for "TS". Default is 1.0.
     reduced_candidate_num : int, optional
         Candidate limit for "TS". Default is None, using all candidates.
+    rng : rng object, optional
+        Random number generator for "TS". A callable that holds a
+        generator in an ``rng`` attribute and was not given one of its
+        own (the built-in :class:`ThompsonSampling`) is attached to it
+        (see :func:`physbo._rng.attach_rng`). Default is None, the global
+        ``numpy.random`` state.
 
     Returns
     -------
@@ -424,9 +446,11 @@ def resolve(score, *, alpha=1.0, reduced_candidate_num=None):
             return HypervolumeProbabilityOfImprovement()
         elif score == "TS":
             return ThompsonSampling(
-                alpha=alpha, reduced_candidate_num=reduced_candidate_num
+                alpha=alpha, reduced_candidate_num=reduced_candidate_num, rng=rng
             )
         raise NotImplementedError("mode must be EHVI, HVPI or TS.")
     if callable(score):
+        if rng is not None:
+            attach_rng(score, rng)
         return score
     raise TypeError("score must be a string or callable.")

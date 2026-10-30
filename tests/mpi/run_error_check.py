@@ -294,9 +294,10 @@ def check_scores():
             failing_rank=last,
         )
 
-    # the samples for the marginal scores
+    # the samples for the marginal scores, drawn on rank 0 only (the discrete
+    # policies broadcast them)
     policy = discrete()
-    with patched(physbo.gp.Predictor, "get_predict_samples", on_rank=last):
+    with patched(physbo.gp.Predictor, "get_predict_samples", on_rank=0):
         expect_raised_everywhere(
             "discrete bayes_search, samples",
             lambda: policy.bayes_search(
@@ -306,7 +307,7 @@ def check_scores():
                 num_search_each_probe=2,
                 is_disp=False,
             ),
-            failing_rank=last,
+            failing_rank=0,
         )
 
     # only the marginal scores, and the samples for them, of the other
@@ -317,12 +318,12 @@ def check_scores():
         ("discrete_unified", discrete_unified, score, sim_multi,
          {"score": "EI", "unify_method": unify()}),
     ]:
-        for label, owner, attr, after in [
-            ("marginal scores", module, "score", 1),
-            ("samples", physbo.gp.Predictor, "get_predict_samples", 0),
+        for label, owner, attr, after, on_rank in [
+            ("marginal scores", module, "score", 1, last),
+            ("samples", physbo.gp.Predictor, "get_predict_samples", 0, 0),
         ]:
             policy = make()
-            with patched(owner, attr, on_rank=last, after=after):
+            with patched(owner, attr, on_rank=on_rank, after=after):
                 expect_raised_everywhere(
                     f"{name} bayes_search, {label}",
                     lambda: policy.bayes_search(
@@ -332,8 +333,29 @@ def check_scores():
                         is_disp=False,
                         **kwargs,
                     ),
-                    failing_rank=last,
+                    failing_rank=on_rank,
                 )
+
+    # the posterior sample of Thompson sampling with the BLM predictor, drawn
+    # on rank 0 only and broadcast: for the first candidate of a step and for
+    # the marginal scores of the second one
+    for label, after in [("TS sample", 0), ("TS samples for marginal scores", 1)]:
+        policy = discrete()
+        with patched(
+            physbo.blm.Predictor, "draw_post_sample_params", on_rank=0, after=after
+        ):
+            expect_raised_everywhere(
+                f"discrete bayes_search, {label}",
+                lambda: policy.bayes_search(
+                    max_num_probes=1,
+                    simulator=sim,
+                    score="TS",
+                    num_rand_basis=20,
+                    num_search_each_probe=2,
+                    is_disp=False,
+                ),
+                failing_rank=0,
+            )
 
     # the samples for the second candidate of a step in the range policies,
     # drawn before the optimizer

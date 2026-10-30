@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 
 from ... import _mpi
+from ..._rng import get_rng
 
 
 class Optimizer:
@@ -22,9 +23,13 @@ class Optimizer:
     nsamples : int
         The number of points sampled uniformly within the bounds, divided
         among the processes in a parallel run.
+    rng : int, numpy.random.SeedSequence, numpy.random.Generator or None, optional
+        Random number generator for the samples; None (default) uses the
+        global ``numpy.random`` state. In a parallel run every process
+        draws its own samples from its own generator.
     """
 
-    def __init__(self, min_X, max_X, nsamples):
+    def __init__(self, min_X, max_X, nsamples, rng=None):
         min_X = np.array(min_X)
         max_X = np.array(max_X)
         if min_X.ndim > 1 or max_X.ndim > 1:
@@ -42,6 +47,7 @@ class Optimizer:
         if nsamples < 1:
             raise ValueError("nsamples must be greater than 0")
         self.nsamples = nsamples
+        self.rng = get_rng(rng)
 
     def __call__(self, fn, mpicomm=None):
         """
@@ -68,6 +74,7 @@ class Optimizer:
             are ``nan`` or ``-inf``), the first sample (of rank 0) is returned
             and a ``RuntimeWarning`` is issued on every process.
         """
+        rng = self.rng
         if mpicomm is not None:
             mpisize = mpicomm.Get_size()
             mpirank = mpicomm.Get_rank()
@@ -83,7 +90,7 @@ class Optimizer:
             result_fx = -np.inf
             result_x = None
             for i in range(nsamples_local):
-                x = self.min_X + (self.max_X - self.min_X) * np.random.rand(self.dim)
+                x = self.min_X + (self.max_X - self.min_X) * rng.random(self.dim)
                 fx = fn(x)
                 if fx > result_fx:
                     result_fx = fx
