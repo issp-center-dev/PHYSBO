@@ -33,12 +33,24 @@ class Optimizer:
         elements (True for feasible points). If given, the samples are
         feasible points drawn by rejection sampling (on every process for
         its own share of the samples).
+    max_trials_per_point : int, optional
+        The rejection sampling of N feasible points is given up after
+        ``max_trials_per_point * N`` draws. Default is the class attribute
+        of the same name (10000).
     """
 
     #: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.
     max_trials_per_point = 10000
 
-    def __init__(self, min_X, max_X, nsamples, rng=None, constraint=None):
+    def __init__(
+        self,
+        min_X,
+        max_X,
+        nsamples,
+        rng=None,
+        constraint=None,
+        max_trials_per_point=None,
+    ):
         min_X = np.array(min_X)
         max_X = np.array(max_X)
         if min_X.ndim > 1 or max_X.ndim > 1:
@@ -58,6 +70,8 @@ class Optimizer:
         self.nsamples = nsamples
         self.rng = get_rng(rng)
         self.constraint = constraint
+        if max_trials_per_point is not None:
+            self.max_trials_per_point = max_trials_per_point
 
     def _sample_uniform(self, N):
         """Draw N points uniformly from the box [min_X, max_X]."""

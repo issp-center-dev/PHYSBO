@@ -59,6 +59,9 @@ class Policy(CheckpointMixin):
             Only feasible points are proposed by random_search and bayes_search.
             If None (default), the whole box [min_X, max_X] is searched.
             This is not saved by save(); pass it again to the constructor.
+            It is part of the state pickled by save_checkpoint(), so it must be
+            picklable (a function defined at module level or a method of a
+            picklable object, not a lambda or a local function).
         config: SetConfig object (physbo.misc.SetConfig)
         initial_data: tuple[np.ndarray, np.ndarray]
             The initial training datasets.
@@ -703,6 +706,7 @@ class Policy(CheckpointMixin):
             nsamples=1000,
             rng=self.rng,
             constraint=self.constraint,
+            max_trials_per_point=self.max_trials_per_point,
         )
 
     def _constrained(self, fn):
@@ -741,21 +745,36 @@ class Policy(CheckpointMixin):
         started from an infeasible point). The returned point is therefore checked,
         and replaced with a feasible random point if it is not feasible.
         """
-        X = optimizer(self._constrained(fn), mpicomm=self.mpicomm)
+        if isinstance(optimizer, RandomOptimizer) and (
+            optimizer.constraint is self.constraint
+        ):
+            # the optimizer draws feasible samples only; no need to judge
+            # them one by one again
+            X = optimizer(fn, mpicomm=self.mpicomm)
+        else:
+            X = optimizer(self._constrained(fn), mpicomm=self.mpicomm)
         if self.constraint is None:
             return X
 
-        is_ok = X is not None
-        if is_ok:
+        def check():
+            if X is None:
+                return False
             x = np.asarray(X, dtype=float).reshape(1, -1)
-            is_ok = bool(
+            return bool(
                 x.shape[1] == self.dim
                 and np.all(np.isfinite(x))
                 and utility.is_feasible(self.constraint, x)[0]
             )
-        if self.mpisize > 1:
-            # all the ranks must take the same branch
-            is_ok = self.mpicomm.bcast(is_ok, root=0)
+
+        # the verdict of rank 0 decides, so that all the ranks take the same
+        # branch; an exception while judging is raised on every rank
+        comm = self.mpicomm if self.mpisize > 1 else None
+        if comm is None or self.mpirank == 0:
+            is_ok, error = _mpi.call(comm, check)
+        else:
+            is_ok, error = None, None
+        if comm is not None:
+            is_ok = _mpi.bcast(comm, is_ok, error, root=0)
         if is_ok:
             return X
 
@@ -850,20 +869,29 @@ class Policy(CheckpointMixin):
                 self.mpicomm.Bcast(action, root=0)
             return action
 
-        # Only rank 0 samples, since the number of trials depends on the random numbers.
+        # Only rank 0 samples, since the number of trials depends on the random
+        # numbers; the other ranks then draw the same number of points, so that
+        # the generators of all the ranks stay in step as without a constraint.
         action = None
+        num_drawn = 0
         if self.mpirank == 0:
+
+            def draw(n):
+                nonlocal num_drawn
+                num_drawn += n
+                return self._sample_uniform(n)
+
             action = utility.sample_feasible(
-                self._sample_uniform,
-                N,
-                self.constraint,
-                max_trials_per_point=self.max_trials_per_point,
+                draw, N, self.constraint, max_trials_per_point=self.max_trials_per_point
             )
         if self.mpisize > 1:
             # all the ranks must raise the error together
-            found = self.mpicomm.bcast(action is not None, root=0)
+            found, num_drawn = self.mpicomm.bcast(
+                (action is not None, num_drawn), root=0
+            )
             if found:
                 if self.mpirank != 0:
+                    self._sample_uniform(num_drawn)
                     action = np.zeros((N, self.dim))
                 self.mpicomm.Bcast(action, root=0)
             else:

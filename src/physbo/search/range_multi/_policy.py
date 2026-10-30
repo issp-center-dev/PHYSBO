@@ -35,6 +35,33 @@ class Policy(range_single.Policy):
         initial_data=None,
         rng=None,
     ):
+        """
+
+        Parameters
+        ----------
+        num_objectives: int
+            The number of objective functions.
+        min_X: numpy.ndarray
+            The minimum value of each dimension of the search space.
+        max_X: numpy.ndarray
+            The maximum value of each dimension of the search space.
+        constraint: callable, optional
+            Inequality constraints on the search space, as in physbo.search.range.Policy:
+            a function from an array of shape (N, d) to a boolean array of N elements
+            (True for feasible points). Only feasible points are proposed.
+            Not saved by save(); pickled by save_checkpoint(), so it must be picklable.
+        comm: MPI.Comm, optional
+            MPI Communicator
+        config: SetConfig object (physbo.misc.SetConfig)
+        initial_data: tuple[np.ndarray, np.ndarray]
+            The initial training datasets.
+            The first element is the array of inputs and the second is the array of
+            values of the objective functions, of shape (N, num_objectives).
+            These points are not checked against the constraint.
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
+        """
         # The constructor of range.Policy is not called: it sets up the history, the
         # training data and initial_data for a single objective. This class inherits
         # range.Policy only to share its helper methods, so everything the base

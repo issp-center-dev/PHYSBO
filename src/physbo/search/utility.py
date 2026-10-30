@@ -439,12 +439,19 @@ def is_feasible(constraint, X):
     Raises
     ======
     ValueError
-        If ``constraint`` does not return one value per point.
+        If ``constraint`` does not return one boolean per point.
     """
     N = X.shape[0]
     if constraint is None:
         return np.ones(N, dtype=bool)
-    ok = np.asarray(constraint(X)).reshape(-1).astype(bool)
+    ok = np.asarray(constraint(X))
+    if ok.dtype != bool:
+        # the values of the constraint functions (g(X) instead of g(X) <= 0)
+        # must not pass silently as "non-zero is feasible"
+        raise ValueError(
+            f"ERROR: constraint must return booleans (True for feasible points), but returned values of dtype {ok.dtype}"
+        )
+    ok = ok.reshape(-1)
     if ok.size != N:
         raise ValueError(
             f"ERROR: constraint must return one boolean per point, but got {ok.size} values for {N} points"
