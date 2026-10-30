@@ -231,3 +231,102 @@ def test_unify_method_without_rng_attribute_is_accepted():
     unify = physbo.search.unify.NDS(2)
     _run_unified_parego_search(777, unify)
     assert not hasattr(unify, "rng")
+
+
+# --- built-in score objects and the policy's generator -----------------------
+
+
+def _run_ts_instance_search(rng, score):
+    X = np.linspace(0, 1, 60).reshape(-1, 1)
+
+    def sim(actions):
+        return -((X[actions, 0] - 0.5) ** 2)
+
+    policy = physbo.search.discrete.Policy(test_X=X, rng=rng)
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=3, simulator=sim, score=score, interval=1,
+        num_rand_basis=50, is_disp=False,
+    )
+    return policy, res.chosen_actions[: res.total_num_search]
+
+
+def test_resolve_gives_the_generator_to_the_builtin_thompson_sampling():
+    from physbo.search import score, score_multi
+
+    gen = np.random.default_rng(3)
+    assert score.resolve("TS", rng=gen).rng is gen
+    assert score_multi.resolve("TS", rng=gen).rng is gen
+    # an instance without a generator of its own borrows the given one
+    ts = score.ThompsonSampling(alpha=0.5)
+    assert isinstance(ts.rng, LegacyRNG)
+    assert score.resolve(ts, rng=gen) is ts
+    assert ts.rng is gen
+    assert ts.alpha == 0.5
+    # one with its own keeps it
+    own = np.random.default_rng(5)
+    ts = score.ThompsonSampling(rng=own)
+    score.resolve(ts, rng=gen)
+    assert ts.rng is own
+    # without rng, resolve leaves the instance alone
+    ts = score.ThompsonSampling()
+    score.resolve(ts)
+    assert isinstance(ts.rng, LegacyRNG)
+    # a user callable is returned unchanged
+    user = lambda predictor, training, test: np.zeros(test.X.shape[0])
+    assert score.resolve(user, rng=gen) is user
+    assert not hasattr(user, "rng")
+
+
+def test_builtin_thompson_sampling_instance_follows_the_policy_generator():
+    from physbo.search import score
+
+    np.random.seed(1)
+    policy, by_name = _run_ts_instance_search(777, "TS")
+    np.random.seed(2)  # a different global state must not matter
+    ts = score.ThompsonSampling()
+    policy, by_instance = _run_ts_instance_search(777, ts)
+    assert ts.rng is policy.rng
+    np.testing.assert_array_equal(by_name, by_instance)
+
+
+def test_thompson_sampling_draw_and_with_sample():
+    from physbo.search import score
+
+    X = np.linspace(0, 1, 40).reshape(-1, 1)
+
+    def sim(actions):
+        return -((X[actions, 0] - 0.5) ** 2)
+
+    policy = physbo.search.discrete.Policy(test_X=X, rng=11)
+    policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+    policy.bayes_search(max_num_probes=0, num_rand_basis=30, is_disp=False)
+    predictor, training = policy.predictor, policy.training
+    test = policy.test.get_subset([3, 10, 20])
+
+    # BLM: the sample is drawn once and evaluated deterministically
+    ts = score.ThompsonSampling(rng=np.random.default_rng(7))
+    sample = ts.draw(predictor, training)
+    sampled = ts.with_sample(sample)
+    assert sampled is not ts and sampled.name == "TS"
+    expected = predictor.evaluate_post_sample(sample, test).flatten()
+    np.testing.assert_array_equal(sampled(predictor, training, test), expected)
+    np.testing.assert_array_equal(sampled(predictor, training, test), expected)
+    assert ts.with_sample(None) is ts
+    # the same generator state gives the same sample as a direct call
+    direct = score.ThompsonSampling(rng=np.random.default_rng(7))(
+        predictor, training, test
+    )
+    np.testing.assert_array_equal(expected, direct)
+
+    # GP: no finite representation, so nothing to share
+    gp_policy = physbo.search.discrete.Policy(test_X=X, rng=11)
+    gp_policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+    gp_policy.bayes_search(max_num_probes=0, num_rand_basis=0, is_disp=False)
+    assert ts.draw(gp_policy.predictor, gp_policy.training) is None
+
+    # without a communicator the helpers do nothing
+    assert score.share_sample(ts, predictor, training, None) is ts
+    assert score.share_samples(ts, predictor, lambda k: None, 3, None) is None
+    ei = score.ExpectedImprovement()
+    assert score.share_sample(ei, predictor, training, None) is ei

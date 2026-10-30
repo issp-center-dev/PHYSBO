@@ -38,6 +38,11 @@ In the Generator mode the RNG state is part of the policy object, so
 pickling the policy captures everything needed for exact resumption;
 this includes the generator that the policy lends to a ``unify_method``
 such as ``ParEGO`` when that object was not given a generator of its own.
+A built-in score object (``physbo.search.score.ThompsonSampling``)
+borrows the generator in the same way but is not part of the policy, so
+after ``load_checkpoint`` pass the name ``"TS"`` or a new instance rather
+than one created before the checkpoint, which still holds the generator
+of the old policy object.
 In the legacy mode the RNG state lives in the global ``numpy.random``
 module; the checkpoint API captures and restores it explicitly (note
 that loading a legacy-mode checkpoint therefore *sets the global

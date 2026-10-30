@@ -11,6 +11,7 @@ import pickle as pickle
 import time
 
 from ._history import History
+from ... import _mpi
 from .. import discrete
 from .. import utility
 from .. import score as search_score
@@ -241,9 +242,13 @@ class Policy(discrete.Policy):
             If true, Pareto set is displayed.
         simulator: callable, optional
             The simulator function.
-        score: str, optional
-            The type of acquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
+            training contains unified targets of shape (N, 1).
         interval: int, optional
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -262,11 +267,19 @@ class Policy(discrete.Policy):
         ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
             Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
         history: history object (physbo.search.discrete_unified.results.history)
         """
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
+
         assert unify_method is not None, "unify_method must be provided"
 
         if self.mpirank != 0:
@@ -312,7 +325,9 @@ class Policy(discrete.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -355,17 +370,20 @@ class Policy(discrete.Policy):
 
     def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
         self._update_predictor()
-        f = search_score.score(
-            mode,
-            predictor=self.predictor,
-            training=self.training_unified,
-            test=self.test.get_subset(self.actions),
+        comm = self.mpicomm if self.mpisize > 1 else None
+        # TS: one posterior sample for every process, drawn on rank 0
+        first_mode = search_score.share_sample(
+            mode, self.predictor, self.training_unified, comm
+        )
+        f, error = _mpi.call(
+            self.mpicomm,
+            self.get_score,
+            mode=first_mode,
             alpha=alpha,
             ucb_beta=ucb_beta,
-            rng=self.rng,
-            comm=self.mpicomm,
+            parallel=False,
         )
-        champion, local_champion, local_index = self._find_champion(f)
+        champion, local_champion, local_index = self._find_champion(f, error)
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
@@ -373,8 +391,10 @@ class Policy(discrete.Policy):
 
         chosen_actions = [champion]
         for n in range(1, N):
-            f = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha, ucb_beta)
-            champion, local_champion, local_index = self._find_champion(f)
+            f, error = self._get_marginal_score(
+                mode, chosen_actions[0:n], K, alpha, ucb_beta
+            )
+            champion, local_champion, local_index = self._find_champion(f, error)
             if champion == -1:
                 break
             if champion == local_champion:
@@ -456,9 +476,14 @@ class Policy(discrete.Policy):
 
         Parameters
         ----------
-        mode: str
-            The type of acquisition funciton. TS, EI and PI are available.
-            These functions are defined in score.py.
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
+            training contains unified targets of shape (N, 1).
         actions: array of int
             actions to calculate score
         xs: physbo.Variable or np.ndarray
@@ -474,6 +499,10 @@ class Policy(discrete.Policy):
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
@@ -492,6 +521,10 @@ class Policy(discrete.Policy):
         When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
         If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
+        mode = search_score.resolve(
+            mode, alpha=alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
+
         if training is None:
             training = self.training_unified
 
@@ -509,35 +542,43 @@ class Policy(discrete.Policy):
                 self._update_predictor()
                 predictor = self.predictor
 
-        if xs is not None:
-            if actions is not None:
-                raise RuntimeError("ERROR: both actions and xs are given")
-            test = self._make_variable_X(xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            if actions is None:
-                actions = self.actions
-            else:
-                if isinstance(actions, int):
-                    actions = [actions]
+        def scores(actions):
+            # the share of this process of the candidates
+            if xs is not None:
+                if actions is not None:
+                    raise RuntimeError("ERROR: both actions and xs are given")
+                test = self._make_variable_X(xs)
                 if parallel and self.mpisize > 1:
-                    actions = np.array_split(actions, self.mpisize)[self.mpirank]
-            test = self.test.get_subset(actions)
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
+            else:
+                if actions is None:
+                    actions = self.actions
+                else:
+                    if isinstance(actions, int):
+                        actions = [actions]
+                    if parallel and self.mpisize > 1:
+                        actions = np.array_split(actions, self.mpisize)[
+                            self.mpirank
+                        ]
+                test = self.test.get_subset(actions)
+            return search_score.score(
+                mode,
+                predictor=predictor,
+                training=training,
+                test=test,
+                alpha=alpha,
+                ucb_beta=ucb_beta,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-            rng=self.rng,
-            comm=self.mpicomm if (parallel and self.mpisize > 1) else None,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        # TS: one posterior sample for every process, drawn on rank 0
+        mode = search_score.share_sample(mode, predictor, training, comm)
+        f, error = _mpi.call(comm, scores, actions)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -602,26 +643,39 @@ class Policy(discrete.Policy):
 
         Returns
         -------
-        f: list
-            N dimensional scores (score is defined in each mode)
+        f: numpy.ndarray or None
+            The marginal scores of the candidates of this process (score is
+            defined in each mode), or None if ``error`` is not None.
+        error: Exception or None
+            An exception raised on this process while computing ``f`` in a
+            parallel run, to be passed to :meth:`_find_champion` (in a serial
+            run it is raised).
         """
-        f = np.zeros((K, len(self.actions)), dtype=float)
+
+        comm = self.mpicomm if self.mpisize > 1 else None
 
         # Draw K samples of the values of objective function of chosen actions.
         # self.test is not partitioned over ranks, so the chosen points are
         # identical on every rank; the virtual values are drawn on rank 0 and
         # broadcast so that all ranks fantasize the same observations.
         new_test = self.test.get_subset(chosen_actions)
-        if self.mpisize == 1 or self.mpirank == 0:
-            virtual_t = self.predictor.get_predict_samples(
-                self.training_unified, new_test, K, rng=self.rng
+        if comm is None or self.mpirank == 0:
+            virtual_t, error = _mpi.call(
+                comm,
+                self.predictor.get_predict_samples,
+                self.training_unified,
+                new_test,
+                K,
+                rng=self.rng,
             )
         else:
-            virtual_t = None
-        if self.mpisize > 1:
-            virtual_t = self.mpicomm.bcast(virtual_t, root=0)
+            virtual_t, error = None, None
+        if comm is not None:
+            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
 
-        for k in range(K):
+        def model(k):
+            # the predictor and the training data with the k-th virtual
+            # observations added (the same on every process)
             predictor = copy.deepcopy(self.predictor)
             train = copy.deepcopy(self.training_unified)
             virtual_train = new_test
@@ -634,15 +688,28 @@ class Policy(discrete.Policy):
                 train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
             predictor.update(train, virtual_train)
+            return predictor, train
 
-            f[k, :] = search_score.score(
-                mode,
+        # TS: one posterior sample per virtual data set for every process,
+        # drawn on rank 0
+        samples = search_score.share_samples(mode, self.predictor, model, K, comm)
+        return _mpi.call(comm, self._marginal_score, mode, model, K, ucb_beta, samples)
+
+    def _marginal_score(self, mode, model, K, ucb_beta, samples=None):
+        """The marginal scores of this process's candidates: the mean of the
+        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.
+        ``samples`` are their posterior samples for Thompson sampling (see
+        :func:`physbo.search.score.share_samples`), or None."""
+        f = np.zeros((K, len(self.actions)), dtype=float)
+        for k in range(K):
+            predictor, train = model(k)
+            mode_k = mode if samples is None else mode.with_sample(samples[k])
+            f[k, :] = self.get_score(
+                mode_k,
                 predictor=predictor,
                 training=train,
-                test=self.test.get_subset(self.actions),
                 ucb_beta=ucb_beta,
-                rng=self.rng,
-                comm=self.mpicomm,
+                parallel=False,
             )
         return np.mean(f, axis=0)
 
@@ -755,7 +822,7 @@ def _run_simulator(simulator, action, comm=None):
     if comm is None:
         return simulator(action)
     if comm.rank == 0:
-        t = simulator(action)
+        t, error = _mpi.call(comm, simulator, action)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        t, error = 0.0, None
+    return _mpi.bcast(comm, t, error, root=0)

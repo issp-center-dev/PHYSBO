@@ -364,6 +364,29 @@ def show_search_results_mo(history, N, disp_pareto_set=False):
     history.show_search_results_mo(n, disp_pareto_set)
 
 
+def score_name(score):
+    """Return the display name of an acquisition function.
+
+    Parameters
+    ----------
+    score : str or callable
+        Acquisition function name, function or callable object.
+
+    Returns
+    -------
+    str
+        The string itself, its name attribute, its function name, or its
+        class name, in that order of preference.
+    """
+    if isinstance(score, str):
+        return score
+    if hasattr(score, "name"):
+        return score.name
+    if hasattr(score, "__name__"):
+        return score.__name__
+    return type(score).__name__
+
+
 def show_start_message_multi_search(N, score=None):
     """Print the header announcing a multiple-probe search step.
 

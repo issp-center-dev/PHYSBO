@@ -82,21 +82,45 @@ greedy exploitation of the posterior mean :math:`\mu_c (\mathbf{x})`.
 
 .. note::
 
-   The acquisition function is selected by the ``score`` argument of
-   ``bayes_search`` / ``get_score`` (``"TS"`` (default), ``"EI"``, ``"PI"`` and
-   ``"UCB"``). For UCB, the trade-off parameter :math:`\beta` is set by the
-   ``ucb_beta`` argument (default ``1.0``):
+   Select the acquisition function with ``score`` in ``bayes_search`` or
+   ``mode`` in ``get_score``: a built-in name (``"TS"``, ``"EI"``, ``"PI"``,
+   ``"UCB"``) or a callable. For string ``"TS"``, ``config.search.alpha`` sets
+   the sampling scale in ``bayes_search``.
+
+   The classes in ``physbo.search.score`` store parameters in their constructors:
+   ``ExpectedImprovement(fmax=None)``, ``ProbabilityOfImprovement(fmax=None)``,
+   ``ThompsonSampling(alpha=1.0)`` and ``UpperConfidenceBound(beta=1.0)``.
+   The following UCB specifications are equivalent (``ucb_beta`` defaults to ``1.0``):
 
    .. code-block:: python
 
-      # discrete search space
-      policy = physbo.search.discrete.Policy(test_X=X)
       policy.bayes_search(
           max_num_probes=10, simulator=sim, score="UCB", ucb_beta=2.0
       )
+      policy.bayes_search(
+          max_num_probes=10, simulator=sim,
+          score=physbo.search.score.UpperConfidenceBound(beta=2.0)
+      )
 
-   UCB is available for single-objective optimization (the ``discrete``,
-   ``discrete_unified`` and ``range`` policies).
+   UCB is available for single-objective optimization (``discrete``,
+   ``discrete_unified``, ``range`` and ``range_unified``).
+   A custom callable returns a NumPy array of shape ``(test.X.shape[0],)``;
+   larger values are preferred:
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def my_score(predictor, training, test):
+          mean = predictor.get_post_fmean(training, test)
+          variance = predictor.get_post_fcov(training, test)
+          return (mean + 0.5 * np.sqrt(variance)).flatten()
+
+      policy.bayes_search(max_num_probes=10, simulator=sim, score=my_score)
+
+   For multi-objective optimization (``discrete_multi`` / ``range_multi``),
+   the callable is invoked as ``score(predictor_list, training, test, pareto)``;
+   built-in classes are in ``physbo.search.score_multi``.
 
 
 - Step3: Experiment (Simulation)

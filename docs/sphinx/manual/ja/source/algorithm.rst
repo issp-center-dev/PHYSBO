@@ -82,20 +82,42 @@ PIスコアは、現在得られている :math:`y` の最大値 :math:`y_{\max}
 
 .. note::
 
-   獲得関数は ``bayes_search`` / ``get_score`` の ``score`` 引数で選択します
-   (``"TS"`` (デフォルト)、 ``"EI"`` 、 ``"PI"`` 、 ``"UCB"`` )。
-   UCBの場合、トレードオフパラメータ :math:`\beta` は ``ucb_beta`` 引数で指定します
-   (デフォルトは ``1.0`` )。
+   獲得関数は ``bayes_search`` の ``score`` 引数、または ``get_score`` の ``mode`` 引数で選択します。
+   組み込みの名前( ``"TS"`` 、 ``"EI"`` 、 ``"PI"`` 、 ``"UCB"`` )のほか、callableも指定できます。
+   文字列 ``"TS"`` を指定した ``bayes_search`` では、サンプリングのスケールを ``config.search.alpha`` で設定します。
+
+   ``physbo.search.score`` の組み込みクラスは、コンストラクタでパラメータを保持します。
+   ``ExpectedImprovement(fmax=None)`` 、 ``ProbabilityOfImprovement(fmax=None)`` 、
+   ``ThompsonSampling(alpha=1.0)`` 、 ``UpperConfidenceBound(beta=1.0)`` が利用できます。
+   次のUCBの指定は等価です( ``ucb_beta`` のデフォルトは ``1.0`` )。
 
    .. code-block:: python
 
-      # 離散空間の探索
-      policy = physbo.search.discrete.Policy(test_X=X)
       policy.bayes_search(
           max_num_probes=10, simulator=sim, score="UCB", ucb_beta=2.0
       )
+      policy.bayes_search(
+          max_num_probes=10, simulator=sim,
+          score=physbo.search.score.UpperConfidenceBound(beta=2.0)
+      )
 
-   UCBは単目的最適化( ``discrete`` 、 ``discrete_unified`` 、 ``range`` の各Policy)で利用できます。
+   UCBは単目的最適化( ``discrete`` 、 ``discrete_unified`` 、 ``range`` 、 ``range_unified`` の各Policy)で利用できます。
+   自作のcallableは、形状が ``(test.X.shape[0],)`` のNumPy配列を返します。値が大きいほどよい候補とみなされます。
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def my_score(predictor, training, test):
+          mean = predictor.get_post_fmean(training, test)
+          variance = predictor.get_post_fcov(training, test)
+          return (mean + 0.5 * np.sqrt(variance)).flatten()
+
+      policy.bayes_search(max_num_probes=10, simulator=sim, score=my_score)
+
+   多目的最適化( ``discrete_multi`` / ``range_multi`` )では、callableは
+   ``score(predictor_list, training, test, pareto)`` として呼び出されます。
+   組み込みクラスは ``physbo.search.score_multi`` にあります。
 
 
 - ステップ３：実験

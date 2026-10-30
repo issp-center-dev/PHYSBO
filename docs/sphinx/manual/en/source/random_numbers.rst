@@ -71,6 +71,14 @@ the policy's generator unless they were given one of their own:
   generator of the policy. An optimizer created by the caller takes its
   own ``rng`` argument, e.g.
   ``physbo.search.optimize.random.Optimizer(min_X, max_X, nsamples=1000, rng=policy.rng)``.
+- The built-in Thompson sampling objects
+  (``physbo.search.score.ThompsonSampling`` and
+  ``physbo.search.score_multi.ThompsonSampling``) draw through their
+  ``rng`` attribute in the same way: the name ``"TS"`` and an instance
+  created without ``rng`` use the generator of the policy, and
+  ``ThompsonSampling(..., rng=...)`` keeps the given generator. A
+  user-defined score (see the algorithm chapter) draws from whatever it
+  uses itself; it is not connected to the policy's generator.
 
 Parallel runs
 ----------------------------------
@@ -80,8 +88,8 @@ In a parallel run (a communicator passed as ``comm``), give the same
 all ranks must agree on are drawn on rank 0 and broadcast: the
 hyperparameters of the model, the random Fourier basis, the posterior
 sample of Thompson sampling with the Bayesian linear model, the virtual
-observations of a multi-point proposal, the point returned by the random
-optimizer, and the result of the simulator. The remaining draws are made
+observations of a multi-point proposal in the discrete policies, the
+point returned by the random optimizer, and the result of the simulator. The remaining draws are made
 by each rank for its own share of the candidates. As a consequence, the
 random number streams of the ranks do not stay in step with each other
 (rank 0 draws more than the others); this is harmless, because every

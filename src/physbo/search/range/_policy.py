@@ -14,6 +14,7 @@ from ._history import History
 from .. import utility
 from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
+from ... import _mpi
 from ... import gp
 from ...gp import Predictor as gp_predictor
 from ...blm import Predictor as blm_predictor
@@ -293,9 +294,12 @@ class Policy(CheckpointMixin):
         simulator: callable
             Callable (function or object with ``__call__``)
             Here, action is an integer which represents the index of the candidate.
-        score: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
         interval: int
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
@@ -308,11 +312,19 @@ class Policy(CheckpointMixin):
         ard: bool
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
             Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
         history: history object (physbo.search.discrete.results.history)
         """
+
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
 
         if self.mpirank != 0:
             is_disp = False
@@ -359,7 +371,9 @@ class Policy(CheckpointMixin):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -515,9 +529,13 @@ class Policy(CheckpointMixin):
 
         Parameters
         ----------
-        mode: str
-            The type of aquisition funciton. TS, EI and PI are available.
-            These functions are defined in score.py.
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
         xs: physbo.Variable or np.ndarray
             input parameters to calculate score
         predictor: predictor object
@@ -531,6 +549,10 @@ class Policy(CheckpointMixin):
         alpha: float
             Tuning parameter which is used if mode = TS.
             In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
 
         Returns
         -------
@@ -549,6 +571,10 @@ class Policy(CheckpointMixin):
         When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.
         If you want to split the input array itself, set *parallel* be False and merge results by yourself.
         """
+        mode = search_score.resolve(
+            mode, alpha=alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
+
         if training is None:
             training = self.training
 
@@ -566,33 +592,49 @@ class Policy(CheckpointMixin):
                 self._update_predictor()
                 predictor = self.predictor
 
-        if xs is not None:
-            test = self._make_variable_X(xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            raise RuntimeError("ERROR: xs is not given")
+        def scores():
+            # the share of this process of the candidates
+            if xs is not None:
+                test = self._make_variable_X(xs)
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
+            else:
+                raise RuntimeError("ERROR: xs is not given")
+            return search_score.score(
+                mode,
+                predictor=predictor,
+                training=training,
+                test=test,
+                alpha=alpha,
+                ucb_beta=ucb_beta,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-            rng=self.rng,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
     def _argmax_score(
-        self, mode, predictor, training, extra_trainings, optimizer, ucb_beta=1.0
+        self,
+        mode,
+        predictor,
+        training,
+        extra_trainings,
+        optimizer,
+        ucb_beta=1.0,
+        error=None,
+        samples_drawn=False,
     ):
-        K = len(extra_trainings)
-        if K == 0:
+        """``error``: an exception raised on this process while drawing the
+        samples in ``extra_trainings`` (see :func:`physbo._mpi.call`);
+        ``samples_drawn``: whether they were drawn (on every process alike),
+        so that the processes exchange whether one of them raised."""
+        if error is None and len(extra_trainings) == 0:
             predictor.prepare(training, objective_index=0)
 
             def fn(x):
@@ -603,29 +645,39 @@ class Policy(CheckpointMixin):
                     ucb_beta=ucb_beta,
                     parallel=False,
                 )[0]
-        else:  # marginal score
-            trains = [copy.deepcopy(training) for _ in range(K)]
-            predictors = [copy.deepcopy(predictor) for _ in range(K)]
-            for k in range(K):
-                extra_train = extra_trainings[k]
-                # Ensure t is normalized
-                if extra_train.t is not None:
-                    extra_train.t = normalize_t(extra_train.t, k=1)
-                trains[k].add(X=extra_train.X, t=extra_train.t)
-                predictors[k].update(trains[k], extra_train, objective_index=0)
+        elif error is None:  # marginal score
 
-            def fn(x):
-                f = np.zeros(K)
+            def marginal_score_function():
+                K = len(extra_trainings)
+                trains = [copy.deepcopy(training) for _ in range(K)]
+                predictors = [copy.deepcopy(predictor) for _ in range(K)]
                 for k in range(K):
-                    f[k] = self.get_score(
-                        mode,
-                        xs=x.reshape(1, -1),
-                        predictor=predictors[k],
-                        training=trains[k],
-                        ucb_beta=ucb_beta,
-                        parallel=False,
-                    )[0]
-                return np.mean(f)
+                    extra_train = extra_trainings[k]
+                    # Ensure t is normalized
+                    if extra_train.t is not None:
+                        extra_train.t = normalize_t(extra_train.t, k=1)
+                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    predictors[k].update(trains[k], extra_train, objective_index=0)
+
+                def fn(x):
+                    f = np.zeros(K)
+                    for k in range(K):
+                        f[k] = self.get_score(
+                            mode,
+                            xs=x.reshape(1, -1),
+                            predictor=predictors[k],
+                            training=trains[k],
+                            ucb_beta=ucb_beta,
+                            parallel=False,
+                        )[0]
+                    return np.mean(f)
+
+                return fn
+
+            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
+        if self.mpisize > 1 and (samples_drawn or len(extra_trainings) > 0):
+            # the samples, and so the predictors, differ between the processes
+            _mpi.allgather(self.mpicomm, None, error)
 
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
@@ -666,15 +718,20 @@ class Policy(CheckpointMixin):
         )
 
         for n in range(1, N):
-            extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(
-                self.training, extra_training, K, objective_index=0, rng=self.rng
-            )
-            extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
-            for k in range(K):
-                # Normalize t to (N, 1) shape
-                t_normalized = normalize_t(t[k, :], k=1)
-                extra_trainings[k].t = t_normalized
+
+            def draw_samples():
+                extra_training = Variable(X=X[0:n, :])
+                t = self.predictor.get_predict_samples(
+                    self.training, extra_training, K, objective_index=0, rng=self.rng
+                )
+                extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
+                for k in range(K):
+                    # Normalize t to (N, 1) shape
+                    t_normalized = normalize_t(t[k, :], k=1)
+                    extra_trainings[k].t = t_normalized
+                return extra_trainings
+
+            extra_trainings, error = _mpi.call(self.mpicomm, draw_samples)
             X[n, :] = self._argmax_score(
                 mode,
                 predictor,
@@ -682,6 +739,8 @@ class Policy(CheckpointMixin):
                 extra_trainings,
                 optimizer=optimizer,
                 ucb_beta=ucb_beta,
+                error=error,
+                samples_drawn=True,
             )
 
         return X
@@ -894,9 +953,9 @@ def _run_simulator(simulator, action, comm=None):
         t = simulator(action)
     else:
         if comm.rank == 0:
-            t = simulator(action)
+            t, error = _mpi.call(comm, simulator, action)
         else:
-            t = 0.0
-        t = comm.bcast(t, root=0)
+            t, error = 0.0, None
+        t = _mpi.bcast(comm, t, error, root=0)
 
     return normalize_t(t, k=1)

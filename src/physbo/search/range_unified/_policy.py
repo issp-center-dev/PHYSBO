@@ -11,6 +11,7 @@ import pickle as pickle
 import time
 
 from ._history import History
+from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score as search_score
@@ -202,7 +203,62 @@ class Policy(range_single.Policy):
         num_rand_basis=0,
         optimizer=None,
         ard=False,
+        ucb_beta=1.0,
     ):
+        """
+        Performing Bayesian optimization by using unified objective function
+
+        Parameters
+        ----------
+        training_list: list of physbo.Variable, optional
+            The training datasets.
+        max_num_probes: int, optional
+            The maximum number of searching process by Bayesian optimization.
+        num_search_each_probe: int, optional
+            The number of searching by Bayesian optimization at each process.
+        predictor: predictor object, optional
+            The predictor object.
+        is_disp: bool, optional
+            If true, process messages are outputted.
+        disp_pareto_set: bool, optional
+            If true, Pareto set is displayed.
+        simulator: callable, optional
+            The simulator function.
+        score: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``score(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable. Under MPI, the callable evaluates local
+            points and must not perform collective communication.
+            training contains unified targets of shape (N, 1).
+        interval: int, optional
+            The interval number of learning the hyper parameter.
+            If you set the negative value to interval, the hyper parameter learning is not performed.
+            If you set zero to interval, the hyper parameter learning is performed only at the first step.
+        num_rand_basis: int, optional
+            The number of basis function. If you choose 0, ordinary Gaussian process run.
+        unify_method: callable
+            The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
+            See physbo.search.unify for examples.
+        optimizer: Optimizer object, optional
+            Optimizer object for optimizing the acquisition function.
+            If None, the default optimizer is used.
+        ard: bool, optional
+            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
+            Default is False.
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
+
+        Returns
+        -------
+        history: history object (physbo.search.range_unified.results.history)
+        """
+        score = search_score.resolve(
+            score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
+
         assert unify_method is not None, "unify_method must be provided"
         self.unify_method = unify_method
         # a unify_method without a generator of its own (e.g. ParEGO) draws
@@ -256,7 +312,9 @@ class Policy(range_single.Policy):
             time_update_predictor = time.time() - time_update_predictor
 
             if num_search_each_probe != 1:
-                utility.show_start_message_multi_search(self.history.num_runs, score)
+                utility.show_start_message_multi_search(
+                    self.history.num_runs, utility.score_name(score)
+                )
 
             time_get_action = time.time()
             K = self.config.search.multi_probe_num_sampling
@@ -290,34 +348,56 @@ class Policy(range_single.Policy):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _argmax_score(self, mode, predictor, training, extra_trainings, optimizer):
-        K = len(extra_trainings)
-        if K == 0:
+    def _argmax_score(
+        self,
+        mode,
+        predictor,
+        training,
+        extra_trainings,
+        optimizer,
+        error=None,
+        samples_drawn=False,
+    ):
+        """``error``: an exception raised on this process while drawing the
+        samples in ``extra_trainings`` (see :func:`physbo._mpi.call`);
+        ``samples_drawn``: whether they were drawn (on every process alike),
+        so that the processes exchange whether one of them raised."""
+        if error is None and len(extra_trainings) == 0:
             predictor.prepare(training, objective_index=0)
 
             def fn(x):
                 return self.get_score(
                     mode, xs=x.reshape(1, -1), predictor=predictor, parallel=False
                 )[0]
-        else:  # marginal score
-            trains = [copy.deepcopy(training) for _ in range(K)]
-            predictors = [copy.deepcopy(predictor) for _ in range(K)]
-            for k in range(K):
-                extra_train = extra_trainings[k]
-                trains[k].add(X=extra_train.X, t=extra_train.t)
-                predictors[k].update(trains[k], extra_train, objective_index=0)
+        elif error is None:  # marginal score
 
-            def fn(x):
-                f = np.zeros(K)
+            def marginal_score_function():
+                K = len(extra_trainings)
+                trains = [copy.deepcopy(training) for _ in range(K)]
+                predictors = [copy.deepcopy(predictor) for _ in range(K)]
                 for k in range(K):
-                    f[k] = self.get_score(
-                        mode,
-                        xs=x.reshape(1, -1),
-                        predictor=predictors[k],
-                        training=trains[k],
-                        parallel=False,
-                    )[0]
-                return np.mean(f)
+                    extra_train = extra_trainings[k]
+                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    predictors[k].update(trains[k], extra_train, objective_index=0)
+
+                def fn(x):
+                    f = np.zeros(K)
+                    for k in range(K):
+                        f[k] = self.get_score(
+                            mode,
+                            xs=x.reshape(1, -1),
+                            predictor=predictors[k],
+                            training=trains[k],
+                            parallel=False,
+                        )[0]
+                    return np.mean(f)
+
+                return fn
+
+            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
+        if self.mpisize > 1 and (samples_drawn or len(extra_trainings) > 0):
+            # the samples, and so the predictors, differ between the processes
+            _mpi.allgather(self.mpicomm, None, error)
 
         X = optimizer(fn, mpicomm=self.mpicomm)
         return X
@@ -356,21 +436,31 @@ class Policy(range_single.Policy):
         )
 
         for n in range(1, N):
-            extra_training = Variable(X=X[0:n, :])
-            t = self.predictor.get_predict_samples(
-                self.training_unified, extra_training, K, objective_index=0,
-                rng=self.rng,
-            )
-            extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
-            for k in range(K):
-                # Normalize t to (N, 1) shape
-                extra_trainings[k].t = t[k, :].reshape(-1, 1)
+
+            def draw_samples():
+                extra_training = Variable(X=X[0:n, :])
+                t = self.predictor.get_predict_samples(
+                    self.training_unified,
+                    extra_training,
+                    K,
+                    objective_index=0,
+                    rng=self.rng,
+                )
+                extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
+                for k in range(K):
+                    # Normalize t to (N, 1) shape
+                    extra_trainings[k].t = t[k, :].reshape(-1, 1)
+                return extra_trainings
+
+            extra_trainings, error = _mpi.call(self.mpicomm, draw_samples)
             X[n, :] = self._argmax_score(
                 mode,
                 predictor,
                 self.training_unified,
                 extra_trainings,
                 optimizer=optimizer,
+                error=error,
+                samples_drawn=True,
             )
 
         return X
@@ -459,7 +549,60 @@ class Policy(range_single.Policy):
         pareto=None,
         parallel=True,
         alpha=1,
+        ucb_beta=1.0,
     ):
+        """
+        Calculate score (acquisition function)
+
+        Parameters
+        ----------
+        mode: str or callable
+            TS, EI, PI, UCB, or a callable called positionally as
+            ``mode(predictor, training, test)`` returning a numpy.ndarray of
+            shape (test.X.shape[0],), with larger values preferred. Empty test
+            data skips the callable but still participates in MPI gathering.
+            The callable must not perform collective communication. alpha and
+            ucb_beta apply only to string modes.
+            training contains unified targets of shape (N, 1).
+        xs: physbo.Variable or np.ndarray
+            input parameters to calculate score
+        predictor: predictor object
+            predictor used to calculate score.
+            If not given, self.predictor will be used.
+        training:physbo.Variable
+            Training dataset.
+            If not given, self.training_unified will be used.
+        pareto: Pareto, optional
+            Retained for API compatibility; unused for unified scoring.
+        parallel: bool
+            Calculate scores in parallel by MPI (default: True)
+        alpha: float
+            Tuning parameter which is used if mode = TS.
+            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
+        ucb_beta: float
+            Trade-off parameter between exploitation and exploration used for
+            string "UCB". The score is ``fmean + ucb_beta * fstd``.
+            Default is 1.0; ignored for callable scores.
+
+        Returns
+        -------
+        f: numpy.ndarray
+            Acquisition scores of shape (num_points,).
+
+        Raises
+        ------
+        RuntimeError
+            If *xs* is not given
+
+        Notes
+        -----
+        When *parallel* is True, it is assumed that the function receives the same input (*xs*) for all the ranks.
+        If you want to split the input array itself, set *parallel* be False and merge results by yourself.
+        """
+        mode = search_score.resolve(
+            mode, alpha=alpha, ucb_beta=ucb_beta, rng=self.rng
+        )
+
         if training is None:
             training = self.training_unified
 
@@ -483,27 +626,32 @@ class Policy(range_single.Policy):
                 self._update_predictor()
                 predictor = self.predictor
 
-        if xs is not None:
-            if isinstance(xs, Variable):
-                test = xs
+        def scores():
+            # the share of this process of the candidates
+            if xs is not None:
+                if isinstance(xs, Variable):
+                    test = xs
+                else:
+                    test = Variable(X=xs)
+                if parallel and self.mpisize > 1:
+                    actions = np.array_split(
+                        np.arange(test.X.shape[0]), self.mpisize
+                    )
+                    test = test.get_subset(actions[self.mpirank])
             else:
-                test = Variable(X=xs)
-            if parallel and self.mpisize > 1:
-                actions = np.array_split(np.arange(test.X.shape[0]), self.mpisize)
-                test = test.get_subset(actions[self.mpirank])
-        else:
-            raise RuntimeError("ERROR: xs is not given")
+                raise RuntimeError("ERROR: xs is not given")
+            return search_score.score(
+                mode,
+                predictor=predictor,
+                training=training,
+                test=test,
+                alpha=alpha,
+            )
 
-        f = search_score.score(
-            mode,
-            predictor=predictor,
-            training=training,
-            test=test,
-            alpha=alpha,
-            rng=self.rng,
-        )
-        if parallel and self.mpisize > 1:
-            fs = self.mpicomm.allgather(f)
+        comm = self.mpicomm if parallel and self.mpisize > 1 else None
+        f, error = _mpi.call(comm, scores)
+        if comm is not None:
+            fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
 
@@ -632,7 +780,7 @@ def _run_simulator(simulator, action_X, comm=None):
     if comm is None:
         return simulator(action_X)
     if comm.rank == 0:
-        t = simulator(action_X)
+        t, error = _mpi.call(comm, simulator, action_X)
     else:
-        t = 0.0
-    return comm.bcast(t, root=0)
+        t, error = 0.0, None
+    return _mpi.bcast(comm, t, error, root=0)

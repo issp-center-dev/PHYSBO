@@ -192,3 +192,30 @@ def test_multi_policy_pickle_smoke():
     reference = cont(policy)
     resumed = cont(clone)
     np.testing.assert_array_equal(reference, resumed)
+
+
+def test_resume_with_builtin_score_object(tmp_path):
+    # A built-in score object borrows the policy's generator but is not part
+    # of the policy: after load_checkpoint, the name or a new instance resumes
+    # bit-exactly, while an instance created before the checkpoint still
+    # holds the generator of the old policy object (as the manual says).
+    from physbo.search.score import ThompsonSampling
+
+    fname = str(tmp_path / "ckpt.pkl")
+    policy = _make_policy(rng=4242)
+    old = ThompsonSampling()
+    policy.bayes_search(max_num_probes=1, simulator=sim, score=old,
+                        interval=1, num_rand_basis=50, is_disp=False)
+    assert old.rng is policy.rng
+    policy.save_checkpoint(fname)
+    reference = _continue_policy(policy)
+
+    def resume(score):
+        restored = physbo.search.discrete.Policy.load_checkpoint(fname)
+        res = restored.bayes_search(max_num_probes=2, simulator=sim, score=score,
+                                    interval=1, num_rand_basis=50, is_disp=False)
+        return res.chosen_actions[: res.total_num_search]
+
+    np.testing.assert_array_equal(reference, resume("TS"))
+    np.testing.assert_array_equal(reference, resume(ThompsonSampling()))
+    assert not np.array_equal(reference, resume(old))
