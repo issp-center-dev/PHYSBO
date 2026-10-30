@@ -34,7 +34,8 @@ a ``numpy.random.Generator``, the policy owns a ``numpy.random.Generator``
 and draws only from it. The global ``numpy.random`` state is neither read
 nor modified, so the search is reproducible regardless of what else the
 process does with ``numpy.random``, and the generator is part of the
-policy object: pickling the policy stores its state. In this mode ``set_seed(seed)`` re-creates the generator from
+policy object: pickling the policy stores its state (see
+:ref:`chap_checkpoint`). In this mode ``set_seed(seed)`` re-creates the generator from
 the seed. The random number stream differs from the legacy one, so a run
 in the Generator mode does not reproduce a run of a previous version
 with the same seed.
