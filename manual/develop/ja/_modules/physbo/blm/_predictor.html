@@ -53,6 +53,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_numbers.html">乱数と再現性</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul>
@@ -126,7 +127,7 @@
 
 <div class="viewcode-block" id="Predictor.fit">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.fit">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">num_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        fit model to training dataset</span>
 
@@ -148,8 +149,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">num_dim</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="c1"># Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is</span>
         <span class="n">t_fit</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">[:,</span> <span class="n">objective_index</span><span class="p">]</span> <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">training</span><span class="o">.</span><span class="n">t</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t_fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">export_blm</span><span class="p">(</span><span class="n">num_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t_fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">export_blm</span><span class="p">(</span><span class="n">num_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_stats</span><span class="p">()</span></div>
 
 
@@ -284,7 +285,9 @@
 
 <div class="viewcode-block" id="Predictor.get_post_samples">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_post_samples">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_samples</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples of mean values of model</span>
 
@@ -311,12 +314,71 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
         <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
         <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Predictor.draw_post_sample_params">
+<a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.draw_post_sample_params">[ドキュメント]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_post_sample_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        draws one sample of the posterior weight parameters</span>
+
+<span class="sd">        Together with ``evaluate_post_sample``, this splits Thompson</span>
+<span class="sd">        sampling into a random "draw" part and a deterministic</span>
+<span class="sd">        "evaluate" part. Under MPI, the sample can be drawn on rank 0,</span>
+<span class="sd">        broadcast, and evaluated on all ranks so that every rank scores</span>
+<span class="sd">        its candidates with the same posterior sample.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        training: physbo.variable</span>
+<span class="sd">            training dataset. If already trained, the model does not use this.</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">            noise for sampling source</span>
+<span class="sd">            (default: 1.0)</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when training.t is 2D (default: 0)</span>
+<span class="sd">        rng: rng object, optional</span>
+<span class="sd">            random number generator (default: global numpy.random state)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            sampled weight parameters (nbasis,)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Predictor.evaluate_post_sample">
+<a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.evaluate_post_sample">[ドキュメント]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_post_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w_hat</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        evaluates a posterior weight sample at test points (deterministic)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ==========</span>
+<span class="sd">        w_hat: numpy.ndarray</span>
+<span class="sd">            weight parameters drawn by ``draw_post_sample_params``</span>
+<span class="sd">        test: physbo.variable</span>
+<span class="sd">            inputs</span>
+<span class="sd">        objective_index: int</span>
+<span class="sd">            Index of objective column to use when test.Z is 3D (default: 0)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            sampled function values at the test points</span>
+<span class="sd">        """</span>
+        <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
+        <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w_hat</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.get_predict_samples">
 <a class="viewcode-back" href="../../../api/physbo.blm.html#physbo.blm.Predictor.get_predict_samples">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples of values of model</span>
 
@@ -340,8 +402,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">objective_index</span><span class="p">)</span>
         <span class="c1"># Extract basis for this objective: Z is (k, N, n), get (N, n) for this objective</span>
         <span class="n">Z_test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span><span class="p">[</span><span class="n">objective_index</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">res</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blm</span><span class="o">.</span><span class="n">predict_sampling</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="n">Z_test</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Predictor.update">

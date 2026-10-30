@@ -53,6 +53,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../random_numbers.html">乱数と再現性</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul>
@@ -105,6 +106,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score</span> <span class="k">as</span> <span class="n">search_score</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">normalize_t</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_rng</span><span class="p">,</span> <span class="n">attach_rng</span>
 
 
 <div class="viewcode-block" id="Policy">
@@ -113,7 +115,13 @@
 <span class="w">    </span><span class="sd">"""Multi objective Bayesian optimization with discrete search space by using unified objective function"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">,</span> <span class="n">num_objectives</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">test_X</span><span class="p">,</span>
+        <span class="n">num_objectives</span><span class="p">,</span>
+        <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the Policy object</span>
@@ -134,6 +142,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">History</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">make_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="kc">None</span>
@@ -348,6 +357,9 @@
 <span class="sd">        unify_method: callable</span>
 <span class="sd">            The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.</span>
 <span class="sd">            See physbo.search.unify for examples.</span>
+<span class="sd">            If it draws random numbers through an ``rng`` attribute (as</span>
+<span class="sd">            ``ParEGO`` does) and was not given a generator of its own, it</span>
+<span class="sd">            uses the random number generator of the policy.</span>
 <span class="sd">        optimizer: Optimizer object, optional</span>
 <span class="sd">            This is for compatibility with the range-based Policies.</span>
 <span class="sd">            This is not used.</span>
@@ -364,7 +376,7 @@
 <span class="sd">        history: history object (physbo.search.discrete_unified.results.history)</span>
 <span class="sd">        """</span>
         <span class="n">score</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
-            <span class="n">score</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span>
+            <span class="n">score</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
         <span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">unify_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"unify_method must be provided"</span>
@@ -380,6 +392,7 @@
             <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">unify_method</span> <span class="o">=</span> <span class="n">unify_method</span>
+        <span class="n">attach_rng</span><span class="p">(</span><span class="n">unify_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">num_rand_basis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"num_rand_basis must be non-negative"</span><span class="p">)</span>
         <span class="n">is_rand_expans</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_rand_basis</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
@@ -456,10 +469,16 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># TS: one posterior sample for every process, drawn on rank 0</span>
+        <span class="n">first_mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_sample</span><span class="p">(</span>
+            <span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">comm</span>
+        <span class="p">)</span>
         <span class="n">f</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">first_mode</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
             <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
             <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -505,7 +524,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fmean()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -537,7 +556,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fcov()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -610,7 +629,9 @@
 <span class="sd">        When *parallel* is True, it is assumed that the function receives the same input (*actions* or *xs*) for all the ranks.</span>
 <span class="sd">        If you want to split the input array itself, set *parallel* be False and merge results by yourself.</span>
 <span class="sd">        """</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
+            <span class="n">mode</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span>
@@ -623,7 +644,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_score()"</span><span class="p">)</span>
                 <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
                 <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
@@ -661,6 +682,8 @@
             <span class="p">)</span>
 
         <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="n">parallel</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># TS: one posterior sample for every process, drawn on rank 0</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_sample</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
         <span class="n">f</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">actions</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fs</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
@@ -693,13 +716,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_permutation_importance()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
             <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span>
                 <span class="n">n_perm</span><span class="p">,</span>
                 <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
                 <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
@@ -708,6 +732,7 @@
                 <span class="n">n_perm</span><span class="p">,</span>
                 <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
                 <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span></div>
 
 
@@ -739,33 +764,30 @@
 <span class="sd">            run it is raised).</span>
 <span class="sd">        """</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">predict_samples</span><span class="p">():</span>
-            <span class="c1"># draw K samples of the values of objective function of chosen</span>
-            <span class="c1"># actions</span>
-            <span class="n">new_test_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
-            <span class="n">virtual_t_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">new_test_local</span><span class="p">,</span> <span class="n">K</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># Draw K samples of the values of objective function of chosen actions.</span>
+        <span class="c1"># self.test is not partitioned over ranks, so the chosen points are</span>
+        <span class="c1"># identical on every rank; the virtual values are drawn on rank 0 and</span>
+        <span class="c1"># broadcast so that all ranks fantasize the same observations.</span>
+        <span class="n">new_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                <span class="n">comm</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span>
+                <span class="n">new_test</span><span class="p">,</span>
+                <span class="n">K</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="k">return</span> <span class="n">new_test_local</span><span class="p">,</span> <span class="n">virtual_t_local</span>
-
-        <span class="n">samples</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">predict_samples</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">samples</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_marginal_score</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""The marginal scores of this process's candidates for the samples</span>
-<span class="sd">        (of every process in a parallel run) from :meth:`_get_marginal_score`."""</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">new_test</span><span class="p">,</span> <span class="n">virtual_t</span> <span class="o">=</span> <span class="n">samples</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_test</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">nt</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
-                <span class="n">new_test</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">nt</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
-            <span class="n">virtual_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">vt</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">vt</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">virtual_t</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+            <span class="c1"># the predictor and the training data with the k-th virtual</span>
+            <span class="c1"># observations added (the same on every process)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">)</span>
             <span class="n">train</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">)</span>
             <span class="n">virtual_train</span> <span class="o">=</span> <span class="n">new_test</span>
@@ -778,9 +800,24 @@
                 <span class="n">train</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
 
             <span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">virtual_train</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">train</span>
 
+        <span class="c1"># TS: one posterior sample per virtual data set for every process,</span>
+        <span class="c1"># drawn on rank 0</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_samples</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_marginal_score</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The marginal scores of this process's candidates: the mean of the</span>
+<span class="sd">        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.</span>
+<span class="sd">        ``samples`` are their posterior samples for Thompson sampling (see</span>
+<span class="sd">        :func:`physbo.search.score.share_samples`), or None."""</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">predictor</span><span class="p">,</span> <span class="n">train</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">mode_k</span> <span class="o">=</span> <span class="n">mode</span> <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mode</span><span class="o">.</span><span class="n">with_sample</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
             <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span>
+                <span class="n">mode_k</span><span class="p">,</span>
                 <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
                 <span class="n">training</span><span class="o">=</span><span class="n">train</span><span class="p">,</span>
                 <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
@@ -868,7 +905,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unify_training</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">)</span>
         <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>

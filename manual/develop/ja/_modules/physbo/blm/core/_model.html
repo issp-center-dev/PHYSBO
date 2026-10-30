@@ -53,6 +53,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../random_numbers.html">乱数と再現性</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul>
@@ -95,6 +96,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">inf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc.permutation_importance</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_permutation_importance</span>
 
 
@@ -222,7 +224,7 @@
 
 <div class="viewcode-block" id="Model.sampling">
 <a class="viewcode-back" href="../../../../api/physbo.blm.core.html#physbo.blm.Model.sampling">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w_mu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w_mu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples of weights</span>
 
@@ -249,7 +251,7 @@
 <span class="sd">        physbo.blm.inf.exact.sampling</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"exact"</span><span class="p">:</span>
-            <span class="n">w_hat</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w_mu</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">w_hat</span> <span class="o">=</span> <span class="n">inf</span><span class="o">.</span><span class="n">exact</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w_mu</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">return</span> <span class="n">w_hat</span></div>
@@ -257,7 +259,7 @@
 
 <div class="viewcode-block" id="Model.post_sampling">
 <a class="viewcode-back" href="../../../../api/physbo.blm.core.html#physbo.blm.Model.post_sampling">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">post_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">post_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples of mean value of model</span>
 
@@ -280,13 +282,13 @@
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">Psi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">Psi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">Xtest</span><span class="p">)</span>
-        <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Psi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_hat</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span></div>
 
 
 <div class="viewcode-block" id="Model.predict_sampling">
 <a class="viewcode-back" href="../../../../api/physbo.blm.core.html#physbo.blm.Model.predict_sampling">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">predict_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples from model</span>
 
@@ -307,10 +309,11 @@
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">Xtest</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+        <span class="n">fmean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_sampling</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">Psi</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">fmean</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">fmean</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">Xtest</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">Xtest</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N</span><span class="p">))</span>
         <span class="n">res</span> <span class="o">=</span> <span class="n">fmean</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lik</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">sigma2</span><span class="p">)</span> <span class="o">*</span> <span class="n">A</span>
         <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
 
@@ -352,7 +355,7 @@
 <div class="viewcode-block" id="Model.get_permutation_importance">
 <a class="viewcode-back" href="../../../../api/physbo.blm.core.html#physbo.blm.Model.get_permutation_importance">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculating permutation importance of model</span>
@@ -384,6 +387,7 @@
             <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
             <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">,</span>
             <span class="n">query_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 

@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>乱数と再現性 &mdash; PHYSBO 3.3-dev ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c71307a2"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/translations.js?v=4755f45a"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="ベンチマーク関数" href="test_functions.html" />
+    <link rel="prev" title="アルゴリズム" href="algorithm.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">基本的な使用方法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">チュートリアル</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setconfig.html">学習の詳細設定</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">乱数と再現性</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">2 つのモード</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">補助オブジェクト</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">並列実行</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="test_functions.html">ベンチマーク関数</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">謝辞</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">お問い合わせ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">乱数と再現性</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/random_numbers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="chap-random-numbers">
+<span id="id1"></span><h1>乱数と再現性<a class="headerlink" href="#chap-random-numbers" title="Link to this heading"></a></h1>
+<p>探索のいくつかの段階で乱数を使います。<code class="docutils literal notranslate"><span class="pre">random_search</span></code> での候補の選択、
+ハイパーパラメータ学習の初期値とミニバッチ、ベイズ線形モデル
+(<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>)のランダムフーリエ基底、Thompson sampling
+(<code class="docutils literal notranslate"><span class="pre">score=&quot;TS&quot;</span></code>)の事後サンプル、1 ステップに複数点を提案するとき
+(<code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>)の仮想観測値、range 系 policy における
+獲得関数のランダム最適化、<code class="docutils literal notranslate"><span class="pre">ParEGO</span></code> の重みです。</p>
+<p>これらの乱数はすべて、policy がコンストラクタの <code class="docutils literal notranslate"><span class="pre">rng</span></code> 引数で選ぶ
+乱数生成器から引かれます。<code class="docutils literal notranslate"><span class="pre">rng</span></code> 引数はすべての policy
+(<code class="docutils literal notranslate"><span class="pre">discrete</span></code>、<code class="docutils literal notranslate"><span class="pre">discrete_multi</span></code>、<code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code>、<code class="docutils literal notranslate"><span class="pre">range</span></code>、
+<code class="docutils literal notranslate"><span class="pre">range_multi</span></code>、<code class="docutils literal notranslate"><span class="pre">range_unified</span></code>)が受け付けます。</p>
+<section id="id2">
+<h2>2 つのモード<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p><strong>legacy モード(デフォルト)。</strong>
+<code class="docutils literal notranslate"><span class="pre">rng</span></code> を与えない(または <code class="docutils literal notranslate"><span class="pre">rng=&quot;legacy&quot;</span></code>)場合、policy は従来の
+PHYSBO と同じくグローバルな <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> の状態から乱数を引きます。
+<code class="docutils literal notranslate"><span class="pre">set_seed()</span></code> はこのグローバル状態に seed を設定するので、
+<code class="docutils literal notranslate"><span class="pre">numpy.random.seed</span></code> や <code class="docutils literal notranslate"><span class="pre">policy.set_seed</span></code> を呼ぶスクリプトは
+これまでと同じ結果を与え続けます。この状態は、プロセス内で
+<code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> を使う他のすべてのコードと共有されます。</p>
+<p><strong>Generator モード。</strong>
+<code class="docutils literal notranslate"><span class="pre">rng</span></code> に整数の seed、<code class="docutils literal notranslate"><span class="pre">numpy.random.SeedSequence</span></code>、または
+<code class="docutils literal notranslate"><span class="pre">numpy.random.Generator</span></code> を与えると、policy は自分専用の
+<code class="docutils literal notranslate"><span class="pre">numpy.random.Generator</span></code> を持ち、乱数をそこからだけ引きます。
+グローバルな <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> の状態は読みも書きもしないので、
+プロセスの他の部分が <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> をどう使っても探索は再現され、
+生成器は policy オブジェクトの一部になります。policy を pickle すると
+その状態も保存されます。
+このモードでは <code class="docutils literal notranslate"><span class="pre">set_seed(seed)</span></code> は seed から生成器を作り直します。
+乱数列は legacy モードとは異なるので、Generator モードでの実行は
+同じ seed を使っても以前のバージョンの実行を再現しません。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># legacy モード: グローバルな numpy.random の状態を set_seed() で設定</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Generator モード: seed 12345 で初期化した policy 専用の生成器</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">12345</span><span class="p">)</span>
+
+<span class="c1"># Generator モード: 呼び出し側で作った生成器を渡す</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>どちらのモードでも、同じ PHYSBO のバージョンを同じ環境
+(Python、NumPy、SciPy のバージョン、BLAS/LAPACK ライブラリ)で使えば、
+同じ seed は同じ探索を与えます。</p>
+</section>
+<section id="id3">
+<h2>補助オブジェクト<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<p>policy に渡すオブジェクトのうち自身で乱数を引くものは、独自の生成器を
+与えられていない限り policy の生成器に従います。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">physbo.search.unify.ParEGO</span></code> は <code class="docutils literal notranslate"><span class="pre">rng</span></code> 属性を通して重みを引きます。
+<code class="docutils literal notranslate"><span class="pre">rng</span></code> 引数なしで <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> の <code class="docutils literal notranslate"><span class="pre">unify_method</span></code> に渡すと
+policy の生成器を使い、<code class="docutils literal notranslate"><span class="pre">ParEGO(...,</span> <span class="pre">rng=...)</span></code> とすれば与えた生成器を
+使い続けます。</p></li>
+<li><p>range 系 policy のデフォルトのランダム最適化器は policy の生成器で
+作られます。呼び出し側で作る最適化器は自身の <code class="docutils literal notranslate"><span class="pre">rng</span></code> 引数を取ります。
+例: <code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.random.Optimizer(min_X,</span> <span class="pre">max_X,</span> <span class="pre">nsamples=1000,</span> <span class="pre">rng=policy.rng)</span></code></p></li>
+<li><p>組み込みの Thompson sampling オブジェクト
+(<code class="docutils literal notranslate"><span class="pre">physbo.search.score.ThompsonSampling</span></code> と
+<code class="docutils literal notranslate"><span class="pre">physbo.search.score_multi.ThompsonSampling</span></code>)も同様に <code class="docutils literal notranslate"><span class="pre">rng</span></code> 属性を
+通して乱数を引きます。名前 <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> と <code class="docutils literal notranslate"><span class="pre">rng</span></code> なしで作ったインスタンスは
+policy の生成器を使い、<code class="docutils literal notranslate"><span class="pre">ThompsonSampling(...,</span> <span class="pre">rng=...)</span></code> とすれば与えた
+生成器を使い続けます。ユーザー定義のスコア(アルゴリズムの章を参照)は
+自身が使う乱数源から引き、policy の生成器とは結び付きません。</p></li>
+</ul>
+</section>
+<section id="id4">
+<h2>並列実行<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<p>並列実行(<code class="docutils literal notranslate"><span class="pre">comm</span></code> にコミュニケータを渡した場合)では、すべての rank で
+policy に同じ <code class="docutils literal notranslate"><span class="pre">rng</span></code> 指定を与えてください。全 rank が一致させる必要の
+ある量は rank 0 で引いてブロードキャストします。モデルのハイパー
+パラメータ、ランダムフーリエ基底、ベイズ線形モデルでの Thompson
+sampling の事後サンプル、離散 policy における複数点提案の仮想観測値、
+ランダム最適化器が返す点、シミュレータの結果がこれにあたります。それ以外の乱数は各 rank
+が自分の担当する候補について引きます。その結果、各 rank の乱数列は
+互いに揃いません(rank 0 が他より多く引きます)が、複数の rank の探索に
+影響する量はすべてブロードキャストされるので問題ありません。</p>
+<p>したがってベイズ線形モデル(<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>)では、Thompson
+sampling は rank 数によらず、同じ seed の逐次実行と同じ点を提案します。
+ガウス過程の predictor(<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">==</span> <span class="pre">0</span></code>)では事後サンプルに
+ブロードキャストできる有限次元の表現がないため、各 rank は自分の候補に
+ついてだけ事後分布からサンプルします。異なる rank 上の候補間の相関は
+無視され、提案は rank 数に依存します。並列実行で Thompson sampling を
+使う場合はベイズ線形モデルを推奨します。</p>
+<p><code class="docutils literal notranslate"><span class="pre">get_score</span></code> は <code class="docutils literal notranslate"><span class="pre">parallel=True``(デフォルト)では候補を</span> <span class="pre">rank</span> <span class="pre">に分割し、</span>
+<span class="pre">Thompson</span> <span class="pre">sampling</span> <span class="pre">のサンプルを</span> <span class="pre">rank</span> <span class="pre">0</span> <span class="pre">で引きます。``parallel=False</span></code> では
+各 rank が与えられた候補を自分のサンプルで採点します。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithm.html" class="btn btn-neutral float-left" title="アルゴリズム" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="test_functions.html" class="btn btn-neutral float-right" title="ベンチマーク関数" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        
+          <a href="../../3.3-dev/en/random_numbers.html">en</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/ja/random_numbers.html">ja</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/ja/random_numbers.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/ja/random_numbers.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/ja/random_numbers.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

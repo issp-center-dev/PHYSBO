@@ -52,6 +52,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_numbers.html">Random numbers and reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
@@ -94,6 +95,9 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy.special</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">attach_rng</span><span class="p">,</span> <span class="n">get_rng</span>
 
 <span class="n">_SQRT_2PI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
 
@@ -145,6 +149,10 @@
 <span class="sd">        noise for sampling source (default: 1.0)</span>
 <span class="sd">        Used only for mode == "TS"</span>
 
+<span class="sd">    rng: rng object</span>
+<span class="sd">        random number generator (default: global numpy.random state)</span>
+<span class="sd">        Used only for mode == "TS"; a callable mode draws from its own.</span>
+
 <span class="sd">    ucb_beta: float</span>
 <span class="sd">        Trade-off parameter between exploitation and exploration (default: 1.0).</span>
 <span class="sd">        The score is ``fmean + ucb_beta * fstd``; larger values favor</span>
@@ -167,6 +175,7 @@
         <span class="n">mode</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
         <span class="n">ucb_beta</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ucb_beta"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rng"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EI"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">):</span>
         <span class="n">score_fn</span><span class="o">.</span><span class="n">fmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fmax"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -247,7 +256,7 @@
 
 <div class="viewcode-block" id="TS">
 <a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.TS">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Thompson sampling (See Sec. 2.1 in Materials Discovery Volume 4, June 2016, Pages 18-21)</span>
 
@@ -263,11 +272,37 @@
 <span class="sd">    alpha: float</span>
 <span class="sd">        noise for sampling source</span>
 <span class="sd">        (default: 1.0)</span>
+<span class="sd">    rng: rng object, optional</span>
+<span class="sd">        random number generator (default: global numpy.random state)</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    score: numpy.ndarray</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For predictors with a finite-dimensional posterior sample</span>
+<span class="sd">    representation (the BLM predictor, i.e. ``num_rand_basis &gt; 0``), the</span>
+<span class="sd">    sample is a weight vector, drawn once and evaluated at every test</span>
+<span class="sd">    point. In a parallel run the policies draw it on rank 0 and broadcast</span>
+<span class="sd">    it (see :class:`ThompsonSampling`), so that every rank scores its</span>
+<span class="sd">    candidates with the same function sample. The GP predictor</span>
+<span class="sd">    (``num_rand_basis == 0``) has no finite sample representation; in a</span>
+<span class="sd">    parallel run each rank then samples the marginal distribution of its</span>
+<span class="sd">    own candidates only, which is an approximation: cross-rank</span>
+<span class="sd">    correlations are ignored, and the result depends on the number of</span>
+<span class="sd">    ranks. For TS in parallel runs, the BLM predictor is recommended.</span>
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="s2">"draw_post_sample_params"</span><span class="p">):</span>
+        <span class="n">w_hat</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">draw_post_sample_params</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">evaluate_post_sample</span><span class="p">(</span><span class="n">w_hat</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="c1"># no finite sample representation (e.g. GP): sample locally</span>
+    <span class="n">test_X</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="s2">"X"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">test_X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">test_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
 
 
 
@@ -370,6 +405,18 @@
 <span class="sd">    alpha : float, optional</span>
 <span class="sd">        Scaling parameter for posterior sampling.</span>
 <span class="sd">        Default is 1.0.</span>
+<span class="sd">    rng : rng object, optional</span>
+<span class="sd">        Random number generator for the posterior sample; None (default)</span>
+<span class="sd">        draws from the global ``numpy.random`` state. An instance given</span>
+<span class="sd">        to a policy without a generator of its own borrows the policy's</span>
+<span class="sd">        (see :func:`physbo._rng.attach_rng`).</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Each call draws a new posterior sample. In a parallel run the</span>
+<span class="sd">    policies share one sample between the processes: :meth:`draw` draws</span>
+<span class="sd">    it on rank 0, it is broadcast, and :meth:`with_sample` gives the score</span>
+<span class="sd">    function evaluating it (see :func:`share_sample`).</span>
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
@@ -378,12 +425,103 @@
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">"TS"</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Return acquisition scores of shape ``(test.X.shape[0],)``."""</span>
-        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">TS</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ThompsonSampling.draw">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.ThompsonSampling.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Draw the posterior sample to be shared between the processes.</span>
+
+<span class="sd">        Returns the sample of a predictor with a finite-dimensional</span>
+<span class="sd">        representation of the posterior (the BLM predictor), or None for</span>
+<span class="sd">        a predictor without one (the GP predictor), which then samples</span>
+<span class="sd">        in each call.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="s2">"draw_post_sample_params"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">draw_post_sample_params</span><span class="p">(</span>
+            <span class="n">training</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ThompsonSampling.with_sample">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.ThompsonSampling.with_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The score function evaluating ``sample`` from :meth:`draw`, or</span>
+<span class="sd">        this object if ``sample`` is None."""</span>
+        <span class="k">if</span> <span class="n">sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">_SampledThompsonSampling</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_SampledThompsonSampling</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Thompson sampling evaluating a given posterior sample (deterministic)."""</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"TS"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span> <span class="o">=</span> <span class="n">sample</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">predictor</span><span class="o">.</span><span class="n">evaluate_post_sample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="share_sample">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.share_sample">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">share_sample</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The score evaluating one posterior sample on every process.</span>
+
+<span class="sd">    For a :class:`ThompsonSampling` instance in a parallel run (``comm``</span>
+<span class="sd">    given), the sample is drawn on rank 0 from its generator, broadcast,</span>
+<span class="sd">    and the returned score evaluates it on every process. Any other</span>
+<span class="sd">    ``mode``, or ``comm`` None, is returned unchanged. A collective</span>
+<span class="sd">    operation when ``comm`` is given; an exception raised while drawing</span>
+<span class="sd">    is raised on every process (see :mod:`physbo._mpi`).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">ThompsonSampling</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">mode</span>
+    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sample</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">draw</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sample</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">mode</span><span class="o">.</span><span class="n">with_sample</span><span class="p">(</span><span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="share_samples">
+<a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.share_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">share_samples</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">models</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The posterior samples of ``K`` models, drawn on rank 0 and broadcast.</span>
+
+<span class="sd">    ``models(k)`` returns the predictor and the training data of the</span>
+<span class="sd">    ``k``-th model (the same on every process). For a</span>
+<span class="sd">    :class:`ThompsonSampling` instance in a parallel run whose</span>
+<span class="sd">    ``predictor`` has a finite-dimensional posterior representation, the</span>
+<span class="sd">    returned list holds one sample per model, for</span>
+<span class="sd">    :meth:`ThompsonSampling.with_sample`; otherwise None is returned, and</span>
+<span class="sd">    the score draws in each call. A collective operation when it draws.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">ThompsonSampling</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="s2">"draw_post_sample_params"</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="n">comm</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="o">*</span><span class="n">models</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
 
 
@@ -416,7 +554,7 @@
 
 <div class="viewcode-block" id="resolve">
 <a class="viewcode-back" href="../../../api/physbo.search.score.html#physbo.search.score.resolve">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Resolve a score name or return a callable unchanged.</span>
 
 <span class="sd">    Parameters</span>
@@ -428,6 +566,12 @@
 <span class="sd">        Posterior sampling scale for "TS". Default is 1.0.</span>
 <span class="sd">    ucb_beta : float, optional</span>
 <span class="sd">        Exploration weight for "UCB". Default is 1.0.</span>
+<span class="sd">    rng : rng object, optional</span>
+<span class="sd">        Random number generator for "TS". A callable that holds a</span>
+<span class="sd">        generator in an ``rng`` attribute and was not given one of its</span>
+<span class="sd">        own (the built-in :class:`ThompsonSampling`) is attached to it</span>
+<span class="sd">        (see :func:`physbo._rng.attach_rng`). Default is None, the global</span>
+<span class="sd">        ``numpy.random`` state.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -452,11 +596,13 @@
         <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"PI"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ProbabilityOfImprovement</span><span class="p">()</span>
         <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">ThompsonSampling</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ThompsonSampling</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"UCB"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">UpperConfidenceBound</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ERROR: mode must be EI, PI, TS or UCB."</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attach_rng</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span>
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"score must be a string or callable."</span><span class="p">)</span></div>
 

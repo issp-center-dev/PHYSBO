@@ -56,6 +56,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../random_numbers.html">乱数と再現性</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul class="current">
@@ -193,7 +194,7 @@ but excluded from the training data and the Pareto front.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.search.discrete_unified.Policy">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.discrete_unified.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_objectives</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete_unified/_policy.html#Policy"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete_unified.Policy" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.discrete_unified.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_objectives</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete_unified/_policy.html#Policy"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.discrete_unified.Policy" title="Link to this definition"></a></dt>
 <dd><p>ベースクラス: <a class="reference internal" href="physbo.search.discrete.html#physbo.search.discrete.Policy" title="physbo.search.discrete._policy.Policy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Policy</span></code></a></p>
 <p>Multi objective Bayesian optimization with discrete search space by using unified objective function</p>
 <p>Initialize the Policy object</p>
@@ -234,7 +235,10 @@ If you set the negative value to interval, the hyper parameter learning is not p
 If you set zero to interval, the hyper parameter learning is performed only at the first step.</p></li>
 <li><p><strong>num_rand_basis</strong> (<em>int</em><em>, </em><em>optional</em>) -- The number of basis function. If you choose 0, ordinary Gaussian process run.</p></li>
 <li><p><strong>unify_method</strong> (<em>callable</em>) -- The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
-See physbo.search.unify for examples.</p></li>
+See physbo.search.unify for examples.
+If it draws random numbers through an <code class="docutils literal notranslate"><span class="pre">rng</span></code> attribute (as
+<code class="docutils literal notranslate"><span class="pre">ParEGO</span></code> does) and was not given a generator of its own, it
+uses the random number generator of the policy.</p></li>
 <li><p><strong>optimizer</strong> (<em>Optimizer object</em><em>, </em><em>optional</em>) -- This is for compatibility with the range-based Policies.
 This is not used.</p></li>
 <li><p><strong>ard</strong> (<em>bool</em><em>, </em><em>optional</em>) -- If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.

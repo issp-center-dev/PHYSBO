@@ -52,6 +52,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_numbers.html">Random numbers and reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
@@ -95,6 +96,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pareto</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pareto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">attach_rng</span><span class="p">,</span> <span class="n">get_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.score</span><span class="w"> </span><span class="kn">import</span> <span class="n">_norm_cdf</span><span class="p">,</span> <span class="n">_norm_pdf</span>
 
 <span class="c1"># target number of elements of each (block, n_cell, n_obj) temporary array in</span>
@@ -130,6 +132,9 @@
 <span class="sd">    reduced_candidate_num : int or None</span>
 <span class="sd">        Required candidate limit for string "TS"; None uses all candidates.</span>
 <span class="sd">        Callable modes ignore this parameter and alpha.</span>
+<span class="sd">    rng : rng object</span>
+<span class="sd">        Random number generator for string "TS" (default: the global</span>
+<span class="sd">        ``numpy.random`` state); a callable mode draws from its own.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -151,9 +156,10 @@
             <span class="n">mode</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
             <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">"reduced_candidate_num"</span><span class="p">],</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rng"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rng"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pareto"</span><span class="p">))</span></div>
 
 
@@ -344,7 +350,9 @@
 
 <div class="viewcode-block" id="TS">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.TS">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">TS</span><span class="p">(</span>
+    <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Thompson Sampling for multi-objective optimization.</span>
 
 <span class="sd">    Parameters</span>
@@ -369,8 +377,11 @@
 <span class="sd">        Score array with 1 at the chosen index and 0 elsewhere.</span>
 <span class="sd">    """</span>
 
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
     <span class="n">score</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_samples</span><span class="p">(</span>
+            <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">),</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span>
@@ -379,15 +390,13 @@
     <span class="k">if</span> <span class="n">reduced_candidate_num</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">reduced_candidate_num</span><span class="p">:</span>
         <span class="n">use_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">use_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-            <span class="n">score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reduced_candidate_num</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
+        <span class="n">use_idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reduced_candidate_num</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># pareto.update_front(score)</span>
     <span class="n">pareto</span><span class="o">.</span><span class="n">update_front</span><span class="p">(</span><span class="n">score</span><span class="p">[</span><span class="n">use_idx</span><span class="p">,</span> <span class="p">:])</span>
 
     <span class="c1"># randomly choose candidate from pareto frontiers</span>
-    <span class="n">chosen_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">pareto</span><span class="o">.</span><span class="n">front_num</span><span class="p">)</span>
+    <span class="n">chosen_idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">pareto</span><span class="o">.</span><span class="n">front_num</span><span class="p">)</span>
     <span class="n">score_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">score_res</span><span class="p">[</span><span class="n">use_idx</span><span class="p">[</span><span class="n">chosen_idx</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># only chosen_idx th value is one.</span>
 
@@ -471,6 +480,12 @@
 <span class="sd">    reduced_candidate_num : int, optional</span>
 <span class="sd">        Maximum number of candidates used for Pareto front calculation.</span>
 <span class="sd">        Default is None, which uses all candidates.</span>
+<span class="sd">    rng : rng object, optional</span>
+<span class="sd">        Random number generator for the posterior samples and the choice</span>
+<span class="sd">        among the Pareto front; None (default) draws from the global</span>
+<span class="sd">        ``numpy.random`` state. An instance given to a policy without a</span>
+<span class="sd">        generator of its own borrows the policy's (see</span>
+<span class="sd">        :func:`physbo._rng.attach_rng`).</span>
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
@@ -479,9 +494,10 @@
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">"TS"</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reduced_candidate_num</span> <span class="o">=</span> <span class="n">reduced_candidate_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor_list</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">pareto</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Return scores of shape ``(test.X.shape[0],)``; pareto is unused."""</span>
@@ -491,13 +507,14 @@
             <span class="n">test</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
             <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reduced_candidate_num</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="resolve">
 <a class="viewcode-back" href="../../../api/physbo.search.score_multi.html#physbo.search.score_multi.resolve">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Resolve a multi-objective score name or return a callable unchanged.</span>
 
 <span class="sd">    Parameters</span>
@@ -509,6 +526,12 @@
 <span class="sd">        Posterior sampling scale for "TS". Default is 1.0.</span>
 <span class="sd">    reduced_candidate_num : int, optional</span>
 <span class="sd">        Candidate limit for "TS". Default is None, using all candidates.</span>
+<span class="sd">    rng : rng object, optional</span>
+<span class="sd">        Random number generator for "TS". A callable that holds a</span>
+<span class="sd">        generator in an ``rng`` attribute and was not given one of its</span>
+<span class="sd">        own (the built-in :class:`ThompsonSampling`) is attached to it</span>
+<span class="sd">        (see :func:`physbo._rng.attach_rng`). Default is None, the global</span>
+<span class="sd">        ``numpy.random`` state.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -534,10 +557,12 @@
             <span class="k">return</span> <span class="n">HypervolumeProbabilityOfImprovement</span><span class="p">()</span>
         <span class="k">elif</span> <span class="n">score</span> <span class="o">==</span> <span class="s2">"TS"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ThompsonSampling</span><span class="p">(</span>
-                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="n">reduced_candidate_num</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
             <span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"mode must be EHVI, HVPI or TS."</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attach_rng</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span>
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"score must be a string or callable."</span><span class="p">)</span></div>
 

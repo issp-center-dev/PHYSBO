@@ -52,6 +52,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../random_numbers.html">Random numbers and reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul>
@@ -96,6 +97,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">physbo.misc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">misc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span>
 
 
 <div class="viewcode-block" id="prepare">
@@ -174,7 +176,7 @@
 
 <div class="viewcode-block" id="sampling">
 <a class="viewcode-back" href="../../../../api/physbo.blm.inf.exact.html#physbo.blm.inf.exact.sampling">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="n">blm</span><span class="p">,</span> <span class="n">w_mu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="n">blm</span><span class="p">,</span> <span class="n">w_mu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    draws samples of weights</span>
 
@@ -190,18 +192,21 @@
 <span class="sd">    alpha: float</span>
 <span class="sd">        noise for sampling source</span>
 <span class="sd">        (default: 1.0)</span>
+<span class="sd">    rng: rng object, optional</span>
+<span class="sd">        random number generator (default: global numpy.random state)</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    =======</span>
 <span class="sd">    numpy.ndarray</span>
 <span class="sd">        samples of weights</span>
 <span class="sd">    """</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">w_mu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">w_mu</span> <span class="o">=</span> <span class="n">get_post_params_mean</span><span class="p">(</span><span class="n">blm</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">nbasis</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">nbasis</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">blm</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">blm</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span> <span class="o">*</span> <span class="n">alpha</span>
 
     <span class="n">U</span> <span class="o">=</span> <span class="n">blm</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">invUz</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>

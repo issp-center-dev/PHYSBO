@@ -55,6 +55,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../algorithm.html">Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../random_numbers.html">Random numbers and reproducibility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test_functions.html">Benchmark functions</a></li>
 </ul>
 <ul class="current">
@@ -111,7 +112,7 @@
 <span id="physbo-gp-core-learning-module"></span><h1>physbo.gp.core.learning module<a class="headerlink" href="#module-physbo.gp.core.learning" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.gp.core.learning.Adam">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Adam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Adam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Adam" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Adam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Adam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Adam" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#physbo.gp.core.learning.Online" title="physbo.gp.core.learning.Online"><code class="xref py py-class docutils literal notranslate"><span class="pre">Online</span></code></a></p>
 <p>default</p>
 <dl class="field-list simple">
@@ -119,6 +120,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>gp</strong> (<em>physbo.gp.core.Model object</em>)</p></li>
 <li><p><strong>config</strong> (<em>physbo.misc.SetConfig object</em>)</p></li>
+<li><p><strong>rng</strong> (<em>rng object</em><em>, </em><em>optional</em>) – random number generator (default: global numpy.random state)</p></li>
 </ul>
 </dd>
 </dl>
@@ -146,7 +148,7 @@ Array of real elements of size (n,), where ‘n’ is the number of independent 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.gp.core.learning.Batch">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Batch" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Batch" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>basis class for batch learning</p>
 <dl class="field-list simple">
@@ -154,6 +156,7 @@ Array of real elements of size (n,), where ‘n’ is the number of independent 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>gp</strong> (<em>physbo.gp.core.Model object</em>)</p></li>
 <li><p><strong>config</strong> (<em>physbo.misc.SetConfig object</em>)</p></li>
+<li><p><strong>rng</strong> (<em>rng object</em><em>, </em><em>optional</em>) – random number generator (default: global numpy.random state)</p></li>
 </ul>
 </dd>
 </dl>
@@ -222,7 +225,7 @@ Array of real elements of size (n,), where ‘n’ is the number of independent 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.gp.core.learning.Online">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Online</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Online"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Online" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.gp.core.learning.</span></span><span class="sig-name descname"><span class="pre">Online</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/gp/core/learning.html#Online"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.gp.core.learning.Online" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>base class for online learning</p>
 <dl class="field-list simple">
@@ -230,6 +233,7 @@ Array of real elements of size (n,), where ‘n’ is the number of independent 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>gp</strong> (<em>physbo.gp.core.Model object</em>)</p></li>
 <li><p><strong>config</strong> (<em>physbo.misc.SetConfig object</em>)</p></li>
+<li><p><strong>rng</strong> (<em>rng object</em><em>, </em><em>optional</em>) – random number generator (default: global numpy.random state)</p></li>
 </ul>
 </dd>
 </dl>

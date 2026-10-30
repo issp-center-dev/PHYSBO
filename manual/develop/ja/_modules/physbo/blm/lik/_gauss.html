@@ -53,6 +53,7 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../algorithm.html">アルゴリズム</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../random_numbers.html">乱数と再現性</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../test_functions.html">ベンチマーク関数</a></li>
 </ul>
 <ul>
@@ -94,6 +95,8 @@
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span>
 
 
 <div class="viewcode-block" id="Gauss">
@@ -229,7 +232,7 @@
 
 <div class="viewcode-block" id="Gauss.sampling">
 <a class="viewcode-back" href="../../../../api/physbo.blm.lik.html#physbo.blm.lik.Gauss.sampling">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmean</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmean</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        draws samples</span>
 
@@ -237,13 +240,16 @@
 <span class="sd">        ==========</span>
 <span class="sd">        fmean: numpy.ndarray</span>
 <span class="sd">            means of samples</span>
+<span class="sd">        rng: rng object, optional</span>
+<span class="sd">            random number generator (default: global numpy.random state)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        =======</span>
 <span class="sd">        samples: numpy.ndarray</span>
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">num_data</span> <span class="o">=</span> <span class="n">fmean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">sigma2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cov</span><span class="o">.</span><span class="n">sigma2</span><span class="p">)</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fmean</span> <span class="o">+</span> <span class="n">eps</span></div>
 </div>
 

@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Random numbers and reproducibility &mdash; PHYSBO 3.3-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=edec8d6d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5e09bc0c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Benchmark functions" href="test_functions.html" />
+    <link rel="prev" title="Algorithm" href="algorithm.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook/index.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setconfig.html">Detailed Settings for Learning</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">Algorithm</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Random numbers and reproducibility</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#two-modes">Two modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#helper-objects">Helper objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parallel-runs">Parallel runs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="test_functions.html">Benchmark functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PHYSBO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Random numbers and reproducibility</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/random_numbers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="random-numbers-and-reproducibility">
+<span id="chap-random-numbers"></span><h1>Random numbers and reproducibility<a class="headerlink" href="#random-numbers-and-reproducibility" title="Link to this heading"></a></h1>
+<p>Several steps of a search draw random numbers: the choice of candidates in
+<code class="docutils literal notranslate"><span class="pre">random_search</span></code>, the initial values and the mini-batches of the
+hyperparameter learning, the random Fourier basis of the Bayesian linear
+model (<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), the posterior samples of Thompson sampling
+(<code class="docutils literal notranslate"><span class="pre">score=&quot;TS&quot;</span></code>), the virtual observations used when several points are
+proposed per step (<code class="docutils literal notranslate"><span class="pre">num_search_each_probe</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>), the random optimizer of
+the acquisition function in the range policies, and the weights of
+<code class="docutils literal notranslate"><span class="pre">ParEGO</span></code>.</p>
+<p>All of these draws go through a random number generator that the policy
+selects with the <code class="docutils literal notranslate"><span class="pre">rng</span></code> argument of its constructor. The argument is
+accepted by every policy (<code class="docutils literal notranslate"><span class="pre">discrete</span></code>, <code class="docutils literal notranslate"><span class="pre">discrete_multi</span></code>,
+<code class="docutils literal notranslate"><span class="pre">discrete_unified</span></code>, <code class="docutils literal notranslate"><span class="pre">range</span></code>, <code class="docutils literal notranslate"><span class="pre">range_multi</span></code> and <code class="docutils literal notranslate"><span class="pre">range_unified</span></code>).</p>
+<section id="two-modes">
+<h2>Two modes<a class="headerlink" href="#two-modes" title="Link to this heading"></a></h2>
+<p><strong>Legacy mode (default).</strong>
+Without <code class="docutils literal notranslate"><span class="pre">rng</span></code> (or with <code class="docutils literal notranslate"><span class="pre">rng=&quot;legacy&quot;</span></code>), the policy draws from the
+global <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> state, as all previous versions of PHYSBO did.
+<code class="docutils literal notranslate"><span class="pre">set_seed()</span></code> seeds that global state, so a script that calls
+<code class="docutils literal notranslate"><span class="pre">numpy.random.seed</span></code> or <code class="docutils literal notranslate"><span class="pre">policy.set_seed</span></code> keeps giving the same
+results as before. The state is shared with everything else in the
+process that uses <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code>.</p>
+<p><strong>Generator mode.</strong>
+With <code class="docutils literal notranslate"><span class="pre">rng</span></code> given as an integer seed, a <code class="docutils literal notranslate"><span class="pre">numpy.random.SeedSequence</span></code>, or
+a <code class="docutils literal notranslate"><span class="pre">numpy.random.Generator</span></code>, the policy owns a <code class="docutils literal notranslate"><span class="pre">numpy.random.Generator</span></code>
+and draws only from it. The global <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> state is neither read
+nor modified, so the search is reproducible regardless of what else the
+process does with <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code>, and the generator is part of the
+policy object: pickling the policy stores its state. In this mode <code class="docutils literal notranslate"><span class="pre">set_seed(seed)</span></code> re-creates the generator from
+the seed. The random number stream differs from the legacy one, so a run
+in the Generator mode does not reproduce a run of a previous version
+with the same seed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># legacy mode: the global numpy.random state, seeded by set_seed()</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">policy</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Generator mode: a policy-owned generator seeded with 12345</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">12345</span><span class="p">)</span>
+
+<span class="c1"># Generator mode with a generator made by the caller</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+<span class="n">policy</span> <span class="o">=</span> <span class="n">physbo</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">discrete</span><span class="o">.</span><span class="n">Policy</span><span class="p">(</span><span class="n">test_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In either mode, the same seed gives the same search on the same version
+of PHYSBO in the same environment (Python, NumPy and SciPy versions,
+BLAS/LAPACK library).</p>
+</section>
+<section id="helper-objects">
+<h2>Helper objects<a class="headerlink" href="#helper-objects" title="Link to this heading"></a></h2>
+<p>Objects passed to the policy that draw random numbers themselves follow
+the policy’s generator unless they were given one of their own:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">physbo.search.unify.ParEGO</span></code> draws its weights through its <code class="docutils literal notranslate"><span class="pre">rng</span></code>
+attribute. When it is given to <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> as <code class="docutils literal notranslate"><span class="pre">unify_method</span></code>
+without an <code class="docutils literal notranslate"><span class="pre">rng</span></code> argument, it uses the generator of the policy; with
+<code class="docutils literal notranslate"><span class="pre">ParEGO(...,</span> <span class="pre">rng=...)</span></code> it keeps the given generator.</p></li>
+<li><p>The default random optimizer of the range policies is created with the
+generator of the policy. An optimizer created by the caller takes its
+own <code class="docutils literal notranslate"><span class="pre">rng</span></code> argument, e.g.
+<code class="docutils literal notranslate"><span class="pre">physbo.search.optimize.random.Optimizer(min_X,</span> <span class="pre">max_X,</span> <span class="pre">nsamples=1000,</span> <span class="pre">rng=policy.rng)</span></code>.</p></li>
+<li><p>The built-in Thompson sampling objects
+(<code class="docutils literal notranslate"><span class="pre">physbo.search.score.ThompsonSampling</span></code> and
+<code class="docutils literal notranslate"><span class="pre">physbo.search.score_multi.ThompsonSampling</span></code>) draw through their
+<code class="docutils literal notranslate"><span class="pre">rng</span></code> attribute in the same way: the name <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> and an instance
+created without <code class="docutils literal notranslate"><span class="pre">rng</span></code> use the generator of the policy, and
+<code class="docutils literal notranslate"><span class="pre">ThompsonSampling(...,</span> <span class="pre">rng=...)</span></code> keeps the given generator. A
+user-defined score (see the algorithm chapter) draws from whatever it
+uses itself; it is not connected to the policy’s generator.</p></li>
+</ul>
+</section>
+<section id="parallel-runs">
+<h2>Parallel runs<a class="headerlink" href="#parallel-runs" title="Link to this heading"></a></h2>
+<p>In a parallel run (a communicator passed as <code class="docutils literal notranslate"><span class="pre">comm</span></code>), give the same
+<code class="docutils literal notranslate"><span class="pre">rng</span></code> specification to the policy on every rank. The quantities that
+all ranks must agree on are drawn on rank 0 and broadcast: the
+hyperparameters of the model, the random Fourier basis, the posterior
+sample of Thompson sampling with the Bayesian linear model, the virtual
+observations of a multi-point proposal in the discrete policies, the
+point returned by the random optimizer, and the result of the simulator. The remaining draws are made
+by each rank for its own share of the candidates. As a consequence, the
+random number streams of the ranks do not stay in step with each other
+(rank 0 draws more than the others); this is harmless, because every
+quantity that affects the search on more than one rank is broadcast.</p>
+<p>With the Bayesian linear model (<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), Thompson
+sampling therefore proposes the same points as a serial run with the
+same seed, whatever the number of ranks. With the Gaussian process
+predictor (<code class="docutils literal notranslate"><span class="pre">num_rand_basis</span> <span class="pre">==</span> <span class="pre">0</span></code>) the posterior sample has no finite
+representation that could be broadcast, so each rank samples the
+posterior of its own candidates only: the correlations between
+candidates on different ranks are ignored, and the proposals depend on
+the number of ranks. For Thompson sampling in parallel runs the Bayesian
+linear model is recommended.</p>
+<p><code class="docutils literal notranslate"><span class="pre">get_score</span></code> with <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> (the default) splits the candidates
+over the ranks and draws the Thompson sample on rank 0; with
+<code class="docutils literal notranslate"><span class="pre">parallel=False</span></code> each rank scores the candidates it was given with a
+sample of its own.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithm.html" class="btn btn-neutral float-left" title="Algorithm" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="test_functions.html" class="btn btn-neutral float-right" title="Benchmark functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-, PHYSBO developers.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+
+
+
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Read the Docs</span>
+    v: 3.3-dev
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/random_numbers.html">en</a>
+        </strong>
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../3.3-dev/ja/random_numbers.html">ja</a>
+        
+        </dd>
+      
+
+      <dt>Branches</dt>
+      
+        
+        <dd>
+        
+          <a href="../../develop/en/random_numbers.html">develop</a>
+        
+        </dd>
+      
+        
+        <dd>
+        
+          <a href="../../master/en/random_numbers.html">master</a>
+        
+        </dd>
+      
+        
+        <dd>
+        <strong>
+          <a href="../../3.3-dev/en/random_numbers.html">3.3-dev</a>
+        </strong>
+        </dd>
+      
+
+      <dt>Tags</dt>
+      
+
+    </dl>
+  </div>
+</div>
+ <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
