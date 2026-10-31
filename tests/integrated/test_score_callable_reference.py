@@ -19,21 +19,31 @@ multiple-proposal search, whose virtual observations are sampled) depend
 on the BLAS/LAPACK build; for those, a mismatch is only a warning while
 STRICT_STOCHASTIC_REFERENCE (conftest.py) is False, and only a sanity
 check is enforced.
+
+The cases above seed the legacy global state (set_seed). The "generator"
+cases give rng=SEED to the constructor (Generator mode) and were recorded
+with develop 64c02431 in the same environment, as regression tests for the
+restructuring of the policies.
 """
 
 import warnings
-from itertools import product
-
 import numpy as np
 import pytest
 
 physbo = pytest.importorskip("physbo")
 
 from .conftest import STRICT_STOCHASTIC_REFERENCE
+from ._policy_fixtures import (  # noqa: E402
+    MAX_X,
+    MIN_X,
+    f_multi,
+    f_single,
+    grid_X,
+    is_range,
+    make_config,
+    make_simulator,
+)
 
-
-MIN_X = np.array([0.0, 0.0])
-MAX_X = np.array([1.0, 1.0])
 # Not 24 = (1, 1) in place of 19: with 24, the map x -> (1 - x2, 1 - x1)
 # swapping the two objectives of f_multi keeps the initial data, so the
 # mirrored candidates 6 and 18 get mathematically equal scores, and which
@@ -46,36 +56,7 @@ NUM_RAND_BASIS_BLM = 50
 TS_CANDIDATE_NUM_REDUCED = 5
 
 
-def grid_X():
-    a = np.linspace(0.0, 1.0, 5)
-    return np.array(list(product(a, a)))
-
-
-def f_single(x):
-    x = np.atleast_2d(x)
-    return -np.sum((x - 0.6) ** 2, axis=-1)
-
-
-def f_multi(x):
-    x = np.atleast_2d(x)
-    return np.stack(
-        [-np.sum((x - 0.25) ** 2, axis=-1), -np.sum((x - 0.75) ** 2, axis=-1)],
-        axis=-1,
-    )
-
-
-def make_config():
-    """Default search config (alpha=1.0) with 3 virtual samples and a cheap fit."""
-    config = physbo.misc.SetConfig()
-    config.search.multi_probe_num_sampling = 3
-    config.learning.is_disp = False
-    config.learning.num_init_params_search = 5
-    config.learning.max_epoch = 50
-    config.learning.max_epoch_init_params_search = 10
-    return config
-
-
-def make_policy(kind):
+def make_policy(kind, rng=None):
     config = make_config()
     X = grid_X()
     if kind == "discrete":
@@ -83,6 +64,7 @@ def make_policy(kind):
             test_X=X,
             config=config,
             initial_data=(INITIAL_ACTIONS, f_single(X[INITIAL_ACTIONS])),
+            rng=rng,
         )
     if kind == "range":
         return physbo.search.range.Policy(
@@ -90,6 +72,7 @@ def make_policy(kind):
             max_X=MAX_X,
             config=config,
             initial_data=(INITIAL_X_RANGE, f_single(INITIAL_X_RANGE)),
+            rng=rng,
         )
     if kind in ("discrete_unified", "discrete_multi"):
         return getattr(physbo.search, kind).Policy(
@@ -97,6 +80,7 @@ def make_policy(kind):
             num_objectives=2,
             config=config,
             initial_data=(INITIAL_ACTIONS, f_multi(X[INITIAL_ACTIONS])),
+            rng=rng,
         )
     return getattr(physbo.search, kind).Policy(
         num_objectives=2,
@@ -104,22 +88,8 @@ def make_policy(kind):
         max_X=MAX_X,
         config=config,
         initial_data=(INITIAL_X_RANGE, f_multi(INITIAL_X_RANGE)),
+        rng=rng,
     )
-
-
-def make_simulator(kind):
-    X = grid_X()
-    if kind == "discrete":
-        return lambda action: f_single(X[action])
-    if kind == "range":
-        return lambda x: f_single(x)
-    if kind in ("discrete_unified", "discrete_multi"):
-        return lambda action: f_multi(X[action])
-    return lambda x: f_multi(x)
-
-
-def is_range(kind):
-    return kind.startswith("range")
 
 
 # (kind, score, num_search_each_probe, variant)
@@ -135,26 +105,42 @@ CASES = (
     + [("discrete_multi", s, n, "gp") for s in ["EHVI", "HVPI", "TS"] for n in [1, 2]]
     + [("discrete_multi", "TS", n, "reduced") for n in [1, 2]]
     + [("range_multi", s, n, "gp") for s in ["EHVI", "HVPI", "TS"] for n in [1, 2]]
+    # Generator mode (rng=SEED given to the constructor instead of set_seed);
+    # "generator-blm" with the BLM predictor
+    + [
+        ("discrete", "EI", 2, "generator"),
+        ("discrete", "TS", 2, "generator-blm"),
+        ("range", "EI", 2, "generator"),
+        ("range", "TS", 1, "generator"),
+        ("discrete_multi", "EHVI", 2, "generator"),
+        ("discrete_multi", "TS", 1, "generator"),
+        ("discrete_unified", "TS", 2, "generator"),
+        ("range_unified", "EI", 2, "generator"),
+        ("range_multi", "TS", 2, "generator"),
+    ]
 )
 
 
 def _run_case(case):
     """Run a seeded string-score search; return (proposals, fx) of the Bayes steps."""
     kind, score, N, variant = case
-    policy = make_policy(kind)
-    policy.set_seed(SEED)
+    generator = variant.startswith("generator")
+    policy = make_policy(kind, rng=SEED if generator else None)
+    if not generator:
+        policy.set_seed(SEED)
     kwargs = {}
     if score == "UCB":
         kwargs["ucb_beta"] = 2.0
-    if variant == "blm":
+    if variant in ("blm", "generator-blm"):
         kwargs["num_rand_basis"] = NUM_RAND_BASIS_BLM
     if variant == "reduced":
         policy.TS_candidate_num = TS_CANDIDATE_NUM_REDUCED
     if kind.endswith("unified"):
         kwargs["unify_method"] = physbo.search.unify.NDS(num_objectives=2)
     if is_range(kind):
+        # legacy: the global state (as before); generator: the policy's
         kwargs["optimizer"] = physbo.search.optimize.random.Optimizer(
-            min_X=MIN_X, max_X=MAX_X, nsamples=20
+            min_X=MIN_X, max_X=MAX_X, nsamples=20, rng=policy.rng if generator else None
         )
     res = policy.bayes_search(
         max_num_probes=MAX_NUM_PROBES,
@@ -341,6 +327,43 @@ REFERENCE = {
     ('range_multi', 'TS', 2, 'gp'): (
         [[0.36915688268789115, 0.39058979865232757], [0.7376552079735929, 0.7436941839077696], [0.6353716018471848, 0.2525650755047475], [0.4613800747509692, 0.7733130959484819]],
         [[-0.03396385417699786, -0.27421717283677915], [-0.48154154908812674, -0.0001921572067642768], [-0.14851785112261015, -0.2605811737706779], [-0.3185381323929103, -0.08384496169345924]],
+    ),
+    # Generator mode, recorded with 64c02431 (see the module docstring).
+    ('discrete', 'EI', 2, 'generator'): (
+        [4, 17, 12, 20],
+        [-0.52, -0.0325, -0.01999999999999999, -0.52],
+    ),
+    ('discrete', 'TS', 2, 'generator-blm'): (
+        [21, 8, 17, 12],
+        [-0.28250000000000003, -0.145, -0.0325, -0.01999999999999999],
+    ),
+    ('range', 'EI', 2, 'generator'): (
+        [[0.3371784303025752, 0.8353206581748247], [0.26833785048265624, 0.6799771081166717], [0.6339239195641564, 0.9263908692203875], [0.44856390556608516, 0.1255669329842053]],
+        [-0.12445098966205101, -0.11639611924517067, -0.10768183182903546, -0.2480196257754111],
+    ),
+    ('range', 'TS', 1, 'generator'): (
+        [[0.9922144806664416, 0.7473765847419975], [0.2207391709909523, 0.22321292692584993]],
+        [-0.17555205657466166, -0.285807274856415],
+    ),
+    ('discrete_multi', 'EHVI', 2, 'generator'): (
+        [4, 21, 12, 17],
+        [[-0.625, -0.625], [-0.5625, -0.3125], [-0.125, -0.125], [-0.3125, -0.0625]],
+    ),
+    ('discrete_multi', 'TS', 1, 'generator'): (
+        [8, 3],
+        [[-0.25, -0.25], [-0.3125, -0.5625]],
+    ),
+    ('discrete_unified', 'TS', 2, 'generator'): (
+        [2, 10, 22, 4],
+        [[-0.125, -0.625], [-0.125, -0.625], [-0.625, -0.125], [-0.625, -0.625]],
+    ),
+    ('range_unified', 'EI', 2, 'generator'): (
+        [[0.3371784303025752, 0.8353206581748247], [0.26833785048265624, 0.6799771081166717], [0.6339239195641564, 0.9263908692203875], [0.44856390556608516, 0.1255669329842053]],
+        [[-0.3502003515962309, -0.17770126311883103], [-0.1852165902647002, -0.2369016316653723], [-0.6049021839782162, -0.04458739519367228], [-0.05491121276061445, -0.480780374210324]],
+    ),
+    ('range_multi', 'TS', 2, 'generator'): (
+        [[0.526463925777371, 0.13781800479739958], [0.005583589705890901, 0.33984267711998184], [0.3649724546767551, 0.12728636766899293], [0.6547340237178927, 0.23225406409798854]],
+        [[-0.08901710230387197, -0.42473517172910136], [-0.0678110882531436, -0.7223848214272709], [-0.02827730089426809, -0.53601847854852], [-0.16412454819591402, -0.2771364603800328]],
     ),
 }
 
