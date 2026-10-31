@@ -683,9 +683,15 @@ class Policy(discrete.Policy):
             virtual_train.t = normalize_t(virtual_t[k, :], k=1)
 
             if virtual_train.Z is None:
-                train.add(virtual_train.X, virtual_train.t)
-            else:
-                train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
+                # the candidates carry no basis values (the basis of the
+                # unified predictor belongs to the unified data, not to the
+                # multi-objective candidates), so compute them for the virtual
+                # observations as the unified training data have them; None
+                # with the GP predictor
+                Z = self.predictor.get_basis(virtual_train.X)
+                if Z is not None:
+                    virtual_train.Z = Z[np.newaxis, :, :]
+            train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
             predictor.update(train, virtual_train)
             return predictor, train
@@ -804,6 +810,12 @@ class Policy(discrete.Policy):
     def _update_predictor(self):
         if self.new_data is not None:
             self.training_unified = self._unify_training(self.training)
+            # the unified data carry the values of the basis functions, as
+            # after _learn_hyperparameter, so that virtual observations with
+            # Z can be added to them (several proposals per step)
+            Z = self.predictor.get_basis(self.training_unified.X)
+            if Z is not None:
+                self.training_unified.Z = Z[np.newaxis, :, :]
             N = self.training_unified.t.shape[0]
             n = self.new_data.t.shape[0]
             new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
