@@ -420,6 +420,92 @@ def show_interactive_mode(simulator, history):
         print("interactive mode starts ... \n ")
 
 
+def is_feasible(constraint, X):
+    """Evaluate a constraint on a set of points.
+
+    Arguments
+    =========
+    constraint: callable or None
+        Function from an array of shape (N, d) to a boolean array of N elements
+        (True for feasible points). If None, every point is feasible.
+    X: np.ndarray
+        Points to be judged, of shape (N, d).
+
+    Returns
+    =======
+    np.ndarray
+        Boolean array of shape (N,).
+
+    Raises
+    ======
+    ValueError
+        If ``constraint`` does not return one boolean per point.
+    """
+    N = X.shape[0]
+    if constraint is None:
+        return np.ones(N, dtype=bool)
+    ok = np.asarray(constraint(X))
+    if ok.dtype != bool:
+        # the values of the constraint functions (g(X) instead of g(X) <= 0)
+        # must not pass silently as "non-zero is feasible"
+        raise ValueError(
+            f"ERROR: constraint must return booleans (True for feasible points), but returned values of dtype {ok.dtype}"
+        )
+    ok = ok.reshape(-1)
+    if ok.size != N:
+        raise ValueError(
+            f"ERROR: constraint must return one boolean per point, but got {ok.size} values for {N} points"
+        )
+    return ok
+
+
+def sample_feasible(draw, N, constraint, max_trials_per_point=10000):
+    """Draw feasible points by rejection sampling.
+
+    Arguments
+    =========
+    draw: callable
+        Function from an integer n to an array of shape (n, d) of random points.
+        This is the only place where random numbers are consumed.
+    N: int
+        Number of feasible points to be drawn.
+    constraint: callable or None
+        See :func:`is_feasible`.
+    max_trials_per_point: int
+        Sampling is given up after ``max_trials_per_point * N`` points are drawn.
+
+    Returns
+    =======
+    np.ndarray or None
+        Feasible points of shape (N, d), in the order they are drawn.
+        None if N feasible points are not found within the limit.
+
+    Notes
+    =====
+    The first batch has N points, so a constraint which is always satisfied
+    consumes the same random numbers as the sampling without constraints.
+    """
+    max_trials = max_trials_per_point * N
+    accepted = []
+    num_accepted = 0
+    num_trials = 0
+    batch = N
+    while True:
+        X = draw(batch)
+        ok = is_feasible(constraint, X)
+        accepted.append(X[ok])
+        num_accepted += int(np.count_nonzero(ok))
+        num_trials += batch
+        if num_accepted >= N:
+            return np.vstack(accepted)[0:N]
+        if num_trials >= max_trials:
+            return None
+        # size of the next batch from the acceptance ratio so far
+        ratio = max(num_accepted, 1) / num_trials
+        batch = int(np.ceil(1.2 * (N - num_accepted) / ratio))
+        batch = max(N, min(batch, max_trials - num_trials, 100000))
+
+
 def length_vector(t):
     """Return the number of elements of ``t``.
 

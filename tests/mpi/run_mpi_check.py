@@ -511,6 +511,182 @@ def check_range_unified():
     log("range_unified (EI, ParEGO): OK")
 
 
+def in_disk(X):
+    return np.sum((X - 0.5) ** 2, axis=1) <= 0.3**2
+
+
+def never(X):
+    return np.zeros(X.shape[0], dtype=bool)
+
+
+def check_random_optimizer_constraint():
+    """Constrained random optimizer: a common feasible point on every rank."""
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=100, constraint=in_disk
+    )
+    np.random.seed(12345 + comm.rank)  # deliberately different streams
+    x = opt(lambda x: f(x), mpicomm=comm)
+    assert_identical_over_ranks(x, "constrained random optimizer result")
+    assert in_disk(x.reshape(1, -1))[0]
+
+    # scores of -inf on all ranks but rank 0
+    x = opt(lambda x: f(x) if comm.rank == 0 else -np.inf, mpicomm=comm)
+    assert_identical_over_ranks(x, "constrained random optimizer result, rank 0")
+    assert in_disk(x.reshape(1, -1))[0]
+
+    # no score larger than -inf anywhere: the first (feasible) sample is
+    # returned, with a warning on every rank
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        x = opt(lambda x: -np.inf, mpicomm=comm)
+    assert [w.category for w in caught] == [RuntimeWarning]
+    assert_identical_over_ranks(x, "constrained random optimizer result, -inf")
+    assert in_disk(x.reshape(1, -1))[0]
+
+    # no feasible sample on any rank: None on every rank
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0], max_X=[1.0, 1.0], nsamples=10, constraint=never
+    )
+    opt.max_trials_per_point = 10
+    x = opt(lambda x: f(x), mpicomm=comm)
+    assert x is None
+
+    # feasible samples on the last rank only: the other ranks have no sample
+    # (and no buffer of their own to receive the point)
+    last = comm.size - 1
+    opt = physbo.search.optimize.random.Optimizer(
+        min_X=[0.0, 0.0],
+        max_X=[1.0, 1.0],
+        nsamples=10,
+        constraint=in_disk if comm.rank == last else never,
+    )
+    opt.max_trials_per_point = 10
+    x = opt(lambda x: f(x), mpicomm=comm)
+    assert_identical_over_ranks(x, "constrained random optimizer result, last")
+    assert in_disk(x.reshape(1, -1))[0]
+    log("random optimizer (constraint): OK")
+
+
+def make_range_policy(kind, constraint, **kwargs):
+    kwargs = dict(
+        min_X=np.array([0.0, 0.0]),
+        max_X=np.array([1.0, 1.0]),
+        constraint=constraint,
+        comm=comm,
+        **kwargs,
+    )
+    if kind == "range":
+        return physbo.search.range.Policy(**kwargs)
+    if kind == "range_multi":
+        return physbo.search.range_multi.Policy(num_objectives=2, **kwargs)
+    return physbo.search.range_unified.Policy(num_objectives=2, **kwargs)
+
+
+def check_range_constraint(kind):
+    """Constrained range search: ranks must agree on feasible proposals."""
+    policy = make_range_policy(kind, in_disk)
+    if kind == "range":
+        search_args = dict(score="EI")
+    elif kind == "range_multi":
+        search_args = dict(score="HVPI")
+    else:
+        search_args = dict(
+            score="EI", unify_method=physbo.search.unify.ParEGO(num_objectives=2)
+        )
+    np.random.seed(12345 + comm.rank)  # deliberately different streams
+
+    def sim(x):
+        return f(np.atleast_2d(x)) if kind == "range" else f_multi(x)
+
+    policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+    policy.bayes_search(
+        max_num_probes=2, simulator=sim, is_disp=False, interval=0, **search_args
+    )
+    # the optimizer fails only on rank 0: all the ranks must fall back together
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        res = policy.bayes_search(
+            max_num_probes=2,
+            simulator=sim,
+            is_disp=False,
+            interval=-1,
+            **search_args,
+            optimizer=lambda fn, mpicomm=None: (
+                None if mpicomm.rank == 0 else np.array([0.5, 0.5])
+            ),
+        )
+    N = res.total_num_search
+    assert N == 9
+    assert_identical_over_ranks(res.action_X[:N], f"constrained {kind} action_X")
+    assert np.all(in_disk(res.action_X[:N]))
+
+    # an error while judging the optimizer's result on rank 0 is raised on
+    # every rank (no deadlock in the broadcast of the verdict)
+    try:
+        policy.bayes_search(
+            max_num_probes=1,
+            simulator=sim,
+            is_disp=False,
+            interval=-1,
+            **search_args,
+            optimizer=lambda fn, mpicomm=None: (
+                np.array(["a", "b"]) if mpicomm.rank == 0 else np.array([0.5, 0.5])
+            ),
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a non-numeric optimizer result did not raise")
+    comm.Barrier()
+
+    # an error of the constraint itself (here: values instead of booleans)
+    # during random_search is raised on every rank, although only rank 0
+    # evaluates it
+    policy = make_range_policy(kind, lambda X: X[:, 0] - 0.5)
+    try:
+        policy.random_search(max_num_probes=1, simulator=sim, is_disp=False)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a constraint returning values did not raise")
+    comm.Barrier()
+
+    # the generators of all the ranks stay in step: rank 0 draws the random
+    # points, the other ranks draw the same number of points
+    policy = make_range_policy(kind, in_disk, rng=4321)
+    policy.random_search(
+        max_num_probes=3, num_search_each_probe=2, simulator=sim, is_disp=False
+    )
+    states = comm.allgather(policy.rng.bit_generator.state["state"])
+    assert all(s == states[0] for s in states), (
+        f"{kind}: rng states differ between ranks after a constrained random_search"
+    )
+    # the same in the legacy mode (global numpy.random state)
+    np.random.seed(2468)
+    policy = make_range_policy(kind, in_disk)
+    policy.random_search(
+        max_num_probes=3, num_search_each_probe=2, simulator=sim, is_disp=False
+    )
+    key, pos = np.random.get_state()[1:3]
+    states = comm.allgather((key.tobytes(), pos))
+    assert all(s == states[0] for s in states), (
+        f"{kind}: global numpy.random states differ between ranks after a "
+        "constrained random_search"
+    )
+
+    # an empty feasible region must raise on all ranks (no deadlock)
+    policy = make_range_policy(kind, never)
+    policy.max_trials_per_point = 100
+    try:
+        policy.random_search(max_num_probes=1, simulator=sim, is_disp=False)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("an empty feasible region did not raise")
+    comm.Barrier()
+    log(f"{kind} (constraint): OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     if comm.size < 2:
@@ -536,6 +712,9 @@ def main():
     check_range()
     check_range_multi()
     check_range_unified()
+    check_random_optimizer_constraint()
+    for kind in ["range", "range_multi", "range_unified"]:
+        check_range_constraint(kind)
     log("all MPI checks passed")
 
 

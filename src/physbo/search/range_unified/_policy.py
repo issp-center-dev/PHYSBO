@@ -15,7 +15,6 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng, attach_rng
@@ -30,17 +29,51 @@ class Policy(range_single.Policy):
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         comm=None,
         config=None,
         initial_data=None,
         rng=None,
     ):
+        """
+
+        Parameters
+        ----------
+        num_objectives: int
+            The number of objective functions.
+        min_X: numpy.ndarray
+            The minimum value of each dimension of the search space.
+        max_X: numpy.ndarray
+            The maximum value of each dimension of the search space.
+        constraint: callable, optional
+            Inequality constraints on the search space, as in physbo.search.range.Policy:
+            a function from an array of shape (N, d) to a boolean array of N elements
+            (True for feasible points). Only feasible points are proposed.
+            Not saved by save(); pickled by save_checkpoint(), so it must be picklable.
+        comm: MPI.Comm, optional
+            MPI Communicator
+        config: SetConfig object (physbo.misc.SetConfig)
+        initial_data: tuple[np.ndarray, np.ndarray]
+            The initial training datasets.
+            The first element is the array of inputs and the second is the array of
+            values of the objective functions, of shape (N, num_objectives).
+            These points are not checked against the constraint.
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
+        """
+        # The constructor of range.Policy is not called: it sets up the history, the
+        # training data and initial_data for a single objective. This class inherits
+        # range.Policy only to share its helper methods, so everything the base
+        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
+        # must be set here as well.
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
         self.max_X = np.array(max_X)
         self.L_X = self.max_X - self.min_X
         self.dim = self.min_X.shape[0]
+        self.constraint = constraint
 
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
@@ -296,9 +329,7 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -399,8 +430,7 @@ class Policy(range_single.Policy):
             # the samples, and so the predictors, differ between the processes
             _mpi.allgather(self.mpicomm, None, error)
 
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
 
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         """
