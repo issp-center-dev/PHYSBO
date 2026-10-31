@@ -421,6 +421,7 @@ class Policy(discrete.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
+            self._require_unified_training("get_post_fmean()")
             predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
@@ -450,6 +451,7 @@ class Policy(discrete.Policy):
         X = self._make_variable_X(xs)
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
+            self._require_unified_training("get_post_fcov()")
             predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, comm=self.mpicomm, rng=self.rng)
             predictor.prepare(self.training_unified)
@@ -526,7 +528,7 @@ class Policy(discrete.Policy):
         )
 
         if training is None:
-            training = self.training_unified
+            training = self._require_unified_training("get_score()")
 
         if training.X is None or training.X.shape[0] == 0:
             msg = "ERROR: No training data is registered."
@@ -604,6 +606,7 @@ class Policy(discrete.Policy):
 
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
+            self._require_unified_training("get_permutation_importance()")
             predictor = self._make_gp_predictor()
             predictor.fit(self.training_unified, 0, rng=self.rng)
             predictor.prepare(self.training_unified)
@@ -810,6 +813,21 @@ class Policy(discrete.Policy):
             assert np.allclose(new_data_unified.X, self.new_data.X)
             self.predictor.update(self.training_unified, new_data_unified)
             self.new_data = None
+
+    def _require_unified_training(self, method_name):
+        """The unified training data, or RuntimeError when they are not built yet.
+
+        They are built by bayes_search, which receives ``unify_method``; before
+        the first bayes_search the policy cannot unify the objectives.
+        """
+        if self.training_unified is None:
+            raise RuntimeError(
+                f"ERROR: {method_name} needs the unified training data, which are "
+                "built by bayes_search with unify_method. Call bayes_search first; "
+                "with max_num_probes=0 and the default interval it only learns "
+                "the predictor without proposing a point."
+            )
+        return self.training_unified
 
     def _unify_training(self, training: Variable) -> Variable:
         """
