@@ -656,7 +656,7 @@ class Policy(CheckpointMixin):
                     # Ensure t is normalized
                     if extra_train.t is not None:
                         extra_train.t = normalize_t(extra_train.t, k=1)
-                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
                     predictors[k].update(trains[k], extra_train, objective_index=0)
 
                 def fn(x):
@@ -720,7 +720,12 @@ class Policy(CheckpointMixin):
         for n in range(1, N):
 
             def draw_samples():
-                extra_training = Variable(X=X[0:n, :])
+                # with a Bayesian linear model the training data carry the
+                # values of the basis functions, so the virtual observations
+                # must too (the GP predictor has no basis: None)
+                extra_training = Variable(
+                    X=X[0:n, :], Z=self.predictor.get_basis(X[0:n, :])
+                )
                 t = self.predictor.get_predict_samples(
                     self.training, extra_training, K, objective_index=0, rng=self.rng
                 )
