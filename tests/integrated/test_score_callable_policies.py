@@ -1073,7 +1073,7 @@ def test_multiple_probe_header_shows_score_name(kind, style, capsys):
         num_search_each_probe=2,
         simulator=None,
         score=score_arg,
-        is_disp=False,
+        is_disp=True,
         **search_kwargs(kind),
     )
     out = capsys.readouterr().out
@@ -1084,7 +1084,7 @@ def test_multiple_probe_header_shows_score_name(kind, style, capsys):
 @pytest.mark.parametrize("style", ["string", "function_without_name"])
 @pytest.mark.parametrize("kind", ALL_KINDS)
 def test_multiple_probe_header_only_for_multiple_proposals(kind, style, capsys):
-    """The header is printed when num_search_each_probe != 1 even with is_disp=False, and not for 1."""
+    """The header is printed once per step with several proposals, not for one proposal, and only with is_disp."""
     score_arg, expected = _display_case(kind, style)
 
     policy = make_policy(kind)
@@ -1094,7 +1094,7 @@ def test_multiple_probe_header_only_for_multiple_proposals(kind, style, capsys):
         num_search_each_probe=1,
         simulator=None,
         score=score_arg,
-        is_disp=False,
+        is_disp=True,
         **search_kwargs(kind),
     )
     assert HEADER.findall(capsys.readouterr().out) == []
@@ -1105,7 +1105,18 @@ def test_multiple_probe_header_only_for_multiple_proposals(kind, style, capsys):
         num_search_each_probe=2,
         simulator=make_simulator(kind),
         score=score_arg,
-        is_disp=False,
+        is_disp=True,
         **search_kwargs(kind),
     )
     assert HEADER.findall(capsys.readouterr().out) == [expected, expected]
+
+    policy = make_policy(kind)
+    policy.bayes_search(
+        max_num_probes=1,
+        num_search_each_probe=2,
+        simulator=None,
+        score=score_arg,
+        is_disp=False,
+        **search_kwargs(kind),
+    )
+    assert HEADER.findall(capsys.readouterr().out) == []
