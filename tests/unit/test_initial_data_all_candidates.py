@@ -47,10 +47,13 @@ def test_initial_data_of_every_candidate_leaves_an_integer_empty_array(kind):
 
 
 @pytest.mark.parametrize("kind", KINDS)
-def test_remaining_candidates_are_sorted_integers(kind):
-    policy = make_policy(kind, [3, 1])
+@pytest.mark.parametrize("actions", [[3, 1], [1, 3, 1]], ids=["unsorted", "repeated"])
+def test_remaining_candidates_are_sorted_integers(kind, actions):
+    """write() alone removes the candidates: unsorted and repeated actions included."""
+    policy = make_policy(kind, actions)
     np.testing.assert_array_equal(policy.actions, [0, 2, 4])
     assert policy.actions.dtype.kind == "i"
+    assert policy.history.total_num_search == len(actions)
 
 
 @pytest.mark.parametrize("kind", ["discrete", "discrete_multi"])
@@ -66,3 +69,22 @@ def test_get_score_without_remaining_candidates_returns_an_empty_array(kind):
     other.write(np.array([2, 3, 4]), values([2, 3, 4], kind))
     assert other.actions.shape == (0,) and other.actions.dtype.kind == "i"
     assert other.get_score(score).shape == (0,)
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_bayes_search_without_remaining_candidates_ends_with_a_warning(kind, capsys):
+    """A script that reloads its results as initial_data and keeps calling
+    bayes_search ends like random_search does, instead of an IndexError."""
+    policy = make_policy(kind, np.arange(5))
+    kwargs = {}
+    if kind == "discrete_unified":
+        kwargs["unify_method"] = physbo.search.unify.NDS(num_objectives=2)
+    capsys.readouterr()
+    policy.bayes_search(
+        max_num_probes=1,
+        simulator=lambda actions: values(actions, kind),
+        is_disp=False,
+        **kwargs,
+    )
+    assert "All actions have already searched" in capsys.readouterr().out
+    assert policy.history.total_num_search == 5

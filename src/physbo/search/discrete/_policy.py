@@ -129,8 +129,6 @@ class Policy(CheckpointMixin):
             # Normalize fs to (N, 1) shape before passing to write()
             fs_normalized = normalize_t(fs, k=1)
             self.write(actions, fs_normalized)
-            # setdiff1d keeps the integer type also when nothing is left
-            self.actions = np.setdiff1d(self.actions, actions)
 
         if comm is None:
             self.mpicomm = None

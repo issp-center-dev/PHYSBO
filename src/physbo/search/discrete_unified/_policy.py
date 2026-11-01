@@ -78,8 +78,6 @@ class Policy(discrete.Policy):
                 msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            # setdiff1d keeps the integer type also when nothing is left
-            self.actions = np.setdiff1d(self.actions, actions)
 
         if comm is None:
             self.mpicomm = None
