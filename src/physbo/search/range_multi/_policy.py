@@ -735,7 +735,7 @@ class Policy(range_single.Policy):
         """
 
         if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_post_fmean()")
+            self._warn_no_predictor("get_permutation_importance()")
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()
