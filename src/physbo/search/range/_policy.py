@@ -944,6 +944,10 @@ class Policy(CheckpointMixin):
         Returns
         -------
 
+        Note
+        ----
+        The constraint is not saved; give it to the constructor of the policy
+        that loads the files.
         """
         if self.mpirank == 0:
             self.history.save(file_history)
@@ -972,6 +976,10 @@ class Policy(CheckpointMixin):
         Returns
         -------
 
+        Note
+        ----
+        The constraint is not restored by load(); the policy keeps the one
+        given to its constructor.
         """
         self.history.load(file_history)
 

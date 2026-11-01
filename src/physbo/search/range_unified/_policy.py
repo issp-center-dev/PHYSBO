@@ -727,6 +727,11 @@ class Policy(range_single.Policy):
             )
 
     def save(self, file_history, file_training=None, file_predictor=None):
+        """Save the history, the training data and the predictor into files.
+
+        The constraint is not saved; give it to the constructor of the policy
+        that loads the files.
+        """
         if self.mpirank == 0:
             self.history.save(file_history)
             if file_training is not None:
@@ -735,6 +740,11 @@ class Policy(range_single.Policy):
                 self.save_predictor(file_predictor)
 
     def load(self, file_history, file_training=None, file_predictor=None):
+        """Load the history, the training data and the predictor from files.
+
+        The constraint is not restored by load(); the policy keeps the one
+        given to its constructor.
+        """
         self.history.load(file_history)
 
         if file_training is None:

@@ -538,7 +538,7 @@ def test_never_satisfied_constraint_raises(kind):
         policy.random_search(max_num_probes=1, simulator=make_simulator(kind, fn))
 
     # initial data are not checked, so that bayes_search can be started
-    X0 = 2 * np.random.rand(5, 2) - 1
+    X0 = np.array([[-0.5, 0.2], [0.3, -0.7], [0.8, 0.6], [-0.9, -0.1], [0.1, 0.9]])
     policy.write(X0, make_simulator(kind, fn)(X0))
     with pytest.warns(RuntimeWarning, match="feasible"):
         with pytest.raises(RuntimeError, match="feasible"):
