@@ -25,7 +25,8 @@ def f(x):
     return np.c_[-np.sum(x**2, axis=1), -np.sum((x - 1.0) ** 2, axis=1)]
 
 
-def make_policy(kind):
+def new_policy(kind):
+    """A policy without any observation, and the simulator of its kind."""
     if kind == "discrete_unified":
         policy = physbo.search.discrete_unified.Policy(test_X=X, num_objectives=2)
         simulator = lambda action: f(X[action])  # noqa: E731
@@ -34,6 +35,12 @@ def make_policy(kind):
             min_X=np.zeros(1), max_X=np.ones(1), num_objectives=2
         )
         simulator = f
+    return policy, simulator
+
+
+def make_policy(kind):
+    """A policy with three random observations."""
+    policy, simulator = new_policy(kind)
     policy.set_seed(0)
     policy.random_search(max_num_probes=3, simulator=simulator, is_disp=False)
     return policy, simulator
@@ -49,12 +56,60 @@ def test_get_score_before_bayes_search_raises_runtime_error(kind):
         policy.get_score("EI", xs=np.array([[0.3]]))
 
 
+def call(policy, method):
+    if method == "get_score":
+        return policy.get_score("EI", xs=np.array([[0.3]]))
+    if method == "get_permutation_importance":
+        return policy.get_permutation_importance(n_perm=2)
+    return getattr(policy, method)(np.array([[0.3]]))
+
+
+METHODS = ["get_score", "get_post_fmean", "get_post_fcov", "get_permutation_importance"]
+
+
 @pytest.mark.parametrize("kind", KINDS)
-@pytest.mark.parametrize("method", ["get_post_fmean", "get_post_fcov"])
-def test_posterior_before_bayes_search_raises_runtime_error(kind, method):
+@pytest.mark.parametrize("method", METHODS)
+def test_methods_before_bayes_search_raise_runtime_error(kind, method, capsys):
     policy, _ = make_policy(kind)
+    capsys.readouterr()
     with pytest.raises(RuntimeError, match="bayes_search"):
-        getattr(policy, method)(np.array([[0.3]]))
+        call(policy, method)
+    # no warning about a GP predictor that is not going to be used
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("kind", KINDS)
+@pytest.mark.parametrize("method", METHODS)
+def test_methods_after_load_raise_runtime_error(kind, method, tmp_path):
+    """load() restores the predictor and the training data, but neither the
+    unified training data nor unify_method; the methods say so instead of
+    failing on the missing data, and bayes_search(max_num_probes=0) with
+    unify_method repairs the state."""
+    policy, simulator = make_policy(kind)
+    unify_method = physbo.search.unify.NDS(num_objectives=2)
+    policy.bayes_search(
+        max_num_probes=1,
+        simulator=simulator,
+        score="EI",
+        unify_method=unify_method,
+        is_disp=False,
+    )
+    files = [
+        str(tmp_path / name)
+        for name in ("history.npz", "training.npz", "predictor.pickle")
+    ]
+    policy.save(*files)
+
+    loaded, _ = new_policy(kind)
+    loaded.load(*files)
+    assert loaded.predictor is not None
+    assert loaded.history.total_num_search == policy.history.total_num_search
+    with pytest.raises(RuntimeError, match="load\\(\\)"):
+        call(loaded, method)
+
+    loaded.bayes_search(max_num_probes=0, unify_method=unify_method, is_disp=False)
+    result = call(loaded, method)
+    assert np.all(np.isfinite(result))
 
 
 @pytest.mark.parametrize("kind", KINDS)
