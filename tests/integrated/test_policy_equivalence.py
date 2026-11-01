@@ -116,6 +116,19 @@ def reseed(policy, rng_mode, seed):
         policy.rng = np.random.default_rng(seed)
 
 
+def rng_state(policy, rng_mode):
+    """The state of the stream the policy draws from, as a comparable value.
+
+    Two runs that give the same search may still have drawn a different
+    number of random numbers (EI and EHVI draw none, and the initial
+    hyperparameter search tolerates a shifted start on the small grid), so
+    the tests compare the state of the stream at the end as well."""
+    if rng_mode == "legacy":
+        state = np.random.get_state()
+        return (state[0], state[1].tolist(), *state[2:])
+    return policy.rng.bit_generator.state
+
+
 def search_kwargs(kind, policy, score=None, predictor="gp"):
     """Keyword arguments of bayes_search for ``kind``, with a cheap optimizer
     for the range policies that draws from the policy's generator. The
@@ -184,6 +197,7 @@ def test_interactive_mode_matches_simulator_mode(kind, rng_mode, predictor):
         simulator=sim,
         **search_kwargs(kind, p, predictor=predictor),
     )
+    state_p = rng_state(p, rng_mode)
 
     q = new_policy(kind, rng_mode)
     seed(q, rng_mode)
@@ -196,6 +210,7 @@ def test_interactive_mode_matches_simulator_mode(kind, rng_mode, predictor):
         q.write(a, sim(a))
 
     assert_same_search(p, q)
+    assert rng_state(q, rng_mode) == state_p
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +228,7 @@ def test_initial_data_matches_write(kind, rng_mode, predictor):
     p = new_policy(kind, rng_mode, initial_data=(points, values))
     q = new_policy(kind, rng_mode)
     q.write(points, values)
+    states = []
     for policy in (p, q):
         seed(policy, rng_mode)
         policy.bayes_search(
@@ -221,9 +237,11 @@ def test_initial_data_matches_write(kind, rng_mode, predictor):
             simulator=sim,
             **search_kwargs(kind, policy, predictor=predictor),
         )
+        states.append(rng_state(policy, rng_mode))
     if not is_range(kind):
         np.testing.assert_array_equal(p.actions, q.actions)
     assert_same_search(p, q)
+    assert states[0] == states[1]
 
 
 # ---------------------------------------------------------------------------
@@ -259,12 +277,15 @@ def test_save_load_restores_the_state(kind, rng_mode, predictor, tmp_path):
 
     # the generator is not part of save(): with a freshly seeded one on both
     # sides, the loaded policy continues like the original
+    states = []
     for policy in (p, q):
         reseed(policy, rng_mode, SEED + 1)
         policy.bayes_search(
             **kwargs, **search_kwargs(kind, policy, predictor=predictor)
         )
+        states.append(rng_state(policy, rng_mode))
     assert_same_search(p, q)
+    assert states[0] == states[1]
 
 
 # ---------------------------------------------------------------------------
@@ -311,8 +332,11 @@ def test_checkpoint_resume_is_bit_exact_for_every_policy(kind, rng_mode, N, tmp_
     p.save_checkpoint(fname)
 
     reference = continue_search(kind, p, N)
+    state_reference = rng_state(p, rng_mode)
     restored = type(p).load_checkpoint(fname)
     assert restored.mpicomm is None
     resumed = continue_search(kind, restored, N)
     np.testing.assert_array_equal(reference[0], resumed[0])
     np.testing.assert_array_equal(reference[1], resumed[1])
+    # the restored stream ends where the original one did
+    assert rng_state(restored, rng_mode) == state_reference

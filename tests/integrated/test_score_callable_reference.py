@@ -21,9 +21,18 @@ STRICT_STOCHASTIC_REFERENCE (conftest.py) is False, and only a sanity
 check is enforced.
 
 The cases above seed the legacy global state (set_seed). The "generator"
-cases give rng=SEED to the constructor (Generator mode) and were recorded
-with develop 64c02431 in the same environment, as regression tests for the
-restructuring of the policies.
+cases give rng=GENERATOR_SEED to the constructor (Generator mode) and were
+recorded with develop 64c02431 in the same environment, as regression tests
+for the restructuring of the policies.
+
+With only four initial points the initial hyperparameter search often ends
+with the kernel width at its lower bound; the posterior is then constant
+away from the training points, every sample of the random optimizer gets
+the same score, and the case pins the random stream but not the
+acquisition function. GENERATOR_SEED was chosen so that this does not
+happen in the generator cases, and the range cases check that the scores
+of the optimizer's samples do not all tie (except where they do by
+construction, see _ties_expected).
 """
 
 import warnings
@@ -51,6 +60,9 @@ from ._policy_fixtures import (  # noqa: E402
 INITIAL_ACTIONS = np.array([0, 7, 13, 19])
 INITIAL_X_RANGE = np.array([[0.1, 0.1], [0.9, 0.2], [0.3, 0.8], [0.5, 0.5]])
 SEED = 12345
+# seed of the Generator-mode cases; with SEED their range cases degenerate
+# (see the module docstring)
+GENERATOR_SEED = 8
 MAX_NUM_PROBES = 2
 NUM_RAND_BASIS_BLM = 50
 TS_CANDIDATE_NUM_REDUCED = 5
@@ -121,11 +133,37 @@ CASES = (
 )
 
 
+class _RecordingOptimizer(physbo.search.optimize.random.Optimizer):
+    """The random optimizer, recording how many distinct finite scores its
+    samples got in each call (1 means that the acquisition function did not
+    take part in the choice; 0 that it gave no finite score at all, in which
+    case the optimizer falls back to its first sample)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.distinct_scores = []
+
+    def __call__(self, fn, mpicomm=None):
+        scores = []
+
+        def recording(x):
+            s = fn(x)
+            scores.append(float(np.ravel(s)[0]))
+            return s
+
+        result = super().__call__(recording, mpicomm=mpicomm)
+        finite = [s for s in scores if np.isfinite(s)]
+        self.distinct_scores.append(len(set(finite)))
+        return result
+
+
 def _run_case(case):
-    """Run a seeded string-score search; return (proposals, fx) of the Bayes steps."""
+    """Run a seeded string-score search; return (proposals, fx, distinct) of
+    the Bayes steps, where distinct lists the number of distinct scores the
+    random optimizer saw in each call (empty for the discrete policies)."""
     kind, score, N, variant = case
     generator = variant.startswith("generator")
-    policy = make_policy(kind, rng=SEED if generator else None)
+    policy = make_policy(kind, rng=GENERATOR_SEED if generator else None)
     if not generator:
         policy.set_seed(SEED)
     kwargs = {}
@@ -137,11 +175,13 @@ def _run_case(case):
         policy.TS_candidate_num = TS_CANDIDATE_NUM_REDUCED
     if kind.endswith("unified"):
         kwargs["unify_method"] = physbo.search.unify.NDS(num_objectives=2)
+    optimizer = None
     if is_range(kind):
         # legacy: the global state (as before); generator: the policy's
-        kwargs["optimizer"] = physbo.search.optimize.random.Optimizer(
+        optimizer = _RecordingOptimizer(
             min_X=MIN_X, max_X=MAX_X, nsamples=20, rng=policy.rng if generator else None
         )
+        kwargs["optimizer"] = optimizer
     res = policy.bayes_search(
         max_num_probes=MAX_NUM_PROBES,
         num_search_each_probe=N,
@@ -157,7 +197,16 @@ def _run_case(case):
     else:
         chosen = np.array(res.chosen_actions[total - n : total])
     fx = np.array(res.fx[total - n : total])
-    return chosen, fx
+    distinct = optimizer.distinct_scores if optimizer is not None else []
+    return chosen, fx, distinct
+
+
+def _ties_expected(case):
+    """Multi-objective TS scores one point at a time in the range policies,
+    so every sample of the optimizer gets the same score (issue #144): these
+    cases pin the random stream only. Strict, so that the fix shows up here."""
+    kind, score, _, _ = case
+    return kind == "range_multi" and score == "TS"
 
 
 def _is_stochastic(case):
@@ -334,41 +383,41 @@ REFERENCE = {
         [-0.52, -0.0325, -0.01999999999999999, -0.52],
     ),
     ('discrete', 'TS', 2, 'generator-blm'): (
-        [21, 8, 17, 12],
-        [-0.28250000000000003, -0.145, -0.0325, -0.01999999999999999],
+        [8, 20, 12, 17],
+        [-0.145, -0.52, -0.01999999999999999, -0.0325],
     ),
     ('range', 'EI', 2, 'generator'): (
-        [[0.3371784303025752, 0.8353206581748247], [0.26833785048265624, 0.6799771081166717], [0.6339239195641564, 0.9263908692203875], [0.44856390556608516, 0.1255669329842053]],
-        [-0.12445098966205101, -0.11639611924517067, -0.10768183182903546, -0.2480196257754111],
+        [[0.5906810288485583, 0.8725105752352116], [0.8715547262947944, 0.7098832957439117], [0.5830099222639767, 0.7191331565021924], [0.7130282441525791, 0.49890896337550616]],
+        [-0.07434885683834733, -0.08581630805658466, -0.014481371719651996, -0.022994781662029798],
     ),
     ('range', 'TS', 1, 'generator'): (
-        [[0.9922144806664416, 0.7473765847419975], [0.2207391709909523, 0.22321292692584993]],
-        [-0.17555205657466166, -0.285807274856415],
+        [[0.9045437744185014, 0.5326199855365639], [0.4653354003265996, 0.6197647027348296]],
+        [-0.09728697688615996, -0.01852519787939337],
     ),
     ('discrete_multi', 'EHVI', 2, 'generator'): (
         [4, 21, 12, 17],
         [[-0.625, -0.625], [-0.5625, -0.3125], [-0.125, -0.125], [-0.3125, -0.0625]],
     ),
     ('discrete_multi', 'TS', 1, 'generator'): (
-        [8, 3],
-        [[-0.25, -0.25], [-0.3125, -0.5625]],
+        [10, 3],
+        [[-0.125, -0.625], [-0.3125, -0.5625]],
     ),
     ('discrete_unified', 'TS', 2, 'generator'): (
-        [2, 10, 22, 4],
-        [[-0.125, -0.625], [-0.125, -0.625], [-0.625, -0.125], [-0.625, -0.625]],
+        [12, 8, 18, 6],
+        [[-0.125, -0.125], [-0.25, -0.25], [-0.5, -0.0], [-0.0, -0.5]],
     ),
     ('range_unified', 'EI', 2, 'generator'): (
-        [[0.3371784303025752, 0.8353206581748247], [0.26833785048265624, 0.6799771081166717], [0.6339239195641564, 0.9263908692203875], [0.44856390556608516, 0.1255669329842053]],
-        [[-0.3502003515962309, -0.17770126311883103], [-0.1852165902647002, -0.2369016316653723], [-0.6049021839782162, -0.04458739519367228], [-0.05491121276061445, -0.480780374210324]],
+        [[0.2886262990454739, 0.2088484700767691], [0.9429974478333368, 0.8232222949080918], [0.38778413404848155, 0.48470246241964166], [0.47151744793960704, 0.20645475908146638]],
+        [[-0.003185439392972944, -0.5057106702707299], [-0.8088292620832178, -0.04260951934178915], [-0.07406971346133323, -0.20158311699321002], [-0.05096616774832965, -0.3729939607272562]],
     ),
     ('range_multi', 'TS', 2, 'generator'): (
-        [[0.526463925777371, 0.13781800479739958], [0.005583589705890901, 0.33984267711998184], [0.3649724546767551, 0.12728636766899293], [0.6547340237178927, 0.23225406409798854]],
-        [[-0.08901710230387197, -0.42473517172910136], [-0.0678110882531436, -0.7223848214272709], [-0.02827730089426809, -0.53601847854852], [-0.16412454819591402, -0.2771364603800328]],
+        [[0.38977302249907764, 0.37059760462550984], [0.16035196441985033, 0.8945732840297316], [0.5203376340912038, 0.15990252231111524], [0.6248990844438007, 0.862797536437043]],
+        [[-0.034080280059938454, -0.273709652935351], [-0.4235114887682528, -0.3685862403186709], [-0.08119999189192868, -0.4009598354896097], [-0.5160701441801091, -0.028373523299265357]],
     ),
 }
 
 
-def _sanity(case, chosen, fx):
+def _sanity(case, chosen, fx, distinct):
     kind, _, N, _ = case
     n = MAX_NUM_PROBES * N
     assert len(chosen) == n
@@ -376,6 +425,20 @@ def _sanity(case, chosen, fx):
     if is_range(kind):
         assert chosen.shape == (n, 2)
         assert np.all(chosen >= MIN_X) and np.all(chosen <= MAX_X)
+        # the acquisition function must have taken part in every choice
+        assert len(distinct) == n
+        if _ties_expected(case):
+            assert all(d == 1 for d in distinct), (
+                f"{_case_id(case)}: distinct finite scores per step {distinct}, "
+                "expected exactly one (the scores tie, issue #144); if the "
+                "scores no longer tie, remove the case from _ties_expected"
+            )
+        else:
+            assert all(d > 1 for d in distinct), (
+                f"{_case_id(case)}: distinct finite scores per step {distinct}; "
+                "in some step the acquisition function did not take part in "
+                "the choice (all samples tied, or no score was finite)"
+            )
     else:
         n_cand = grid_X().shape[0]
         assert np.all((0 <= chosen) & (chosen < n_cand))
@@ -400,8 +463,8 @@ def _matches(case, chosen, fx, ref_chosen, ref_fx):
 @pytest.mark.parametrize("case", CASES, ids=[_case_id(c) for c in CASES])
 def test_string_score_reproduces_reference(case):
     """A seeded string-score search reproduces the proposals and fx recorded before the change."""
-    chosen, fx = _run_case(case)
-    _sanity(case, chosen, fx)
+    chosen, fx, distinct = _run_case(case)
+    _sanity(case, chosen, fx, distinct)
     ref_chosen, ref_fx = REFERENCE[case]
     ok = _matches(case, chosen, fx, ref_chosen, ref_fx)
     if STRICT_STOCHASTIC_REFERENCE or not _is_stochastic(case):
