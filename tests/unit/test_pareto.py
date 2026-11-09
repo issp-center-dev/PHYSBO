@@ -147,7 +147,7 @@ def test_binary_search_cells_regression():
     pareto.update_front(
         np.array([[0.0, 1.0, 2.0], [1.0, 2.0, 0.0], [2.0, 0.0, 1.0], [1.0, 1.0, 1.0]])
     )
-    pareto.divide_non_dominated_region()
+    pareto.divide_non_dominated_region(method="binary_search")
     lb = [[2, 1, 0], [2, 0, 3], [4, 0, 0], [3, 4, 0], [2, 4, 0], [0, 1, 3], [0, 2, 0],
           [1, 3, 2], [1, 1, 2], [0, 3, 2], [0, 1, 2], [0, 0, 1], [1, 0, 3]]
     ub = [[5, 5, 5], [5, 1, 5], [5, 1, 3], [4, 1, 3], [3, 1, 3], [2, 5, 5], [2, 5, 3],
