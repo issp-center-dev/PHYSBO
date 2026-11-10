@@ -430,8 +430,9 @@ class Policy(CheckpointMixin):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    @staticmethod
-    def _warn_no_predictor(method_name):
+    def _warn_no_predictor(self, method_name):
+        if self.mpirank != 0:
+            return
         print("Warning: Since policy.predictor is not yet set,")
         print("         a GP predictor (num_rand_basis=0) is used for predicting")
         print("         If you want to use a BLM predictor (num_rand_basis>0),")
