@@ -533,8 +533,9 @@
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_warn_no_predictor</span><span class="p">(</span><span class="n">method_name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_warn_no_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"Warning: Since policy.predictor is not yet set,"</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"         a GP predictor (num_rand_basis=0) is used for predicting"</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"         If you want to use a BLM predictor (num_rand_basis&gt;0),"</span><span class="p">)</span>
