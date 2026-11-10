@@ -16,10 +16,13 @@ X = np.linspace(0.0, 1.0, 5)[:, None]
 
 
 def values(actions, kind):
+    """One objective, or two whose optima (x = 0.25 and x = 0.5) are close
+    enough for some candidates to be dominated: also among the first two,
+    so that the unified objective of any set used here is not constant."""
     x = X[actions, 0]
     if kind == "discrete":
         return -(x**2)
-    return np.c_[-(x**2), -((x - 1.0) ** 2)]
+    return np.c_[-((x - 0.25) ** 2), -((x - 0.5) ** 2)]
 
 
 def make_policy(kind, actions):
@@ -56,19 +59,48 @@ def test_remaining_candidates_are_sorted_integers(kind, actions):
     assert policy.history.total_num_search == len(actions)
 
 
-@pytest.mark.parametrize("kind", ["discrete", "discrete_multi"])
-def test_get_score_without_remaining_candidates_returns_an_empty_array(kind):
-    """As when the candidates were used up by write() or a search."""
-    policy = make_policy(kind, np.arange(5))
-    score = "EI" if kind == "discrete" else "EHVI"
-    f = policy.get_score(score)
-    assert f.shape == (0,)
+def score_name(kind):
+    return "EHVI" if kind == "discrete_multi" else "EI"
 
-    # the same state reached through write(): the candidates are consumed
+
+def build_unified_data(policy, kind):
+    """A unified policy builds its unified training data, and its predictor,
+    in bayes_search (issue #132): call it once without proposing a point,
+    so that get_score can be asked. The other two kinds need nothing; with
+    no predictor yet, their get_score fits a Gaussian process of its own, so
+    the three kinds do not take the same branch of get_score."""
+    if kind == "discrete_unified":
+        policy.bayes_search(
+            max_num_probes=0,
+            unify_method=physbo.search.unify.NDS(num_objectives=2),
+            is_disp=False,
+        )
+
+
+def assert_empty_score_and_usable_state(policy, kind):
+    """No candidate remains, so get_score returns an empty array; the state
+    it worked with is sound, since explicit points get finite scores."""
+    assert policy.actions.shape == (0,) and policy.actions.dtype.kind == "i"
+    assert policy.get_score(score_name(kind)).shape == (0,)
+    f = policy.get_score(score_name(kind), xs=X[:2])
+    assert f.shape == (2,)
+    assert np.all(np.isfinite(f))
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_get_score_without_remaining_candidates_returns_an_empty_array(kind):
+    """Whether initial_data covered every candidate or write() used up the rest."""
+    policy = make_policy(kind, np.arange(5))
+    build_unified_data(policy, kind)
+    assert_empty_score_and_usable_state(policy, kind)
+
+    # the same state reached through write(); in the unified policy after
+    # its unified data exist, so that get_score has new data to take in
     other = make_policy(kind, [0, 1])
+    build_unified_data(other, kind)
     other.write(np.array([2, 3, 4]), values([2, 3, 4], kind))
-    assert other.actions.shape == (0,) and other.actions.dtype.kind == "i"
-    assert other.get_score(score).shape == (0,)
+    assert_empty_score_and_usable_state(other, kind)
+    assert other.training.X.shape[0] == 5
 
 
 @pytest.mark.parametrize("kind", KINDS)
