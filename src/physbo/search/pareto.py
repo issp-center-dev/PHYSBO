@@ -72,6 +72,10 @@ def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
 # a block holds at least one new point
 _CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
 
+# initial number of rows of the arrays of Pareto._local_upper_bounds; the
+# arrays double when they are full
+_LOCAL_UPPER_BOUNDS_ROWS = 1024
+
 
 def _cross_dominance(front: np.ndarray, t: np.ndarray):
     """
@@ -467,7 +471,7 @@ class Pareto(object):
         # for every point; dead rows are dropped, keeping the order of the
         # others, once they are the majority.  The rows come out in the order
         # in which rebuilding the arrays for every point would leave them.
-        cap = 1024
+        cap = _LOCAL_UPPER_BOUNDS_ROWS
         U = np.empty((cap, M))
         Z = np.empty((cap, M, M))
         alive = np.zeros(cap, dtype=bool)
@@ -477,7 +481,8 @@ class Pareto(object):
         off = ~np.eye(M, dtype=bool)
         for z in points:
             # the bounds with U > z in every objective, selected one objective
-            # at a time: the first ones exclude most of the rows
+            # at a time, so that the later ones are compared on fewer rows (in
+            # the second pass an objective keeps about half of the rows left)
             hit = np.flatnonzero(alive[:k] & (U[:k, 0] > z[0]))
             for d in range(1, M):
                 hit = hit[U[hit, d] > z[d]]
