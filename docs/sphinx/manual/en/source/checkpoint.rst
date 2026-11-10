@@ -43,6 +43,10 @@ borrows the generator in the same way but is not part of the policy, so
 after ``load_checkpoint`` pass the name ``"TS"`` or a new instance rather
 than one created before the checkpoint, which still holds the generator
 of the old policy object.
+The ``constraint`` of a range policy is pickled with it as well, so it
+must be picklable: a function defined at module level or a method of a
+picklable object, not a lambda or a function defined inside another
+function.
 In the legacy mode the RNG state lives in the global ``numpy.random``
 module; the checkpoint API captures and restores it explicitly (note
 that loading a legacy-mode checkpoint therefore *sets the global
