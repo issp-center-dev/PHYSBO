@@ -89,9 +89,9 @@ nbsphinx_execute = "never"
 
 napoleon_use_admonition_for_references = False
 
-current_version = os.environ.get("TARGET_NAME", "")
-if current_version:
-    branch = current_version
+tutorial_ref = os.environ.get("TUTORIAL_REF", "")
+if tutorial_ref:
+    branch = tutorial_ref
 else:
     supported_branches = ["master", "develop"]
     if find_spec("git"):
