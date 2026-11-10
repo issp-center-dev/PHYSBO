@@ -249,7 +249,7 @@ If None (default), filled by 0.0.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.search.range.Policy">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.range.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range/_policy.html#Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range.Policy" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.range.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range/_policy.html#Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range.Policy" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CheckpointMixin</span></code></p>
 <p>Single objective Bayesian optimization with continuous search space</p>
 <dl class="field-list simple">
@@ -257,9 +257,18 @@ If None (default), filled by 0.0.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>min_X</strong> (<em>numpy.ndarray</em>) – The minimum value of each dimension of the search space.</p></li>
 <li><p><strong>max_X</strong> (<em>numpy.ndarray</em>) – The maximum value of each dimension of the search space.</p></li>
+<li><p><strong>constraint</strong> (<em>callable</em><em>, </em><em>optional</em>) – Inequality constraints on the search space.
+A function from an array of shape (N, d) to a boolean array of N elements (True for feasible points).
+Only feasible points are proposed by random_search and bayes_search.
+If None (default), the whole box [min_X, max_X] is searched.
+This is not saved by save(); pass it again to the constructor.
+It is part of the state pickled by save_checkpoint(), so it must be
+picklable (a function defined at module level or a method of a
+picklable object, not a lambda or a local function).</p></li>
 <li><p><strong>config</strong> (<em>SetConfig object</em><em> (</em><em>physbo.misc.SetConfig</em><em>)</em>)</p></li>
 <li><p><strong>initial_data</strong> (<em>tuple</em><em>[</em><em>np.ndarray</em><em>, </em><em>np.ndarray</em><em>]</em>) – The initial training datasets.
-The first elements is the array of inputs and the second is the array of values of objective functions</p></li>
+The first elements is the array of inputs and the second is the array of values of objective functions
+These points are not checked against the constraint.</p></li>
 <li><p><strong>comm</strong> (<em>MPI.Comm</em><em>, </em><em>optional</em>) – MPI Communicator</p></li>
 <li><p><strong>rng</strong> (<em>None</em><em>, </em><em>&quot;legacy&quot;</em><em>, </em><em>int</em><em>, or </em><em>numpy.random.Generator</em><em>, </em><em>optional</em>) – Random number generator specification (default: “legacy”).
 See physbo.search.discrete.Policy for details.</p></li>
@@ -306,6 +315,12 @@ Default is 1.0; ignored for callable scores.</p></li>
 <dd class="field-odd"><p>history object (physbo.search.discrete.results.history)</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.range.Policy.constraint">
+<span class="sig-name descname"><span class="pre">constraint</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#physbo.search.range.Policy.constraint" title="Link to this definition"></a></dt>
+<dd><p>No constraint, for subclasses whose constructor does not set it.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -452,6 +467,17 @@ If you want to split the input array itself, set <em>parallel</em> be False and 
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The constraint is not restored by load(); the policy keeps the one
+given to its constructor.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.range.Policy.max_trials_per_point">
+<span class="sig-name descname"><span class="pre">max_trials_per_point</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10000</span></span><a class="headerlink" href="#physbo.search.range.Policy.max_trials_per_point" title="Link to this definition"></a></dt>
+<dd><p>Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -490,6 +516,11 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The constraint is not saved; give it to the constructor of the policy
+that loads the files.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">

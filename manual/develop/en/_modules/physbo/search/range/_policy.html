@@ -98,6 +98,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">History</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
@@ -118,11 +119,18 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">CheckpointMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Single objective Bayesian optimization with continuous search space"""</span>
 
+    <span class="c1">#: No constraint, for subclasses whose constructor does not set it.</span>
+    <span class="n">constraint</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1">#: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.</span>
+    <span class="n">max_trials_per_point</span> <span class="o">=</span> <span class="mi">10000</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">min_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">max_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -136,10 +144,20 @@
 <span class="sd">            The minimum value of each dimension of the search space.</span>
 <span class="sd">        max_X: numpy.ndarray</span>
 <span class="sd">            The maximum value of each dimension of the search space.</span>
+<span class="sd">        constraint: callable, optional</span>
+<span class="sd">            Inequality constraints on the search space.</span>
+<span class="sd">            A function from an array of shape (N, d) to a boolean array of N elements (True for feasible points).</span>
+<span class="sd">            Only feasible points are proposed by random_search and bayes_search.</span>
+<span class="sd">            If None (default), the whole box [min_X, max_X] is searched.</span>
+<span class="sd">            This is not saved by save(); pass it again to the constructor.</span>
+<span class="sd">            It is part of the state pickled by save_checkpoint(), so it must be</span>
+<span class="sd">            picklable (a function defined at module level or a method of a</span>
+<span class="sd">            picklable object, not a lambda or a local function).</span>
 <span class="sd">        config: SetConfig object (physbo.misc.SetConfig)</span>
 <span class="sd">        initial_data: tuple[np.ndarray, np.ndarray]</span>
 <span class="sd">            The initial training datasets.</span>
 <span class="sd">            The first elements is the array of inputs and the second is the array of values of objective functions</span>
+<span class="sd">            These points are not checked against the constraint.</span>
 <span class="sd">        comm: MPI.Comm, optional</span>
 <span class="sd">            MPI Communicator</span>
 <span class="sd">        rng: None, "legacy", int, or numpy.random.Generator, optional</span>
@@ -164,6 +182,7 @@
             <span class="s2">"min_X must be less than max_X for each dimension"</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">L_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="o">=</span> <span class="n">constraint</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">History</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">SetConfig</span><span class="p">()</span>
@@ -456,9 +475,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">RandomOptimizer</span><span class="p">(</span>
-                <span class="n">min_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="n">nsamples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
-            <span class="p">)</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_optimizer</span><span class="p">()</span>
 
         <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
 
@@ -797,8 +814,104 @@
             <span class="c1"># the samples, and so the predictors, differ between the processes</span>
             <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
-        <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">X</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimize_score</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_default_optimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Optimizer of the acquisition function used when none is given."""</span>
+        <span class="k">return</span> <span class="n">RandomOptimizer</span><span class="p">(</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">nsamples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+            <span class="n">constraint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span>
+            <span class="n">max_trials_per_point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_trials_per_point</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_constrained</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make the acquisition function -inf at infeasible points."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fn</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapped</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">utility</span><span class="o">.</span><span class="n">is_feasible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="k">return</span> <span class="n">wrapped</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_optimize_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Maximize the acquisition function under the constraint.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fn: callable</span>
+<span class="sd">            Acquisition function, from a point of shape (dim,) to float.</span>
+<span class="sd">        optimizer: Optimizer object</span>
+<span class="sd">            Called as optimizer(fn, mpicomm=...).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X: numpy.ndarray</span>
+<span class="sd">            The point to be searched next.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Infeasible points are hidden from the optimizer by -inf, but the optimizer can</span>
+<span class="sd">        still fail to return a feasible point (no feasible sample, or a local search</span>
+<span class="sd">        started from an infeasible point). The returned point is therefore checked,</span>
+<span class="sd">        and replaced with a feasible random point if it is None, not finite or not</span>
+<span class="sd">        feasible. A point of the wrong dimension is an error of the optimizer and</span>
+<span class="sd">        raises ValueError, as without a constraint.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">RandomOptimizer</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="c1"># == rather than "is": a bound method (fn.constraint) is a new</span>
+            <span class="c1"># object at every attribute access</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">constraint</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span>
+        <span class="p">):</span>
+            <span class="c1"># the optimizer draws feasible samples only; no need to judge</span>
+            <span class="c1"># them one by one again</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constrained</span><span class="p">(</span><span class="n">fn</span><span class="p">),</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">X</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"ERROR: the optimizer returned a point of </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> "</span>
+                    <span class="sa">f</span><span class="s2">"dimension(s), but the search space has </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="ow">and</span> <span class="n">utility</span><span class="o">.</span><span class="n">is_feasible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span> <span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="c1"># the verdict of rank 0 decides, so that all the ranks take the same</span>
+        <span class="c1"># branch; an exception while judging is raised on every rank</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">is_ok</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">check</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_ok</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">is_ok</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">is_ok</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">X</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">"The optimizer of the acquisition function did not return a feasible point. "</span>
+                <span class="s2">"A feasible random point is proposed instead."</span><span class="p">,</span>
+                <span class="ne">RuntimeWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_random_action</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span>
@@ -881,12 +994,61 @@
 <span class="sd">        action: numpy.ndarray</span>
 <span class="sd">            Indexes of actions selected randomly from search candidates.</span>
 <span class="sd">        """</span>
-        <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">L_X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_uniform</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">action</span>
+
+        <span class="c1"># Only rank 0 samples, since the number of trials depends on the random</span>
+        <span class="c1"># numbers; the other ranks then draw the same number of points, so that</span>
+        <span class="c1"># the generators of all the ranks stay in step as without a constraint.</span>
+        <span class="n">num_drawn</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">nonlocal</span> <span class="n">num_drawn</span>
+            <span class="n">num_drawn</span> <span class="o">+=</span> <span class="n">n</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_uniform</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">action</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># an exception of the constraint is raised on every rank below</span>
+            <span class="n">action</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                <span class="n">comm</span><span class="p">,</span>
+                <span class="n">utility</span><span class="o">.</span><span class="n">sample_feasible</span><span class="p">,</span>
+                <span class="n">draw</span><span class="p">,</span>
+                <span class="n">N</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span>
+                <span class="n">max_trials_per_point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_trials_per_point</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># all the ranks must raise the error together</span>
+            <span class="n">found</span><span class="p">,</span> <span class="n">num_drawn</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span>
+                <span class="n">comm</span><span class="p">,</span> <span class="p">(</span><span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">num_drawn</span><span class="p">),</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sample_uniform</span><span class="p">(</span><span class="n">num_drawn</span><span class="p">)</span>
+                    <span class="n">action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+                <span class="n">comm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">action</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"ERROR: feasible points were not found in </span><span class="si">{}</span><span class="s2"> random samples. "</span>
+                <span class="s2">"The feasible region may be empty or too small "</span>
+                <span class="s2">"(equality constraints are not supported)."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_trials_per_point</span> <span class="o">*</span> <span class="n">N</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">action</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Draw N points uniformly from the box [min_X, max_X]."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">L_X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
             <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
         <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">action</span>
 
 <div class="viewcode-block" id="Policy.save">
 <a class="viewcode-back" href="../../../../api/physbo.search.range.html#physbo.search.range.Policy.save">[docs]</a>
@@ -907,6 +1069,10 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        The constraint is not saved; give it to the constructor of the policy</span>
+<span class="sd">        that loads the files.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
@@ -938,6 +1104,10 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        The constraint is not restored by load(); the policy keeps the one</span>
+<span class="sd">        given to its constructor.</span>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
 

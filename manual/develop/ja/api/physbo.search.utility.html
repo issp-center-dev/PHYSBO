@@ -158,6 +158,30 @@ a NaN or an infinite value marks a failed evaluation.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.is_feasible">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">is_feasible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#is_feasible"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.is_feasible" title="Link to this definition"></a></dt>
+<dd><p>Evaluate a constraint on a set of points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>constraint</strong> (<em>callable</em><em> or </em><em>None</em>) -- Function from an array of shape (N, d) to a boolean array of N elements
+(True for feasible points). If None, every point is feasible.</p></li>
+<li><p><strong>X</strong> (<em>np.ndarray</em>) -- Points to be judged, of shape (N, d).</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boolean array of shape (N,).</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">例外<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If <code class="docutils literal notranslate"><span class="pre">constraint</span></code> does not return one boolean per point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="physbo.search.utility.is_learning">
 <span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">is_learning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#is_learning"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.is_learning" title="Link to this definition"></a></dt>
 <dd><p>Decide whether to (re)learn the hyperparameters at search step <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
@@ -346,6 +370,33 @@ proposed again and again if it were only excluded from the training data.</p>
 <dd class="field-even"><p><strong>RuntimeError</strong> -- If the training dataset is empty.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="physbo.search.utility.sample_feasible">
+<span class="sig-prename descclassname"><span class="pre">physbo.search.utility.</span></span><span class="sig-name descname"><span class="pre">sample_feasible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">draw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_trials_per_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/utility.html#sample_feasible"><span class="viewcode-link"><span class="pre">[ソース]</span></span></a><a class="headerlink" href="#physbo.search.utility.sample_feasible" title="Link to this definition"></a></dt>
+<dd><p>Draw feasible points by rejection sampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">パラメータ<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>draw</strong> (<em>callable</em>) -- Function from an integer n to an array of shape (n, d) of random points.
+This is the only place where random numbers are consumed.</p></li>
+<li><p><strong>N</strong> (<em>int</em>) -- Number of feasible points to be drawn.</p></li>
+<li><p><strong>constraint</strong> (<em>callable</em><em> or </em><em>None</em>) -- See <a class="reference internal" href="#physbo.search.utility.is_feasible" title="physbo.search.utility.is_feasible"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_feasible()</span></code></a>.</p></li>
+<li><p><strong>max_trials_per_point</strong> (<em>int</em>) -- Sampling is given up after <code class="docutils literal notranslate"><span class="pre">max_trials_per_point</span> <span class="pre">*</span> <span class="pre">N</span></code> points are drawn.</p></li>
+</ul>
+</dd>
+<dt class="field-even">戻り値<span class="colon">:</span></dt>
+<dd class="field-even"><p>Feasible points of shape (N, d), in the order they are drawn.
+None if N feasible points are not found within the limit.</p>
+</dd>
+<dt class="field-odd">戻り値の型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray or None</p>
+</dd>
+</dl>
+<p class="rubric">メモ</p>
+<p>The first batch has N points, so a constraint which is always satisfied
+consumes the same random numbers as the sampling without constraints.</p>
 </dd></dl>
 
 <dl class="py function">

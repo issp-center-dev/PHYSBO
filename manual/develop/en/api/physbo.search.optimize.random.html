@@ -113,7 +113,7 @@
 <span id="physbo-search-optimize-random-module"></span><h1>physbo.search.optimize.random module<a class="headerlink" href="#module-physbo.search.optimize.random" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.search.optimize.random.Optimizer">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.optimize.random.</span></span><span class="sig-name descname"><span class="pre">Optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/optimize/random.html#Optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.optimize.random.Optimizer" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.optimize.random.</span></span><span class="sig-name descname"><span class="pre">Optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_trials_per_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/optimize/random.html#Optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.optimize.random.Optimizer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Random search for the maximum of a function within bounds.</p>
 <dl class="field-list simple">
@@ -126,9 +126,22 @@ among the processes in a parallel run.</p></li>
 <li><p><strong>rng</strong> (<em>int</em><em>, </em><em>numpy.random.SeedSequence</em><em>, </em><em>numpy.random.Generator</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Random number generator for the samples; None (default) uses the
 global <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> state. In a parallel run every process
 draws its own samples from its own generator.</p></li>
+<li><p><strong>constraint</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function from an array of shape (N, d) to a boolean array of N
+elements (True for feasible points). If given, the samples are
+feasible points drawn by rejection sampling (on every process for
+its own share of the samples).</p></li>
+<li><p><strong>max_trials_per_point</strong> (<em>int</em><em>, </em><em>optional</em>) – The rejection sampling of N feasible points is given up after
+<code class="docutils literal notranslate"><span class="pre">max_trials_per_point</span> <span class="pre">*</span> <span class="pre">N</span></code> draws. Default is the class attribute
+of the same name (10000).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="physbo.search.optimize.random.Optimizer.max_trials_per_point">
+<span class="sig-name descname"><span class="pre">max_trials_per_point</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10000</span></span><a class="headerlink" href="#physbo.search.optimize.random.Optimizer.max_trials_per_point" title="Link to this definition"></a></dt>
+<dd><p>Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>

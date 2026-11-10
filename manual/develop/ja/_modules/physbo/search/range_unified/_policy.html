@@ -105,7 +105,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="nb">range</span> <span class="k">as</span> <span class="n">range_single</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score</span> <span class="k">as</span> <span class="n">search_score</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..optimize.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optimizer</span> <span class="k">as</span> <span class="n">RandomOptimizer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_rng</span><span class="p">,</span> <span class="n">attach_rng</span>
@@ -122,17 +121,51 @@
         <span class="o">*</span><span class="p">,</span>
         <span class="n">min_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">max_X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">initial_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_objectives: int</span>
+<span class="sd">            The number of objective functions.</span>
+<span class="sd">        min_X: numpy.ndarray</span>
+<span class="sd">            The minimum value of each dimension of the search space.</span>
+<span class="sd">        max_X: numpy.ndarray</span>
+<span class="sd">            The maximum value of each dimension of the search space.</span>
+<span class="sd">        constraint: callable, optional</span>
+<span class="sd">            Inequality constraints on the search space, as in physbo.search.range.Policy:</span>
+<span class="sd">            a function from an array of shape (N, d) to a boolean array of N elements</span>
+<span class="sd">            (True for feasible points). Only feasible points are proposed.</span>
+<span class="sd">            Not saved by save(); pickled by save_checkpoint(), so it must be picklable.</span>
+<span class="sd">        comm: MPI.Comm, optional</span>
+<span class="sd">            MPI Communicator</span>
+<span class="sd">        config: SetConfig object (physbo.misc.SetConfig)</span>
+<span class="sd">        initial_data: tuple[np.ndarray, np.ndarray]</span>
+<span class="sd">            The initial training datasets.</span>
+<span class="sd">            The first element is the array of inputs and the second is the array of</span>
+<span class="sd">            values of the objective functions, of shape (N, num_objectives).</span>
+<span class="sd">            These points are not checked against the constraint.</span>
+<span class="sd">        rng: None, "legacy", int, or numpy.random.Generator, optional</span>
+<span class="sd">            Random number generator specification (default: "legacy").</span>
+<span class="sd">            See physbo.search.discrete.Policy for details.</span>
+<span class="sd">        """</span>
+        <span class="c1"># The constructor of range.Policy is not called: it sets up the history, the</span>
+        <span class="c1"># training data and initial_data for a single objective. This class inherits</span>
+        <span class="c1"># range.Policy only to share its helper methods, so everything the base</span>
+        <span class="c1"># constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)</span>
+        <span class="c1"># must be set here as well.</span>
         <span class="k">if</span> <span class="n">min_X</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">max_X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"min_X and max_X must be specified"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">L_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="o">=</span> <span class="n">constraint</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">History</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
@@ -396,9 +429,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">RandomOptimizer</span><span class="p">(</span>
-                <span class="n">min_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="n">nsamples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
-            <span class="p">)</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_optimizer</span><span class="p">()</span>
 
         <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
 
@@ -500,8 +531,7 @@
             <span class="c1"># the samples, and so the predictors, differ between the processes</span>
             <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
-        <span class="n">X</span> <span class="o">=</span> <span class="n">optimizer</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">X</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimize_score</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -820,6 +850,11 @@
 <div class="viewcode-block" id="Policy.save">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_unified.html#physbo.search.range_unified.Policy.save">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Save the history, the training data and the predictor into files.</span>
+
+<span class="sd">        The constraint is not saved; give it to the constructor of the policy</span>
+<span class="sd">        that loads the files.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">file_training</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -831,6 +866,11 @@
 <div class="viewcode-block" id="Policy.load">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_unified.html#physbo.search.range_unified.Policy.load">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Load the history, the training data and the predictor from files.</span>
+
+<span class="sd">        The constraint is not restored by load(); the policy keeps the one</span>
+<span class="sd">        given to its constructor.</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_history</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">file_training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

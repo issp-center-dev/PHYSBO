@@ -134,6 +134,10 @@ borrows the generator in the same way but is not part of the policy, so
 after <code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> pass the name <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> or a new instance rather
 than one created before the checkpoint, which still holds the generator
 of the old policy object.
+The <code class="docutils literal notranslate"><span class="pre">constraint</span></code> of a range policy is pickled with it as well, so it
+must be picklable: a function defined at module level or a method of a
+picklable object, not a lambda or a function defined inside another
+function.
 In the legacy mode the RNG state lives in the global <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code>
 module; the checkpoint API captures and restores it explicitly (note
 that loading a legacy-mode checkpoint therefore <em>sets the global

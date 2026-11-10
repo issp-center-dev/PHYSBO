@@ -131,6 +131,10 @@ policy を pickle するだけで厳密な再開に必要な情報がすべて�
 生成器を借りますが policy の一部ではないため、<code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code> の後は
 チェックポイント前に作ったインスタンス(古い policy オブジェクトの生成器を
 保持したまま)ではなく、名前 <code class="docutils literal notranslate"><span class="pre">&quot;TS&quot;</span></code> か新しいインスタンスを渡してください。
+range 系 policy の <code class="docutils literal notranslate"><span class="pre">constraint</span></code> も policy と一緒に pickle されるため、
+pickle できるもの(モジュールレベルで定義した関数、または pickle 可能な
+オブジェクトのメソッド)にしてください。lambda や関数の中で定義した関数は
+pickle できません。
 legacy モードでは乱数状態はグローバルな <code class="docutils literal notranslate"><span class="pre">numpy.random</span></code> モジュ
 ールにあるため、チェックポイント API が明示的に捕捉・復元します
 (このため legacy モードのチェックポイントを読み込むと、副作用として

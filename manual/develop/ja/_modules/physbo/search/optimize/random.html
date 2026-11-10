@@ -101,6 +101,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utility</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_feasible</span>
 
 
 <div class="viewcode-block" id="Optimizer">
@@ -119,9 +120,29 @@
 <span class="sd">        Random number generator for the samples; None (default) uses the</span>
 <span class="sd">        global ``numpy.random`` state. In a parallel run every process</span>
 <span class="sd">        draws its own samples from its own generator.</span>
+<span class="sd">    constraint : callable, optional</span>
+<span class="sd">        A function from an array of shape (N, d) to a boolean array of N</span>
+<span class="sd">        elements (True for feasible points). If given, the samples are</span>
+<span class="sd">        feasible points drawn by rejection sampling (on every process for</span>
+<span class="sd">        its own share of the samples).</span>
+<span class="sd">    max_trials_per_point : int, optional</span>
+<span class="sd">        The rejection sampling of N feasible points is given up after</span>
+<span class="sd">        ``max_trials_per_point * N`` draws. Default is the class attribute</span>
+<span class="sd">        of the same name (10000).</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_X</span><span class="p">,</span> <span class="n">max_X</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1">#: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.</span>
+    <span class="n">max_trials_per_point</span> <span class="o">=</span> <span class="mi">10000</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">min_X</span><span class="p">,</span>
+        <span class="n">max_X</span><span class="p">,</span>
+        <span class="n">nsamples</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_trials_per_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
         <span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">min_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">max_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -140,6 +161,13 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"nsamples must be greater than 0"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">nsamples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">get_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="o">=</span> <span class="n">constraint</span>
+        <span class="k">if</span> <span class="n">max_trials_per_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_trials_per_point</span> <span class="o">=</span> <span class="n">max_trials_per_point</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Draw N points uniformly from the box [min_X, max_X]."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -159,14 +187,17 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        numpy.ndarray</span>
+<span class="sd">        numpy.ndarray or None</span>
 <span class="sd">            The first sample with the largest score, of shape (dim,); in a</span>
 <span class="sd">            parallel run, of the process of the lowest rank among equally good</span>
 <span class="sd">            ones. If no sample has a score larger than ``-inf`` (all scores</span>
-<span class="sd">            are ``nan`` or ``-inf``), the first sample (of rank 0) is returned</span>
-<span class="sd">            and a ``RuntimeWarning`` is issued on every process.</span>
+<span class="sd">            are ``nan`` or ``-inf``), the first sample (of the lowest rank</span>
+<span class="sd">            with a sample) is returned and a ``RuntimeWarning`` is issued on</span>
+<span class="sd">            every process. None, on every process, only with a</span>
+<span class="sd">            ``constraint`` for which no process found a feasible sample</span>
+<span class="sd">            within about ``max_trials_per_point`` draws per sample of its</span>
+<span class="sd">            share.</span>
 <span class="sd">        """</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
         <span class="k">if</span> <span class="n">mpicomm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mpisize</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
             <span class="n">mpirank</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
@@ -179,10 +210,25 @@
             <span class="n">nsamples_local</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">nlocal</span> <span class="o">=</span> <span class="n">nsamples_local</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># feasible points are drawn beforehand</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">sample_feasible</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sample_uniform</span><span class="p">,</span>
+                    <span class="n">nsamples_local</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span>
+                    <span class="n">max_trials_per_point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_trials_per_point</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">nlocal</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nsamples_local</span>
             <span class="n">result_fx</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
             <span class="n">result_x</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsamples_local</span><span class="p">):</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">)</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nlocal</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_uniform</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="n">fx</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">fx</span> <span class="o">&gt;</span> <span class="n">result_fx</span><span class="p">:</span>
                     <span class="n">result_fx</span> <span class="o">=</span> <span class="n">fx</span>
@@ -196,13 +242,21 @@
         <span class="n">result_fx</span><span class="p">,</span> <span class="n">result_x</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">result</span>
         <span class="k">if</span> <span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># gathered as objects, so that scores of any type (e.g. float32,</span>
-            <span class="c1"># or integers beyond 2**53) are compared as they are</span>
-            <span class="n">result_fx_all</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">result_fx</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+            <span class="c1"># or integers beyond 2**53) are compared as they are; with the</span>
+            <span class="c1"># scores, whether the process has a sample at all (it may have</span>
+            <span class="c1"># none with a constraint)</span>
+            <span class="n">results_all</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span>
+                <span class="n">mpicomm</span><span class="p">,</span> <span class="p">(</span><span class="n">result_fx</span><span class="p">,</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="n">error</span>
+            <span class="p">)</span>
+            <span class="n">ranks_with_sample</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">rank</span> <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mpisize</span><span class="p">)</span> <span class="k">if</span> <span class="n">results_all</span><span class="p">[</span><span class="n">rank</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks_with_sample</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
             <span class="c1"># the first of equally good processes, like np.argmax; with no</span>
-            <span class="c1"># score larger than -inf anywhere, the first process, which has</span>
-            <span class="c1"># at least one sample</span>
-            <span class="n">best_rank</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">mpisize</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rank</span><span class="p">:</span> <span class="n">result_fx_all</span><span class="p">[</span><span class="n">rank</span><span class="p">])</span>
-            <span class="n">result_fx</span> <span class="o">=</span> <span class="n">result_fx_all</span><span class="p">[</span><span class="n">best_rank</span><span class="p">]</span>
+            <span class="c1"># score larger than -inf anywhere, the first process with a sample</span>
+            <span class="n">best_rank</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ranks_with_sample</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rank</span><span class="p">:</span> <span class="n">results_all</span><span class="p">[</span><span class="n">rank</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">result_fx</span> <span class="o">=</span> <span class="n">results_all</span><span class="p">[</span><span class="n">best_rank</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="c1"># a process without samples still needs a buffer to receive the</span>
             <span class="c1"># point</span>
             <span class="k">if</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -211,6 +265,9 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">result_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
                 <span class="p">)</span>
             <span class="n">mpicomm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">result_x</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">best_rank</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">result_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># no feasible sample (only with a constraint)</span>
+            <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">result_fx</span> <span class="o">==</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
             <span class="c1"># the same on every process, as result_fx is the best of all</span>

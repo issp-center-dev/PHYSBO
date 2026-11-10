@@ -89,7 +89,10 @@ all ranks must agree on are drawn on rank 0 and broadcast: the
 hyperparameters of the model, the random Fourier basis, the posterior
 sample of Thompson sampling with the Bayesian linear model, the virtual
 observations of a multi-point proposal in the discrete policies, the
-point returned by the random optimizer, and the result of the simulator. The remaining draws are made
+point returned by the random optimizer, the random points of
+``random_search`` in the range policies with a ``constraint`` (the other
+ranks then draw the same number of points, so that their generators stay
+in step with rank 0), and the result of the simulator. The remaining draws are made
 by each rank for its own share of the candidates. As a consequence, the
 random number streams of the ranks do not stay in step with each other
 (rank 0 draws more than the others); this is harmless, because every
