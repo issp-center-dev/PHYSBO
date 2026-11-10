@@ -687,6 +687,29 @@ def check_range_constraint(kind):
     log(f"{kind} (constraint): OK")
 
 
+def check_no_predictor_warning_on_rank_0_only():
+    """The warning about a missing predictor (printed by get_post_fmean etc.
+    before bayes_search) appears on rank 0 only."""
+    import io
+    from contextlib import redirect_stdout
+
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm)
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    policy.config.learning.is_disp = False
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        policy.get_post_fmean(X[:3])
+    counts = comm.allgather(
+        buf.getvalue().count("Warning: Since policy.predictor is not yet set")
+    )
+    if counts != [1] + [0] * (comm.size - 1):
+        raise AssertionError(f"no-predictor warning printed {counts} times per rank")
+    log("no-predictor warning on rank 0 only: OK")
+
+
 def check_multi_probe_header_obeys_is_disp():
     """The header of a multiple-probe step of bayes_search is printed on
     rank 0 only, and not at all with is_disp=False."""
@@ -750,6 +773,7 @@ def main():
     check_random_optimizer_constraint()
     for kind in ["range", "range_multi", "range_unified"]:
         check_range_constraint(kind)
+    check_no_predictor_warning_on_rank_0_only()
     check_multi_probe_header_obeys_is_disp()
     log("all MPI checks passed")
 
