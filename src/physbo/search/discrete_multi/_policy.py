@@ -73,6 +73,9 @@ class Policy(discrete.Policy):
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
 
     def write(
         self,
