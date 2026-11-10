@@ -314,7 +314,7 @@ class Policy(discrete.Policy):
                 self._update_predictor()
             time_update_predictor = time.time() - time_update_predictor
 
-            if num_search_each_probe != 1:
+            if is_disp and N > 1:
                 utility.show_start_message_multi_search(
                     self.history.num_runs, utility.score_name(score)
                 )

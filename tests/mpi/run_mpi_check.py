@@ -710,6 +710,41 @@ def check_no_predictor_warning_on_rank_0_only():
     log("no-predictor warning on rank 0 only: OK")
 
 
+def check_multi_probe_header_obeys_is_disp():
+    """The header of a multiple-probe step of bayes_search is printed on
+    rank 0 only, and not at all with is_disp=False."""
+    import io
+    from contextlib import redirect_stdout
+
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    counts = {}
+    for is_disp in (False, True):
+        policy = physbo.search.discrete.Policy(test_X=X, comm=comm)
+        policy.set_seed(12345)
+        policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            policy.bayes_search(
+                max_num_probes=1,
+                num_search_each_probe=2,
+                simulator=sim,
+                score="EI",
+                is_disp=is_disp,
+                interval=0,
+            )
+        counts[is_disp] = comm.allgather(buf.getvalue().count("multiple probe search"))
+    if counts[False] != [0] * comm.size:
+        raise AssertionError(
+            f"multi-probe header printed with is_disp=False: {counts[False]} per rank"
+        )
+    if counts[True] != [1] + [0] * (comm.size - 1):
+        raise AssertionError(
+            f"multi-probe header printed {counts[True]} times per rank with is_disp=True"
+        )
+    log("multi-probe header obeys is_disp: OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     if comm.size < 2:
@@ -739,6 +774,7 @@ def main():
     for kind in ["range", "range_multi", "range_unified"]:
         check_range_constraint(kind)
     check_no_predictor_warning_on_rank_0_only()
+    check_multi_probe_header_obeys_is_disp()
     log("all MPI checks passed")
 
 
