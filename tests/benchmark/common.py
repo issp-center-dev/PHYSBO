@@ -48,9 +48,19 @@ def benchmark(
     if use_range:
         sim = fn
         if use_unify:
-            policy = physbo.search.range_unified.Policy(min_X=min_X, max_X=max_X, num_objectives=fn.nobj)
+            policy = physbo.search.range_unified.Policy(
+                min_X=min_X,
+                max_X=max_X,
+                constraint=fn.constraint,
+                num_objectives=fn.nobj,
+            )
         else:
-            policy = physbo.search.range_multi.Policy(min_X=min_X, max_X=max_X, num_objectives=fn.nobj)
+            policy = physbo.search.range_multi.Policy(
+                min_X=min_X,
+                max_X=max_X,
+                constraint=fn.constraint,
+                num_objectives=fn.nobj,
+            )
     else:
         sim = physbo.search.utility.Simulator(test_X=X, test_function=fn)
         if use_unify:
@@ -155,7 +165,12 @@ def set_parameters(
     unify_method_name: str,
 ):
     if use_range:
-        optimizer = physbo.search.optimize.random.Optimizer(min_X=fn.min_X, max_X=fn.max_X, nsamples=N*N)
+        optimizer = physbo.search.optimize.random.Optimizer(
+            min_X=fn.min_X,
+            max_X=fn.max_X,
+            nsamples=N * N,
+            constraint=fn.constraint,
+        )
     else:
         optimizer = None
 
