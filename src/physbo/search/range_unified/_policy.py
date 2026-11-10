@@ -377,7 +377,7 @@ class Policy(range_single.Policy):
                 predictors = [copy.deepcopy(predictor) for _ in range(K)]
                 for k in range(K):
                     extra_train = extra_trainings[k]
-                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
                     predictors[k].update(trains[k], extra_train, objective_index=0)
 
                 def fn(x):
@@ -438,7 +438,12 @@ class Policy(range_single.Policy):
         for n in range(1, N):
 
             def draw_samples():
-                extra_training = Variable(X=X[0:n, :])
+                # with a Bayesian linear model the training data carry the
+                # values of the basis functions, so the virtual observations
+                # must too (the GP predictor has no basis: None)
+                extra_training = Variable(
+                    X=X[0:n, :], Z=self.predictor.get_basis(X[0:n, :])
+                )
                 t = self.predictor.get_predict_samples(
                     self.training_unified,
                     extra_training,
@@ -761,6 +766,12 @@ class Policy(range_single.Policy):
     def _update_predictor(self):
         if self.new_data is not None:
             self.training_unified = self._unify_training(self.training)
+            # the unified data carry the values of the basis functions, as
+            # after _learn_hyperparameter, so that virtual observations with
+            # Z can be added to them (several proposals per step)
+            Z = self.predictor.get_basis(self.training_unified.X)
+            if Z is not None:
+                self.training_unified.Z = Z[np.newaxis, :, :]
             N = self.training_unified.t.shape[0]
             n = self.new_data.t.shape[0]
             new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))

@@ -465,7 +465,12 @@ class Policy(range_single.Policy):
         for n in range(1, N):
 
             def draw_samples():
-                virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
+                # with Bayesian linear models the training data carry the
+                # values of the basis functions of every objective, so the
+                # virtual observations must too (as in write)
+                z = [p.get_basis(X[0:n, :]) for p in predictors]
+                Z = np.stack(z, axis=0) if z[0] is not None else None
+                virtual_trainings = [Variable(X=X[0:n, :], Z=Z) for _ in range(K)]
                 virtual_t = np.zeros((K, n, self.num_objectives))
                 for i in range(self.num_objectives):
                     virtual_t[:, :, i] = predictors[i].get_predict_samples(
