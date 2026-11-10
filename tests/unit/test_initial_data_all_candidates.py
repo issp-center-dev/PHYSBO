@@ -56,19 +56,30 @@ def test_remaining_candidates_are_sorted_integers(kind, actions):
     assert policy.history.total_num_search == len(actions)
 
 
-@pytest.mark.parametrize("kind", ["discrete", "discrete_multi"])
+def get_score(policy, kind):
+    """The score of every remaining candidate. A unified policy builds its
+    unified training data in bayes_search (issue #132), so it is called
+    first, without proposing a point."""
+    if kind == "discrete_unified":
+        policy.bayes_search(
+            max_num_probes=0,
+            unify_method=physbo.search.unify.NDS(num_objectives=2),
+            is_disp=False,
+        )
+    return policy.get_score("EHVI" if kind == "discrete_multi" else "EI")
+
+
+@pytest.mark.parametrize("kind", KINDS)
 def test_get_score_without_remaining_candidates_returns_an_empty_array(kind):
     """As when the candidates were used up by write() or a search."""
     policy = make_policy(kind, np.arange(5))
-    score = "EI" if kind == "discrete" else "EHVI"
-    f = policy.get_score(score)
-    assert f.shape == (0,)
+    assert get_score(policy, kind).shape == (0,)
 
     # the same state reached through write(): the candidates are consumed
     other = make_policy(kind, [0, 1])
     other.write(np.array([2, 3, 4]), values([2, 3, 4], kind))
     assert other.actions.shape == (0,) and other.actions.dtype.kind == "i"
-    assert other.get_score(score).shape == (0,)
+    assert get_score(other, kind).shape == (0,)
 
 
 @pytest.mark.parametrize("kind", KINDS)
