@@ -13,6 +13,7 @@ import copy
 import numpy as np
 import pytest
 
+from physbo.search import pareto as pareto_module
 from physbo.search import score_multi
 from physbo.search.pareto import Pareto
 
@@ -150,3 +151,75 @@ def test_local_upper_bounds_rows_and_order(m, kind, n):
     U2, Z2 = Pareto._local_upper_bounds(*second)
     U2_ref, Z2_ref = _local_upper_bounds_rebuilding(*second)
     assert np.array_equal(U2, U2_ref) and np.array_equal(Z2, Z2_ref)
+
+
+def _coverage_error(p):
+    """On the grid cut by the coordinates of the front, the cells must cover
+    every cell that is not dominated exactly once and no dominated one.
+    This does not use the binary search."""
+    m = p.num_objectives
+    padded = np.r_[np.full((1, m), -np.inf), p.front, np.full((1, m), np.inf)]
+    ax = np.arange(m)
+    lo, hi = padded[p.cells.lb, ax], padded[p.cells.ub, ax]
+    if not np.all(lo < hi):
+        return "improper cell"
+    ticks = [np.unique(padded[:, d]) for d in range(m)]
+    cover = np.zeros([len(t) - 1 for t in ticks], dtype=int)
+    for l, h in zip(lo, hi):
+        cover[
+            tuple(
+                slice(np.searchsorted(ticks[d], l[d]), np.searchsorted(ticks[d], h[d]))
+                for d in range(m)
+            )
+        ] += 1
+    dominated = np.zeros(cover.shape, dtype=bool)
+    for y in p.front:
+        dominated[
+            tuple(slice(0, np.searchsorted(ticks[d], y[d])) for d in range(m))
+        ] = True
+    if np.any(cover[dominated] != 0):
+        return "a dominated cell is covered"
+    if np.any(cover[~dominated] != 1):
+        return "a cell is not covered exactly once"
+    return None
+
+
+@pytest.mark.parametrize("m,n", [(5, 9), (6, 6)])
+@pytest.mark.parametrize("last", ["any", "grid", 1, 2, 3])
+def test_slabs_tile_the_region_exactly(m, n, last):
+    # 5 or more objectives: slabs along the last objective.  `last` is the
+    # number of distinct values of the last objective (1: no cut; 2: nothing
+    # of the front lies in the upper slab), "grid" has ties in all objectives.
+    rng = np.random.default_rng(10 * m + n)
+    for _ in range(5):
+        front = make_front(rng, "grid" if last == "grid" else "sphere", n, m)
+        if isinstance(last, int):
+            front[:, -1] = rng.permutation(np.arange(n) % last)
+        p = Pareto(m)
+        p.update_front(front)
+        p.divide_non_dominated_region(method="box")
+        assert _coverage_error(p) is None
+
+
+def test_slabs_from_five_objectives(monkeypatch):
+    rng = np.random.default_rng(5)
+    fronts = {m: make_front(rng, "sphere", 30, m) for m in (3, 4, 5)}
+
+    def cells(m):
+        p = Pareto(m)
+        p.update_front(fronts[m])
+        p.divide_non_dominated_region(method="box")
+        return p
+
+    with_slabs = {m: cells(m) for m in fronts}
+    monkeypatch.setattr(pareto_module, "_BOX_SLABS", 1)
+    for m in fronts:
+        p, q = with_slabs[m], cells(m)
+        same = np.array_equal(p.cells.lb, q.cells.lb) and np.array_equal(
+            p.cells.ub, q.cells.ub
+        )
+        assert same == (m < 5)
+        lo, hi = p.front.min(axis=0) - 0.1, p.front.max(axis=0) + 0.1
+        np.testing.assert_allclose(
+            p.volume_in_dominance(lo, hi), q.volume_in_dominance(lo, hi), rtol=1e-12
+        )

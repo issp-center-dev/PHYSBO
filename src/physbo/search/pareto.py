@@ -73,6 +73,14 @@ def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
 _CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
 
 
+# The box decomposition of a front with _BOX_SLAB_MIN_OBJECTIVES or more
+# objectives is made of _BOX_SLABS slabs along the last objective (see
+# Pareto.__divide_box_decomposition).  With fewer objectives the slabs save
+# neither time nor cells; more slabs give more cells.
+_BOX_SLABS = 3
+_BOX_SLAB_MIN_OBJECTIVES = 5
+
+
 def _cross_dominance(front: np.ndarray, t: np.ndarray):
     """
     Masks of the points of front not dominated by any point of t, and of the
@@ -448,6 +456,15 @@ class Pareto(object):
     #      region not dominated by the front above reference_min.
     # Every box coordinate is a coordinate of the front, of reference_min or
     # +inf (mapped to reference_max), so the boxes are stored as index bounds.
+    #
+    # For _BOX_SLAB_MIN_OBJECTIVES or more objectives, the region is first cut
+    # into _BOX_SLABS slabs a <= y < b along the last objective, at values of
+    # the front.  In a slab, the points with that objective <= a dominate
+    # nothing, and the others dominate the same part of the slab with that
+    # objective lowered to b.  Each slab is thus the decomposition of a
+    # smaller front, cut to the slab.  The cost of Algorithm 1 grows faster
+    # than the number of its bounds, so the slabs take less time in total;
+    # they also give fewer boxes.
 
     @staticmethod
     def _local_upper_bounds(points, ref, fill_value):
@@ -521,15 +538,65 @@ class Pareto(object):
         if nf == 0:  # the whole box, as the binary search gives
             self.cells.add(np.zeros((1, M), dtype=int), np.ones((1, M), dtype=int))
             return
-        # Any point strictly below the front gives the same cells (as index
-        # bounds, row 0 = reference_min), so the cells do not depend on
-        # reference_min.
-        rmin = np.min(self.front, axis=0) - 1.0
+        ax = M - 1
+        edges = [-np.inf, np.inf]
+        if M >= _BOX_SLAB_MIN_OBJECTIVES:
+            # cut at values of the front, with about as many of them per slab
+            s = np.unique(self.front[:, ax])
+            cut = {(len(s) * k) // _BOX_SLABS for k in range(1, _BOX_SLABS)} - {0}
+            edges = [-np.inf] + [s[i] for i in sorted(cut)] + [np.inf]
+        los, his = [], []
+        for a, b in zip(edges[:-1], edges[1:]):
+            if len(edges) == 2:
+                sub = self.front
+            else:
+                sub = self.front[self.front[:, ax] > a]  # a copy
+                # Lowered to b, the points above the slab differ in the other
+                # objectives only, which leaves far fewer bounds.  The region
+                # is the same without this step; the time is not.
+                sub[:, ax] = np.minimum(sub[:, ax], b)
+                sub = sub[_non_dominated_mask(sub)]
+            lo, hi = self._box_cells(sub)
+            lo[:, ax] = np.maximum(lo[:, ax], a)
+            hi[:, ax] = np.minimum(hi[:, ax], b)
+            keep = lo[:, ax] < hi[:, ax]
+            los.append(lo[keep])
+            his.append(hi[keep])
+        lo = np.concatenate(los)
+        hi = np.concatenate(his)
+        if lo.shape[0] == 0:
+            return
+        # value -> row of [reference_min; front; reference_max], per objective
+        # (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)
+        lb = np.empty(lo.shape, dtype=int)
+        ub = np.empty(hi.shape, dtype=int)
+        for d in range(M):
+            index = {-np.inf: 0}
+            for i in range(nf):
+                index.setdefault(self.front[i, d] + 0.0, i + 1)
+            index[np.inf] = nf + 1
+            lb[:, d] = [index[x + 0.0] for x in lo[:, d]]
+            ub[:, d] = [index[x + 0.0] for x in hi[:, d]]
+        self.cells.add(lb, ub)
+
+    @staticmethod
+    def _box_cells(front):
+        """
+        Boxes [lo, hi) that tile the region not dominated by ``front`` (the
+        two passes above), as values: -inf stands for reference_min and +inf
+        for reference_max.
+        """
+        M = front.shape[1]
+        if front.shape[0] == 0:  # nothing is dominated
+            return np.full((1, M), -np.inf), np.full((1, M), np.inf)
+        # Any point strictly below the front gives the same boxes, so they do
+        # not depend on reference_min.
+        rmin = np.min(front, axis=0) - 1.0
         # pass 1: minimization of -front with reference point -rmin
-        U1, _ = self._local_upper_bounds(-self.front, -rmin, np.full(M, -np.inf))
+        U1, _ = Pareto._local_upper_bounds(-front, -rmin, np.full(M, -np.inf))
         L = -U1  # local lower bounds of the maximization problem
         # pass 2: points L (minimization), reference point +inf, dummies at rmin
-        U2, Z2 = self._local_upper_bounds(L, np.full(M, np.inf), rmin)
+        U2, Z2 = Pareto._local_upper_bounds(L, np.full(M, np.inf), rmin)
         # Eq. (2): l_1 = z^1_1(u), u_1 = inf; l_j = max_{i<j} z^i_j(u), u_j = u_j
         lo = np.empty_like(U2)
         hi = np.empty_like(U2)
@@ -540,20 +607,8 @@ class Pareto(object):
             hi[:, j] = U2[:, j]
         keep = np.all(hi > lo, axis=1)
         lo, hi = lo[keep], hi[keep]
-        if lo.shape[0] == 0:
-            return
-        # value -> row of [reference_min; front; reference_max], per objective
-        # (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)
-        lb = np.empty(lo.shape, dtype=int)
-        ub = np.empty(hi.shape, dtype=int)
-        for d in range(M):
-            index = {rmin[d] + 0.0: 0}
-            for i in range(nf):
-                index.setdefault(self.front[i, d] + 0.0, i + 1)
-            index[np.inf] = nf + 1
-            lb[:, d] = [index[x + 0.0] for x in lo[:, d]]
-            ub[:, d] = [index[x + 0.0] for x in hi[:, d]]
-        self.cells.add(lb, ub)
+        lo[lo == rmin] = -np.inf  # compared objective by objective
+        return lo, hi
 
     def __divide_2d(self):
         """
