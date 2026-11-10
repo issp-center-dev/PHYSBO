@@ -15,7 +15,6 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng, attach_rng
@@ -30,17 +29,51 @@ class Policy(range_single.Policy):
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         comm=None,
         config=None,
         initial_data=None,
         rng=None,
     ):
+        """
+
+        Parameters
+        ----------
+        num_objectives: int
+            The number of objective functions.
+        min_X: numpy.ndarray
+            The minimum value of each dimension of the search space.
+        max_X: numpy.ndarray
+            The maximum value of each dimension of the search space.
+        constraint: callable, optional
+            Inequality constraints on the search space, as in physbo.search.range.Policy:
+            a function from an array of shape (N, d) to a boolean array of N elements
+            (True for feasible points). Only feasible points are proposed.
+            Not saved by save(); pickled by save_checkpoint(), so it must be picklable.
+        comm: MPI.Comm, optional
+            MPI Communicator
+        config: SetConfig object (physbo.misc.SetConfig)
+        initial_data: tuple[np.ndarray, np.ndarray]
+            The initial training datasets.
+            The first element is the array of inputs and the second is the array of
+            values of the objective functions, of shape (N, num_objectives).
+            These points are not checked against the constraint.
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
+        """
+        # The constructor of range.Policy is not called: it sets up the history, the
+        # training data and initial_data for a single objective. This class inherits
+        # range.Policy only to share its helper methods, so everything the base
+        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
+        # must be set here as well.
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
         self.max_X = np.array(max_X)
         self.L_X = self.max_X - self.min_X
         self.dim = self.min_X.shape[0]
+        self.constraint = constraint
 
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
@@ -296,9 +329,7 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -377,7 +408,7 @@ class Policy(range_single.Policy):
                 predictors = [copy.deepcopy(predictor) for _ in range(K)]
                 for k in range(K):
                     extra_train = extra_trainings[k]
-                    trains[k].add(X=extra_train.X, t=extra_train.t)
+                    trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
                     predictors[k].update(trains[k], extra_train, objective_index=0)
 
                 def fn(x):
@@ -399,8 +430,7 @@ class Policy(range_single.Policy):
             # the samples, and so the predictors, differ between the processes
             _mpi.allgather(self.mpicomm, None, error)
 
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
 
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         """
@@ -438,7 +468,12 @@ class Policy(range_single.Policy):
         for n in range(1, N):
 
             def draw_samples():
-                extra_training = Variable(X=X[0:n, :])
+                # with a Bayesian linear model the training data carry the
+                # values of the basis functions, so the virtual observations
+                # must too (the GP predictor has no basis: None)
+                extra_training = Variable(
+                    X=X[0:n, :], Z=self.predictor.get_basis(X[0:n, :])
+                )
                 t = self.predictor.get_predict_samples(
                     self.training_unified,
                     extra_training,
@@ -482,6 +517,7 @@ class Policy(range_single.Policy):
             Returned shape is (num_points).
         """
         X = self._make_variable_X(xs)
+        self._require_unified_training("get_post_fmean()")
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = self._make_gp_predictor()
@@ -519,6 +555,7 @@ class Policy(range_single.Policy):
             Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false.
         """
         X = self._make_variable_X(xs)
+        self._require_unified_training("get_post_fcov()")
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = self._make_gp_predictor()
@@ -604,7 +641,7 @@ class Policy(range_single.Policy):
         )
 
         if training is None:
-            training = self.training_unified
+            training = self._require_unified_training("get_score()")
 
         if pareto is None:
             pareto = self.history.pareto
@@ -674,6 +711,7 @@ class Policy(range_single.Policy):
             importance_std
         """
 
+        self._require_unified_training("get_permutation_importance()")
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = self._make_gp_predictor()
@@ -697,6 +735,11 @@ class Policy(range_single.Policy):
             )
 
     def save(self, file_history, file_training=None, file_predictor=None):
+        """Save the history, the training data and the predictor into files.
+
+        The constraint is not saved; give it to the constructor of the policy
+        that loads the files.
+        """
         if self.mpirank == 0:
             self.history.save(file_history)
             if file_training is not None:
@@ -705,6 +748,11 @@ class Policy(range_single.Policy):
                 self.save_predictor(file_predictor)
 
     def load(self, file_history, file_training=None, file_predictor=None):
+        """Load the history, the training data and the predictor from files.
+
+        The constraint is not restored by load(); the policy keeps the one
+        given to its constructor.
+        """
         self.history.load(file_history)
 
         if file_training is None:
@@ -761,12 +809,36 @@ class Policy(range_single.Policy):
     def _update_predictor(self):
         if self.new_data is not None:
             self.training_unified = self._unify_training(self.training)
+            # the unified data carry the values of the basis functions, as
+            # after _learn_hyperparameter, so that virtual observations with
+            # Z can be added to them (several proposals per step)
+            Z = self.predictor.get_basis(self.training_unified.X)
+            if Z is not None:
+                self.training_unified.Z = Z[np.newaxis, :, :]
             N = self.training_unified.t.shape[0]
             n = self.new_data.t.shape[0]
             new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
             assert np.allclose(new_data_unified.X, self.new_data.X)
             self.predictor.update(self.training_unified, new_data_unified)
             self.new_data = None
+
+    def _require_unified_training(self, method_name):
+        """The unified training data, or RuntimeError when they are not built yet.
+
+        They are built by bayes_search, which receives ``unify_method``; before
+        the first bayes_search the policy cannot unify the objectives. load()
+        restores neither them nor unify_method, so after load() bayes_search
+        has to be called again as well.
+        """
+        if self.training_unified is None:
+            raise RuntimeError(
+                f"ERROR: {method_name} needs the unified training data, which are "
+                "built by bayes_search with unify_method. Call bayes_search first "
+                "(also after load(), which does not restore them); with "
+                "max_num_probes=0 and the default interval it only learns the "
+                "predictor without proposing a point."
+            )
+        return self.training_unified
 
     def _unify_training(self, training: Variable) -> Variable:
         """

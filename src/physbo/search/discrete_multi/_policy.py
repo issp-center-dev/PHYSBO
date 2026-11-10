@@ -62,7 +62,6 @@ class Policy(discrete.Policy):
                 msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
@@ -73,6 +72,9 @@ class Policy(discrete.Policy):
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
 
     def write(
         self,

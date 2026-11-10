@@ -78,7 +78,6 @@ class Policy(discrete.Policy):
                 msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
@@ -89,6 +88,9 @@ class Policy(discrete.Policy):
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
 
     def write(
         self,
@@ -419,6 +421,7 @@ class Policy(discrete.Policy):
             Returned shape is (num_points).
         """
         X = self._make_variable_X(xs)
+        self._require_unified_training("get_post_fmean()")
         if self.predictor is None:
             self._warn_no_predictor("get_post_fmean()")
             predictor = self._make_gp_predictor()
@@ -448,6 +451,7 @@ class Policy(discrete.Policy):
             Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false.
         """
         X = self._make_variable_X(xs)
+        self._require_unified_training("get_post_fcov()")
         if self.predictor is None:
             self._warn_no_predictor("get_post_fcov()")
             predictor = self._make_gp_predictor()
@@ -526,7 +530,7 @@ class Policy(discrete.Policy):
         )
 
         if training is None:
-            training = self.training_unified
+            training = self._require_unified_training("get_score()")
 
         if training.X is None or training.X.shape[0] == 0:
             msg = "ERROR: No training data is registered."
@@ -602,6 +606,7 @@ class Policy(discrete.Policy):
             importance_std
         """
 
+        self._require_unified_training("get_permutation_importance()")
         if self.predictor is None:
             self._warn_no_predictor("get_permutation_importance()")
             predictor = self._make_gp_predictor()
@@ -683,9 +688,15 @@ class Policy(discrete.Policy):
             virtual_train.t = normalize_t(virtual_t[k, :], k=1)
 
             if virtual_train.Z is None:
-                train.add(virtual_train.X, virtual_train.t)
-            else:
-                train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
+                # the candidates carry no basis values (the basis of the
+                # unified predictor belongs to the unified data, not to the
+                # multi-objective candidates), so compute them for the virtual
+                # observations as the unified training data have them; None
+                # with the GP predictor
+                Z = self.predictor.get_basis(virtual_train.X)
+                if Z is not None:
+                    virtual_train.Z = Z[np.newaxis, :, :]
+            train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
             predictor.update(train, virtual_train)
             return predictor, train
@@ -804,12 +815,36 @@ class Policy(discrete.Policy):
     def _update_predictor(self):
         if self.new_data is not None:
             self.training_unified = self._unify_training(self.training)
+            # the unified data carry the values of the basis functions, as
+            # after _learn_hyperparameter, so that virtual observations with
+            # Z can be added to them (several proposals per step)
+            Z = self.predictor.get_basis(self.training_unified.X)
+            if Z is not None:
+                self.training_unified.Z = Z[np.newaxis, :, :]
             N = self.training_unified.t.shape[0]
             n = self.new_data.t.shape[0]
             new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
             assert np.allclose(new_data_unified.X, self.new_data.X)
             self.predictor.update(self.training_unified, new_data_unified)
             self.new_data = None
+
+    def _require_unified_training(self, method_name):
+        """The unified training data, or RuntimeError when they are not built yet.
+
+        They are built by bayes_search, which receives ``unify_method``; before
+        the first bayes_search the policy cannot unify the objectives. load()
+        restores neither them nor unify_method, so after load() bayes_search
+        has to be called again as well.
+        """
+        if self.training_unified is None:
+            raise RuntimeError(
+                f"ERROR: {method_name} needs the unified training data, which are "
+                "built by bayes_search with unify_method. Call bayes_search first "
+                "(also after load(), which does not restore them); with "
+                "max_num_probes=0 and the default interval it only learns the "
+                "predictor without proposing a point."
+            )
+        return self.training_unified
 
     def _unify_training(self, training: Variable) -> Variable:
         """
