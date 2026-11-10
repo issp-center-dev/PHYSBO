@@ -524,6 +524,7 @@
 <span class="sd">            Returned shape is (num_points).</span>
 <span class="sd">        """</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_unified_training</span><span class="p">(</span><span class="s2">"get_post_fmean()"</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fmean()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
@@ -556,6 +557,7 @@
 <span class="sd">            Returned shape is (num_points) if diag=true, (num_points, num_points) if diag=false.</span>
 <span class="sd">        """</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_unified_training</span><span class="p">(</span><span class="s2">"get_post_fcov()"</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fcov()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
@@ -637,7 +639,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span>
+            <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_unified_training</span><span class="p">(</span><span class="s2">"get_score()"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: No training data is registered."</span>
@@ -716,6 +718,7 @@
 <span class="sd">            importance_std</span>
 <span class="sd">        """</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_unified_training</span><span class="p">(</span><span class="s2">"get_permutation_importance()"</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_permutation_importance()"</span><span class="p">)</span>
             <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
@@ -943,6 +946,24 @@
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">new_data_unified</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span><span class="p">,</span> <span class="n">new_data_unified</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_require_unified_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The unified training data, or RuntimeError when they are not built yet.</span>
+
+<span class="sd">        They are built by bayes_search, which receives ``unify_method``; before</span>
+<span class="sd">        the first bayes_search the policy cannot unify the objectives. load()</span>
+<span class="sd">        restores neither them nor unify_method, so after load() bayes_search</span>
+<span class="sd">        has to be called again as well.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"ERROR: </span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> needs the unified training data, which are "</span>
+                <span class="s2">"built by bayes_search with unify_method. Call bayes_search first "</span>
+                <span class="s2">"(also after load(), which does not restore them); with "</span>
+                <span class="s2">"max_num_probes=0 and the default interval it only learns the "</span>
+                <span class="s2">"predictor without proposing a point."</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_unified</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_unify_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="n">Variable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Variable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
