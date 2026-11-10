@@ -22,9 +22,9 @@ of the basis functions).
   covered by tests/unit/test_saveload_multi.py);
 - a policy restored from a checkpoint continues bit-exactly.
 
-Several proposals per step with the Bayesian linear model are broken in the
-range and unified policies (issue #131); those cases are expected to fail
-until the fix is in, strictly, so that the marks have to be removed then.
+The searches propose two points per step, so that the virtual observations
+of the first point (and, with the Bayesian linear model, their basis
+values) take part in the choice of the second.
 """
 
 import numpy as np
@@ -57,20 +57,7 @@ PREDICTORS = ["gp", "blm"]
 SEED = 2468
 NUM_RAND_BASIS = {"gp": 0, "blm": 20}
 
-# policies in which several proposals per step fail with the BLM (#131)
-MULTI_PROPOSAL_BLM_BROKEN = (
-    "range",
-    "range_multi",
-    "range_unified",
-    "discrete_unified",
-)
-
-
-def proposals_per_step(kind, predictor):
-    """Two proposals per step, or one where #131 breaks it (see the module docstring)."""
-    if predictor == "blm" and kind in MULTI_PROPOSAL_BLM_BROKEN:
-        return 1
-    return 2
+PROPOSALS_PER_STEP = 2
 
 
 def new_policy(kind, rng_mode, initial_data=None):
@@ -184,7 +171,7 @@ def initial_points(kind):
 @pytest.mark.parametrize("predictor", PREDICTORS)
 def test_interactive_mode_matches_simulator_mode(kind, rng_mode, predictor):
     sim = make_simulator(kind)
-    N = proposals_per_step(kind, predictor)
+    N = PROPOSALS_PER_STEP
 
     p = new_policy(kind, rng_mode)
     seed(p, rng_mode)
@@ -223,7 +210,7 @@ def test_interactive_mode_matches_simulator_mode(kind, rng_mode, predictor):
 def test_initial_data_matches_write(kind, rng_mode, predictor):
     sim = make_simulator(kind)
     points, values = initial_points(kind)
-    N = proposals_per_step(kind, predictor)
+    N = PROPOSALS_PER_STEP
 
     p = new_policy(kind, rng_mode, initial_data=(points, values))
     q = new_policy(kind, rng_mode)
@@ -305,13 +292,8 @@ def continue_search(kind, policy, N):
 def checkpoint_cases():
     for kind in KINDS:
         for rng_mode in RNG_MODES:
-            yield pytest.param(kind, rng_mode, 1, id=f"{rng_mode}-{kind}-1")
-            marks = []
-            if kind in MULTI_PROPOSAL_BLM_BROKEN:
-                marks.append(pytest.mark.xfail(strict=True, reason="issue #131"))
-            yield pytest.param(
-                kind, rng_mode, 2, marks=marks, id=f"{rng_mode}-{kind}-2"
-            )
+            for N in (1, 2):
+                yield pytest.param(kind, rng_mode, N, id=f"{rng_mode}-{kind}-{N}")
 
 
 @pytest.mark.parametrize("kind,rng_mode,N", list(checkpoint_cases()))
