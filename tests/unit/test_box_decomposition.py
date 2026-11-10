@@ -188,10 +188,10 @@ def _coverage_error(p):
     return None
 
 
-@pytest.mark.parametrize("m,n", [(5, 9), (6, 6)])
+@pytest.mark.parametrize("m,n", [(6, 6), (7, 5)])
 @pytest.mark.parametrize("last", ["any", "grid", 1, 2, 3])
 def test_slabs_tile_the_region_exactly(m, n, last):
-    # 5 or more objectives: slabs along the last objective.  `last` is the
+    # 6 or more objectives: slabs along the last objective.  `last` is the
     # number of distinct values of the last objective (1: no cut; 2: nothing
     # of the front lies in the upper slab), "grid" has ties in all objectives.
     rng = np.random.default_rng(10 * m + n)
@@ -205,25 +205,76 @@ def test_slabs_tile_the_region_exactly(m, n, last):
         assert _coverage_error(p) is None
 
 
-def test_slabs_from_five_objectives(monkeypatch):
+def _box(front):
+    p = Pareto(front.shape[1])
+    p.update_front(front)
+    p.divide_non_dominated_region(method="box")
+    return p
+
+
+def test_slabs_from_six_objectives(monkeypatch):
     rng = np.random.default_rng(5)
-    fronts = {m: make_front(rng, "sphere", 30, m) for m in (3, 4, 5)}
-
-    def cells(m):
-        p = Pareto(m)
-        p.update_front(fronts[m])
-        p.divide_non_dominated_region(method="box")
-        return p
-
-    with_slabs = {m: cells(m) for m in fronts}
+    fronts = {m: make_front(rng, "sphere", 25, m) for m in (4, 5, 6)}
+    with_slabs = {m: _box(f) for m, f in fronts.items()}
     monkeypatch.setattr(pareto_module, "_BOX_SLABS", 1)
-    for m in fronts:
-        p, q = with_slabs[m], cells(m)
+    for m, p in with_slabs.items():
+        q = _box(fronts[m])
         same = np.array_equal(p.cells.lb, q.cells.lb) and np.array_equal(
             p.cells.ub, q.cells.ub
         )
-        assert same == (m < 5)
+        assert same == (m < 6)
         lo, hi = p.front.min(axis=0) - 0.1, p.front.max(axis=0) + 0.1
         np.testing.assert_allclose(
             p.volume_in_dominance(lo, hi), q.volume_in_dominance(lo, hi), rtol=1e-12
         )
+        for r in (p, q):
+            r.set_reference_min(lo)
+            r.set_reference_max(hi)
+        fmean = rng.random((20, m)) * 1.4 - 0.2
+        fstd = rng.random((20, m)) * 0.3 + 0.02
+        for score in (score_multi.EHVI, score_multi.HVPI):
+            np.testing.assert_allclose(
+                score(fmean, fstd, p), score(fmean, fstd, q), rtol=1e-10
+            )
+
+
+def _cells_and_bounds(monkeypatch, front, slabs):
+    """Number of cells, and of local upper bounds of the largest pass (the
+    time of a pass grows faster than its bounds), with this number of slabs."""
+    bounds = []
+    original = Pareto._local_upper_bounds
+
+    def counting(points, ref, fill_value):
+        U, Z = original(points, ref, fill_value)
+        bounds.append(U.shape[0])
+        return U, Z
+
+    with monkeypatch.context() as mp:
+        mp.setattr(pareto_module, "_BOX_SLABS", slabs)
+        mp.setattr(Pareto, "_local_upper_bounds", staticmethod(counting))
+        n_cells = _box(front).cells.lb.shape[0]
+    return n_cells, max(bounds)
+
+
+def test_slabs_save_cells_and_bounds(monkeypatch):
+    # what the slabs are for, on a front without structure
+    front = make_front(np.random.default_rng(6), "sphere", 30, 6)
+    cells, bounds = _cells_and_bounds(monkeypatch, front, 3)
+    cells_1, bounds_1 = _cells_and_bounds(monkeypatch, front, 1)
+    assert cells < cells_1
+    # without lowering the points above a slab to its upper edge, the lowest
+    # slab would need as many bounds as the whole front
+    assert bounds < 0.8 * bounds_1
+
+
+def test_slabs_with_ties_in_the_last_objective(monkeypatch):
+    # Most points share the value of the last objective.  The slabs are cut
+    # at quantiles of the points; at quantiles of the distinct values, the
+    # tied points would be decomposed in every slab and the cells would be
+    # about 1.5 times as many as without slabs.
+    rng = np.random.default_rng(10)
+    front = make_front(rng, "sphere", 40, 6)
+    front[rng.random(40) < 0.8, -1] = 0.5
+    cells, _ = _cells_and_bounds(monkeypatch, front, 3)
+    cells_1, _ = _cells_and_bounds(monkeypatch, front, 1)
+    assert cells < 1.1 * cells_1
