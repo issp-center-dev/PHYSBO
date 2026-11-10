@@ -130,15 +130,19 @@ def _local_upper_bounds_rebuilding(points, ref, fill_value):
     return U, Z
 
 
+@pytest.mark.parametrize("rows", [1, 1024])
 @pytest.mark.parametrize(
     "m,kind,n",
     [(2, "random", 40), (3, "sphere", 80), (4, "sphere", 60), (4, "grid", 300),
      (5, "random", 200)],
 )
-def test_local_upper_bounds_rows_and_order(m, kind, n):
+def test_local_upper_bounds_rows_and_order(monkeypatch, m, kind, n, rows):
     # Both passes of the box decomposition give the rows of the reference in
     # the same order, so that the cells and the order of the sums over them
-    # do not depend on how the rows are stored.
+    # do not depend on how the rows are stored.  `rows` is the initial size
+    # of the arrays: starting from 1, they grow and are compacted from the
+    # first points on, whatever the size of the front.
+    monkeypatch.setattr(pareto_module, "_LOCAL_UPPER_BOUNDS_ROWS", rows)
     rng = np.random.default_rng(100 * m + n)
     p = Pareto(m)
     p.update_front(make_front(rng, kind, n, m))
