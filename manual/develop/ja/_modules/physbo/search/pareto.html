@@ -512,15 +512,175 @@
 
 <div class="viewcode-block" id="Pareto.divide_non_dominated_region">
 <a class="viewcode-back" href="../../../api/physbo.search.pareto.html#physbo.search.pareto.Pareto.divide_non_dominated_region">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">divide_non_dominated_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_binary_search</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">divide_non_dominated_region</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">force_binary_search</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"auto"</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Partition the region not dominated by the front into disjoint</span>
+<span class="sd">        hyper-rectangles, stored in ``self.cells`` as index bounds into</span>
+<span class="sd">        ``[reference_min; front; reference_max]``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        force_binary_search: bool</span>
+<span class="sd">            Same as ``method="binary_search"``.</span>
+<span class="sd">        debug: bool</span>
+<span class="sd">            Print timings of the binary search.</span>
+<span class="sd">        method: str</span>
+<span class="sd">            ``"auto"`` (default): vertical strips for 2 objectives, ``"box"``</span>
+<span class="sd">            otherwise.</span>
+<span class="sd">            ``"box"``: the box decomposition of Lacour, Klamroth and Fonseca</span>
+<span class="sd">            (2017), built from local upper bounds as in BoTorch's</span>
+<span class="sd">            ``FastNondominatedPartitioning``.  Far fewer cells than the binary</span>
+<span class="sd">            search for 3 or more objectives (4 objectives, 150 front points:</span>
+<span class="sd">            about 1,600 instead of 2.7 million).</span>
+<span class="sd">            ``"binary_search"``: recursive bisection of the bounding box.</span>
+
+<span class="sd">        All methods cover the same region, so EHVI, HVPI and</span>
+<span class="sd">        ``volume_in_dominance`` agree up to rounding.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">force_binary_search</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s2">"binary_search"</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"auto"</span><span class="p">,</span> <span class="s2">"box"</span><span class="p">,</span> <span class="s2">"binary_search"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"unknown method </span><span class="si">{</span><span class="n">method</span><span class="si">!r}</span><span class="s2"> (use 'auto', 'box' or 'binary_search')"</span>
+            <span class="p">)</span>
         <span class="c1"># clear rectangles</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">Rectangles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force_binary_search</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"binary_search"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__divide_using_binary_search</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__divide_2d</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__divide_using_binary_search</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__divide_box_decomposition</span><span class="p">()</span></div>
 
+
+    <span class="c1"># --- Box decomposition from local upper bounds ---------------------------</span>
+    <span class="c1">#</span>
+    <span class="c1"># Lacour, Klamroth &amp; Fonseca, "A box decomposition algorithm to compute the</span>
+    <span class="c1"># hypervolume indicator", Computers &amp; Operations Research 79 (2017)</span>
+    <span class="c1"># 347-360.  Algorithm 1 maintains, for a minimization problem, the local</span>
+    <span class="c1"># upper bounds U of the search region and for each u in U its defining</span>
+    <span class="c1"># points z^j(u) (one per objective).  Following BoTorch's</span>
+    <span class="c1"># FastNondominatedPartitioning (MIT licence), the region not dominated by</span>
+    <span class="c1"># the front of a maximization problem is decomposed in two passes:</span>
+    <span class="c1">#   1. Algorithm 1 on the negated front gives local upper bounds U; -U are</span>
+    <span class="c1">#      the local lower bounds of the maximization problem.</span>
+    <span class="c1">#   2. Algorithm 1 again, with -U as the points of a minimization problem</span>
+    <span class="c1">#      whose reference point is +inf; Eq. (2) of the paper turns its local</span>
+    <span class="c1">#      upper bounds and defining points into disjoint boxes that tile the</span>
+    <span class="c1">#      region not dominated by the front above reference_min.</span>
+    <span class="c1"># Every box coordinate is a coordinate of the front, of reference_min or</span>
+    <span class="c1"># +inf (mapped to reference_max), so the boxes are stored as index bounds.</span>
+    <span class="c1">#</span>
+    <span class="c1"># _local_upper_bounds and the conversion by Eq. (2) in</span>
+    <span class="c1"># __divide_box_decomposition are adapted from BoTorch</span>
+    <span class="c1"># (botorch/utils/multi_objective/box_decompositions/utils.py:</span>
+    <span class="c1"># compute_local_upper_bounds and get_partition_bounds), which is</span>
+    <span class="c1"># distributed under the following licence:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   MIT License</span>
+    <span class="c1">#</span>
+    <span class="c1">#   Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+    <span class="c1">#</span>
+    <span class="c1">#   Permission is hereby granted, free of charge, to any person obtaining</span>
+    <span class="c1">#   a copy of this software and associated documentation files (the</span>
+    <span class="c1">#   "Software"), to deal in the Software without restriction, including</span>
+    <span class="c1">#   without limitation the rights to use, copy, modify, merge, publish,</span>
+    <span class="c1">#   distribute, sublicense, and/or sell copies of the Software, and to</span>
+    <span class="c1">#   permit persons to whom the Software is furnished to do so, subject to</span>
+    <span class="c1">#   the following conditions:</span>
+    <span class="c1">#</span>
+    <span class="c1">#   The above copyright notice and this permission notice shall be</span>
+    <span class="c1">#   included in all copies or substantial portions of the Software.</span>
+    <span class="c1">#</span>
+    <span class="c1">#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,</span>
+    <span class="c1">#   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</span>
+    <span class="c1">#   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</span>
+    <span class="c1">#   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY</span>
+    <span class="c1">#   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,</span>
+    <span class="c1">#   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE</span>
+    <span class="c1">#   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_local_upper_bounds</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Algorithm 1 of Lacour et al. (minimization): local upper bounds of the</span>
+<span class="sd">        points (rows) inside the box bounded above by ``ref``.</span>
+
+<span class="sd">        Returns ``U`` (k x M) and the defining points ``Z`` (k x M x M) with</span>
+<span class="sd">        ``Z[k, :, j]`` the defining point z^j of ``U[k]``.  The dummy defining</span>
+<span class="sd">        points have ``ref[j]`` on the diagonal and ``fill_value`` elsewhere.</span>
+<span class="sd">        """</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+        <span class="n">Z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fill_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">M</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Z0</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ref</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">Z0</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">off</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+            <span class="n">hit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">U</span> <span class="o">&gt;</span> <span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">hit</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">Uh</span><span class="p">,</span> <span class="n">Zh</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">hit</span><span class="p">],</span> <span class="n">Z</span><span class="p">[</span><span class="n">hit</span><span class="p">]</span>
+            <span class="n">newU</span><span class="p">,</span> <span class="n">newZ</span> <span class="o">=</span> <span class="p">[</span><span class="n">U</span><span class="p">[</span><span class="o">~</span><span class="n">hit</span><span class="p">]],</span> <span class="p">[</span><span class="n">Z</span><span class="p">[</span><span class="o">~</span><span class="n">hit</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+                <span class="c1"># max over the other defining points of their j-th coordinate</span>
+                <span class="n">zmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Zh</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="n">off</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">initial</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+                <span class="n">ok</span> <span class="o">=</span> <span class="n">z</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">zmax</span>
+                <span class="k">if</span> <span class="n">ok</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">u2</span> <span class="o">=</span> <span class="n">Uh</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">u2</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">z2</span> <span class="o">=</span> <span class="n">Zh</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">z2</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span>
+                    <span class="n">newU</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u2</span><span class="p">)</span>
+                    <span class="n">newZ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">newU</span><span class="p">)</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">newZ</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">U</span><span class="p">,</span> <span class="n">Z</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__divide_box_decomposition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span>
+        <span class="n">nf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># the whole box, as the binary search gives</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+            <span class="k">return</span>
+        <span class="c1"># Any point strictly below the front gives the same cells (as index</span>
+        <span class="c1"># bounds, row 0 = reference_min), so the cells do not depend on</span>
+        <span class="c1"># reference_min.  The next double below the front stays strictly</span>
+        <span class="c1"># below it at any magnitude, unlike front.min - 1, which rounds back</span>
+        <span class="c1"># to front.min beyond about 2**53.</span>
+        <span class="n">rmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nextafter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="c1"># pass 1: minimization of -front with reference point -rmin</span>
+        <span class="n">U1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="o">-</span><span class="n">rmin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">U1</span>  <span class="c1"># local lower bounds of the maximization problem</span>
+        <span class="c1"># pass 2: points L (minimization), reference point +inf, dummies at rmin</span>
+        <span class="n">U2</span><span class="p">,</span> <span class="n">Z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="n">rmin</span><span class="p">)</span>
+        <span class="c1"># Eq. (2): l_1 = z^1_1(u), u_1 = inf; l_j = max_{i&lt;j} z^i_j(u), u_j = u_j</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">U2</span><span class="p">)</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">U2</span><span class="p">)</span>
+        <span class="n">lo</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">Z2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">hi</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+            <span class="n">lo</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Z2</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="n">j</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">hi</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">U2</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">hi</span> <span class="o">&gt;</span> <span class="n">lo</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">hi</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># value -&gt; row of [reference_min; front; reference_max], per objective</span>
+        <span class="c1"># (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">hi</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="p">{</span><span class="n">rmin</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nf</span><span class="p">):</span>
+                <span class="n">index</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">=</span> <span class="n">nf</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lb</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lo</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
+            <span class="n">ub</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">hi</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__divide_2d</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>

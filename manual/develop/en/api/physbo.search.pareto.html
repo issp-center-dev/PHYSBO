@@ -116,8 +116,31 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.divide_non_dominated_region">
-<span class="sig-name descname"><span class="pre">divide_non_dominated_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_binary_search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.divide_non_dominated_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.divide_non_dominated_region" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">divide_non_dominated_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_binary_search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/pareto.html#Pareto.divide_non_dominated_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.pareto.Pareto.divide_non_dominated_region" title="Link to this definition"></a></dt>
+<dd><p>Partition the region not dominated by the front into disjoint
+hyper-rectangles, stored in <code class="docutils literal notranslate"><span class="pre">self.cells</span></code> as index bounds into
+<code class="docutils literal notranslate"><span class="pre">[reference_min;</span> <span class="pre">front;</span> <span class="pre">reference_max]</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>force_binary_search</strong> (<em>bool</em>) – Same as <code class="docutils literal notranslate"><span class="pre">method=&quot;binary_search&quot;</span></code>.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Print timings of the binary search.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> (default): vertical strips for 2 objectives, <code class="docutils literal notranslate"><span class="pre">&quot;box&quot;</span></code>
+otherwise.
+<code class="docutils literal notranslate"><span class="pre">&quot;box&quot;</span></code>: the box decomposition of Lacour, Klamroth and Fonseca
+(2017), built from local upper bounds as in BoTorch’s
+<code class="docutils literal notranslate"><span class="pre">FastNondominatedPartitioning</span></code>.  Far fewer cells than the binary
+search for 3 or more objectives (4 objectives, 150 front points:
+about 1,600 instead of 2.7 million).
+<code class="docutils literal notranslate"><span class="pre">&quot;binary_search&quot;</span></code>: recursive bisection of the bounding box.</p></li>
+<li><p><strong>region</strong> (<em>All methods cover the same</em>)</p></li>
+<li><p><strong>EHVI</strong> (<em>so</em>)</p></li>
+<li><p><strong>and</strong> (<em>HVPI</em>)</p></li>
+<li><p><strong>rounding.</strong> (<em>volume_in_dominance agree up to</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.pareto.Pareto.export_front">
