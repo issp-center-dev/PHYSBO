@@ -153,14 +153,11 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         is_disp=True,
         disp_pareto_set=False,
     ):
-        # unlike the single-objective policies, this one does not stop when a
-        # step proposes no point; kept as it was
         return self._random_search(
             max_num_probes,
             num_search_each_probe,
             simulator,
             is_disp,
-            stop_when_exhausted=False,
             disp_pareto_set=disp_pareto_set,
         )
 

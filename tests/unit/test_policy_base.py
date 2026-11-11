@@ -102,6 +102,32 @@ def test_bayes_search_restores_the_display_of_the_learning(
     assert policy.config.learning.is_disp is configured
 
 
+@pytest.mark.parametrize("kind", DISCRETE_KINDS)
+def test_random_search_takes_what_is_left_and_then_stops(kind, capsys):
+    """With fewer candidates left than asked for, a step takes them all; with
+    none left, random_search warns and returns the history, also in the
+    interactive mode. The three discrete policies behave alike."""
+    policy, simulator = make_policy(kind)
+    policy.set_seed(0)
+    n = X.shape[0]  # 8 candidates, 3 per step
+    history = policy.random_search(
+        max_num_probes=3, num_search_each_probe=3, simulator=simulator, is_disp=False
+    )
+    assert history.total_num_search == n
+    assert sorted(history.chosen_actions[:n].tolist()) == list(range(n))
+    assert len(policy.actions) == 0
+    assert "All actions have already searched" not in capsys.readouterr().out
+
+    for interactive in (False, True):
+        result = policy.random_search(
+            max_num_probes=1,
+            simulator=None if interactive else simulator,
+            is_disp=False,
+        )
+        assert "All actions have already searched" in capsys.readouterr().out
+        assert result.total_num_search == n
+
+
 # ---------------------------------------------------------------------------
 # the constructor
 

@@ -87,7 +87,7 @@ class _PolicyBase(CheckpointMixin):
     - ``_prepare_predictor(predictor, is_rand_expans)``,
       ``_learn_hyperparameter(num_rand_basis)`` and ``_update_predictor()``;
     - ``write(...)`` to record a step;
-    - ``_show_search_results(N, N_indeed, disp_pareto_set)`` to print it.
+    - ``_show_search_results(N_indeed, disp_pareto_set)`` to print it.
     """
 
     def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
@@ -140,11 +140,10 @@ class _PolicyBase(CheckpointMixin):
         (also when a communicator of a single process was given)."""
         return self.mpicomm if self.mpisize > 1 else None
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set):
-        """Print the results of the step just recorded: ``N`` points were
-        asked for and ``N_indeed`` proposed. ``disp_pareto_set`` is the
-        argument of the multi-objective and unified policies; the
-        single-objective ones have no use for it."""
+    def _show_search_results(self, N_indeed, disp_pareto_set):
+        """Print the results of the step just recorded, of ``N_indeed``
+        points. ``disp_pareto_set`` is the argument of the multi-objective
+        and unified policies; the single-objective ones have no use for it."""
         raise NotImplementedError
 
     def _search_loop(
@@ -157,14 +156,15 @@ class _PolicyBase(CheckpointMixin):
         *,
         update_predictor=None,
         score=None,
-        stop_when_exhausted=True,
         disp_pareto_set=False,
     ):
         """
         The steps of random_search and bayes_search.
 
         Each step proposes points with ``propose()``, runs the simulator on
-        them and records the result with write().
+        them and records the result with write(). A step may propose fewer
+        points than asked for (the candidates of a discrete search space run
+        out); when it proposes none, the loop stops with a warning.
 
         Parameters
         ----------
@@ -185,9 +185,6 @@ class _PolicyBase(CheckpointMixin):
         score: optional
             The acquisition function, for the header of a step of several
             points; None in random_search.
-        stop_when_exhausted: bool
-            Stop, with a warning, when a step proposes no point, and record
-            the number of points proposed instead of ``N``.
         disp_pareto_set: bool
             Passed to ``_show_search_results``.
 
@@ -213,13 +210,11 @@ class _PolicyBase(CheckpointMixin):
             action = propose()
             time_get_action = time.time() - time_get_action
 
-            N_indeed = N
-            if stop_when_exhausted:
-                N_indeed = len(action)
-                if N_indeed == 0:
-                    if self.mpirank == 0:
-                        print("WARNING: All actions have already searched.")
-                    break
+            N_indeed = len(action)
+            if N_indeed == 0:
+                if self.mpirank == 0:
+                    print("WARNING: All actions have already searched.")
+                break
 
             if simulator is None:
                 return action
@@ -243,7 +238,7 @@ class _PolicyBase(CheckpointMixin):
             )
 
             if is_disp:
-                self._show_search_results(N, N_indeed, disp_pareto_set)
+                self._show_search_results(N_indeed, disp_pareto_set)
         return None
 
     def _random_search(
@@ -252,12 +247,9 @@ class _PolicyBase(CheckpointMixin):
         num_search_each_probe,
         simulator,
         is_disp,
-        *,
-        stop_when_exhausted=True,
         disp_pareto_set=False,
     ):
-        """The body of random_search of the six policies; the two options
-        are those of ``_search_loop``."""
+        """The body of random_search of the six policies."""
         if self.mpirank != 0:
             is_disp = False
 
@@ -272,7 +264,6 @@ class _PolicyBase(CheckpointMixin):
             simulator,
             is_disp,
             lambda: self._get_random_action(N),
-            stop_when_exhausted=stop_when_exhausted,
             disp_pareto_set=disp_pareto_set,
         )
         if proposal is not None:
@@ -535,8 +526,10 @@ class _MultiObjectiveMethods:
         else:
             self.predictor_list = predictor_list
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set):
-        utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
+    def _show_search_results(self, N_indeed, disp_pareto_set):
+        utility.show_search_results_mo(
+            self.history, N_indeed, disp_pareto_set=disp_pareto_set
+        )
 
     @staticmethod
     def _stack_basis(predictors, X):
@@ -766,8 +759,10 @@ class _UnifiedObjectiveMethods:
         else:
             self.predictor = predictor
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set):
-        utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
+    def _show_search_results(self, N_indeed, disp_pareto_set):
+        utility.show_search_results_mo(
+            self.history, N_indeed, disp_pareto_set=disp_pareto_set
+        )
 
     def _attach_unified_basis(self, variable):
         """Give ``variable`` the values of the basis functions of the unified

@@ -100,7 +100,7 @@ class Policy(_PolicyBase):
         )
         self.write(init_X, fs_normalized)
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set):
+    def _show_search_results(self, N_indeed, disp_pareto_set):
         self.history.show_search_results(N_indeed)
 
     def write(
