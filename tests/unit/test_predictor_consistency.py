@@ -26,7 +26,17 @@ X = np.array(
 )
 POINTS = X[::4]
 
-KINDS = ["discrete", "discrete_multi", "range", "range_multi"]
+# (kind, unify method of the unified policies)
+CASES = [
+    ("discrete", None),
+    ("discrete_multi", None),
+    ("discrete_unified", "ParEGO"),
+    ("discrete_unified", "NDS"),
+    ("range", None),
+    ("range_multi", None),
+    ("range_unified", "ParEGO"),
+    ("range_unified", "NDS"),
+]
 
 
 def objectives(x, kind):
@@ -97,17 +107,24 @@ def max_difference_from_fresh_statistics(policy, kind):
     return worst
 
 
-@pytest.mark.parametrize("kind", KINDS)
+@pytest.mark.parametrize("kind,unify", CASES)
 @pytest.mark.parametrize("interval", [0, 1], ids=["learn once", "learn every step"])
 @pytest.mark.parametrize("num_search_each_probe", [1, 2])
-def test_statistics_agree_with_the_training_data(kind, interval, num_search_each_probe):
+def test_statistics_agree_with_the_training_data(
+    kind, unify, interval, num_search_each_probe
+):
     policy, simulator = make_policy(kind)
+    unify_method = None
+    if unify is not None:
+        # the unified objective is computed again at every step: ParEGO draws
+        # new weights, and the ranks of NDS move with the front (issue #140)
+        unify_method = getattr(physbo.search.unify, unify)(num_objectives=2)
     policy.random_search(max_num_probes=5, simulator=simulator, is_disp=False)
     policy.bayes_search(
         max_num_probes=3,
         num_search_each_probe=num_search_each_probe,
         simulator=simulator,
         interval=interval,
-        **search_kwargs(kind, policy),
+        **search_kwargs(kind, policy, unify_method),
     )
     assert max_difference_from_fresh_statistics(policy, kind) < 1e-8

@@ -805,11 +805,13 @@ class _UnifiedObjectiveMethods:
             # after _learn_hyperparameter, so that virtual observations with
             # Z can be added to them (several proposals per step)
             self._attach_unified_basis(self.training_unified)
-            N = self.training_unified.t.shape[0]
-            n = self.new_data.t.shape[0]
-            new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
-            assert np.allclose(new_data_unified.X, self.new_data.X)
-            self.predictor.update(self.training_unified, new_data_unified)
+            # Unifying again may change the unified objective of every point,
+            # not only of the new ones (ParEGO draws new weights at each
+            # call, the ranks of NDS move with the front), so the statistics
+            # are built again from all of them rather than updated with the
+            # new points.
+            self.predictor.delete_stats()
+            self.predictor.prepare(self.training_unified)
             self.new_data = None
 
     def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
