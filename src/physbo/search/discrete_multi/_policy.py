@@ -62,7 +62,6 @@ class Policy(discrete.Policy):
                 msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
                 raise RuntimeError(msg)
             self.write(actions, fs)
-            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
@@ -73,6 +72,9 @@ class Policy(discrete.Policy):
             self.mpisize = comm.size
             self.mpirank = comm.rank
             self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
 
     def write(
         self,
@@ -312,7 +314,7 @@ class Policy(discrete.Policy):
                 self._update_predictor()
             time_update_predictor = time.time() - time_update_predictor
 
-            if num_search_each_probe != 1:
+            if is_disp and N > 1:
                 utility.show_start_message_multi_search(
                     self.history.num_runs, utility.score_name(score)
                 )
@@ -635,7 +637,7 @@ class Policy(discrete.Policy):
         """
 
         if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_post_fmean()")
+            self._warn_no_predictor("get_permutation_importance()")
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()

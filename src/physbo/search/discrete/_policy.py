@@ -129,7 +129,6 @@ class Policy(CheckpointMixin):
             # Normalize fs to (N, 1) shape before passing to write()
             fs_normalized = normalize_t(fs, k=1)
             self.write(actions, fs_normalized)
-            self.actions = np.array(sorted(list(set(self.actions) - set(actions))))
 
         if comm is None:
             self.mpicomm = None
@@ -438,7 +437,7 @@ class Policy(CheckpointMixin):
                 self._update_predictor()
             time_update_predictor = time.time() - time_update_predictor
 
-            if num_search_each_probe != 1:
+            if is_disp and N > 1:
                 utility.show_start_message_multi_search(
                     self.history.num_runs, utility.score_name(score)
                 )
@@ -479,8 +478,9 @@ class Policy(CheckpointMixin):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    @staticmethod
-    def _warn_no_predictor(method_name):
+    def _warn_no_predictor(self, method_name):
+        if self.mpirank != 0:
+            return
         print("Warning: Since policy.predictor is not yet set,")
         print("         a GP predictor (num_rand_basis=0) is used for predicting")
         print("         If you want to use a BLM predictor (num_rand_basis>0),")
@@ -604,7 +604,7 @@ class Policy(CheckpointMixin):
         """
 
         if self.predictor is None:
-            self._warn_no_predictor("get_post_fmean()")
+            self._warn_no_predictor("get_permutation_importance()")
             predictor = self._make_gp_predictor()
             predictor.fit(self.training, 0, rng=self.rng)
             predictor.prepare(self.training)

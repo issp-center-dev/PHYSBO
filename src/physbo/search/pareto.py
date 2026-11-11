@@ -476,6 +476,35 @@ class Pareto(object):
     # smaller front, cut to the slab.  The cost of Algorithm 1 grows faster
     # than the number of its bounds, so the slabs take less time in total;
     # for most fronts they also give fewer boxes (see _BOX_SLABS).
+    #
+    # _local_upper_bounds and the conversion by Eq. (2) in _box_cells are
+    # adapted from BoTorch
+    # (botorch/utils/multi_objective/box_decompositions/utils.py:
+    # compute_local_upper_bounds and get_partition_bounds), which is
+    # distributed under the following licence:
+    #
+    #   MIT License
+    #
+    #   Copyright (c) Meta Platforms, Inc. and affiliates.
+    #
+    #   Permission is hereby granted, free of charge, to any person obtaining
+    #   a copy of this software and associated documentation files (the
+    #   "Software"), to deal in the Software without restriction, including
+    #   without limitation the rights to use, copy, modify, merge, publish,
+    #   distribute, sublicense, and/or sell copies of the Software, and to
+    #   permit persons to whom the Software is furnished to do so, subject to
+    #   the following conditions:
+    #
+    #   The above copyright notice and this permission notice shall be
+    #   included in all copies or substantial portions of the Software.
+    #
+    #   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    #   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    #   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    #   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    #   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    #   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    #   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     @staticmethod
     def _local_upper_bounds(points, ref, fill_value):
@@ -604,8 +633,11 @@ class Pareto(object):
         if front.shape[0] == 0:  # nothing is dominated
             return np.full((1, M), -np.inf), np.full((1, M), np.inf)
         # Any point strictly below the front gives the same boxes, so they do
-        # not depend on reference_min.
-        rmin = np.min(front, axis=0) - 1.0
+        # not depend on reference_min.  The next double below the front stays
+        # strictly below it at any magnitude, unlike front.min - 1, which
+        # rounds back to front.min beyond about 2**53; lo == rmin below would
+        # then also turn coordinates of the front into reference_min.
+        rmin = np.nextafter(np.min(front, axis=0), -np.inf)
         # pass 1: minimization of -front with reference point -rmin
         U1, _ = Pareto._local_upper_bounds(-front, -rmin, np.full(M, -np.inf))
         L = -U1  # local lower bounds of the maximization problem

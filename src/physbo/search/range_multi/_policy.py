@@ -15,7 +15,6 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng
@@ -30,17 +29,51 @@ class Policy(range_single.Policy):
         *,
         min_X=None,
         max_X=None,
+        constraint=None,
         comm=None,
         config=None,
         initial_data=None,
         rng=None,
     ):
+        """
+
+        Parameters
+        ----------
+        num_objectives: int
+            The number of objective functions.
+        min_X: numpy.ndarray
+            The minimum value of each dimension of the search space.
+        max_X: numpy.ndarray
+            The maximum value of each dimension of the search space.
+        constraint: callable, optional
+            Inequality constraints on the search space, as in physbo.search.range.Policy:
+            a function from an array of shape (N, d) to a boolean array of N elements
+            (True for feasible points). Only feasible points are proposed.
+            Not saved by save(); pickled by save_checkpoint(), so it must be picklable.
+        comm: MPI.Comm, optional
+            MPI Communicator
+        config: SetConfig object (physbo.misc.SetConfig)
+        initial_data: tuple[np.ndarray, np.ndarray]
+            The initial training datasets.
+            The first element is the array of inputs and the second is the array of
+            values of the objective functions, of shape (N, num_objectives).
+            These points are not checked against the constraint.
+        rng: None, "legacy", int, or numpy.random.Generator, optional
+            Random number generator specification (default: "legacy").
+            See physbo.search.discrete.Policy for details.
+        """
+        # The constructor of range.Policy is not called: it sets up the history, the
+        # training data and initial_data for a single objective. This class inherits
+        # range.Policy only to share its helper methods, so everything the base
+        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
+        # must be set here as well.
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
         self.max_X = np.array(max_X)
         self.L_X = self.max_X - self.min_X
         self.dim = self.min_X.shape[0]
+        self.constraint = constraint
 
         self.num_objectives = num_objectives
         self.history = History(num_objectives=self.num_objectives, dim=self.dim)
@@ -305,9 +338,7 @@ class Policy(range_single.Policy):
             self._learn_hyperparameter(num_rand_basis)
 
         if optimizer is None:
-            optimizer = RandomOptimizer(
-                min_X=self.min_X, max_X=self.max_X, nsamples=1000, rng=self.rng
-            )
+            optimizer = self._default_optimizer()
 
         N = int(num_search_each_probe)
 
@@ -320,7 +351,7 @@ class Policy(range_single.Policy):
                 self._update_predictor()
             time_update_predictor = time.time() - time_update_predictor
 
-            if num_search_each_probe != 1:
+            if is_disp and N > 1:
                 utility.show_start_message_multi_search(
                     self.history.num_runs, utility.score_name(score)
                 )
@@ -447,8 +478,7 @@ class Policy(range_single.Policy):
             # some processes only, so that they all use the same reference
             # points and warn (or raise) together
             pareto.prepare_reference_points(upper=upper)
-        X = optimizer(fn, mpicomm=self.mpicomm)
-        return X
+        return self._optimize_score(fn, optimizer)
 
     def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
         X = np.zeros((N, self.dim))
@@ -465,7 +495,12 @@ class Policy(range_single.Policy):
         for n in range(1, N):
 
             def draw_samples():
-                virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
+                # with Bayesian linear models the training data carry the
+                # values of the basis functions of every objective, so the
+                # virtual observations must too (as in write)
+                z = [p.get_basis(X[0:n, :]) for p in predictors]
+                Z = np.stack(z, axis=0) if z[0] is not None else None
+                virtual_trainings = [Variable(X=X[0:n, :], Z=Z) for _ in range(K)]
                 virtual_t = np.zeros((K, n, self.num_objectives))
                 for i in range(self.num_objectives):
                     virtual_t[:, :, i] = predictors[i].get_predict_samples(
@@ -735,7 +770,7 @@ class Policy(range_single.Policy):
         """
 
         if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_post_fmean()")
+            self._warn_no_predictor("get_permutation_importance()")
             predictor_list = []
             for i in range(self.num_objectives):
                 predictor = self._make_gp_predictor()
@@ -764,6 +799,11 @@ class Policy(range_single.Policy):
         return np.array(importance_mean).T, np.array(importance_std).T
 
     def save(self, file_history, file_training_list=None, file_predictor_list=None):
+        """Save the history, the training data and the predictors into files.
+
+        The constraint is not saved; give it to the constructor of the policy
+        that loads the files.
+        """
         if self.mpirank == 0:
             self.history.save(file_history)
             if file_training_list is not None:
@@ -772,6 +812,11 @@ class Policy(range_single.Policy):
                 self.save_predictor_list(file_predictor_list)
 
     def load(self, file_history, file_training_list=None, file_predictor_list=None):
+        """Load the history, the training data and the predictors from files.
+
+        The constraint is not restored by load(); the policy keeps the one
+        given to its constructor.
+        """
         self.history.load(file_history)
 
         if file_training_list is None:
