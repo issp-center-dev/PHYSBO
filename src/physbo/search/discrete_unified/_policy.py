@@ -196,8 +196,14 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
+            A negative interval needs a learned predictor of the kind asked for
+            (num_rand_basis, ard): the one learned by an earlier bayes_search, or
+            one given as an argument. Otherwise a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            The predictor is kept between calls of bayes_search; it is replaced by
+            a new one, to be learned, when num_rand_basis or ard differ from those
+            it was made with.
         unify_method: callable
             The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
             See physbo.search.unify for examples.
@@ -619,6 +625,7 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
+            self._predictor_learned = True
 
         N = self.history.total_num_search
 

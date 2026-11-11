@@ -295,8 +295,14 @@ class Policy(_PolicyBase):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
+            A negative interval needs a learned predictor of the kind asked for
+            (num_rand_basis, ard): the one learned by an earlier bayes_search, or
+            one given as an argument. Otherwise a RuntimeError is raised.
         num_rand_basis: int
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            The predictor is kept between calls of bayes_search; it is replaced by
+            a new one, to be learned, when num_rand_basis or ard differ from those
+            it was made with.
         optimizer: optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
@@ -859,6 +865,7 @@ class Policy(_PolicyBase):
         if file_predictor is not None:
             with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
+            self._predictor_learned = True
 
         N = self.history.total_num_search
 
@@ -873,6 +880,9 @@ class Policy(_PolicyBase):
         self.predictor.fit(
             self.training, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
+        self._prepare_statistics()
+
+    def _prepare_statistics(self):
         # Get basis and convert to (1, N, n) format for single-objective
         test_Z_basis = self.predictor.get_basis(self.test.X)
         training_Z_basis = self.predictor.get_basis(self.training.X)
@@ -882,6 +892,10 @@ class Policy(_PolicyBase):
             self.training.Z = training_Z_basis[np.newaxis, :, :]  # (N, n) -> (1, N, n)
         self.predictor.prepare(self.training)
         self.new_data = None
+
+    def _clear_basis_values(self):
+        self.training.Z = None
+        self.test.Z = None
 
     def _update_predictor(self):
         """

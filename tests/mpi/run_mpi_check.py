@@ -745,6 +745,31 @@ def check_multi_probe_header_obeys_is_disp():
     log("multi-probe header obeys is_disp: OK")
 
 
+def check_negative_interval_needs_a_learned_predictor():
+    """bayes_search with interval < 0 and no learned predictor is refused on
+    every process before anything is communicated, and the policy is usable
+    afterwards."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm)
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    try:
+        policy.bayes_search(max_num_probes=1, simulator=sim, interval=-1, is_disp=False)
+    except RuntimeError:
+        refused = True
+    else:
+        refused = False
+    if not all(comm.allgather(refused)):
+        raise AssertionError("interval < 0 without a learned predictor was not refused")
+    res = policy.bayes_search(max_num_probes=1, simulator=sim, interval=0, is_disp=False)
+    res = policy.bayes_search(max_num_probes=1, simulator=sim, interval=-1, is_disp=False)
+    N = res.total_num_search
+    assert N == 6
+    assert_identical_over_ranks(res.chosen_actions[:N], "actions after interval < 0")
+    log("interval < 0 needs a learned predictor: OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     if comm.size < 2:
@@ -775,6 +800,7 @@ def main():
         check_range_constraint(kind)
     check_no_predictor_warning_on_rank_0_only()
     check_multi_probe_header_obeys_is_disp()
+    check_negative_interval_needs_a_learned_predictor()
     log("all MPI checks passed")
 
 

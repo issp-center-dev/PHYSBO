@@ -208,8 +208,14 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
+            A negative interval needs a learned predictor of the kind asked for
+            (num_rand_basis, ard): the one learned by an earlier bayes_search, or
+            one given as an argument. Otherwise a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            The predictor is kept between calls of bayes_search; it is replaced by
+            a new one, to be learned, when num_rand_basis or ard differ from those
+            it was made with.
         optimizer: Optimizer object, optional
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
@@ -541,25 +547,24 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         N = self.history.total_num_search
 
     def _learn_hyperparameter(self, num_rand_basis):
-        training = self.training
-        Z_list = []
         for i in range(self.num_objectives):
-            predictor = self.predictor_list[i]
-            predictor.fit(
-                training,
+            self.predictor_list[i].fit(
+                self.training,
                 num_rand_basis,
                 comm=self.mpicomm,
                 objective_index=i,
                 rng=self.rng,
             )
-            Z_list.append(predictor.get_basis(training.X))
+        self._prepare_statistics()
 
-        # The basis values of the training data, in (k, N, n) format, have to
-        # be those of the predictors just fitted before prepare() reads them
-        # (None with Gaussian process predictors).
-        if all(z is not None for z in Z_list):
-            self.training.Z = np.stack(Z_list, axis=0)
+    def _prepare_statistics(self):
+        # The basis values of the training data, in (k, N, n) format, are
+        # those of the current predictors (None with Gaussian process
+        # predictors) before prepare() reads them.
+        training_Z = self._stack_basis(self.predictor_list, self.training.X)
+        if training_Z is not None:
+            self.training.Z = training_Z
 
         for i in range(self.num_objectives):
-            self.predictor_list[i].prepare(training, objective_index=i)
+            self.predictor_list[i].prepare(self.training, objective_index=i)
         self.new_data = None

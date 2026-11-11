@@ -84,16 +84,26 @@ class _PolicyBase(CheckpointMixin):
     the loop ``_search_loop`` and use:
 
     - ``_get_random_action(N)`` and the proposal function given by the policy;
-    - ``_prepare_predictor(predictor, is_rand_expans)``,
-      ``_learn_hyperparameter(num_rand_basis)`` and ``_update_predictor()``;
+    - ``_current_predictors()``, ``_use_predictor(predictor)`` and
+      ``_new_predictor(is_rand_expans)`` to keep, take or create the
+      predictor(s);
+    - ``_learn_hyperparameter(num_rand_basis)``, ``_update_predictor()``,
+      ``_prepare_statistics()`` and ``_clear_basis_values()``;
     - ``write(...)`` to record a step;
     - ``_show_search_results(N_indeed, disp_pareto_set)`` to print it.
     """
+
+    # Whether the predictor(s) of the policy have been learned (or were given
+    # to bayes_search, which counts as learned). The constructor sets it to
+    # False; the value here is for a policy restored from a state saved before
+    # the attribute existed, whose predictor, if it has one, was learned.
+    _predictor_learned = True
 
     def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
         self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
+        self._predictor_learned = False
         self._init_predictor_state()
         self.history = self._new_history()
         if config is None:
@@ -270,14 +280,60 @@ class _PolicyBase(CheckpointMixin):
             return proposal
         return copy.deepcopy(self.history)
 
-    def _prepare_predictor(self, predictor, is_rand_expans):
-        """Set the predictor for a bayes_search: the one given, else the one
-        the policy has, else a new one (a Bayesian linear model if
-        ``is_rand_expans``, a Gaussian process otherwise)."""
-        if predictor is not None:
-            self.predictor = predictor
-        elif self.predictor is None:
-            self._init_predictor(is_rand_expans)
+    def _current_predictors(self):
+        """The predictor(s) the policy has, as a list (empty if none yet)."""
+        return [] if self.predictor is None else [self.predictor]
+
+    def _use_predictor(self, predictor):
+        """Take the predictor(s) given to bayes_search."""
+        self.predictor = predictor
+
+    def _new_predictor(self, is_rand_expans):
+        """Create the predictor(s), not learned: Bayesian linear model(s) if
+        ``is_rand_expans``, Gaussian process(es) otherwise."""
+        self._init_predictor(is_rand_expans)
+
+    def _predictor_matches(self, num_rand_basis, ard):
+        """Whether the predictor(s) the policy has are of the kind asked for:
+        Gaussian process (``num_rand_basis == 0``) or Bayesian linear model
+        with ``num_rand_basis`` basis functions, with ARD or without.
+
+        The kind is read from the predictor itself, so that a predictor
+        given to an earlier bayes_search is judged like one the policy made.
+        What cannot be read (a predictor of another class, a model without
+        the ``ard`` attribute) is taken to match.
+        """
+        predictors = self._current_predictors()
+        if not predictors:
+            return False
+        for predictor in predictors:
+            if not isinstance(predictor, (gp_predictor, blm_predictor)):
+                continue
+            is_blm = isinstance(predictor, blm_predictor)
+            if is_blm != (num_rand_basis != 0):
+                return False
+            if is_blm and predictor.blm is not None:
+                if predictor.blm.nbasis != num_rand_basis:
+                    return False
+            cov = getattr(getattr(predictor.model, "prior", None), "cov", None)
+            if hasattr(cov, "ard") and bool(cov.ard) != bool(ard):
+                return False
+        return True
+
+    def _clear_basis_values(self):
+        """Forget the values of the basis functions kept with the data: they
+        belong to a predictor that is being replaced."""
+        self.training.Z = None
+
+    def _prepare_statistics(self):
+        """Build the statistics of the predictor(s) from the training data
+        (and the basis values the data carry), without learning."""
+        raise NotImplementedError
+
+    def _statistics_missing(self):
+        """Whether the predictor lacks what _prepare_statistics builds
+        although it has been learned (the unified policies after load())."""
+        return False
 
     def _bayes_search(
         self,
@@ -306,6 +362,22 @@ class _PolicyBase(CheckpointMixin):
         of bayes_search; ``disp_pareto_set`` is passed to
         ``_show_search_results``.
         """
+        # The predictor(s) of the policy are kept between calls, and replaced
+        # only when another kind is asked for (Gaussian process or Bayesian
+        # linear model, the number of basis functions, ARD).
+        is_rand_expans = num_rand_basis != 0
+        given = predictor is not None
+        keep = given or self._predictor_matches(num_rand_basis, ard)
+        if interval < 0 and not (given or (keep and self._predictor_learned)):
+            # checked before anything is changed; the condition is the same
+            # on every process
+            raise RuntimeError(
+                "ERROR: bayes_search with interval < 0 does not learn the "
+                "hyperparameters, but the policy has no learned predictor of "
+                "the kind asked for (num_rand_basis, ard). Call bayes_search "
+                "with interval >= 0 first, or give a learned predictor."
+            )
+
         if self.mpirank != 0:
             is_disp = False
 
@@ -316,25 +388,43 @@ class _PolicyBase(CheckpointMixin):
             max_num_probes = 1
             simulator = None
 
-        is_rand_expans = num_rand_basis != 0
         self.ard = ard
 
         if training is not None:
             self.training = training
+            # the points not given to the predictor yet belonged to the
+            # training data just replaced
+            self.new_data = None
 
-        self._prepare_predictor(predictor, is_rand_expans)
+        if given:
+            self._use_predictor(predictor)
+            self._predictor_learned = True
+        elif not keep:
+            self._new_predictor(is_rand_expans)
+            self._predictor_learned = False
+            self._clear_basis_values()
 
         if max_num_probes > 0 or interval >= 0:
             utility.require_training_data(self.training)
 
-        if max_num_probes == 0 and interval >= 0:
+        def learn():
             self._learn_hyperparameter(num_rand_basis)
+            self._predictor_learned = True
+
+        if max_num_probes == 0 and interval >= 0:
+            learn()
+        elif interval < 0 and (training is not None or self._statistics_missing()):
+            # nothing is learned in this call, so the statistics of the
+            # predictor are built here from the training data: those given,
+            # or those of a policy whose statistics were not restored
+            if self.training.X is not None and self.training.X.shape[0] > 0:
+                self._prepare_statistics()
 
         N = int(num_search_each_probe)
 
         def update_predictor(n):
             if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
+                learn()
             else:
                 self._update_predictor()
 
@@ -511,20 +601,21 @@ class _MultiObjectiveMethods:
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.TS_candidate_num = None
 
-    def _prepare_predictor(self, predictor_list, is_rand_expans):
-        """Set the predictors for a bayes_search: those given, else new ones
-        (the multi-objective policies do not keep theirs between calls)."""
-        if predictor_list is None:
-            if is_rand_expans:
-                self.predictor_list = [
-                    self._make_blm_predictor() for i in range(self.num_objectives)
-                ]
-            else:
-                self.predictor_list = [
-                    self._make_gp_predictor() for i in range(self.num_objectives)
-                ]
+    def _current_predictors(self):
+        return [p for p in self.predictor_list if p is not None]
+
+    def _use_predictor(self, predictor_list):
+        self.predictor_list = predictor_list
+
+    def _new_predictor(self, is_rand_expans):
+        if is_rand_expans:
+            self.predictor_list = [
+                self._make_blm_predictor() for i in range(self.num_objectives)
+            ]
         else:
-            self.predictor_list = predictor_list
+            self.predictor_list = [
+                self._make_gp_predictor() for i in range(self.num_objectives)
+            ]
 
     def _show_search_results(self, N_indeed, disp_pareto_set):
         utility.show_search_results_mo(
@@ -709,6 +800,7 @@ class _MultiObjectiveMethods:
     def load_predictor_list(self, file_name):
         with open(file_name, "rb") as f:
             self.predictor_list = pickle.load(f)
+        self._predictor_learned = True
 
     def load_training_list(self, file_name):
         with open(file_name, "rb") as f:
@@ -751,14 +843,6 @@ class _UnifiedObjectiveMethods:
         self.training_unified = None
         self.predictor = None
 
-    def _prepare_predictor(self, predictor, is_rand_expans):
-        """Set the predictor for a bayes_search: the one given, else a new
-        one (the unified policies do not keep theirs between calls)."""
-        if predictor is None:
-            self._init_predictor(is_rand_expans)
-        else:
-            self.predictor = predictor
-
     def _show_search_results(self, N_indeed, disp_pareto_set):
         utility.show_search_results_mo(
             self.history, N_indeed, disp_pareto_set=disp_pareto_set
@@ -798,21 +882,28 @@ class _UnifiedObjectiveMethods:
         t_unified = self.unify_method(training.t)
         return Variable(X=training.X, t=t_unified.reshape(-1, 1))
 
+    def _statistics_missing(self):
+        # load() restores the predictor but not the unified training data
+        return self.training_unified is None
+
+    def _prepare_statistics(self):
+        self.training_unified = self._unify_training(self.training)
+        # the unified data carry the values of the basis functions, as
+        # after _learn_hyperparameter, so that virtual observations with
+        # Z can be added to them (several proposals per step)
+        self._attach_unified_basis(self.training_unified)
+        self.predictor.delete_stats()
+        self.predictor.prepare(self.training_unified)
+        self.new_data = None
+
     def _update_predictor(self):
         if self.new_data is not None:
-            self.training_unified = self._unify_training(self.training)
-            # the unified data carry the values of the basis functions, as
-            # after _learn_hyperparameter, so that virtual observations with
-            # Z can be added to them (several proposals per step)
-            self._attach_unified_basis(self.training_unified)
             # Unifying again may change the unified objective of every point,
             # not only of the new ones (ParEGO draws new weights at each
             # call, the ranks of NDS move with the front), so the statistics
             # are built again from all of them rather than updated with the
             # new points.
-            self.predictor.delete_stats()
-            self.predictor.prepare(self.training_unified)
-            self.new_data = None
+            self._prepare_statistics()
 
     def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
         """
