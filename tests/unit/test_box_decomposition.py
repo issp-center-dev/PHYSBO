@@ -78,6 +78,27 @@ def test_cells_do_not_depend_on_reference_points():
     assert np.array_equal(p.cells.lb, lb) and np.array_equal(p.cells.ub, ub)
 
 
+def test_large_magnitude_front():
+    # front.min - 1 rounds back to front.min beyond about 2**53, which would put
+    # the lowest front coordinates on the row of reference_min
+    rng = np.random.default_rng(0)
+    a = np.abs(rng.standard_normal((10, 3)))
+    a /= np.linalg.norm(a, axis=1, keepdims=True)
+    scale = 1e17
+    p = Pareto(3)
+    p.update_front(3 * scale + scale * a)
+    p.set_reference_min(p.front.min(axis=0) - 0.1 * scale)
+    p.set_reference_max(p.front.max(axis=0) + 0.1 * scale)
+    q = copy.deepcopy(p)
+    p.divide_non_dominated_region(method="box")
+    q.divide_non_dominated_region(method="binary_search")
+    fmean = 3 * scale + scale * rng.random((20, 3))
+    fstd = 0.1 * scale * np.ones((20, 3))
+    np.testing.assert_allclose(
+        score_multi.EHVI(fmean, fstd, p), score_multi.EHVI(fmean, fstd, q), rtol=1e-10
+    )
+
+
 def test_defaults_and_options():
     rng = np.random.default_rng(3)
     p2 = Pareto(2)
