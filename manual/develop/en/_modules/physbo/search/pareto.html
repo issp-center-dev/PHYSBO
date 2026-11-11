@@ -175,6 +175,19 @@
 <span class="n">_LOCAL_UPPER_BOUNDS_ROWS</span> <span class="o">=</span> <span class="mi">1024</span>
 
 
+<span class="c1"># The box decomposition of a front with _BOX_SLAB_MIN_OBJECTIVES or more</span>
+<span class="c1"># objectives is made of _BOX_SLABS slabs along the last objective (see</span>
+<span class="c1"># Pareto.__divide_box_decomposition).  The slabs are a heuristic: they take</span>
+<span class="c1"># less time and, for most fronts, give fewer cells, but how much depends on</span>
+<span class="c1"># the front.  With 3 or 4 objectives they save neither.  With 5 they save a</span>
+<span class="c1"># few percent of the cells at best and cost about 20% when the last</span>
+<span class="c1"># objective follows another one, so they start at 6; such a last objective</span>
+<span class="c1"># still costs about 15% of the cells there.  The number of slabs is not</span>
+<span class="c1"># critical: 2 to 4 give similar numbers of cells, many give more.</span>
+<span class="n">_BOX_SLABS</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">_BOX_SLAB_MIN_OBJECTIVES</span> <span class="o">=</span> <span class="mi">6</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_cross_dominance</span><span class="p">(</span><span class="n">front</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Masks of the points of front not dominated by any point of t, and of the</span>
@@ -536,7 +549,9 @@
 <span class="sd">            (2017), built from local upper bounds as in BoTorch's</span>
 <span class="sd">            ``FastNondominatedPartitioning``.  Far fewer cells than the binary</span>
 <span class="sd">            search for 3 or more objectives (4 objectives, 150 front points:</span>
-<span class="sd">            about 1,600 instead of 2.7 million).</span>
+<span class="sd">            about 1,600 instead of 2.7 million).  For 6 or more objectives</span>
+<span class="sd">            the region is cut into slabs along the last objective, and each</span>
+<span class="sd">            slab is decomposed in this way.</span>
 <span class="sd">            ``"binary_search"``: recursive bisection of the bounding box.</span>
 
 <span class="sd">        All methods cover the same region, so EHVI, HVPI and</span>
@@ -577,8 +592,17 @@
     <span class="c1"># Every box coordinate is a coordinate of the front, of reference_min or</span>
     <span class="c1"># +inf (mapped to reference_max), so the boxes are stored as index bounds.</span>
     <span class="c1">#</span>
-    <span class="c1"># _local_upper_bounds and the conversion by Eq. (2) in</span>
-    <span class="c1"># __divide_box_decomposition are adapted from BoTorch</span>
+    <span class="c1"># For _BOX_SLAB_MIN_OBJECTIVES or more objectives, the region is first cut</span>
+    <span class="c1"># into _BOX_SLABS slabs a &lt;= y &lt; b along the last objective, at values of</span>
+    <span class="c1"># the front.  In a slab, the points with that objective &lt;= a dominate</span>
+    <span class="c1"># nothing, and the others dominate the same part of the slab with that</span>
+    <span class="c1"># objective lowered to b.  Each slab is thus the decomposition of a</span>
+    <span class="c1"># smaller front, cut to the slab.  The cost of Algorithm 1 grows faster</span>
+    <span class="c1"># than the number of its bounds, so the slabs take less time in total;</span>
+    <span class="c1"># for most fronts they also give fewer boxes (see _BOX_SLABS).</span>
+    <span class="c1">#</span>
+    <span class="c1"># _local_upper_bounds and the conversion by Eq. (2) in _box_cells are</span>
+    <span class="c1"># adapted from BoTorch</span>
     <span class="c1"># (botorch/utils/multi_objective/box_decompositions/utils.py:</span>
     <span class="c1"># compute_local_upper_bounds and get_partition_bounds), which is</span>
     <span class="c1"># distributed under the following licence:</span>
@@ -679,17 +703,70 @@
         <span class="k">if</span> <span class="n">nf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># the whole box, as the binary search gives</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
             <span class="k">return</span>
-        <span class="c1"># Any point strictly below the front gives the same cells (as index</span>
-        <span class="c1"># bounds, row 0 = reference_min), so the cells do not depend on</span>
-        <span class="c1"># reference_min.  The next double below the front stays strictly</span>
-        <span class="c1"># below it at any magnitude, unlike front.min - 1, which rounds back</span>
-        <span class="c1"># to front.min beyond about 2**53.</span>
-        <span class="n">rmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nextafter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">M</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">M</span> <span class="o">&gt;=</span> <span class="n">_BOX_SLAB_MIN_OBJECTIVES</span><span class="p">:</span>
+            <span class="c1"># Cut at values of the front, with about as many points per slab.</span>
+            <span class="c1"># (Not as many distinct values: points that share a value would</span>
+            <span class="c1"># then lie in most of the slabs and be decomposed in each.)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">])</span>
+            <span class="n">cut</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">[(</span><span class="n">nf</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span> <span class="o">//</span> <span class="n">_BOX_SLABS</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_BOX_SLABS</span><span class="p">)}</span> <span class="o">-</span> <span class="p">{</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+        <span class="n">los</span><span class="p">,</span> <span class="n">his</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">sub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">a</span><span class="p">]</span>  <span class="c1"># a copy</span>
+                <span class="c1"># Lowered to b, the points above the slab differ in the other</span>
+                <span class="c1"># objectives only, which leaves far fewer bounds.  The region</span>
+                <span class="c1"># is the same without this step; the time is not.</span>
+                <span class="n">sub</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">sub</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">],</span> <span class="n">b</span><span class="p">)</span>
+                <span class="n">sub</span> <span class="o">=</span> <span class="n">sub</span><span class="p">[</span><span class="n">_non_dominated_mask</span><span class="p">(</span><span class="n">sub</span><span class="p">)]</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_box_cells</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+            <span class="n">lo</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">lo</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">],</span> <span class="n">a</span><span class="p">)</span>
+            <span class="n">hi</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">hi</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">],</span> <span class="n">b</span><span class="p">)</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">[:,</span> <span class="n">ax</span><span class="p">]</span>
+            <span class="n">los</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lo</span><span class="p">[</span><span class="n">keep</span><span class="p">])</span>
+            <span class="n">his</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hi</span><span class="p">[</span><span class="n">keep</span><span class="p">])</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">los</span><span class="p">)</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">his</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># value -&gt; row of [reference_min; front; reference_max], per objective</span>
+        <span class="c1"># (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">hi</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nf</span><span class="p">):</span>
+                <span class="n">index</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">=</span> <span class="n">nf</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lb</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lo</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
+            <span class="n">ub</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">hi</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_box_cells</span><span class="p">(</span><span class="n">front</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Boxes [lo, hi) that tile the region not dominated by ``front`` (the</span>
+<span class="sd">        two passes described before ``_local_upper_bounds``), as values:</span>
+<span class="sd">        -inf stands for reference_min and +inf for reference_max.</span>
+<span class="sd">        """</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># nothing is dominated</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="c1"># Any point strictly below the front gives the same boxes, so they do</span>
+        <span class="c1"># not depend on reference_min.  The next double below the front stays</span>
+        <span class="c1"># strictly below it at any magnitude, unlike front.min - 1, which</span>
+        <span class="c1"># rounds back to front.min beyond about 2**53; lo == rmin below would</span>
+        <span class="c1"># then also turn coordinates of the front into reference_min.</span>
+        <span class="n">rmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nextafter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">front</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
         <span class="c1"># pass 1: minimization of -front with reference point -rmin</span>
-        <span class="n">U1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">,</span> <span class="o">-</span><span class="n">rmin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
+        <span class="n">U1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Pareto</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="o">-</span><span class="n">front</span><span class="p">,</span> <span class="o">-</span><span class="n">rmin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
         <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">U1</span>  <span class="c1"># local lower bounds of the maximization problem</span>
         <span class="c1"># pass 2: points L (minimization), reference point +inf, dummies at rmin</span>
-        <span class="n">U2</span><span class="p">,</span> <span class="n">Z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="n">rmin</span><span class="p">)</span>
+        <span class="n">U2</span><span class="p">,</span> <span class="n">Z2</span> <span class="o">=</span> <span class="n">Pareto</span><span class="o">.</span><span class="n">_local_upper_bounds</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="n">rmin</span><span class="p">)</span>
         <span class="c1"># Eq. (2): l_1 = z^1_1(u), u_1 = inf; l_j = max_{i&lt;j} z^i_j(u), u_j = u_j</span>
         <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">U2</span><span class="p">)</span>
         <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">U2</span><span class="p">)</span>
@@ -700,20 +777,8 @@
             <span class="n">hi</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">U2</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
         <span class="n">keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">hi</span> <span class="o">&gt;</span> <span class="n">lo</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">hi</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="c1"># value -&gt; row of [reference_min; front; reference_max], per objective</span>
-        <span class="c1"># (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)</span>
-        <span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">lo</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">hi</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="p">{</span><span class="n">rmin</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nf</span><span class="p">):</span>
-                <span class="n">index</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">=</span> <span class="n">nf</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">lb</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lo</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
-            <span class="n">ub</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">hi</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="n">lo</span><span class="p">[</span><span class="n">lo</span> <span class="o">==</span> <span class="n">rmin</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>  <span class="c1"># compared objective by objective</span>
+        <span class="k">return</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__divide_2d</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
