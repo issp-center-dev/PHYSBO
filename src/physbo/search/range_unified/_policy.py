@@ -18,10 +18,10 @@ from .. import score as search_score
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng, attach_rng
-from .._policy_common import run_simulator
+from .._policy_common import _UnifiedObjectiveMethods, run_simulator
 
 
-class Policy(range_single.Policy):
+class Policy(_UnifiedObjectiveMethods, range_single.Policy):
     """Multi objective Bayesian optimization with continuous search space"""
 
     def __init__(
@@ -693,48 +693,6 @@ class Policy(range_single.Policy):
             f = np.hstack(fs)
         return f
 
-    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
-        """
-        Calculating permutation importance of model
-
-        Parameters
-        ==========
-        n_perm: int
-            number of permutations
-        split_features_parallel: bool
-            If true, split features in parallel.
-
-        Returns
-        =======
-        importance_mean: numpy.ndarray
-            importance_mean
-        importance_std: numpy.ndarray
-            importance_std
-        """
-
-        self._require_unified_training("get_permutation_importance()")
-        if self.predictor is None:
-            self._warn_no_predictor("get_permutation_importance()")
-            predictor = self._make_gp_predictor()
-            predictor.fit(self.training_unified, 0, rng=self.rng)
-            predictor.prepare(self.training_unified)
-            return predictor.get_permutation_importance(
-                self.training_unified,
-                n_perm,
-                comm=self.mpicomm,
-                split_features_parallel=split_features_parallel,
-                rng=self.rng,
-            )
-        else:
-            self._update_predictor()
-            return self.predictor.get_permutation_importance(
-                self.training_unified,
-                n_perm,
-                comm=self.mpicomm,
-                split_features_parallel=split_features_parallel,
-                rng=self.rng,
-            )
-
     def save(self, file_history, file_training=None, file_predictor=None):
         """Save the history, the training data and the predictor into files.
 
@@ -797,53 +755,3 @@ class Policy(range_single.Policy):
         else:
             # Assume it's already a Variable
             self.training = data
-
-    def _learn_hyperparameter(self, num_rand_basis):
-        self.training_unified = self._unify_training(self.training)
-        self.predictor.fit(self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng)
-        self.predictor.prepare(self.training_unified)
-        Z = self.predictor.get_basis(self.training_unified.X)
-        if Z is not None:
-            self.training_unified.Z = Z[np.newaxis, :, :]
-        self.new_data = None
-
-    def _update_predictor(self):
-        if self.new_data is not None:
-            self.training_unified = self._unify_training(self.training)
-            # the unified data carry the values of the basis functions, as
-            # after _learn_hyperparameter, so that virtual observations with
-            # Z can be added to them (several proposals per step)
-            Z = self.predictor.get_basis(self.training_unified.X)
-            if Z is not None:
-                self.training_unified.Z = Z[np.newaxis, :, :]
-            N = self.training_unified.t.shape[0]
-            n = self.new_data.t.shape[0]
-            new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
-            assert np.allclose(new_data_unified.X, self.new_data.X)
-            self.predictor.update(self.training_unified, new_data_unified)
-            self.new_data = None
-
-    def _require_unified_training(self, method_name):
-        """The unified training data, or RuntimeError when they are not built yet.
-
-        They are built by bayes_search, which receives ``unify_method``; before
-        the first bayes_search the policy cannot unify the objectives. load()
-        restores neither them nor unify_method, so after load() bayes_search
-        has to be called again as well.
-        """
-        if self.training_unified is None:
-            raise RuntimeError(
-                f"ERROR: {method_name} needs the unified training data, which are "
-                "built by bayes_search with unify_method. Call bayes_search first "
-                "(also after load(), which does not restore them); with "
-                "max_num_probes=0 and the default interval it only learns the "
-                "predictor without proposing a point."
-            )
-        return self.training_unified
-
-    def _unify_training(self, training: Variable) -> Variable:
-        """
-        Wrapper of the unify_method function
-        """
-        t_unified = self.unify_method(training.t)
-        return Variable(X=training.X, t=t_unified.reshape(-1, 1))
