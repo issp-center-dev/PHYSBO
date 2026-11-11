@@ -15,9 +15,7 @@ from ... import _mpi
 from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
-from ...misc import SetConfig
 from ..._variable import Variable
-from ..._rng import make_rng
 from .._policy_common import _MultiObjectiveMethods, run_simulator
 
 
@@ -34,48 +32,25 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
         rng=None,
     ):
         self.num_objectives = num_objectives
-        self.history = History(num_objectives=self.num_objectives)
+        super().__init__(
+            test_X, config=config, initial_data=initial_data, comm=comm, rng=rng
+        )
 
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.predictor_list = [None for _ in range(self.num_objectives)]
-        self.test = self._make_variable_X(test_X)
-        self.new_data = None
+    def _new_history(self):
+        return History(num_objectives=self.num_objectives)
 
-        self.actions = np.arange(0, test_X.shape[0])
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
-
-        self.TS_candidate_num = None
-
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
-                raise RuntimeError(msg)
-            actions, fs = initial_data
-            if fs.shape[1] != self.num_objectives:
-                msg = "ERROR: initial_data[1].shape[1] != num_objectives"
-                raise RuntimeError(msg)
-            if len(actions) != fs.shape[0]:
-                msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
-                raise RuntimeError(msg)
-            self.write(actions, fs)
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+            raise RuntimeError(msg)
+        actions, fs = initial_data
+        if fs.shape[1] != self.num_objectives:
+            msg = "ERROR: initial_data[1].shape[1] != num_objectives"
+            raise RuntimeError(msg)
+        if len(actions) != fs.shape[0]:
+            msg = "ERROR: len(initial_data[0]) != initial_data[1].shape[0]"
+            raise RuntimeError(msg)
+        self.write(actions, fs)
 
     def write(
         self,

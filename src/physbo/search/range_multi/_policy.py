@@ -15,9 +15,7 @@ from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
-from ...misc import SetConfig
 from ..._variable import Variable
-from ..._rng import make_rng
 from .._policy_common import _MultiObjectiveMethods, run_simulator
 
 
@@ -63,63 +61,36 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             Random number generator specification (default: "legacy").
             See physbo.search.discrete.Policy for details.
         """
-        # The constructor of range.Policy is not called: it sets up the history, the
-        # training data and initial_data for a single objective. This class inherits
-        # range.Policy only to share its helper methods, so everything the base
-        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
-        # must be set here as well.
-        if min_X is None or max_X is None:
-            raise ValueError("min_X and max_X must be specified")
-        self.min_X = np.array(min_X)
-        self.max_X = np.array(max_X)
-        self.L_X = self.max_X - self.min_X
-        self.dim = self.min_X.shape[0]
-        self.constraint = constraint
-
         self.num_objectives = num_objectives
-        self.history = History(num_objectives=self.num_objectives, dim=self.dim)
+        super().__init__(
+            min_X=min_X,
+            max_X=max_X,
+            constraint=constraint,
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
+        )
 
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.predictor_list = [None for _ in range(self.num_objectives)]
-        self.new_data = None
+    def _new_history(self):
+        return History(num_objectives=self.num_objectives, dim=self.dim)
 
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+            raise RuntimeError(msg)
+        init_X, fs = initial_data
+        assert init_X.shape[0] == len(fs), (
+            "The number of initial data must be the same"
+        )
+        assert init_X.shape[1] == self.dim, (
+            "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+        )
+        assert fs.shape[1] == self.num_objectives, (
+            "The number of objectives in initial_data[1] must be the same as num_objectives"
+        )
 
-        self.TS_candidate_num = None
-
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
-                raise RuntimeError(msg)
-            init_X, fs = initial_data
-            assert init_X.shape[0] == len(fs), (
-                "The number of initial data must be the same"
-            )
-            assert init_X.shape[1] == self.dim, (
-                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
-            )
-            assert fs.shape[1] == self.num_objectives, (
-                "The number of objectives in initial_data[1] must be the same as num_objectives"
-            )
-
-            self.write(init_X, fs)
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+        self.write(init_X, fs)
 
     def write(
         self,

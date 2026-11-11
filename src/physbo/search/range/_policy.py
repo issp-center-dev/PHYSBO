@@ -16,14 +16,11 @@ from .. import utility
 from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
 from ... import _mpi
-from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
-from ..._rng import make_rng
-from .._checkpoint import CheckpointMixin
-from .._policy_common import _PolicyCommon, run_simulator
+from .._policy_common import _PolicyBase, run_simulator
 
 
-class Policy(_PolicyCommon, CheckpointMixin):
+class Policy(_PolicyBase):
     """Single objective Bayesian optimization with continuous search space"""
 
     #: No constraint, for subclasses whose constructor does not set it.
@@ -71,12 +68,6 @@ class Policy(_PolicyCommon, CheckpointMixin):
             Random number generator specification (default: "legacy").
             See physbo.search.discrete.Policy for details.
         """
-
-        self.predictor = None
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.new_data = None
-
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
         self.min_X = np.array(min_X)
@@ -90,38 +81,28 @@ class Policy(_PolicyCommon, CheckpointMixin):
         )
         self.L_X = self.max_X - self.min_X
         self.constraint = constraint
-        self.history = History(dim=self.dim)
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
 
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
-                raise RuntimeError(msg)
-            init_X, fs = initial_data
-            fs_normalized = normalize_t(fs, k=1)
-            assert init_X.shape[0] == fs_normalized.shape[0], (
-                "The number of initial data must be the same"
-            )
-            assert init_X.shape[1] == self.dim, (
-                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
-            )
-            self.write(init_X, fs_normalized)
+        super().__init__(config=config, initial_data=initial_data, comm=comm, rng=rng)
 
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+    def _new_history(self):
+        return History(dim=self.dim)
+
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
+            raise RuntimeError(msg)
+        init_X, fs = initial_data
+        fs_normalized = normalize_t(fs, k=1)
+        assert init_X.shape[0] == fs_normalized.shape[0], (
+            "The number of initial data must be the same"
+        )
+        assert init_X.shape[1] == self.dim, (
+            "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+        )
+        self.write(init_X, fs_normalized)
+
+    def _show_search_results(self, N, N_indeed):
+        self.history.show_search_results(N_indeed)
 
     def write(
         self,

@@ -19,12 +19,11 @@ from ... import _mpi
 from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
-from ..._rng import get_rng, make_rng
-from .._checkpoint import CheckpointMixin
-from .._policy_common import _PolicyCommon, run_simulator
+from ..._rng import get_rng
+from .._policy_common import _PolicyBase, run_simulator
 
 
-class Policy(_PolicyCommon, CheckpointMixin):
+class Policy(_PolicyBase):
     """Single objective Bayesian optimization with discrete search space"""
 
     predictor: Optional[Any]
@@ -103,43 +102,30 @@ class Policy(_PolicyCommon, CheckpointMixin):
             stored on the policy (and thus included when the policy is
             pickled). Under MPI, pass the same specification on all ranks.
         """
-        self.predictor = None
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.new_data = None
         self.test = self._make_variable_X(test_X)
         self.actions = np.arange(0, self.test.X.shape[0])
-        self.history = History()
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
+        super().__init__(config=config, initial_data=initial_data, comm=comm, rng=rng)
 
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
-                raise RuntimeError(msg)
-            actions, fs = initial_data
-            if len(actions) != len(fs):
-                msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
-                raise RuntimeError(msg)
-            # Normalize fs to (N, 1) shape before passing to write()
-            fs_normalized = normalize_t(fs, k=1)
-            self.write(actions, fs_normalized)
+    def _new_history(self):
+        return History()
 
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+            raise RuntimeError(msg)
+        actions, fs = initial_data
+        if len(actions) != len(fs):
+            msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
+            raise RuntimeError(msg)
+        # Normalize fs to (N, 1) shape before passing to write()
+        fs_normalized = normalize_t(fs, k=1)
+        self.write(actions, fs_normalized)
+
+    def _split_candidates(self):
+        self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
+
+    def _show_search_results(self, N, N_indeed):
+        utility.show_search_results(self.history, N_indeed)
 
     def write(
         self,

@@ -7,23 +7,32 @@
 
 """Code shared by the six policies.
 
-The policies of the discrete and of the range search spaces, and those of
-one, several and unified objectives, repeat a good part of their code.
-What is literally the same is kept here: a function, and classes that only
-hold methods (no state and no constructor of their own) and are listed
-among the bases of the policies that share them.
+``_PolicyBase`` is the base class of the six policies: the state they all
+have, the loop of random_search and bayes_search, and the helpers that do
+not depend on the kind of policy. What depends on it is asked from the
+policy through a few methods (hooks), named in the docstrings below.
+
+``_MultiObjectiveMethods`` and ``_UnifiedObjectiveMethods`` hold what the
+policies of several and of unified objectives share between the two search
+spaces. They have no constructor and are listed before the single-objective
+policy among the bases of the policies that use them.
 """
 
+import copy
 import pickle
+import time
 
 import numpy as np
 
+from . import utility
+from ._checkpoint import CheckpointMixin
 from .. import _mpi
 from .. import gp
 from ..gp import Predictor as gp_predictor
 from ..blm import Predictor as blm_predictor
+from ..misc import SetConfig
 from .._variable import Variable
-from .._rng import LegacyRNG
+from .._rng import LegacyRNG, make_rng
 
 
 def run_simulator(simulator, action, comm=None):
@@ -57,19 +66,304 @@ def run_simulator(simulator, action, comm=None):
     return _mpi.bcast(comm, t, error, root=0)
 
 
-class _PolicyCommon:
-    """Methods that the policies of both search spaces share.
+class _PolicyBase(CheckpointMixin):
+    """Base class of the six policies.
 
-    The policies of the discrete and of the range search space list this
-    class among their bases; the policies of several and of unified
-    objectives get its methods through them.
+    The constructor of a policy sets the attributes of its search space (and
+    ``num_objectives``) and then calls the constructor of this class, which
+    sets up the rest and asks the policy for what depends on its kind:
+
+    - ``_init_predictor_state()``: the attributes that hold the predictor(s);
+    - ``_new_history()``: the history object;
+    - ``_write_initial_data(initial_data)``: check and record the initial data;
+    - ``_split_candidates()``: keep the share of this process of the
+      candidates (discrete search space).
+
+    random_search and bayes_search of the policies keep their signatures and
+    docstrings and call ``_random_search`` and ``_bayes_search``, which run
+    the loop ``_search_loop`` and use:
+
+    - ``_get_random_action(N)`` and the proposal function given by the policy;
+    - ``_prepare_predictor(predictor, is_rand_expans)``,
+      ``_learn_hyperparameter(num_rand_basis)`` and ``_update_predictor()``;
+    - ``write(...)`` to record a step;
+    - ``_show_search_results(N, N_indeed, ...)`` to print it.
     """
+
+    def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
+        self.rng = make_rng(rng)
+        self.training = Variable()
+        self.new_data = None
+        self._init_predictor_state()
+        self.history = self._new_history()
+        if config is None:
+            self.config = SetConfig()
+        else:
+            self.config = config
+
+        self.ard = False
+        if initial_data is not None:
+            self._write_initial_data(initial_data)
+
+        if comm is None:
+            self.mpicomm = None
+            self.mpisize = 1
+            self.mpirank = 0
+        else:
+            self.mpicomm = comm
+            self.mpisize = comm.size
+            self.mpirank = comm.rank
+            self._split_candidates()
+            self.config.learning.is_disp = (
+                self.config.learning.is_disp and self.mpirank == 0
+            )
+
+    def _init_predictor_state(self):
+        """Create the attributes that hold the predictor(s), not built yet."""
+        self.predictor = None
+
+    def _new_history(self):
+        """The (empty) history object of the policy."""
+        raise NotImplementedError
+
+    def _write_initial_data(self, initial_data):
+        """Check ``initial_data`` and record it with write()."""
+        raise NotImplementedError
+
+    def _split_candidates(self):
+        """Keep the share of this process of the candidates. Nothing to do
+        unless the search space is a list of candidates."""
 
     @property
     def _comm(self):
         """The communicator for collective calls, or None in a serial run
         (also when a communicator of a single process was given)."""
         return self.mpicomm if self.mpisize > 1 else None
+
+    def _show_search_results(self, N, N_indeed, **options):
+        """Print the results of the step just recorded: ``N`` points were
+        asked for and ``N_indeed`` proposed."""
+        raise NotImplementedError
+
+    def _search_loop(
+        self,
+        max_num_probes,
+        N,
+        simulator,
+        is_disp,
+        propose,
+        *,
+        update_predictor=None,
+        score=None,
+        stop_when_exhausted=True,
+        **show_options,
+    ):
+        """
+        The steps of random_search and bayes_search.
+
+        Each step proposes points with ``propose()``, runs the simulator on
+        them and records the result with write().
+
+        Parameters
+        ----------
+        max_num_probes: int
+            Number of steps.
+        N: int
+            Number of points asked for in each step.
+        simulator: callable or None
+            None for the interactive mode, in which the first proposal is
+            returned instead of being evaluated.
+        is_disp: bool
+            Whether to print the progress.
+        propose: callable
+            Returns the proposal of a step.
+        update_predictor: callable, optional
+            Called with the index of the step before the proposal
+            (bayes_search); its time is recorded.
+        score: optional
+            The acquisition function, for the header of a step of several
+            points; None in random_search.
+        stop_when_exhausted: bool
+            Stop, with a warning, when a step proposes no point, and record
+            the number of points proposed instead of ``N``.
+        show_options:
+            Passed to ``_show_search_results``.
+
+        Returns
+        -------
+        The proposal in the interactive mode, None otherwise.
+        """
+        for n in range(0, max_num_probes):
+            time_total = time.time()
+
+            if update_predictor is not None:
+                time_update_predictor = time.time()
+                update_predictor(n)
+                time_update_predictor = time.time() - time_update_predictor
+
+            if is_disp and N > 1:
+                utility.show_start_message_multi_search(
+                    self.history.num_runs,
+                    None if score is None else utility.score_name(score),
+                )
+
+            time_get_action = time.time()
+            action = propose()
+            time_get_action = time.time() - time_get_action
+
+            N_indeed = N
+            if stop_when_exhausted:
+                N_indeed = len(action)
+                if N_indeed == 0:
+                    if self.mpirank == 0:
+                        print("WARNING: All actions have already searched.")
+                    break
+
+            if simulator is None:
+                return action
+
+            time_run_simulator = time.time()
+            t = run_simulator(simulator, action, self.mpicomm)
+            time_run_simulator = time.time() - time_run_simulator
+
+            time_total = time.time() - time_total
+            if update_predictor is None:
+                times_update_predictor = np.zeros(N_indeed, dtype=float)
+            else:
+                times_update_predictor = [time_update_predictor] * N_indeed
+            self.write(
+                action,
+                t,
+                time_total=[time_total] * N_indeed,
+                time_update_predictor=times_update_predictor,
+                time_get_action=[time_get_action] * N_indeed,
+                time_run_simulator=[time_run_simulator] * N_indeed,
+            )
+
+            if is_disp:
+                self._show_search_results(N, N_indeed, **show_options)
+        return None
+
+    def _random_search(
+        self,
+        max_num_probes,
+        num_search_each_probe,
+        simulator,
+        is_disp,
+        **loop_options,
+    ):
+        """The body of random_search of the six policies; ``loop_options``
+        are passed to ``_search_loop``."""
+        if self.mpirank != 0:
+            is_disp = False
+
+        N = int(num_search_each_probe)
+
+        if is_disp:
+            utility.show_interactive_mode(simulator, self.history)
+
+        proposal = self._search_loop(
+            max_num_probes,
+            N,
+            simulator,
+            is_disp,
+            lambda: self._get_random_action(N),
+            **loop_options,
+        )
+        if proposal is not None:
+            return proposal
+        return copy.deepcopy(self.history)
+
+    def _prepare_predictor(self, predictor, is_rand_expans):
+        """Set the predictor for a bayes_search: the one given, else the one
+        the policy has, else a new one (a Bayesian linear model if
+        ``is_rand_expans``, a Gaussian process otherwise)."""
+        if predictor is not None:
+            self.predictor = predictor
+        elif self.predictor is None:
+            self._init_predictor(is_rand_expans)
+
+    def _bayes_search(
+        self,
+        score,
+        propose,
+        *,
+        training,
+        predictor,
+        max_num_probes,
+        num_search_each_probe,
+        simulator,
+        is_disp,
+        interval,
+        num_rand_basis,
+        ard,
+        **show_options,
+    ):
+        """
+        The body of bayes_search of the six policies.
+
+        ``score`` is the acquisition function already resolved, and
+        ``propose(N, K, alpha)`` returns the proposal of a step (``K`` and
+        ``alpha`` are read from the config). ``training`` and ``predictor``
+        are what the caller gave (``training_list`` / ``predictor_list`` in
+        the multi-objective policies) or None. The other arguments are those
+        of bayes_search; ``show_options`` are passed to
+        ``_show_search_results``.
+        """
+        if self.mpirank != 0:
+            is_disp = False
+
+        old_disp = self.config.learning.is_disp
+        self.config.learning.is_disp = is_disp
+
+        if max_num_probes is None:
+            max_num_probes = 1
+            simulator = None
+
+        is_rand_expans = num_rand_basis != 0
+        self.ard = ard
+
+        if training is not None:
+            self.training = training
+
+        self._prepare_predictor(predictor, is_rand_expans)
+
+        if max_num_probes > 0 or interval >= 0:
+            utility.require_training_data(self.training)
+
+        if max_num_probes == 0 and interval >= 0:
+            self._learn_hyperparameter(num_rand_basis)
+
+        N = int(num_search_each_probe)
+
+        def update_predictor(n):
+            if utility.is_learning(n, interval):
+                self._learn_hyperparameter(num_rand_basis)
+            else:
+                self._update_predictor()
+
+        def propose_step():
+            K = self.config.search.multi_probe_num_sampling
+            alpha = self.config.search.alpha
+            return propose(N, K, alpha)
+
+        proposal = self._search_loop(
+            max_num_probes,
+            N,
+            simulator,
+            is_disp,
+            propose_step,
+            update_predictor=update_predictor,
+            score=score,
+            **show_options,
+        )
+        if proposal is not None:
+            self.config.learning.is_disp = old_disp
+            return proposal
+
+        self._update_predictor()
+        self.config.learning.is_disp = old_disp
+        return copy.deepcopy(self.history)
 
     def _init_predictor(self, is_rand_expans):
         """
@@ -86,19 +380,21 @@ class _PolicyCommon:
         else:
             self.predictor = self._make_gp_predictor()
 
-    def _make_blm_predictor(self):
-        """Create a BLM predictor, with ARD if self.ard is True."""
+    def _make_predictor(self, predictor_class):
+        """Create a predictor of the given class with the default model,
+        with ARD if self.ard is True."""
         ard = self.ard
         num_dim = self.get_num_dim()
         model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return blm_predictor(self.config, model=model)
+        return predictor_class(self.config, model=model)
+
+    def _make_blm_predictor(self):
+        """Create a BLM predictor, with ARD if self.ard is True."""
+        return self._make_predictor(blm_predictor)
 
     def _make_gp_predictor(self):
         """Create a GP predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return gp_predictor(self.config, model=model)
+        return self._make_predictor(gp_predictor)
 
     def _make_variable_X(self, test_X):
         """
@@ -214,6 +510,28 @@ class _MultiObjectiveMethods:
     ``discrete_multi.Policy`` and ``range_multi.Policy``, so that these
     methods replace the single-objective ones.
     """
+
+    def _init_predictor_state(self):
+        self.predictor_list = [None for _ in range(self.num_objectives)]
+        self.TS_candidate_num = None
+
+    def _prepare_predictor(self, predictor_list, is_rand_expans):
+        """Set the predictors for a bayes_search: those given, else new ones
+        (the multi-objective policies do not keep theirs between calls)."""
+        if predictor_list is None:
+            if is_rand_expans:
+                self.predictor_list = [
+                    self._make_blm_predictor() for i in range(self.num_objectives)
+                ]
+            else:
+                self.predictor_list = [
+                    self._make_gp_predictor() for i in range(self.num_objectives)
+                ]
+        else:
+            self.predictor_list = predictor_list
+
+    def _show_search_results(self, N, N_indeed, disp_pareto_set=False):
+        utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
 
     @staticmethod
     def _stack_basis(predictors, X):
@@ -430,6 +748,21 @@ class _UnifiedObjectiveMethods:
     policy among the bases of ``discrete_unified.Policy`` and
     ``range_unified.Policy``.
     """
+
+    def _init_predictor_state(self):
+        self.training_unified = None
+        self.predictor = None
+
+    def _prepare_predictor(self, predictor, is_rand_expans):
+        """Set the predictor for a bayes_search: the one given, else a new
+        one (the unified policies do not keep theirs between calls)."""
+        if predictor is None:
+            self._init_predictor(is_rand_expans)
+        else:
+            self.predictor = predictor
+
+    def _show_search_results(self, N, N_indeed, disp_pareto_set=False):
+        utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
 
     def _attach_unified_basis(self, variable):
         """Give ``variable`` the values of the basis functions of the unified
