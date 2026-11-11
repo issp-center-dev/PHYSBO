@@ -388,14 +388,174 @@ class Pareto(object):
         else:
             return v_all - v_non_dom
 
-    def divide_non_dominated_region(self, force_binary_search=False, debug=False):
+    def divide_non_dominated_region(
+        self, force_binary_search=False, debug=False, method="auto"
+    ):
+        """
+        Partition the region not dominated by the front into disjoint
+        hyper-rectangles, stored in ``self.cells`` as index bounds into
+        ``[reference_min; front; reference_max]``.
+
+        Parameters
+        ----------
+        force_binary_search: bool
+            Same as ``method="binary_search"``.
+        debug: bool
+            Print timings of the binary search.
+        method: str
+            ``"auto"`` (default): vertical strips for 2 objectives, ``"box"``
+            otherwise.
+            ``"box"``: the box decomposition of Lacour, Klamroth and Fonseca
+            (2017), built from local upper bounds as in BoTorch's
+            ``FastNondominatedPartitioning``.  Far fewer cells than the binary
+            search for 3 or more objectives (4 objectives, 150 front points:
+            about 1,600 instead of 2.7 million).
+            ``"binary_search"``: recursive bisection of the bounding box.
+
+        All methods cover the same region, so EHVI, HVPI and
+        ``volume_in_dominance`` agree up to rounding.
+        """
+        if force_binary_search:
+            method = "binary_search"
+        if method not in ("auto", "box", "binary_search"):
+            raise ValueError(
+                f"unknown method {method!r} (use 'auto', 'box' or 'binary_search')"
+            )
         # clear rectangles
         self.cells = Rectangles(self.num_objectives, int)
 
-        if self.num_objectives == 2 and not force_binary_search:
+        if method == "binary_search":
+            self.__divide_using_binary_search(debug=debug)
+        elif self.num_objectives == 2 and method == "auto":
             self.__divide_2d()
         else:
-            self.__divide_using_binary_search(debug=debug)
+            self.__divide_box_decomposition()
+
+    # --- Box decomposition from local upper bounds ---------------------------
+    #
+    # Lacour, Klamroth & Fonseca, "A box decomposition algorithm to compute the
+    # hypervolume indicator", Computers & Operations Research 79 (2017)
+    # 347-360.  Algorithm 1 maintains, for a minimization problem, the local
+    # upper bounds U of the search region and for each u in U its defining
+    # points z^j(u) (one per objective).  Following BoTorch's
+    # FastNondominatedPartitioning (MIT licence), the region not dominated by
+    # the front of a maximization problem is decomposed in two passes:
+    #   1. Algorithm 1 on the negated front gives local upper bounds U; -U are
+    #      the local lower bounds of the maximization problem.
+    #   2. Algorithm 1 again, with -U as the points of a minimization problem
+    #      whose reference point is +inf; Eq. (2) of the paper turns its local
+    #      upper bounds and defining points into disjoint boxes that tile the
+    #      region not dominated by the front above reference_min.
+    # Every box coordinate is a coordinate of the front, of reference_min or
+    # +inf (mapped to reference_max), so the boxes are stored as index bounds.
+    #
+    # _local_upper_bounds and the conversion by Eq. (2) in
+    # __divide_box_decomposition are adapted from BoTorch
+    # (botorch/utils/multi_objective/box_decompositions/utils.py:
+    # compute_local_upper_bounds and get_partition_bounds), which is
+    # distributed under the following licence:
+    #
+    #   MIT License
+    #
+    #   Copyright (c) Meta Platforms, Inc. and affiliates.
+    #
+    #   Permission is hereby granted, free of charge, to any person obtaining
+    #   a copy of this software and associated documentation files (the
+    #   "Software"), to deal in the Software without restriction, including
+    #   without limitation the rights to use, copy, modify, merge, publish,
+    #   distribute, sublicense, and/or sell copies of the Software, and to
+    #   permit persons to whom the Software is furnished to do so, subject to
+    #   the following conditions:
+    #
+    #   The above copyright notice and this permission notice shall be
+    #   included in all copies or substantial portions of the Software.
+    #
+    #   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    #   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    #   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    #   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    #   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    #   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    #   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    @staticmethod
+    def _local_upper_bounds(points, ref, fill_value):
+        """
+        Algorithm 1 of Lacour et al. (minimization): local upper bounds of the
+        points (rows) inside the box bounded above by ``ref``.
+
+        Returns ``U`` (k x M) and the defining points ``Z`` (k x M x M) with
+        ``Z[k, :, j]`` the defining point z^j of ``U[k]``.  The dummy defining
+        points have ``ref[j]`` on the diagonal and ``fill_value`` elsewhere.
+        """
+        M = len(ref)
+        Z0 = np.repeat(np.asarray(fill_value, dtype=float)[:, None], M, axis=1)
+        Z0[np.arange(M), np.arange(M)] = ref
+        U = np.asarray(ref, dtype=float)[None, :].copy()
+        Z = Z0[None, :, :]
+        off = ~np.eye(M, dtype=bool)
+        for z in points:
+            hit = np.all(U > z, axis=1)
+            if not hit.any():
+                continue
+            Uh, Zh = U[hit], Z[hit]
+            newU, newZ = [U[~hit]], [Z[~hit]]
+            for j in range(M):
+                # max over the other defining points of their j-th coordinate
+                zmax = np.max(Zh[:, j, off[j]], axis=1, initial=-np.inf)
+                ok = z[j] >= zmax
+                if ok.any():
+                    u2 = Uh[ok].copy()
+                    u2[:, j] = z[j]
+                    z2 = Zh[ok].copy()
+                    z2[:, :, j] = z
+                    newU.append(u2)
+                    newZ.append(z2)
+            U = np.concatenate(newU)
+            Z = np.concatenate(newZ)
+        return U, Z
+
+    def __divide_box_decomposition(self):
+        M = self.num_objectives
+        nf = self.front.shape[0]
+        if nf == 0:  # the whole box, as the binary search gives
+            self.cells.add(np.zeros((1, M), dtype=int), np.ones((1, M), dtype=int))
+            return
+        # Any point strictly below the front gives the same cells (as index
+        # bounds, row 0 = reference_min), so the cells do not depend on
+        # reference_min.  The next double below the front stays strictly
+        # below it at any magnitude, unlike front.min - 1, which rounds back
+        # to front.min beyond about 2**53.
+        rmin = np.nextafter(np.min(self.front, axis=0), -np.inf)
+        # pass 1: minimization of -front with reference point -rmin
+        U1, _ = self._local_upper_bounds(-self.front, -rmin, np.full(M, -np.inf))
+        L = -U1  # local lower bounds of the maximization problem
+        # pass 2: points L (minimization), reference point +inf, dummies at rmin
+        U2, Z2 = self._local_upper_bounds(L, np.full(M, np.inf), rmin)
+        # Eq. (2): l_1 = z^1_1(u), u_1 = inf; l_j = max_{i<j} z^i_j(u), u_j = u_j
+        lo = np.empty_like(U2)
+        hi = np.empty_like(U2)
+        lo[:, 0] = Z2[:, 0, 0]
+        hi[:, 0] = np.inf
+        for j in range(1, M):
+            lo[:, j] = np.max(Z2[:, j, :j], axis=1)
+            hi[:, j] = U2[:, j]
+        keep = np.all(hi > lo, axis=1)
+        lo, hi = lo[keep], hi[keep]
+        if lo.shape[0] == 0:
+            return
+        # value -> row of [reference_min; front; reference_max], per objective
+        # (+ 0.0 turns -0.0 into 0.0 so that both map to the same key)
+        lb = np.empty(lo.shape, dtype=int)
+        ub = np.empty(hi.shape, dtype=int)
+        for d in range(M):
+            index = {rmin[d] + 0.0: 0}
+            for i in range(nf):
+                index.setdefault(self.front[i, d] + 0.0, i + 1)
+            index[np.inf] = nf + 1
+            lb[:, d] = [index[x + 0.0] for x in lo[:, d]]
+            ub[:, d] = [index[x + 0.0] for x in hi[:, d]]
+        self.cells.add(lb, ub)
 
     def __divide_2d(self):
         """
