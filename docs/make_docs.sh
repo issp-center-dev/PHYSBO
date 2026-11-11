@@ -38,6 +38,12 @@ for lang in ${LANGS}; do
   for policy in discrete discrete_multi discrete_unified range range_multi range_unified; do
     rst="$DOCS_DIR/$lang/source/api/physbo.search.$policy.rst"
     awk '{print} /^   :members:$/ {print "   :inherited-members:"}' "$rst" >"$rst.tmp" && mv "$rst.tmp" "$rst"
+    # stop if the page does not have the form expected above, rather than
+    # build a reference without the inherited methods
+    if ! grep -q '^   :inherited-members:$' "$rst"; then
+      echo "ERROR: could not add :inherited-members: to $rst"
+      exit 1
+    fi
   done
 
   # Build documentation
