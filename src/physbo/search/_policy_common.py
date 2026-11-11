@@ -215,6 +215,15 @@ class _MultiObjectiveMethods:
     methods replace the single-objective ones.
     """
 
+    @staticmethod
+    def _stack_basis(predictors, X):
+        """The values at ``X`` of the basis functions of the predictors of
+        the objectives, stacked into the (k, N, n) form of the training
+        data, or None with Gaussian process predictors, which have no basis
+        functions."""
+        z = [p.get_basis(X) for p in predictors]
+        return np.stack(z, axis=0) if z[0] is not None else None
+
     def get_post_fmean(self, xs):
         """
         Calculate mean value of predictors (post distribution)
@@ -422,6 +431,15 @@ class _UnifiedObjectiveMethods:
     ``range_unified.Policy``.
     """
 
+    def _attach_unified_basis(self, variable):
+        """Give ``variable`` the values of the basis functions of the unified
+        predictor at its points, in the (1, N, n) form of the training data.
+        Nothing is done with the Gaussian process predictor, which has no
+        basis functions."""
+        Z = self.predictor.get_basis(variable.X)
+        if Z is not None:
+            variable.Z = Z[np.newaxis, :, :]
+
     def _require_unified_training(self, method_name):
         """The unified training data, or RuntimeError when they are not built yet.
 
@@ -453,9 +471,7 @@ class _UnifiedObjectiveMethods:
             # the unified data carry the values of the basis functions, as
             # after _learn_hyperparameter, so that virtual observations with
             # Z can be added to them (several proposals per step)
-            Z = self.predictor.get_basis(self.training_unified.X)
-            if Z is not None:
-                self.training_unified.Z = Z[np.newaxis, :, :]
+            self._attach_unified_basis(self.training_unified)
             N = self.training_unified.t.shape[0]
             n = self.new_data.t.shape[0]
             new_data_unified = self.training_unified.get_subset(np.arange(N - n, N))
@@ -512,7 +528,5 @@ class _UnifiedObjectiveMethods:
             self.training_unified, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
         self.predictor.prepare(self.training_unified)
-        Z = self.predictor.get_basis(self.training_unified.X)
-        if Z is not None:
-            self.training_unified.Z = Z[np.newaxis, :, :]
+        self._attach_unified_basis(self.training_unified)
         self.new_data = None

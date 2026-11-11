@@ -114,13 +114,7 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             Z = self.test.Z[:, action, :] if self.test.Z is not None else None
         else:
             if self.predictor_list[0] is not None:
-                z = []
-                for p in self.predictor_list:
-                    z.append(p.get_basis(X))
-                if z[0] is not None:
-                    Z = np.stack(z, axis=0)
-                else:
-                    Z = None
+                Z = self._stack_basis(self.predictor_list, X)
             else:
                 Z = None
 

@@ -652,9 +652,7 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
                 # multi-objective candidates), so compute them for the virtual
                 # observations as the unified training data have them; None
                 # with the GP predictor
-                Z = self.predictor.get_basis(virtual_train.X)
-                if Z is not None:
-                    virtual_train.Z = Z[np.newaxis, :, :]
+                self._attach_unified_basis(virtual_train)
             train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
 
             predictor.update(train, virtual_train)

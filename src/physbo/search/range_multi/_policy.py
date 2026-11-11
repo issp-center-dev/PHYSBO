@@ -160,13 +160,7 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         )
 
         if self.predictor_list[0] is not None:
-            z = []
-            for p in self.predictor_list:
-                z.append(p.get_basis(X))
-            if z[0] is not None:
-                Z = np.stack(z, axis=0)
-            else:
-                Z = None
+            Z = self._stack_basis(self.predictor_list, X)
         else:
             Z = None
 
@@ -499,8 +493,7 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
                 # with Bayesian linear models the training data carry the
                 # values of the basis functions of every objective, so the
                 # virtual observations must too (as in write)
-                z = [p.get_basis(X[0:n, :]) for p in predictors]
-                Z = np.stack(z, axis=0) if z[0] is not None else None
+                Z = self._stack_basis(predictors, X[0:n, :])
                 virtual_trainings = [Variable(X=X[0:n, :], Z=Z) for _ in range(K)]
                 virtual_t = np.zeros((K, n, self.num_objectives))
                 for i in range(self.num_objectives):
