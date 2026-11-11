@@ -23,6 +23,7 @@ from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 from ..._rng import make_rng, LegacyRNG
 from .._checkpoint import CheckpointMixin
+from .._policy_common import run_simulator
 
 
 class Policy(CheckpointMixin):
@@ -261,7 +262,7 @@ class Policy(CheckpointMixin):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = normalize_t(run_simulator(simulator, action, self.mpicomm), k=1)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -411,7 +412,7 @@ class Policy(CheckpointMixin):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = normalize_t(run_simulator(simulator, action, self.mpicomm), k=1)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -1105,33 +1106,3 @@ class Policy(CheckpointMixin):
         else:
             raise TypeError("The type of test_X must be ndarray or physbo.Variable")
         return test
-
-
-def _run_simulator(simulator, action, comm=None):
-    """
-    Run simulator and normalize return value to (N, 1) shape.
-
-    Parameters
-    ----------
-    simulator: callable
-        Function that takes action and returns t value(s)
-    action: numpy.ndarray
-        Array of actions
-    comm: MPI.Comm, optional
-        MPI communicator
-
-    Returns
-    -------
-    numpy.ndarray
-        Normalized array with shape (N, 1)
-    """
-    if comm is None:
-        t = simulator(action)
-    else:
-        if comm.rank == 0:
-            t, error = _mpi.call(comm, simulator, action)
-        else:
-            t, error = 0.0, None
-        t = _mpi.bcast(comm, t, error, root=0)
-
-    return normalize_t(t, k=1)

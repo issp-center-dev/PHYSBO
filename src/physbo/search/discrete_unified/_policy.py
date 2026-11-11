@@ -18,6 +18,7 @@ from .. import score as search_score
 from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 from ..._rng import make_rng, attach_rng
+from .._policy_common import run_simulator
 
 
 class Policy(discrete.Policy):
@@ -188,7 +189,7 @@ class Policy(discrete.Policy):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = run_simulator(simulator, action, self.mpicomm)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -349,7 +350,7 @@ class Policy(discrete.Policy):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = run_simulator(simulator, action, self.mpicomm)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -852,12 +853,3 @@ class Policy(discrete.Policy):
         """
         t_unified = self.unify_method(training.t)
         return Variable(X=training.X, t=t_unified.reshape(-1, 1))
-
-def _run_simulator(simulator, action, comm=None):
-    if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
-        t, error = _mpi.call(comm, simulator, action)
-    else:
-        t, error = 0.0, None
-    return _mpi.bcast(comm, t, error, root=0)

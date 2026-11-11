@@ -18,6 +18,7 @@ from .. import score_multi as search_score
 from ...misc import SetConfig
 from ..._variable import Variable
 from ..._rng import make_rng
+from .._policy_common import run_simulator
 
 
 class Policy(discrete.Policy):
@@ -181,7 +182,7 @@ class Policy(discrete.Policy):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = run_simulator(simulator, action, self.mpicomm)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -337,7 +338,7 @@ class Policy(discrete.Policy):
                 return action
 
             time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
+            t = run_simulator(simulator, action, self.mpicomm)
             time_run_simulator = time.time() - time_run_simulator
 
             time_total = time.time() - time_total
@@ -848,13 +849,3 @@ class Policy(discrete.Policy):
                     self.training, self.new_data, objective_index=i
                 )
             self.new_data = None
-
-
-def _run_simulator(simulator, action, comm=None):
-    if comm is None:
-        return simulator(action)
-    if comm.rank == 0:
-        t, error = _mpi.call(comm, simulator, action)
-    else:
-        t, error = 0.0, None
-    return _mpi.bcast(comm, t, error, root=0)
