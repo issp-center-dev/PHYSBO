@@ -32,6 +32,14 @@ for lang in ${LANGS}; do
   rm -rf "$DOCS_DIR/$lang/source/api"
   sphinx-apidoc -f -T -d 3 -e -o "$DOCS_DIR/$lang/source/api" "$ROOT_DIR/src/physbo"
 
+  # The policies share methods through base classes of a private module
+  # (physbo/search/_policy_common.py), so list the inherited methods on the
+  # page of each policy; elsewhere inherited members stay out.
+  for policy in discrete discrete_multi discrete_unified range range_multi range_unified; do
+    rst="$DOCS_DIR/$lang/source/api/physbo.search.$policy.rst"
+    awk '{print} /^   :members:$/ {print "   :inherited-members:"}' "$rst" >"$rst.tmp" && mv "$rst.tmp" "$rst"
+  done
+
   # Build documentation
   sphinx-build -d "$DOCS_OUT/doctree/$lang" "$DOCS_DIR/$lang/source" "$DOCS_OUT/manual/$lang" --color -bhtml
 done
