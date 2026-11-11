@@ -523,10 +523,14 @@ class Pareto(object):
             return
         # Any point strictly below the front gives the same cells (as index
         # bounds, row 0 = reference_min), so the cells do not depend on
-        # reference_min.  The next double below the front stays strictly
-        # below it at any magnitude, unlike front.min - 1, which rounds back
-        # to front.min beyond about 2**53.
-        rmin = np.nextafter(np.min(self.front, axis=0), -np.inf)
+        # reference_min.  For a finite front the next double below it stays
+        # strictly below at any magnitude, unlike front.min - 1, which can
+        # round back to front.min at large magnitudes (e.g. 1e17).  It is
+        # -inf below -DBL_MAX (overflow) and a subnormal below 0.0
+        # (underflow); both are valid placeholders, so these flags are not
+        # raised.
+        with np.errstate(over="ignore", under="ignore"):
+            rmin = np.nextafter(np.min(self.front, axis=0), -np.inf)
         # pass 1: minimization of -front with reference point -rmin
         U1, _ = self._local_upper_bounds(-self.front, -rmin, np.full(M, -np.inf))
         L = -U1  # local lower bounds of the maximization problem
