@@ -14,6 +14,8 @@ hold methods (no state and no constructor of their own) and are listed
 among the bases of the policies that share them.
 """
 
+import pickle
+
 import numpy as np
 
 from .. import _mpi
@@ -202,3 +204,209 @@ class _PolicyCommon:
             self.rng.seed(self.seed)
         else:
             self.rng = np.random.default_rng(self.seed)
+
+
+class _MultiObjectiveMethods:
+    """Methods that the multi-objective policies of both search spaces share.
+
+    They keep one predictor per objective (``predictor_list``). The class
+    is listed before the single-objective policy among the bases of
+    ``discrete_multi.Policy`` and ``range_multi.Policy``, so that these
+    methods replace the single-objective ones.
+    """
+
+    def get_post_fmean(self, xs):
+        """
+        Calculate mean value of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.Variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives).
+        """
+        if self.predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fmean()")
+            predictor_list = []
+            for i in range(self.num_objectives):
+                predictor = self._make_gp_predictor()
+                predictor.fit(
+                    self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng
+                )
+                predictor.prepare(self.training, objective_index=i)
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
+        fmean = [
+            predictor.get_post_fmean(self.training, X, objective_index=i)
+            for i, predictor in enumerate(predictor_list)
+        ]
+        return np.array(fmean).T
+
+    def get_post_fcov(self, xs, diag=True):
+        """
+        Calculate covariance of predictors (post distribution)
+
+        Parameters
+        ----------
+        xs: physbo.Variable or np.ndarray
+            input parameters to calculate covariance
+            shape is (num_points, num_parameters)
+        diag: bool
+            If true, only variances (diagonal elements) are returned.
+
+        Returns
+        -------
+        fcov: numpy.ndarray
+            Covariance matrix of the post distribution.
+            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.
+        """
+        if self.predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_post_fcov()")
+            predictor_list = []
+            for i in range(self.num_objectives):
+                predictor = self._make_gp_predictor()
+                predictor.fit(
+                    self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng
+                )
+                predictor.prepare(self.training, objective_index=i)
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+        X = self._make_variable_X(xs)
+        fcov = [
+            predictor.get_post_fcov(self.training, X, diag, objective_index=i)
+            for i, predictor in enumerate(predictor_list)
+        ]
+        arr = np.array(fcov)
+        if diag:
+            return arr.T
+        else:
+            return np.einsum("nij->ijn", arr)
+
+    def get_kernel_length_scale(self):
+        """
+        Return the Gaussian kernel length scale(s) for each objective.
+
+        Returns
+        -------
+        list of numpy.ndarray or None
+            List of length num_objectives; each element is the length scale(s)
+            for that objective's GP, or None if not available.
+        """
+        if self.predictor_list is None or all(p is None for p in self.predictor_list):
+            return None
+        self._update_predictor()
+        result = []
+        for predictor in self.predictor_list:
+            if predictor is None:
+                result.append(None)
+                continue
+            try:
+                cov = predictor.model.prior.cov
+            except AttributeError:
+                result.append(None)
+                continue
+            if not hasattr(cov, "width"):
+                result.append(None)
+                continue
+            result.append(np.atleast_1d(np.asarray(cov.width).flatten()))
+        return result
+
+    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
+        """
+        Calculate permutation importance of models
+
+        Parameters
+        ----------
+        n_perm: int
+            The number of permutations
+        split_features_parallel: bool
+            If true, split features in parallel.
+
+        Returns
+        -------
+        importance_mean: numpy.ndarray
+            importance_mean (num_parameters, num_objectives)
+        importance_std: numpy.ndarray
+            importance_std (num_parameters, num_objectives)
+        """
+
+        if self.predictor_list == [None] * self.num_objectives:
+            self._warn_no_predictor("get_permutation_importance()")
+            predictor_list = []
+            for i in range(self.num_objectives):
+                predictor = self._make_gp_predictor()
+                predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
+                predictor.prepare(self.training, objective_index=i)
+                predictor_list.append(predictor)
+        else:
+            self._update_predictor()
+            predictor_list = self.predictor_list[:]
+
+        importance_mean = [None for _ in range(self.num_objectives)]
+        importance_std = [None for _ in range(self.num_objectives)]
+
+        for i in range(self.num_objectives):
+            importance_mean[i], importance_std[i] = predictor_list[
+                i
+            ].get_permutation_importance(
+                self.training,
+                n_perm,
+                comm=self.mpicomm,
+                split_features_parallel=split_features_parallel,
+                objective_index=i,
+                rng=self.rng,
+            )
+
+        return np.array(importance_mean).T, np.array(importance_std).T
+
+    def save_predictor_list(self, file_name):
+        with open(file_name, "wb") as f:
+            pickle.dump(self.predictor_list, f, 2)
+
+    def save_training_list(self, file_name):
+        obj = {"X": self.training.X, "t": self.training.t, "Z": self.training.Z}
+        with open(file_name, "wb") as f:
+            pickle.dump(obj, f, 2)
+
+    def load_predictor_list(self, file_name):
+        with open(file_name, "rb") as f:
+            self.predictor_list = pickle.load(f)
+
+    def load_training_list(self, file_name):
+        with open(file_name, "rb") as f:
+            data = pickle.load(f)
+
+        # Handle both old format (list) and new format (dict/Variable)
+        if isinstance(data, list):
+            # Old format: list of dicts, convert to single Variable
+            X = data[0]["X"]
+            Z = np.stack([d["Z"] for d in data], axis=0)
+            t = np.stack([d["t"] for d in data], axis=1)
+            self.training = Variable(X=X, t=t, Z=Z)
+        elif isinstance(data, dict):
+            # New format: single dict
+            self.training = Variable(X=data["X"], t=data["t"], Z=data["Z"])
+        else:
+            # Assume it's already a Variable
+            self.training = data
+
+    def _update_predictor(self):
+        if self.new_data is not None:
+            for i in range(self.num_objectives):
+                self.predictor_list[i].update(
+                    self.training, self.new_data, objective_index=i
+                )
+            self.new_data = None
