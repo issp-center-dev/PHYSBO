@@ -8,7 +8,6 @@
 import numpy as np
 import copy
 import pickle as pickle
-import time
 
 from ._history import History
 from ... import _mpi
@@ -16,7 +15,7 @@ from .. import discrete
 from .. import utility
 from .. import score_multi as search_score
 from ..._variable import Variable
-from .._policy_common import _MultiObjectiveMethods, run_simulator
+from .._policy_common import _MultiObjectiveMethods
 
 
 class Policy(_MultiObjectiveMethods, discrete.Policy):
@@ -128,48 +127,16 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
         is_disp=True,
         disp_pareto_set=False,
     ):
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-            time_total = time.time()
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, score="random"
-                )
-
-            time_get_action = time.time()
-            action = self._get_random_action(N)
-            time_get_action = time.time() - time_get_action
-
-            if simulator is None:
-                return action
-
-            time_run_simulator = time.time()
-            t = run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N,
-                time_update_predictor=np.zeros(N, dtype=float),
-                time_get_action=[time_get_action] * N,
-                time_run_simulator=[time_run_simulator] * N,
-            )
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
+        # unlike the single-objective policies, this one does not stop when a
+        # step proposes no point; kept as it was
+        return self._random_search(
+            max_num_probes,
+            num_search_each_probe,
+            simulator,
+            is_disp,
+            stop_when_exhausted=False,
+            disp_pareto_set=disp_pareto_set,
+        )
 
     def bayes_search(
         self,
@@ -239,94 +206,23 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             rng=self.rng,
         )
 
-        if self.mpirank != 0:
-            is_disp = False
+        def propose(N, K, alpha):
+            return self._get_actions(score, N, K, alpha)
 
-        old_disp = self.config.learning.is_disp
-        self.config.learning.is_disp = is_disp
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = False if num_rand_basis == 0 else True
-        self.ard = ard
-
-        if training_list is not None:
-            self.training = training_list
-
-        if predictor_list is None:
-            if is_rand_expans:
-                self.predictor_list = [
-                    self._make_blm_predictor() for i in range(self.num_objectives)
-                ]
-            else:
-                self.predictor_list = [
-                    self._make_gp_predictor() for i in range(self.num_objectives)
-                ]
-        else:
-            self.predictor_list = predictor_list
-
-        if max_num_probes > 0 or interval >= 0:
-            utility.require_training_data(self.training)
-
-        if max_num_probes == 0 and interval >= 0:
-            self._learn_hyperparameter(num_rand_basis)
-
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-            time_total = time.time()
-            time_update_predictor = time.time()
-            if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
-            else:
-                self._update_predictor()
-            time_update_predictor = time.time() - time_update_predictor
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, utility.score_name(score)
-                )
-
-            time_get_action = time.time()
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha)
-            time_get_action = time.time() - time_get_action
-
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                self.config.learning.is_disp = old_disp
-                return copy.deepcopy(self.history)
-
-            if simulator is None:
-                self.config.learning.is_disp = old_disp
-                return action
-
-            time_run_simulator = time.time()
-            t = run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=[time_update_predictor] * N_indeed,
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
-            )
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-        self._update_predictor()
-        self.config.learning.is_disp = old_disp
-        return copy.deepcopy(self.history)
+        return self._bayes_search(
+            score,
+            propose,
+            training=training_list,
+            predictor=predictor_list,
+            max_num_probes=max_num_probes,
+            num_search_each_probe=num_search_each_probe,
+            simulator=simulator,
+            is_disp=is_disp,
+            interval=interval,
+            num_rand_basis=num_rand_basis,
+            ard=ard,
+            disp_pareto_set=disp_pareto_set,
+        )
 
     def _get_actions(self, mode, N, K, alpha):
         f, error = _mpi.call(

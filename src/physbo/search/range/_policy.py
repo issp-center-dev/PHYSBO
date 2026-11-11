@@ -8,7 +8,6 @@
 import numpy as np
 import copy
 import pickle as pickle
-import time
 import warnings
 
 from ._history import History
@@ -17,7 +16,7 @@ from .. import score as search_score
 from ..optimize.random import Optimizer as RandomOptimizer
 from ... import _mpi
 from ..._variable import Variable, normalize_t
-from .._policy_common import _PolicyBase, run_simulator
+from .._policy_common import _PolicyBase
 
 
 class Policy(_PolicyBase):
@@ -195,51 +194,9 @@ class Policy(_PolicyBase):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-            time_total = time.time()
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(self.history.num_runs)
-
-            time_get_action = time.time()
-            action = self._get_random_action(N)
-            time_get_action = time.time() - time_get_action
-
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                return copy.deepcopy(self.history)
-
-            if simulator is None:
-                return action
-
-            time_run_simulator = time.time()
-            t = normalize_t(run_simulator(simulator, action, self.mpicomm), k=1)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=np.zeros(N_indeed, dtype=float),
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
-            )
-
-            if is_disp:
-                self.history.show_search_results(N_indeed)
-
-        return copy.deepcopy(self.history)
+        return self._random_search(
+            max_num_probes, num_search_each_probe, simulator, is_disp
+        )
 
     def bayes_search(
         self,
@@ -302,62 +259,14 @@ class Policy(_PolicyBase):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
         score = search_score.resolve(
             score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
         )
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        old_disp = self.config.learning.is_disp
-        self.config.learning.is_disp = is_disp
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = num_rand_basis != 0
-        self.ard = ard
-
-        if training is not None:
-            self.training = training
-
-        if predictor is not None:
-            self.predictor = predictor
-        elif self.predictor is None:
-            self._init_predictor(is_rand_expans)
-
-        if max_num_probes > 0 or interval >= 0:
-            utility.require_training_data(self.training)
-
-        if max_num_probes == 0 and interval >= 0:
-            self._learn_hyperparameter(num_rand_basis)
-
         if optimizer is None:
             optimizer = self._default_optimizer()
 
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-            time_total = time.time()
-
-            time_update_predictor = time.time()
-            if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
-            else:
-                self._update_predictor()
-            time_update_predictor = time.time() - time_update_predictor
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, utility.score_name(score)
-                )
-
-            time_get_action = time.time()
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self._get_actions(
+        def propose(N, K, alpha):
+            return self._get_actions(
                 score,
                 N,
                 K,
@@ -366,31 +275,20 @@ class Policy(_PolicyBase):
                 num_rand_basis=num_rand_basis,
                 ucb_beta=ucb_beta,
             )
-            time_get_action = time.time() - time_get_action
 
-            if simulator is None:
-                self.config.learning.is_disp = old_disp
-                return action
-
-            time_run_simulator = time.time()
-            t = normalize_t(run_simulator(simulator, action, self.mpicomm), k=1)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N,
-                time_update_predictor=[time_update_predictor] * N,
-                time_get_action=[time_get_action] * N,
-                time_run_simulator=[time_run_simulator] * N,
-            )
-
-            if is_disp:
-                self.history.show_search_results(N)
-        self._update_predictor()
-        self.config.learning.is_disp = old_disp
-        return copy.deepcopy(self.history)
+        return self._bayes_search(
+            score,
+            propose,
+            training=training,
+            predictor=predictor,
+            max_num_probes=max_num_probes,
+            num_search_each_probe=num_search_each_probe,
+            simulator=simulator,
+            is_disp=is_disp,
+            interval=interval,
+            num_rand_basis=num_rand_basis,
+            ard=ard,
+        )
 
     def get_post_fmean(self, xs):
         """
