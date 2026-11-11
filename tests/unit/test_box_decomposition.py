@@ -79,6 +79,62 @@ def test_cells_do_not_depend_on_reference_points():
     assert np.array_equal(p.cells.lb, lb) and np.array_equal(p.cells.ub, ub)
 
 
+def test_large_magnitude_front():
+    # front.min - 1 can round back to front.min at this magnitude, which would put
+    # the lowest front coordinates on the row of reference_min
+    rng = np.random.default_rng(0)
+    a = np.abs(rng.standard_normal((10, 3)))
+    a /= np.linalg.norm(a, axis=1, keepdims=True)
+    scale = 1e17
+    p = Pareto(3)
+    p.update_front(3 * scale + scale * a)
+    p.set_reference_min(p.front.min(axis=0) - 0.1 * scale)
+    p.set_reference_max(p.front.max(axis=0) + 0.1 * scale)
+    q = copy.deepcopy(p)
+    p.divide_non_dominated_region(method="box")
+    q.divide_non_dominated_region(method="binary_search")
+    fmean = 3 * scale + scale * rng.random((20, 3))
+    fstd = 0.1 * scale * np.ones((20, 3))
+    np.testing.assert_allclose(
+        score_multi.EHVI(fmean, fstd, p), score_multi.EHVI(fmean, fstd, q), rtol=1e-10
+    )
+    lo, hi = p.reference_min, p.reference_max
+    np.testing.assert_allclose(
+        p.volume_in_dominance(lo, hi), q.volume_in_dominance(lo, hi), rtol=1e-12
+    )
+
+
+@pytest.mark.parametrize("edge", [0.0, -np.finfo(float).max])
+def test_front_at_floating_point_edges(edge):
+    # the placeholder below the front underflows to a subnormal below 0.0 and
+    # overflows to -inf below -DBL_MAX; neither may raise
+    front = np.array(
+        [[edge, 1.0, 2.0], [1.0, edge, 2.0], [2.0, 1.0, edge], [0.5, 0.5, 0.5]]
+    )
+    p = Pareto(3)
+    p.update_front(front)
+    q = copy.deepcopy(p)
+    with np.errstate(all="raise"):
+        p.divide_non_dominated_region(method="box")
+    q.divide_non_dominated_region(method="binary_search")
+    # same region: every elementary cell of the grid of front coordinates
+    # lies in exactly as many box cells as binary-search cells (0 or 1)
+    def coverage(cells):
+        grid = np.zeros((front.shape[0] + 1,) * 3, dtype=int)
+        coords = np.r_[[np.full(3, -np.inf)], p.front, [np.full(3, np.inf)]]
+        order = [np.argsort(coords[:, d], kind="stable") for d in range(3)]
+        rank = [np.empty_like(o) for o in order]
+        for d in range(3):
+            v = coords[order[d], d]
+            rank[d][order[d]] = np.searchsorted(np.unique(v), v)
+        for lb, ub in zip(cells.lb, cells.ub):
+            sl = tuple(slice(rank[d][lb[d]], rank[d][ub[d]]) for d in range(3))
+            grid[sl] += 1
+        return grid
+    assert coverage(p.cells).max() == 1
+    assert np.array_equal(coverage(p.cells), coverage(q.cells))
+
+
 def test_defaults_and_options():
     rng = np.random.default_rng(3)
     p2 = Pareto(2)
