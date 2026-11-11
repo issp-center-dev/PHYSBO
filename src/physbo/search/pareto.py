@@ -72,6 +72,10 @@ def _non_dominated_mask(t: np.ndarray) -> np.ndarray:
 # a block holds at least one new point
 _CROSS_DOMINANCE_BLOCK_ELEMENTS = 1 << 20
 
+# initial number of rows of the arrays of Pareto._local_upper_bounds; the
+# arrays double when they are full
+_LOCAL_UPPER_BOUNDS_ROWS = 1024
+
 
 def _cross_dominance(front: np.ndarray, t: np.ndarray):
     """
@@ -491,29 +495,59 @@ class Pareto(object):
         M = len(ref)
         Z0 = np.repeat(np.asarray(fill_value, dtype=float)[:, None], M, axis=1)
         Z0[np.arange(M), np.arange(M)] = ref
-        U = np.asarray(ref, dtype=float)[None, :].copy()
-        Z = Z0[None, :, :]
+        # A point replaces only a few of the bounds.  They are marked as dead
+        # and the new ones are appended, so that the other rows are not copied
+        # for every point; dead rows are dropped, keeping the order of the
+        # others, once they are the majority.  The rows come out in the order
+        # in which rebuilding the arrays for every point would leave them.
+        cap = _LOCAL_UPPER_BOUNDS_ROWS
+        U = np.empty((cap, M))
+        Z = np.empty((cap, M, M))
+        alive = np.zeros(cap, dtype=bool)
+        U[0], Z[0], alive[0] = ref, Z0, True
+        k = 1  # rows in use, alive or dead
+        n_dead = 0
         off = ~np.eye(M, dtype=bool)
         for z in points:
-            hit = np.all(U > z, axis=1)
-            if not hit.any():
+            # the bounds with U > z in every objective, selected one objective
+            # at a time, so that the later ones are compared on fewer rows (in
+            # the second pass an objective keeps about half of the rows left)
+            hit = np.flatnonzero(alive[:k] & (U[:k, 0] > z[0]))
+            for d in range(1, M):
+                hit = hit[U[hit, d] > z[d]]
+            if hit.size == 0:
                 continue
             Uh, Zh = U[hit], Z[hit]
-            newU, newZ = [U[~hit]], [Z[~hit]]
+            alive[hit] = False
+            n_dead += hit.size
             for j in range(M):
                 # max over the other defining points of their j-th coordinate
                 zmax = np.max(Zh[:, j, off[j]], axis=1, initial=-np.inf)
                 ok = z[j] >= zmax
-                if ok.any():
-                    u2 = Uh[ok].copy()
-                    u2[:, j] = z[j]
-                    z2 = Zh[ok].copy()
-                    z2[:, :, j] = z
-                    newU.append(u2)
-                    newZ.append(z2)
-            U = np.concatenate(newU)
-            Z = np.concatenate(newZ)
-        return U, Z
+                c = int(np.count_nonzero(ok))
+                if c == 0:
+                    continue
+                if k + c > cap:
+                    cap = max(2 * cap, k + c)
+                    U = np.concatenate([U[:k], np.empty((cap - k, M))])
+                    Z = np.concatenate([Z[:k], np.empty((cap - k, M, M))])
+                    alive = np.concatenate([alive[:k], np.zeros(cap - k, dtype=bool)])
+                U[k : k + c] = Uh[ok]
+                U[k : k + c, j] = z[j]
+                Z[k : k + c] = Zh[ok]
+                Z[k : k + c, :, j] = z
+                alive[k : k + c] = True
+                k += c
+            if 2 * n_dead > k:
+                keep = alive[:k]
+                U[: k - n_dead] = U[:k][keep]
+                Z[: k - n_dead] = Z[:k][keep]
+                alive[: k - n_dead] = True
+                alive[k - n_dead : k] = False
+                k -= n_dead
+                n_dead = 0
+        keep = alive[:k]
+        return U[:k][keep], Z[:k][keep]
 
     def __divide_box_decomposition(self):
         M = self.num_objectives

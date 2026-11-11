@@ -13,6 +13,7 @@ import copy
 import numpy as np
 import pytest
 
+from physbo.search import pareto as pareto_module
 from physbo.search import score_multi
 from physbo.search.pareto import Pareto
 
@@ -118,3 +119,60 @@ def test_defaults_and_options():
     p0 = Pareto(3)
     p0.divide_non_dominated_region(method="box")
     assert p0.cells.lb.tolist() == [[0, 0, 0]] and p0.cells.ub.tolist() == [[1, 1, 1]]
+
+
+def _local_upper_bounds_rebuilding(points, ref, fill_value):
+    """Algorithm 1 of Lacour et al. with the arrays rebuilt for every point:
+    the reference for the rows of Pareto._local_upper_bounds and their order."""
+    M = len(ref)
+    Z0 = np.repeat(np.asarray(fill_value, dtype=float)[:, None], M, axis=1)
+    Z0[np.arange(M), np.arange(M)] = ref
+    U = np.asarray(ref, dtype=float)[None, :].copy()
+    Z = Z0[None, :, :]
+    off = ~np.eye(M, dtype=bool)
+    for z in points:
+        hit = np.all(U > z, axis=1)
+        if not hit.any():
+            continue
+        Uh, Zh = U[hit], Z[hit]
+        newU, newZ = [U[~hit]], [Z[~hit]]
+        for j in range(M):
+            zmax = np.max(Zh[:, j, off[j]], axis=1, initial=-np.inf)
+            ok = z[j] >= zmax
+            if ok.any():
+                u2 = Uh[ok].copy()
+                u2[:, j] = z[j]
+                z2 = Zh[ok].copy()
+                z2[:, :, j] = z
+                newU.append(u2)
+                newZ.append(z2)
+        U = np.concatenate(newU)
+        Z = np.concatenate(newZ)
+    return U, Z
+
+
+@pytest.mark.parametrize("rows", [1, 1024])
+@pytest.mark.parametrize(
+    "m,kind,n",
+    [(2, "random", 40), (3, "sphere", 80), (4, "sphere", 60), (4, "grid", 300),
+     (5, "random", 200)],
+)
+def test_local_upper_bounds_rows_and_order(monkeypatch, m, kind, n, rows):
+    # Both passes of the box decomposition give the rows of the reference in
+    # the same order, so that the cells and the order of the sums over them
+    # do not depend on how the rows are stored.  `rows` is the initial size
+    # of the arrays: starting from 1, they grow and are compacted from the
+    # first points on, whatever the size of the front.
+    monkeypatch.setattr(pareto_module, "_LOCAL_UPPER_BOUNDS_ROWS", rows)
+    rng = np.random.default_rng(100 * m + n)
+    p = Pareto(m)
+    p.update_front(make_front(rng, kind, n, m))
+    rmin = np.min(p.front, axis=0) - 1.0
+    first = (-p.front, -rmin, np.full(m, -np.inf))
+    U1, Z1 = Pareto._local_upper_bounds(*first)
+    U1_ref, Z1_ref = _local_upper_bounds_rebuilding(*first)
+    assert np.array_equal(U1, U1_ref) and np.array_equal(Z1, Z1_ref)
+    second = (-U1, np.full(m, np.inf), rmin)
+    U2, Z2 = Pareto._local_upper_bounds(*second)
+    U2_ref, Z2_ref = _local_upper_bounds_rebuilding(*second)
+    assert np.array_equal(U2, U2_ref) and np.array_equal(Z2, Z2_ref)
