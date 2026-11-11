@@ -80,7 +80,7 @@ def test_cells_do_not_depend_on_reference_points():
 
 
 def test_large_magnitude_front():
-    # front.min - 1 rounds back to front.min beyond about 2**53, which would put
+    # front.min - 1 can round back to front.min at this magnitude, which would put
     # the lowest front coordinates on the row of reference_min
     rng = np.random.default_rng(0)
     a = np.abs(rng.standard_normal((10, 3)))
@@ -98,6 +98,41 @@ def test_large_magnitude_front():
     np.testing.assert_allclose(
         score_multi.EHVI(fmean, fstd, p), score_multi.EHVI(fmean, fstd, q), rtol=1e-10
     )
+    lo, hi = p.reference_min, p.reference_max
+    np.testing.assert_allclose(
+        p.volume_in_dominance(lo, hi), q.volume_in_dominance(lo, hi), rtol=1e-12
+    )
+
+
+@pytest.mark.parametrize("edge", [0.0, -np.finfo(float).max])
+def test_front_at_floating_point_edges(edge):
+    # the placeholder below the front underflows to a subnormal below 0.0 and
+    # overflows to -inf below -DBL_MAX; neither may raise
+    front = np.array(
+        [[edge, 1.0, 2.0], [1.0, edge, 2.0], [2.0, 1.0, edge], [0.5, 0.5, 0.5]]
+    )
+    p = Pareto(3)
+    p.update_front(front)
+    q = copy.deepcopy(p)
+    with np.errstate(all="raise"):
+        p.divide_non_dominated_region(method="box")
+    q.divide_non_dominated_region(method="binary_search")
+    # same region: every elementary cell of the grid of front coordinates
+    # lies in exactly as many box cells as binary-search cells (0 or 1)
+    def coverage(cells):
+        grid = np.zeros((front.shape[0] + 1,) * 3, dtype=int)
+        coords = np.r_[[np.full(3, -np.inf)], p.front, [np.full(3, np.inf)]]
+        order = [np.argsort(coords[:, d], kind="stable") for d in range(3)]
+        rank = [np.empty_like(o) for o in order]
+        for d in range(3):
+            v = coords[order[d], d]
+            rank[d][order[d]] = np.searchsorted(np.unique(v), v)
+        for lb, ub in zip(cells.lb, cells.ub):
+            sl = tuple(slice(rank[d][lb[d]], rank[d][ub[d]]) for d in range(3))
+            grid[sl] += 1
+        return grid
+    assert coverage(p.cells).max() == 1
+    assert np.array_equal(coverage(p.cells), coverage(q.cells))
 
 
 def test_defaults_and_options():
@@ -299,3 +334,18 @@ def test_slabs_with_ties_in_the_last_objective(monkeypatch):
     cells, _ = _cells_and_bounds(monkeypatch, front, 3)
     cells_1, _ = _cells_and_bounds(monkeypatch, front, 1)
     assert cells < 1.1 * cells_1
+
+
+@pytest.mark.parametrize("edge", [0.0, -np.finfo(float).max])
+def test_slabs_at_floating_point_edges(edge):
+    # as test_front_at_floating_point_edges, with 6 objectives: every slab
+    # has its own placeholder below its part of the front
+    rng = np.random.default_rng(8)
+    front = make_front(rng, "sphere", 9, 6) + 0.5
+    front[np.arange(6), np.arange(6)] = edge
+    p = Pareto(6)
+    p.update_front(front)
+    assert np.all(np.min(p.front, axis=0) == edge)
+    with np.errstate(all="raise"):
+        p.divide_non_dominated_region(method="box")
+    assert _coverage_error(p) is None
