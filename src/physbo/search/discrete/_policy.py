@@ -16,18 +16,15 @@ from ._history import History
 from .. import utility
 from .. import score as search_score
 from ... import _mpi
-from ... import gp
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
-from ..._rng import get_rng, make_rng, LegacyRNG
+from ..._rng import get_rng, make_rng
 from .._checkpoint import CheckpointMixin
-from .._policy_common import run_simulator
+from .._policy_common import _PolicyCommon, run_simulator
 
 
-class Policy(CheckpointMixin):
+class Policy(_PolicyCommon, CheckpointMixin):
     """Single objective Bayesian optimization with discrete search space"""
 
     predictor: Optional[Any]
@@ -143,28 +140,6 @@ class Policy(CheckpointMixin):
             self.config.learning.is_disp = (
                 self.config.learning.is_disp and self.mpirank == 0
             )
-
-    def set_seed(self, seed):
-        """
-        Setting a seed parameter.
-
-        In the legacy RNG mode (default), this seeds the global
-        ``numpy.random`` state, as before. In the Generator mode
-        (``rng=`` given as int or Generator), the policy-owned generator
-        is re-created from the seed and the global state is not touched.
-
-        Parameters
-        ----------
-        seed: int
-            seed number
-        -------
-
-        """
-        self.seed = seed
-        if isinstance(self.rng, LegacyRNG):
-            self.rng.seed(self.seed)
-        else:
-            self.rng = np.random.default_rng(self.seed)
 
     def write(
         self,
@@ -479,15 +454,6 @@ class Policy(CheckpointMixin):
         self.config.learning.is_disp = old_disp
         return copy.deepcopy(self.history)
 
-    def _warn_no_predictor(self, method_name):
-        if self.mpirank != 0:
-            return
-        print("Warning: Since policy.predictor is not yet set,")
-        print("         a GP predictor (num_rand_basis=0) is used for predicting")
-        print("         If you want to use a BLM predictor (num_rand_basis>0),")
-        print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
-        print("         before calling {}.".format(method_name))
-
     def get_post_fmean(self, xs):
         """
         Calculate mean value of predictor (post distribution)
@@ -543,29 +509,6 @@ class Policy(CheckpointMixin):
         else:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
-
-    def get_kernel_length_scale(self):
-        """
-        Return the Gaussian kernel length scale(s) (width) of the predictor.
-
-        With ARD, returns one length scale per input dimension; otherwise a single value.
-
-        Returns
-        -------
-        numpy.ndarray or None
-            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.
-            None if the predictor is not set or not a GP with Gaussian kernel.
-        """
-        if self.predictor is None:
-            return None
-        self._update_predictor()
-        try:
-            cov = self.predictor.model.prior.cov
-        except AttributeError:
-            return None
-        if not hasattr(cov, "width"):
-            return None
-        return np.atleast_1d(np.asarray(cov.width).flatten())
 
     def get_num_dim(self):
         """
@@ -775,7 +718,7 @@ class Policy(CheckpointMixin):
             run it is raised).
         """
 
-        comm = self.mpicomm if self.mpisize > 1 else None
+        comm = self._comm
 
         # Draw K samples of the values of objective function of chosen actions.
         # self.test is not partitioned over ranks, so the chosen points are
@@ -859,7 +802,7 @@ class Policy(CheckpointMixin):
         chosen_actions: numpy.ndarray
             An N-dimensional array of actions selected in each search process.
         """
-        comm = self.mpicomm if self.mpisize > 1 else None
+        comm = self._comm
         # TS: one posterior sample for every process, drawn on rank 0
         first_mode = search_score.share_sample(
             mode, self.predictor, self.training, comm
@@ -1047,65 +990,6 @@ class Policy(CheckpointMixin):
         ]
         self.actions = self._delete_actions(local_index)
 
-    def export_predictor(self):
-        """
-        Returning the predictor dataset
-
-        Returns
-        -------
-
-        """
-        return self.predictor
-
-    def export_training(self):
-        """
-        Returning the training dataset
-
-        Returns
-        -------
-
-        """
-        return self.training
-
-    def export_history(self):
-        """
-        Returning the information of the history.
-
-        Returns
-        -------
-
-        """
-        return self.history
-
-    def _init_predictor(self, is_rand_expans):
-        """
-        Initialize predictor.
-
-        Parameters
-        ----------
-        is_rand_expans: bool
-            If true, physbo.blm.predictor is selected.
-            If false, physbo.gp.Predictor is selected.
-        """
-        if is_rand_expans:
-            self.predictor = self._make_blm_predictor()
-        else:
-            self.predictor = self._make_gp_predictor()
-
-    def _make_gp_predictor(self):
-        """Create a GP predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return gp_predictor(self.config, model=model)
-
-    def _make_blm_predictor(self):
-        """Create a BLM predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return blm_predictor(self.config, model=model)
-
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
             self.training, num_rand_basis, comm=self.mpicomm, rng=self.rng
@@ -1128,27 +1012,6 @@ class Policy(CheckpointMixin):
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data)
             self.new_data = None
-
-    def _make_variable_X(self, test_X):
-        """
-        Make a new *Variable* with X=test_X
-
-        Parameters
-        ----------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        Returns
-        -------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        """
-        if isinstance(test_X, np.ndarray):
-            test = Variable(X=test_X)
-        elif isinstance(test_X, Variable):
-            test = test_X
-        else:
-            raise TypeError("The type of test_X must be ndarray or physbo.Variable")
-        return test
 
     def _delete_actions(self, index, actions=None):
         """

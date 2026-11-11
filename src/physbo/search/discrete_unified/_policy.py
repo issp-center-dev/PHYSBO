@@ -373,7 +373,7 @@ class Policy(discrete.Policy):
 
     def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
         self._update_predictor()
-        comm = self.mpicomm if self.mpisize > 1 else None
+        comm = self._comm
         # TS: one posterior sample for every process, drawn on rank 0
         first_mode = search_score.share_sample(
             mode, self.predictor, self.training_unified, comm
@@ -658,7 +658,7 @@ class Policy(discrete.Policy):
             run it is raised).
         """
 
-        comm = self.mpicomm if self.mpisize > 1 else None
+        comm = self._comm
 
         # Draw K samples of the values of objective function of chosen actions.
         # self.test is not partitioned over ranks, so the chosen points are

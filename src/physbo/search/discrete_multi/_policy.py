@@ -694,7 +694,7 @@ class Policy(discrete.Policy):
             run it is raised).
         """
 
-        comm = self.mpicomm if self.mpisize > 1 else None
+        comm = self._comm
 
         def predict_samples():
             N = len(chosen_actions)
