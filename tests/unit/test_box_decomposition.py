@@ -334,3 +334,18 @@ def test_slabs_with_ties_in_the_last_objective(monkeypatch):
     cells, _ = _cells_and_bounds(monkeypatch, front, 3)
     cells_1, _ = _cells_and_bounds(monkeypatch, front, 1)
     assert cells < 1.1 * cells_1
+
+
+@pytest.mark.parametrize("edge", [0.0, -np.finfo(float).max])
+def test_slabs_at_floating_point_edges(edge):
+    # as test_front_at_floating_point_edges, with 6 objectives: every slab
+    # has its own placeholder below its part of the front
+    rng = np.random.default_rng(8)
+    front = make_front(rng, "sphere", 9, 6) + 0.5
+    front[np.arange(6), np.arange(6)] = edge
+    p = Pareto(6)
+    p.update_front(front)
+    assert np.all(np.min(p.front, axis=0) == edge)
+    with np.errstate(all="raise"):
+        p.divide_non_dominated_region(method="box")
+    assert _coverage_error(p) is None
