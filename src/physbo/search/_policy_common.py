@@ -87,7 +87,7 @@ class _PolicyBase(CheckpointMixin):
     - ``_prepare_predictor(predictor, is_rand_expans)``,
       ``_learn_hyperparameter(num_rand_basis)`` and ``_update_predictor()``;
     - ``write(...)`` to record a step;
-    - ``_show_search_results(N, N_indeed, ...)`` to print it.
+    - ``_show_search_results(N, N_indeed, disp_pareto_set)`` to print it.
     """
 
     def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
@@ -140,9 +140,11 @@ class _PolicyBase(CheckpointMixin):
         (also when a communicator of a single process was given)."""
         return self.mpicomm if self.mpisize > 1 else None
 
-    def _show_search_results(self, N, N_indeed, **options):
+    def _show_search_results(self, N, N_indeed, disp_pareto_set):
         """Print the results of the step just recorded: ``N`` points were
-        asked for and ``N_indeed`` proposed."""
+        asked for and ``N_indeed`` proposed. ``disp_pareto_set`` is the
+        argument of the multi-objective and unified policies; the
+        single-objective ones have no use for it."""
         raise NotImplementedError
 
     def _search_loop(
@@ -156,7 +158,7 @@ class _PolicyBase(CheckpointMixin):
         update_predictor=None,
         score=None,
         stop_when_exhausted=True,
-        **show_options,
+        disp_pareto_set=False,
     ):
         """
         The steps of random_search and bayes_search.
@@ -186,7 +188,7 @@ class _PolicyBase(CheckpointMixin):
         stop_when_exhausted: bool
             Stop, with a warning, when a step proposes no point, and record
             the number of points proposed instead of ``N``.
-        show_options:
+        disp_pareto_set: bool
             Passed to ``_show_search_results``.
 
         Returns
@@ -241,7 +243,7 @@ class _PolicyBase(CheckpointMixin):
             )
 
             if is_disp:
-                self._show_search_results(N, N_indeed, **show_options)
+                self._show_search_results(N, N_indeed, disp_pareto_set)
         return None
 
     def _random_search(
@@ -250,10 +252,12 @@ class _PolicyBase(CheckpointMixin):
         num_search_each_probe,
         simulator,
         is_disp,
-        **loop_options,
+        *,
+        stop_when_exhausted=True,
+        disp_pareto_set=False,
     ):
-        """The body of random_search of the six policies; ``loop_options``
-        are passed to ``_search_loop``."""
+        """The body of random_search of the six policies; the two options
+        are those of ``_search_loop``."""
         if self.mpirank != 0:
             is_disp = False
 
@@ -268,7 +272,8 @@ class _PolicyBase(CheckpointMixin):
             simulator,
             is_disp,
             lambda: self._get_random_action(N),
-            **loop_options,
+            stop_when_exhausted=stop_when_exhausted,
+            disp_pareto_set=disp_pareto_set,
         )
         if proposal is not None:
             return proposal
@@ -297,7 +302,7 @@ class _PolicyBase(CheckpointMixin):
         interval,
         num_rand_basis,
         ard,
-        **show_options,
+        disp_pareto_set=False,
     ):
         """
         The body of bayes_search of the six policies.
@@ -307,7 +312,7 @@ class _PolicyBase(CheckpointMixin):
         ``alpha`` are read from the config). ``training`` and ``predictor``
         are what the caller gave (``training_list`` / ``predictor_list`` in
         the multi-objective policies) or None. The other arguments are those
-        of bayes_search; ``show_options`` are passed to
+        of bayes_search; ``disp_pareto_set`` is passed to
         ``_show_search_results``.
         """
         if self.mpirank != 0:
@@ -355,7 +360,7 @@ class _PolicyBase(CheckpointMixin):
             propose_step,
             update_predictor=update_predictor,
             score=score,
-            **show_options,
+            disp_pareto_set=disp_pareto_set,
         )
         if proposal is not None:
             self.config.learning.is_disp = old_disp
@@ -530,7 +535,7 @@ class _MultiObjectiveMethods:
         else:
             self.predictor_list = predictor_list
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set=False):
+    def _show_search_results(self, N, N_indeed, disp_pareto_set):
         utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
 
     @staticmethod
@@ -761,7 +766,7 @@ class _UnifiedObjectiveMethods:
         else:
             self.predictor = predictor
 
-    def _show_search_results(self, N, N_indeed, disp_pareto_set=False):
+    def _show_search_results(self, N, N_indeed, disp_pareto_set):
         utility.show_search_results_mo(self.history, N, disp_pareto_set=disp_pareto_set)
 
     def _attach_unified_basis(self, variable):

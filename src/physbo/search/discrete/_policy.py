@@ -123,7 +123,7 @@ class Policy(_PolicyBase):
     def _split_candidates(self):
         self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
 
-    def _show_search_results(self, N, N_indeed):
+    def _show_search_results(self, N, N_indeed, disp_pareto_set):
         utility.show_search_results(self.history, N_indeed)
 
     def write(
