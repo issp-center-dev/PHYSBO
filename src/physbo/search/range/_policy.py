@@ -6,7 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
 
 from ._history import History
@@ -276,20 +275,9 @@ class Policy(_PolicyBase):
         if optimizer is None:
             optimizer = self._default_optimizer()
 
-        def propose(N, K, alpha):
-            return self._get_actions(
-                score,
-                N,
-                K,
-                alpha,
-                optimizer,
-                num_rand_basis=num_rand_basis,
-                ucb_beta=ucb_beta,
-            )
-
         return self._bayes_search(
             score,
-            propose,
+            optimizer=optimizer,
             training=training,
             predictor=predictor,
             max_num_probes=max_num_probes,
@@ -476,80 +464,17 @@ class Policy(_PolicyBase):
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(
-        self,
-        mode,
-        predictor,
-        training,
-        extra_trainings,
-        optimizer,
-        ucb_beta=1.0,
-        error=None,
-        samples_drawn=False,
-    ):
-        """``error``: an exception raised on this process while drawing the
-        samples in ``extra_trainings`` (see :func:`physbo._mpi.call`);
-        ``samples_drawn``: whether they were drawn (on every process alike),
-        so that the processes exchange whether one of them raised."""
-        if error is None and len(extra_trainings) == 0:
-            predictor.prepare(training, objective_index=0)
-
-            def fn(x):
-                return self.get_score(
-                    mode,
-                    xs=x.reshape(1, -1),
-                    predictor=predictor,
-                    ucb_beta=ucb_beta,
-                    parallel=False,
-                )[0]
-        elif error is None:  # marginal score
-
-            def marginal_score_function():
-                K = len(extra_trainings)
-                trains = [copy.deepcopy(training) for _ in range(K)]
-                predictors = [copy.deepcopy(predictor) for _ in range(K)]
-                for k in range(K):
-                    extra_train = extra_trainings[k]
-                    # Ensure t is normalized
-                    if extra_train.t is not None:
-                        extra_train.t = normalize_t(extra_train.t, k=1)
-                    trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
-                    predictors[k].update(trains[k], extra_train, objective_index=0)
-
-                def fn(x):
-                    f = np.zeros(K)
-                    for k in range(K):
-                        f[k] = self.get_score(
-                            mode,
-                            xs=x.reshape(1, -1),
-                            predictor=predictors[k],
-                            training=trains[k],
-                            ucb_beta=ucb_beta,
-                            parallel=False,
-                        )[0]
-                    return np.mean(f)
-
-                return fn
-
-            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
-        if self.mpisize > 1 and (samples_drawn or len(extra_trainings) > 0):
-            # the samples, and so the predictors, differ between the processes
-            _mpi.allgather(self.mpicomm, None, error)
-
-        return self._optimize_score(fn, optimizer)
+    def _proposal_model(self):
+        # copies of the predictor(s), prepared afresh from the training
+        # data (which are not copied)
+        predictors, training = self._current_model()
+        model = (self._copy_predictors(predictors), training)
+        self._prepare_model(model)
+        return model
 
     def _default_optimizer(self):
         """Optimizer of the acquisition function used when none is given."""
         return self.space.default_optimizer(self.rng, self.max_trials_per_point)
-
-    def _optimize_score(self, fn, optimizer):
-        """Maximize the acquisition function ``fn`` (from a point of shape
-        (dim,) to float) with the optimizer, under the constraint; see
-        ``_RangeSpace.argmax``. When the optimizer does not return a
-        feasible point, a random one is proposed."""
-        return self.space.argmax(
-            fn, optimizer, self.mpicomm, lambda: self._get_random_action(1)[0]
-        )
 
     def _get_random_action(self, N):
         return self.space.random(
@@ -558,74 +483,6 @@ class Policy(_PolicyBase):
             self.mpicomm,
             max_trials_per_point=self.max_trials_per_point,
         )
-
-    def _get_actions(
-        self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
-    ):
-        """
-        Getting next candidates
-
-        Parameters
-        ----------
-        mode: str
-            The type of aquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        N: int
-            The total number of actions to return.
-        K: int
-            The total number of samples to evaluate marginal score
-        alpha: float
-            Tuning parameter which is used if mode = TS.
-            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
-
-        Returns
-        -------
-        chosen_actions: numpy.ndarray
-            An N-dimensional array of actions selected in each search process.
-        """
-
-        X = np.zeros((N, self.dim))
-
-        self._update_predictor()
-        predictor = copy.deepcopy(self.predictor)
-        predictor.config.is_disp = False
-        X[0, :] = self._argmax_score(
-            mode, predictor, self.training, [], optimizer=optimizer, ucb_beta=ucb_beta
-        )
-
-        for n in range(1, N):
-
-            def draw_samples():
-                # with a Bayesian linear model the training data carry the
-                # values of the basis functions, so the virtual observations
-                # must too (the GP predictor has no basis: None)
-                extra_training = Variable(
-                    X=X[0:n, :], Z=self.predictor.get_basis(X[0:n, :])
-                )
-                t = self.predictor.get_predict_samples(
-                    self.training, extra_training, K, objective_index=0, rng=self.rng
-                )
-                extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
-                for k in range(K):
-                    # Normalize t to (N, 1) shape
-                    t_normalized = normalize_t(t[k, :], k=1)
-                    extra_trainings[k].t = t_normalized
-                return extra_trainings
-
-            extra_trainings, error = _mpi.call(self.mpicomm, draw_samples)
-            X[n, :] = self._argmax_score(
-                mode,
-                predictor,
-                self.training,
-                extra_trainings,
-                optimizer=optimizer,
-                ucb_beta=ucb_beta,
-                error=error,
-                samples_drawn=True,
-            )
-
-        return X
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """

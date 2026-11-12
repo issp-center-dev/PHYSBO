@@ -6,7 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
 
 from ._history import History
@@ -70,6 +69,15 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             comm=comm,
             rng=rng,
         )
+
+    def _prepare_scoring(self, mode):
+        pareto = self.history.pareto
+        upper = search_score._reference_points_upper(mode)
+        if upper is not None and pareto.front.shape[0] > 0:
+            # on every process before the optimizer, which may evaluate the
+            # scores on some processes only, so that they all use the same
+            # reference points and warn (or raise) together
+            pareto.prepare_reference_points(upper=upper)
 
     def _new_history(self):
         return History(num_objectives=self.num_objectives, dim=self.dim)
@@ -243,12 +251,9 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         if optimizer is None:
             optimizer = self._default_optimizer()
 
-        def propose(N, K, alpha):
-            return self._get_actions(score, N, K, alpha, optimizer=optimizer)
-
         return self._bayes_search(
             score,
-            propose,
+            optimizer=optimizer,
             training=training_list,
             predictor=predictor_list,
             max_num_probes=max_num_probes,
@@ -260,143 +265,6 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             ard=ard,
             disp_pareto_set=disp_pareto_set,
         )
-
-    def _argmax_score(
-        self,
-        mode,
-        predictors,
-        training,
-        virtual_trainings,
-        optimizer,
-        error=None,
-        samples_drawn=False,
-    ):
-        """
-        Get the action that maximizes the score.
-
-        Arguments
-        ----------
-        mode: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        predictors: list[Predictor]
-            List of predictors.
-        training: Variable
-            Training data.
-        virtual_trainings: list[Variable]
-            List of extra training data.
-        optimizer: Function or Optimizer object
-            Optimizer object for optimizing the acquisition function.
-        error: Exception or None
-            An exception raised on this process while drawing the samples in
-            ``virtual_trainings`` (see :func:`physbo._mpi.call`).
-        samples_drawn: bool
-            Whether the samples were drawn (on every process alike), so that
-            the processes exchange whether one of them raised.
-        """
-
-        if error is None and len(virtual_trainings) == 0:
-            for i, predictor in enumerate(predictors):
-                predictor.prepare(training, objective_index=i)
-
-            def fn(x):
-                return self.get_score(
-                    mode,
-                    xs=x.reshape(1, -1),
-                    predictor_list=predictors,
-                    training_list=training,
-                    parallel=False,
-                )[0]
-        elif error is None:  # marginal score
-
-            def marginal_score_function():
-                K = len(virtual_trainings)
-                trains_k = [copy.deepcopy(training) for _ in range(K)]
-                predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-                for predictor_k, training_k, virtual_training in zip(
-                    predictors_k, trains_k, virtual_trainings
-                ):
-                    training_k.add(
-                        X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
-                    )
-                    for i in range(self.num_objectives):
-                        predictor_k[i].update(
-                            training_k, virtual_training, objective_index=i
-                        )
-
-                def fn(x):
-                    f = np.zeros(K)
-                    for k in range(K):
-                        f[k] = self.get_score(
-                            mode,
-                            xs=x.reshape(1, -1),
-                            predictor_list=predictors_k[k],
-                            training_list=trains_k[k],
-                            parallel=False,
-                        )[0]
-                    return np.mean(f)
-
-                return fn
-
-            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
-        if self.mpisize > 1 and (samples_drawn or len(virtual_trainings) > 0):
-            # the samples, and so the predictors, differ between the processes
-            _mpi.allgather(self.mpicomm, None, error)
-
-        pareto = self.history.pareto
-        upper = search_score._reference_points_upper(mode)
-        if upper is not None and pareto.front.shape[0] > 0:
-            # on every process before the optimizer, which may evaluate fn on
-            # some processes only, so that they all use the same reference
-            # points and warn (or raise) together
-            pareto.prepare_reference_points(upper=upper)
-        return self._optimize_score(fn, optimizer)
-
-    def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
-        X = np.zeros((N, self.dim))
-        self._update_predictor()
-        predictors = [copy.deepcopy(predictor) for predictor in self.predictor_list]
-
-        for i, predictor in enumerate(predictors):
-            predictor.config.is_disp = False
-            predictor.prepare(self.training, objective_index=i)
-        X[0, :] = self._argmax_score(
-            mode, predictors, self.training, [], optimizer=optimizer
-        )
-
-        for n in range(1, N):
-
-            def draw_samples():
-                # with Bayesian linear models the training data carry the
-                # values of the basis functions of every objective, so the
-                # virtual observations must too (as in write)
-                Z = self._stack_basis(predictors, X[0:n, :])
-                virtual_trainings = [Variable(X=X[0:n, :], Z=Z) for _ in range(K)]
-                virtual_t = np.zeros((K, n, self.num_objectives))
-                for i in range(self.num_objectives):
-                    virtual_t[:, :, i] = predictors[i].get_predict_samples(
-                        self.training,
-                        virtual_trainings[0],
-                        K,
-                        objective_index=i,
-                        rng=self.rng,
-                    )
-                for k in range(K):
-                    virtual_trainings[k].t = virtual_t[k, :, :]
-                return virtual_trainings
-
-            virtual_trainings, error = _mpi.call(self.mpicomm, draw_samples)
-            X[n, :] = self._argmax_score(
-                mode,
-                predictors,
-                self.training,
-                virtual_trainings,
-                optimizer=optimizer,
-                error=error,
-                samples_drawn=True,
-            )
-        return X
 
     def get_score(
         self,

@@ -29,6 +29,7 @@ import numpy as np
 from . import utility
 from .optimize.random import Optimizer as RandomOptimizer
 from .. import _mpi
+from .._variable import Variable
 
 
 def _num_procs(mpicomm):
@@ -67,8 +68,33 @@ class _SearchSpace:
         """Keep the share of this process of the candidates. Nothing to do
         unless the search space is a list of candidates."""
 
+    #: Whether ``argmax`` evaluates the function it is given point by
+    #: point, many times. The policy then builds what the function needs
+    #: (the models with the virtual observations) once, beforehand.
+    pointwise = False
+
     def random(self, N, rng, mpicomm):
         """``N`` points drawn at random, the same on every process."""
+        raise NotImplementedError
+
+    def argmax(self, score_function, optimizer, mpicomm, random_point):
+        """The point that maximizes ``score_function``, the same on every
+        process, or None if the space has no point left.
+
+        ``score_function`` takes points as a ``physbo.Variable`` and returns
+        an array of their scores. ``optimizer`` and ``random_point`` are
+        for the spaces that need them (see ``_RangeSpace.argmax``).
+        """
+        raise NotImplementedError
+
+    def to_variable(self, points):
+        """The points (a list of what ``argmax`` returns) as a
+        ``physbo.Variable``."""
+        raise NotImplementedError
+
+    def as_proposal(self, points):
+        """The points (a list of what ``argmax`` returns) as the array that
+        a search step proposes."""
         raise NotImplementedError
 
     def local_state(self):
@@ -209,6 +235,31 @@ class _DiscreteSpace(_SearchSpace):
             champion = local_champions[champion_rank]
         return champion, local_champion, local_index
 
+    def argmax(self, score_function, optimizer, mpicomm, random_point):
+        """The best of the candidates not searched yet, which is removed
+        from them; None if no candidate is left.
+
+        Each process scores its candidates; an exception raised on one of
+        them is raised on every process.
+        """
+        f, error = _mpi.call(
+            mpicomm, score_function, self.test.get_subset(self.actions)
+        )
+        champion, local_champion, local_index = self.find_champion(f, error, mpicomm)
+        if champion == -1:
+            return None
+        if champion == local_champion:
+            self.remove(local_index)
+        return champion
+
+    def to_variable(self, points):
+        return self.test.get_subset(points)
+
+    def as_proposal(self, points):
+        if len(points) == 0:
+            return np.zeros(0, dtype=int)
+        return np.array(points)
+
     def local_state(self):
         return {"actions": self.actions}
 
@@ -232,6 +283,8 @@ class _RangeSpace(_SearchSpace):
         (True for feasible points).
     """
 
+    pointwise = True
+
     def __init__(self, min_X, max_X, constraint=None):
         if min_X is None or max_X is None:
             raise ValueError("min_X and max_X must be specified")
@@ -253,7 +306,7 @@ class _RangeSpace(_SearchSpace):
             1, -1
         )
 
-    def random(self, N, rng, mpicomm, max_trials_per_point=10000):
+    def random(self, N, rng, mpicomm, *, max_trials_per_point):
         """
         Drawing feasible points uniformly.
 
@@ -326,7 +379,7 @@ class _RangeSpace(_SearchSpace):
             )
         return action
 
-    def default_optimizer(self, rng, max_trials_per_point=10000):
+    def default_optimizer(self, rng, max_trials_per_point):
         """Optimizer of the acquisition function used when none is given."""
         return RandomOptimizer(
             min_X=self.min_X,
@@ -350,14 +403,22 @@ class _RangeSpace(_SearchSpace):
 
         return wrapped
 
-    def argmax(self, fn, optimizer, mpicomm, random_point):
+    def to_variable(self, points):
+        return Variable(X=np.array(points).reshape(-1, self.dim))
+
+    def as_proposal(self, points):
+        return np.array(points).reshape(-1, self.dim)
+
+    def argmax(self, score_function, optimizer, mpicomm, random_point):
         """
         Maximize the acquisition function under the constraint.
 
         Parameters
         ----------
-        fn: callable
-            Acquisition function, from a point of shape (dim,) to float.
+        score_function: callable
+            Acquisition function, from points as a ``physbo.Variable`` to
+            the array of their scores. The optimizer is given a function of
+            one point of shape (dim,).
         optimizer: Optimizer object
             Called as optimizer(fn, mpicomm=...).
         mpicomm: MPI.Comm or None
@@ -369,7 +430,7 @@ class _RangeSpace(_SearchSpace):
         Returns
         -------
         X: numpy.ndarray
-            The point to be searched next.
+            The point to be searched next, of shape (dim,).
 
         Notes
         -----
@@ -380,6 +441,10 @@ class _RangeSpace(_SearchSpace):
         feasible. A point of the wrong dimension is an error of the optimizer and
         raises ValueError, as without a constraint.
         """
+
+        def fn(x):
+            return score_function(Variable(X=x.reshape(1, -1)))[0]
+
         if isinstance(optimizer, RandomOptimizer) and (
             # == rather than "is": a bound method (fn.constraint) is a new
             # object at every attribute access
@@ -391,7 +456,7 @@ class _RangeSpace(_SearchSpace):
         else:
             X = optimizer(self.constrained(fn), mpicomm=mpicomm)
         if self.constraint is None:
-            return X
+            return self._as_point(X)
 
         def check():
             if X is None:
@@ -418,13 +483,19 @@ class _RangeSpace(_SearchSpace):
         if comm is not None:
             is_ok = _mpi.bcast(comm, is_ok, error, root=0)
         if is_ok:
-            return X
+            return self._as_point(X)
         if mpirank == 0:
             warnings.warn(
                 "The optimizer of the acquisition function did not return a feasible point. "
                 "A feasible random point is proposed instead.",
                 RuntimeWarning,
-                # the caller of the policy method that delegates here
-                stacklevel=3,
+                stacklevel=2,
             )
-        return random_point()
+        return self._as_point(random_point())
+
+    def _as_point(self, X):
+        """``X`` as an array of shape (dim,) of floats; what the optimizer
+        returned must fit."""
+        point = np.zeros(self.dim)
+        point[:] = X
+        return point

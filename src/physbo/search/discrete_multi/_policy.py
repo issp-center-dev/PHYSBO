@@ -6,7 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
 
 from ._history import History
@@ -208,12 +207,8 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             rng=self.rng,
         )
 
-        def propose(N, K, alpha):
-            return self._get_actions(score, N, K, alpha)
-
         return self._bayes_search(
             score,
-            propose,
             training=training_list,
             predictor=predictor_list,
             max_num_probes=max_num_probes,
@@ -225,31 +220,6 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             ard=ard,
             disp_pareto_set=disp_pareto_set,
         )
-
-    def _get_actions(self, mode, N, K, alpha):
-        f, error = _mpi.call(
-            self.mpicomm, self.get_score, mode=mode, alpha=alpha, parallel=False
-        )
-        champion, local_champion, local_index = self.space.find_champion(
-            f, error, self.mpicomm
-        )
-        if champion == -1:
-            return np.zeros(0, dtype=int)
-        if champion == local_champion:
-            self.space.remove(local_index)
-
-        chosen_actions = [champion]
-        for n in range(1, N):
-            f, error = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
-            champion, local_champion, local_index = self.space.find_champion(
-                f, error, self.mpicomm
-            )
-            if champion == -1:
-                break
-            if champion == local_champion:
-                self.space.remove(local_index)
-            chosen_actions.append(champion)
-        return np.array(chosen_actions)
 
     def get_score(
         self,
@@ -383,84 +353,6 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
-
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha):
-        """
-        Getting marginal scores.
-
-        Parameters
-        ----------
-        mode: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        chosen_actions: numpy.ndarray
-            Array of selected actions.
-        K: int
-            The total number of search candidates.
-        alpha: float
-            not used.
-
-        Returns
-        -------
-        f: numpy.ndarray or None
-            The marginal scores of the candidates of this process (score is
-            defined in each mode), or None if ``error`` is not None.
-        error: Exception or None
-            An exception raised on this process while computing ``f`` in a
-            parallel run, to be passed to ``space.find_champion`` (in a serial
-            run it is raised).
-        """
-
-        comm = self._comm
-
-        def predict_samples():
-            N = len(chosen_actions)
-            # draw K samples of the values of objective function of chosen
-            # actions
-            virtual_t = np.zeros((K, N, self.num_objectives))
-            for i in range(self.num_objectives):
-                virtual_t[:, :, i] = self.predictor_list[i].get_predict_samples(
-                    self.training, new_test, K, objective_index=i, rng=self.rng
-                )
-            return virtual_t
-
-        # self.test is not partitioned over ranks, so the chosen points are
-        # identical on every rank; the virtual values are drawn on rank 0 and
-        # broadcast so that all ranks fantasize the same observations.
-        new_test = self.test.get_subset(chosen_actions)
-        if comm is None or self.mpirank == 0:
-            virtual_t, error = _mpi.call(comm, predict_samples)
-        else:
-            virtual_t, error = None, None
-        if comm is not None:
-            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
-        return _mpi.call(comm, self._marginal_score, mode, new_test, virtual_t, K)
-
-    def _marginal_score(self, mode, new_test, virtual_t, K):
-        """The marginal scores of this process's candidates for the K virtual
-        observations ``virtual_t`` at the points ``new_test`` (the same on
-        every process) from :meth:`_get_marginal_score`."""
-        f = np.zeros((K, len(self.actions)), dtype=float)
-        for k in range(K):
-            predictor_list = [copy.deepcopy(p) for p in self.predictor_list]
-
-            virtual_train = copy.deepcopy(new_test)
-            virtual_train.t = virtual_t[k, :, :]
-
-            training_k = copy.deepcopy(self.training)
-            training_k.add(X=virtual_train.X, t=virtual_train.t, Z=virtual_train.Z)
-
-            for i in range(self.num_objectives):
-                predictor_list[i].update(training_k, virtual_train, objective_index=i)
-
-            f[k, :] = self.get_score(
-                mode,
-                predictor_list=predictor_list,
-                training_list=training_k,
-                parallel=False,
-            )
-        return np.mean(f, axis=0)
 
     def save(self, file_history, file_training_list=None, file_predictor_list=None):
         if self.mpirank == 0:

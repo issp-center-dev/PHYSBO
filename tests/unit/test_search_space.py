@@ -14,6 +14,7 @@ the policies (``test``, ``actions``, ``min_X``, ...) read and write it.
 """
 
 import copy
+import inspect
 import os
 import pickle
 import threading
@@ -136,8 +137,10 @@ def test_space_is_copied_and_pickled_with_the_policy(kind):
 @pytest.mark.parametrize("kind", DISCRETE + RANGE)
 def test_random_points_of_the_policy_are_those_of_its_space(kind):
     first, second = make_policy(kind), make_policy(kind)
+    kwargs = {} if kind.startswith("discrete") else {"max_trials_per_point": 10000}
     np.testing.assert_array_equal(
-        first._get_random_action(3), second.space.random(3, second.rng, None)
+        first._get_random_action(3),
+        second.space.random(3, second.rng, None, **kwargs),
     )
 
 
@@ -251,14 +254,16 @@ def test_range_space_draws_points_of_the_box():
 
     # without a constraint, random() is the uniform sample
     np.testing.assert_array_equal(
-        space.random(5, np.random.default_rng(1), None),
+        space.random(5, np.random.default_rng(1), None, max_trials_per_point=1),
         space.sample_uniform(5, np.random.default_rng(1)),
     )
 
 
 def test_range_space_draws_feasible_points():
     space = _RangeSpace(np.zeros(2), np.ones(2), in_lower_half)
-    points = space.random(50, np.random.default_rng(0), None)
+    points = space.random(
+        50, np.random.default_rng(0), None, max_trials_per_point=10000
+    )
     assert points.shape == (50, 2) and np.all(in_lower_half(points))
 
     # the sampling is given up after max_trials_per_point * N points
@@ -295,13 +300,19 @@ def test_range_space_default_optimizer_draws_from_the_space():
     assert optimizer.constraint is in_lower_half
     assert optimizer.max_trials_per_point == 30
     assert optimizer.rng is rng
-    assert space.default_optimizer(rng).max_trials_per_point == 10000
+
+
+def score_near(center):
+    """A score function of the form the spaces are given: from points as a
+    Variable to the array of their scores."""
+
+    def score_function(test):
+        return -np.sum((test.X - center) ** 2, axis=1)
+
+    return score_function
 
 
 def test_range_space_maximizes_with_the_optimizer():
-    def fn(x):
-        return -float(np.sum((np.asarray(x) - 0.2) ** 2))
-
     def corner(f, mpicomm=None):
         return np.array([0.1, 0.1])
 
@@ -317,30 +328,111 @@ def test_range_space_maximizes_with_the_optimizer():
         asked.append(1)
         return np.array([0.3, 0.3])
 
+    score_function = score_near(0.2)
     # without a constraint the point of the optimizer is taken as it is
     free = _RangeSpace(np.zeros(2), np.ones(2))
     np.testing.assert_array_equal(
-        free.argmax(fn, outside, None, random_point), [0.9, 0.9]
+        free.argmax(score_function, outside, None, random_point), [0.9, 0.9]
     )
+    with pytest.raises(ValueError, match="could not broadcast"):
+        free.argmax(score_function, wrong_dimension, None, random_point)
 
     space = _RangeSpace(np.zeros(2), np.ones(2), in_lower_half)
     np.testing.assert_array_equal(
-        space.argmax(fn, corner, None, random_point), [0.1, 0.1]
+        space.argmax(score_function, corner, None, random_point), [0.1, 0.1]
     )
     assert asked == []
     # an infeasible point is replaced by the random point it is given
     with pytest.warns(RuntimeWarning, match="feasible random point"):
-        point = space.argmax(fn, outside, None, random_point)
+        point = space.argmax(score_function, outside, None, random_point)
     np.testing.assert_array_equal(point, [0.3, 0.3])
     assert asked == [1]
     with pytest.raises(ValueError, match="3 dimension"):
-        space.argmax(fn, wrong_dimension, None, random_point)
+        space.argmax(score_function, wrong_dimension, None, random_point)
 
     # the default optimizer proposes feasible points by itself
     rng = np.random.default_rng(0)
-    best = space.argmax(fn, space.default_optimizer(rng), None, random_point)
+    best = space.argmax(
+        score_function, space.default_optimizer(rng, 10000), None, random_point
+    )
     assert in_lower_half(best)[0] and np.linalg.norm(best - 0.2) < 0.1
     assert asked == [1]
+
+
+def test_range_space_gives_the_optimizer_a_function_of_one_point():
+    """The optimizer calls a function of a point of shape (dim,) that
+    returns a number; the space asks the score function for one point as a
+    Variable. The point returned is an array of floats of shape (dim,)."""
+    seen = []
+
+    def score_function(test):
+        seen.append(test)
+        return np.array([7.5])
+
+    def optimizer(f, mpicomm=None):
+        value = f(np.array([0.25, 0.5]))
+        assert value == 7.5 and np.ndim(value) == 0
+        return [1, 0]
+
+    space = _RangeSpace(np.zeros(2), np.ones(2))
+    point = space.argmax(score_function, optimizer, None, lambda: None)
+    assert isinstance(seen[0], physbo.Variable)
+    np.testing.assert_array_equal(seen[0].X, [[0.25, 0.5]])
+    assert point.dtype == float and point.shape == (2,)
+    np.testing.assert_array_equal(point, [1.0, 0.0])
+
+
+def test_range_space_collects_points():
+    space = _RangeSpace(np.zeros(2), np.ones(2))
+    assert type(space).pointwise
+    points = [np.array([0.1, 0.2]), np.array([0.3, 0.4])]
+    variable = space.to_variable(points)
+    np.testing.assert_array_equal(variable.X, [[0.1, 0.2], [0.3, 0.4]])
+    assert variable.t is None and variable.Z is None
+    np.testing.assert_array_equal(space.as_proposal(points), variable.X)
+    assert space.as_proposal(points[:1]).shape == (1, 2)
+
+
+def test_discrete_space_takes_the_best_candidate():
+    """argmax scores the candidates not searched yet, returns the best one
+    and removes it; None when no candidate is left."""
+    space = _DiscreteSpace(physbo.Variable(X=X))
+    space.actions = np.array([4, 8, 15, 16])
+    assert not type(space).pointwise
+    seen = []
+
+    def score_function(test):
+        seen.append(test.X.copy())
+        return 2 * test.X[:, 0] + test.X[:, 1]
+
+    best = space.argmax(score_function, None, None, None)
+    np.testing.assert_array_equal(seen[0], X[[4, 8, 15, 16]])
+    assert best == 16
+    np.testing.assert_array_equal(space.actions, [4, 8, 15])
+    assert space.argmax(score_function, None, None, None) == 15
+
+    space.actions = np.array([], dtype=int)
+    assert space.argmax(score_function, None, None, None) is None
+
+    def failing(test):
+        raise KeyError("scores")
+
+    space.actions = np.array([1, 2])
+    with pytest.raises(KeyError, match="scores"):
+        space.argmax(failing, None, None, None)
+    np.testing.assert_array_equal(space.actions, [1, 2])
+
+
+def test_discrete_space_collects_points():
+    space = _DiscreteSpace(physbo.Variable(X=X, Z=np.arange(50.0).reshape(1, 25, 2)))
+    variable = space.to_variable([3, 7])
+    np.testing.assert_array_equal(variable.X, X[[3, 7]])
+    np.testing.assert_array_equal(variable.Z, space.test.Z[:, [3, 7], :])
+    proposal = space.as_proposal([np.int64(3), np.int64(7)])
+    assert proposal.dtype == np.int64
+    np.testing.assert_array_equal(proposal, [3, 7])
+    empty = space.as_proposal([])
+    assert empty.shape == (0,) and empty.dtype == np.zeros(0, dtype=int).dtype
 
 
 @pytest.mark.parametrize("bad", [np.inf, np.nan, None], ids=["inf", "nan", "none"])
@@ -355,7 +447,7 @@ def test_range_space_replaces_a_point_that_is_not_finite(bad):
 
     space = _RangeSpace(np.zeros(2), np.ones(2), anything)
     with pytest.warns(RuntimeWarning, match="feasible random point"):
-        point = space.argmax(lambda x: 0.0, broken, None, lambda: np.full(2, 0.3))
+        point = space.argmax(score_near(0.2), broken, None, lambda: np.full(2, 0.3))
     np.testing.assert_array_equal(point, [0.3, 0.3])
 
 
@@ -370,7 +462,7 @@ def test_range_space_gives_the_communicator_to_the_optimizer_as_it_is():
 
     for constraint in (None, in_lower_half):
         space = _RangeSpace(np.zeros(2), np.ones(2), constraint)
-        space.argmax(lambda x: 0.0, optimizer, one_process, lambda: None)
+        space.argmax(score_near(0.2), optimizer, one_process, lambda: None)
     assert seen == [one_process, one_process]
 
 
@@ -479,29 +571,67 @@ def test_point_proposed_when_the_optimizer_fails_is_the_random_action_of_the_pol
 
     policy = make_policy(kind, constraint=in_lower_half)
     policy.random_search(max_num_probes=4, simulator=simulator(kind), is_disp=False)
-    monkeypatch.setattr(policy, "_get_random_action", lambda N: np.full((N, 2), 0.25))
+    asked = []
+
+    def random_action(N):
+        asked.append(N)
+        return np.full((N, 2), 0.25)
+
+    monkeypatch.setattr(policy, "_get_random_action", random_action)
     with pytest.warns(RuntimeWarning, match="feasible random point") as record:
         proposal = policy.bayes_search(
             max_num_probes=None, optimizer=outside, **bayes_kwargs(kind, policy)
         )
     np.testing.assert_array_equal(proposal, [[0.25, 0.25]])
-    # the warning points at the proposal of the policy, not at the helpers
+    # one random point, drawn once
+    assert asked == [1]
+    # the warning points at the maximization in the proposal of the policies
     (warning,) = [w for w in record if "feasible random point" in str(w.message)]
-    assert warning.filename.endswith(os.path.join("search", kind, "_policy.py"))
+    assert warning.filename.endswith(os.path.join("search", "_policy_common.py"))
+    lines, first = inspect.getsourcelines(type(policy)._get_actions)
+    assert first <= warning.lineno < first + len(lines)
+
+
+class OneProcess:
+    """A communicator of one process, as far as a serial search uses it."""
+
+    size = 1
+    rank = 0
+
+    def Get_size(self):
+        return 1
+
+    def Get_rank(self):
+        return 0
+
+    def allgather(self, value):
+        return [value]
+
+    def bcast(self, value, root=0):
+        return value
+
+    def Bcast(self, buffer, root=0):
+        pass
 
 
 @pytest.mark.parametrize("kind", RANGE)
 def test_policy_gives_its_communicator_to_the_optimizer_as_it_is(kind):
-    one_process = SimpleNamespace(size=1, rank=0)
+    one_process = OneProcess()
     policy = make_policy(kind, comm=one_process)
+    policy.random_search(max_num_probes=4, simulator=simulator(kind), is_disp=False)
     seen = []
 
     def optimizer(f, mpicomm=None):
         seen.append(mpicomm)
         return np.array([0.1, 0.1])
 
-    policy._optimize_score(lambda x: 0.0, optimizer)
-    assert seen == [one_process]
+    policy.bayes_search(
+        max_num_probes=None,
+        num_search_each_probe=2,
+        optimizer=optimizer,
+        **bayes_kwargs(kind, policy),
+    )
+    assert seen == [one_process, one_process]
 
 
 @pytest.mark.parametrize("kind", DISCRETE + RANGE)

@@ -6,7 +6,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
 
 from ._history import History
@@ -14,7 +13,7 @@ from ... import _mpi
 from .. import discrete
 from .. import utility
 from .. import score as search_score
-from ..._variable import Variable, normalize_t
+from ..._variable import Variable
 from .._policy_common import _UnifiedObjectiveMethods
 
 
@@ -231,12 +230,8 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
         if num_rand_basis is not None and num_rand_basis < 0:
             raise ValueError("num_rand_basis must be non-negative")
 
-        def propose(N, K, alpha):
-            return self._get_actions(score, N, K, alpha, ucb_beta)
-
         return self._bayes_search(
             score,
-            propose,
             training=training_list,
             predictor=predictor,
             max_num_probes=max_num_probes,
@@ -249,44 +244,6 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
             unify_method=unify_method,
             disp_pareto_set=disp_pareto_set,
         )
-
-    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
-        self._update_predictor()
-        comm = self._comm
-        # TS: one posterior sample for every process, drawn on rank 0
-        first_mode = search_score.share_sample(
-            mode, self.predictor, self.training_unified, comm
-        )
-        f, error = _mpi.call(
-            self.mpicomm,
-            self.get_score,
-            mode=first_mode,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-            parallel=False,
-        )
-        champion, local_champion, local_index = self.space.find_champion(
-            f, error, self.mpicomm
-        )
-        if champion == -1:
-            return np.zeros(0, dtype=int)
-        if champion == local_champion:
-            self.space.remove(local_index)
-
-        chosen_actions = [champion]
-        for n in range(1, N):
-            f, error = self._get_marginal_score(
-                mode, chosen_actions[0:n], K, alpha, ucb_beta
-            )
-            champion, local_champion, local_index = self.space.find_champion(
-                f, error, self.mpicomm
-            )
-            if champion == -1:
-                break
-            if champion == local_champion:
-                self.space.remove(local_index)
-            chosen_actions.append(champion)
-        return np.array(chosen_actions)
 
     def get_post_fmean(self, xs):
         """
@@ -469,100 +426,6 @@ class Policy(_UnifiedObjectiveMethods, discrete.Policy):
             fs = _mpi.allgather(comm, f, error)
             f = np.hstack(fs)
         return f
-
-
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
-        """
-        Getting marginal scores.
-
-        Parameters
-        ----------
-        mode: str
-            The type of acquisition function.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        chosen_actions: numpy.ndarray
-            Array of selected actions.
-        K: int
-            The number of samples for evaluating score.
-        alpha: float
-            not used.
-
-        Returns
-        -------
-        f: numpy.ndarray or None
-            The marginal scores of the candidates of this process (score is
-            defined in each mode), or None if ``error`` is not None.
-        error: Exception or None
-            An exception raised on this process while computing ``f`` in a
-            parallel run, to be passed to ``space.find_champion`` (in a serial
-            run it is raised).
-        """
-
-        comm = self._comm
-
-        # Draw K samples of the values of objective function of chosen actions.
-        # self.test is not partitioned over ranks, so the chosen points are
-        # identical on every rank; the virtual values are drawn on rank 0 and
-        # broadcast so that all ranks fantasize the same observations.
-        new_test = self.test.get_subset(chosen_actions)
-        if comm is None or self.mpirank == 0:
-            virtual_t, error = _mpi.call(
-                comm,
-                self.predictor.get_predict_samples,
-                self.training_unified,
-                new_test,
-                K,
-                rng=self.rng,
-            )
-        else:
-            virtual_t, error = None, None
-        if comm is not None:
-            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
-
-        def model(k):
-            # the predictor and the training data with the k-th virtual
-            # observations added (the same on every process)
-            predictor = copy.deepcopy(self.predictor)
-            train = copy.deepcopy(self.training_unified)
-            virtual_train = new_test
-            # Normalize virtual_t[k, :] to (N, 1) shape
-            virtual_train.t = normalize_t(virtual_t[k, :], k=1)
-
-            if virtual_train.Z is None:
-                # the candidates carry no basis values (the basis of the
-                # unified predictor belongs to the unified data, not to the
-                # multi-objective candidates), so compute them for the virtual
-                # observations as the unified training data have them; None
-                # with the GP predictor
-                self._attach_unified_basis(virtual_train)
-            train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
-
-            predictor.update(train, virtual_train)
-            return predictor, train
-
-        # TS: one posterior sample per virtual data set for every process,
-        # drawn on rank 0
-        samples = search_score.share_samples(mode, self.predictor, model, K, comm)
-        return _mpi.call(comm, self._marginal_score, mode, model, K, ucb_beta, samples)
-
-    def _marginal_score(self, mode, model, K, ucb_beta, samples=None):
-        """The marginal scores of this process's candidates: the mean of the
-        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.
-        ``samples`` are their posterior samples for Thompson sampling (see
-        :func:`physbo.search.score.share_samples`), or None."""
-        f = np.zeros((K, len(self.actions)), dtype=float)
-        for k in range(K):
-            predictor, train = model(k)
-            mode_k = mode if samples is None else mode.with_sample(samples[k])
-            f[k, :] = self.get_score(
-                mode_k,
-                predictor=predictor,
-                training=train,
-                ucb_beta=ucb_beta,
-                parallel=False,
-            )
-        return np.mean(f, axis=0)
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """

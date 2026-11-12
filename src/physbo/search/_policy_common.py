@@ -128,7 +128,10 @@ class _PolicyBase(CheckpointMixin):
     the loop ``_search_loop`` and use:
 
     - ``space.random(N, rng, mpicomm)`` (through ``_get_random_action(N)``)
-      and the proposal function given by the policy;
+      and ``_get_actions``, the proposal of a step of bayes_search, which
+      is written once below in terms of the search space
+      (``space.argmax``) and of what depends on the kind of objective
+      (``_current_model``, ``_score_function``, ...);
     - ``_has_predictors()``, ``_current_predictors()``,
       ``_use_predictor(predictor)`` and ``_new_predictor(is_rand_expans)`` to
       keep, take or create the predictor(s);
@@ -190,6 +193,218 @@ class _PolicyBase(CheckpointMixin):
     def _write_initial_data(self, initial_data):
         """Check ``initial_data`` and record it with write()."""
         raise NotImplementedError
+
+    # -- the proposal of a step of bayes_search ----------------------------
+    #
+    # A "model" is the pair (predictor(s), training data) that a score is
+    # computed from: (predictor, training) here, (predictor_list, training)
+    # in the multi-objective policies, (predictor, training_unified) in the
+    # unified ones.
+
+    def _current_model(self):
+        """The model of the policy as it is."""
+        return self.predictor, self.training
+
+    def _proposal_model(self):
+        """The model that the scores of a proposal start from."""
+        return self._current_model()
+
+    def _copy_predictors(self, predictors):
+        return copy.deepcopy(predictors)
+
+    def _prepare_model(self, model):
+        """Build the statistics of the predictor(s) of ``model`` from its
+        training data."""
+        predictor, training = model
+        predictor.prepare(training, objective_index=0)
+
+    def _observe(self, model, observed):
+        """Add the observations ``observed`` to the training data of
+        ``model`` and update its predictor(s)."""
+        predictor, training = model
+        training.add(X=observed.X, t=observed.t, Z=observed.Z)
+        predictor.update(training, observed, objective_index=0)
+
+    def _attach_basis(self, variable):
+        """Give ``variable`` the values of the basis functions of the
+        predictor(s) at its points, as the training data carry them. Nothing
+        is done with Gaussian process predictors, which have no basis."""
+        Z = self.predictor.get_basis(variable.X)
+        if Z is not None:
+            variable.Z = Z[np.newaxis, :, :]
+
+    def _draw_virtual_observations(self, variable, K):
+        """``K`` samples of the objective(s) at the points of ``variable``
+        from the posterior of the model of the policy, of shape
+        (K, number of points, number of objectives)."""
+        predictor, training = self._current_model()
+        t = predictor.get_predict_samples(
+            training, variable, K, objective_index=0, rng=self.rng
+        )
+        return t.reshape(K, -1, 1)
+
+    def _score_function(self, mode, model):
+        """The function from points (a ``physbo.Variable``) to their scores
+        ``mode`` (resolved, so that it carries its own parameters) under
+        ``model``."""
+        predictor, training = model
+
+        def score_function(test):
+            return self.get_score(
+                mode, xs=test, predictor=predictor, training=training, parallel=False
+            )
+
+        return score_function
+
+    def _share_sample(self, mode, comm):
+        """``mode`` evaluating one posterior sample on every process, where
+        the policy shares the sample of Thompson sampling between the
+        processes (see ``physbo.search.score.share_sample``)."""
+        return mode
+
+    def _share_samples(self, mode, model, K, comm):
+        """The posterior samples of the ``K`` models ``model(k)`` for every
+        process, or None where the policy does not share them (see
+        ``physbo.search.score.share_samples``)."""
+        return None
+
+    def _prepare_scoring(self, mode):
+        """Called on every process before the scores of a point are
+        maximized."""
+
+    def _get_actions(self, mode, N, K, optimizer=None):
+        """
+        The proposal of a step of bayes_search: ``N`` points, chosen one
+        after another.
+
+        The first point maximizes the acquisition function. Each of the
+        following ones maximizes its mean over ``K`` models, in each of
+        which the points chosen so far are observed with values drawn from
+        the posterior (virtual observations); with ``K = 0`` they maximize
+        the acquisition function itself again.
+
+        Parameters
+        ----------
+        mode: callable
+            The acquisition function (resolved).
+        N: int
+            The number of points.
+        K: int
+            The number of sets of virtual observations.
+        optimizer:
+            The optimizer of the acquisition function (range policies).
+
+        Returns
+        -------
+        The points, as the search space gives them: an array of the indices
+        of the candidates (fewer than ``N`` if they ran out), or an array of
+        points of shape (N, dim).
+        """
+        self._update_predictor()
+        base = self._proposal_model()
+
+        def random_point():
+            return self._get_random_action(1)[0]
+
+        chosen = []
+        for n in range(N):
+            # The function of the point before, with its K models, is let go
+            # before the models of this point are built.
+            score_function = None
+            if n == 0 or K == 0:
+                score_function = self._score_function(
+                    self._share_sample(mode, self._comm), base
+                )
+            else:
+                score_function = self._score_with_virtual_observations(
+                    mode, base, chosen, K
+                )
+            self._prepare_scoring(mode)
+            point = self.space.argmax(
+                score_function, optimizer, self.mpicomm, random_point
+            )
+            if point is None:
+                break
+            chosen.append(point)
+        return self.space.as_proposal(chosen)
+
+    def _score_with_virtual_observations(self, mode, base, chosen, K):
+        """The function from points to the mean of their scores ``mode``
+        over ``K`` models: copies of the model ``base`` in which the points
+        ``chosen`` are observed with values drawn from the posterior of the
+        model of the policy."""
+        comm = self._comm
+        # The points chosen so far, with the values of the basis functions
+        # that the training data carry.
+        virtual = self.space.to_variable(chosen)
+        if virtual.Z is None:
+            self._attach_basis(virtual)
+        # K sets of virtual observations at them. They are drawn on rank 0
+        # and broadcast, so that every process scores its share of the space
+        # under the same K models; an exception while drawing is raised on
+        # every process.
+        if comm is None or self.mpirank == 0:
+            virtual_t, error = _mpi.call(
+                comm, self._draw_virtual_observations, virtual, K
+            )
+        else:
+            virtual_t, error = None, None
+        if comm is not None:
+            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
+
+        def model(k):
+            # a copy of the model with the k-th virtual observations added
+            # (the same on every process)
+            observed = copy.copy(virtual)
+            observed.t = virtual_t[k]
+            predictors, training = base
+            with_virtual = (
+                self._copy_predictors(predictors),
+                copy.deepcopy(training),
+            )
+            self._observe(with_virtual, observed)
+            return with_virtual
+
+        # TS: one posterior sample per model for every process
+        samples = self._share_samples(mode, model, K, comm)
+        if not self.space.pointwise:
+            # the scores are asked for once: the models are built one at a
+            # time while they are computed
+            return self._marginal_score_function(mode, model, K, samples)
+
+        # The scores are asked for point by point: the K models are built
+        # once, and an exception while building them on one process is
+        # raised on every process.
+        def models_with_virtual_observations():
+            return [model(k) for k in range(K)]
+
+        models, error = _mpi.call(self.mpicomm, models_with_virtual_observations)
+        if comm is not None:
+            _mpi.allgather(comm, None, error)
+        return self._marginal_score_function(mode, models.__getitem__, K, samples)
+
+    def _marginal_score_function(self, mode, model, K, samples):
+        """The function from points to the mean of their scores over the
+        ``K`` models ``model(k)``. ``samples`` are the posterior samples of
+        the models for Thompson sampling (see ``_share_samples``), or
+        None."""
+
+        def score_function(test):
+            f = np.zeros((K, test.X.shape[0]), dtype=float)
+            for k in range(K):
+                mode_k = mode if samples is None else mode.with_sample(samples[k])
+                f[k, :] = self._score_function(mode_k, model(k))(test)
+            return np.mean(f, axis=0)
+
+        return score_function
+
+    @staticmethod
+    def _require_points_per_step(num_search_each_probe):
+        if int(num_search_each_probe) < 1:
+            raise ValueError(
+                "ERROR: num_search_each_probe must be a positive integer, "
+                f"but {num_search_each_probe} was given."
+            )
 
     def _get_random_action(self, N):
         """``N`` points of the search space drawn at random (indices of
@@ -314,6 +529,7 @@ class _PolicyBase(CheckpointMixin):
     ):
         """The body of random_search of the six policies."""
         self._require_comm()
+        self._require_points_per_step(num_search_each_probe)
         if self.mpirank != 0:
             is_disp = False
 
@@ -415,10 +631,26 @@ class _PolicyBase(CheckpointMixin):
         self._statistics_sources = ()
         self.new_data = None
 
-    def _bayes_search(
+    # True while bayes_search runs. Every process of a parallel run is then
+    # in the same call, so that what the processes must agree on can be
+    # computed on rank 0 and broadcast (the unified objective, see
+    # _UnifiedObjectiveMethods._unify_training). Outside a search a method
+    # of the policy may be called by one process alone.
+    _in_search = False
+
+    def _bayes_search(self, score, **kwargs):
+        """The body of bayes_search of the six policies: ``_run_bayes_search``,
+        marked as running."""
+        self._in_search = True
+        try:
+            return self._run_bayes_search(score, **kwargs)
+        finally:
+            # back to the class attribute: not part of the state
+            self.__dict__.pop("_in_search", None)
+
+    def _run_bayes_search(
         self,
         score,
-        propose,
         *,
         training,
         predictor,
@@ -429,21 +661,25 @@ class _PolicyBase(CheckpointMixin):
         interval,
         num_rand_basis,
         ard,
+        optimizer=None,
         unify_method=None,
         disp_pareto_set=False,
     ):
         """
         The body of bayes_search of the six policies.
 
-        ``score`` is the acquisition function already resolved, and
-        ``propose(N, K, alpha)`` returns the proposal of a step (``K`` and
-        ``alpha`` are read from the config). ``training`` and ``predictor``
-        are what the caller gave (``training_list`` / ``predictor_list`` in
-        the multi-objective policies) or None. The other arguments are those
-        of bayes_search; ``unify_method`` is that of the unified policies,
-        and ``disp_pareto_set`` is passed to ``_show_search_results``.
+        ``score`` is the acquisition function already resolved; the proposal
+        of a step is ``_get_actions(score, N, K, optimizer)``, with ``K``
+        read from the config. ``training`` and ``predictor`` are
+        what the caller gave (``training_list`` / ``predictor_list`` in the
+        multi-objective policies) or None. The other arguments are those of
+        bayes_search; ``optimizer`` is that of the range policies (already
+        set to the default one if none was given), ``unify_method`` that of
+        the unified policies, and ``disp_pareto_set`` is passed to
+        ``_show_search_results``.
         """
         self._require_comm()
+        self._require_points_per_step(num_search_each_probe)
 
         # The predictor(s) of the policy are kept between calls. New ones are
         # made, to be learned, when the policy has none, or when this call
@@ -551,8 +787,7 @@ class _PolicyBase(CheckpointMixin):
 
         def propose_step():
             K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            return propose(N, K, alpha)
+            return self._get_actions(score, N, K, optimizer=optimizer)
 
         proposal = self._search_loop(
             max_num_probes,
@@ -751,6 +986,53 @@ class _MultiObjectiveMethods:
         utility.show_search_results_mo(
             self.history, N_indeed, disp_pareto_set=disp_pareto_set
         )
+
+    def _current_model(self):
+        return self.predictor_list, self.training
+
+    def _prepare_model(self, model):
+        predictors, training = model
+        for i, predictor in enumerate(predictors):
+            predictor.prepare(training, objective_index=i)
+
+    def _observe(self, model, observed):
+        predictors, training = model
+        training.add(X=observed.X, t=observed.t, Z=observed.Z)
+        for i, predictor in enumerate(predictors):
+            predictor.update(training, observed, objective_index=i)
+
+    def _attach_basis(self, variable):
+        variable.Z = self._stack_basis(self.predictor_list, variable.X)
+
+    def _draw_virtual_observations(self, variable, K):
+        predictors, training = self._current_model()
+        t = np.zeros((K, variable.X.shape[0], self.num_objectives))
+        for i, predictor in enumerate(predictors):
+            t[:, :, i] = predictor.get_predict_samples(
+                training, variable, K, objective_index=i, rng=self.rng
+            )
+        return t
+
+    def _score_function(self, mode, model):
+        predictors, training = model
+
+        def score_function(test):
+            return self.get_score(
+                mode,
+                xs=test,
+                predictor_list=predictors,
+                training_list=training,
+                parallel=False,
+            )
+
+        return score_function
+
+    def _share_sample(self, mode, comm):
+        # each process samples the posterior of its own points
+        return mode
+
+    def _share_samples(self, mode, model, K, comm):
+        return None
 
     @staticmethod
     def _stack_basis(predictors, X):
@@ -977,6 +1259,9 @@ class _UnifiedObjectiveMethods:
             self.history, N_indeed, disp_pareto_set=disp_pareto_set
         )
 
+    def _current_model(self):
+        return self.predictor, self.training_unified
+
     def _attach_unified_basis(self, variable):
         """Give ``variable`` the values of the basis functions of the unified
         predictor at its points, in the (1, N, n) form of the training data.
@@ -1006,9 +1291,26 @@ class _UnifiedObjectiveMethods:
 
     def _unify_training(self, training: Variable) -> Variable:
         """
-        Wrapper of the unify_method function
+        The training data with the objectives unified by ``unify_method``.
+
+        During a search of a parallel run the unify method is called on
+        rank 0 and its result is broadcast: a unify method may draw random
+        numbers (the weights of ParEGO), and the generators of the processes
+        do not stay in step. An exception of the unify method is raised on
+        every process. Outside a search (get_post_fmean and the like, which
+        one process may call alone) each process unifies by itself; the next
+        search unifies anew if the processes then differ (see
+        ``_statistics_missing``).
         """
-        t_unified = self.unify_method(training.t)
+        comm = self._comm if self._in_search else None
+        if comm is None:
+            t_unified = self.unify_method(training.t)
+        else:
+            if self.mpirank == 0:
+                t_unified, error = _mpi.call(comm, self.unify_method, training.t)
+            else:
+                t_unified, error = None, None
+            t_unified = _mpi.bcast(comm, t_unified, error, root=0)
         return Variable(X=training.X, t=t_unified.reshape(-1, 1))
 
     def _set_unify_method(self, unify_method):
@@ -1023,7 +1325,20 @@ class _UnifiedObjectiveMethods:
         return (*super()._sources_of_statistics(), getattr(self, "unify_method", None))
 
     def _statistics_missing(self):
-        return super()._statistics_missing() or self.training_unified is None
+        missing = super()._statistics_missing() or self.training_unified is None
+        comm = self._comm if self._in_search else None
+        if comm is not None:
+            # The processes decide together. Outside a search each unifies
+            # by itself (see _unify_training), so that their unified data
+            # may differ, or one of them may be ahead of the others; then
+            # all of them unify anew, on rank 0.
+            unified = self.training_unified
+            mine = None if unified is None else unified.t.tobytes()
+            answers = comm.allgather((missing, mine))
+            missing = any(m for m, _ in answers) or any(
+                t != answers[0][1] for _, t in answers
+            )
+        return missing
 
     def _after_load(self):
         super()._after_load()

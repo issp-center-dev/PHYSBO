@@ -358,7 +358,8 @@ def check_scores():
             )
 
     # the samples for the second candidate of a step in the range policies,
-    # drawn before the optimizer
+    # drawn on rank 0 and broadcast before the optimizer, as in the discrete
+    # policies
     for name, make, simulator, kwargs in [
         ("range", range_single, sim_x, {"score": "EI"}),
         ("range_multi", range_multi, f_multi, {"score": "HVPI"}),
@@ -366,7 +367,7 @@ def check_scores():
          {"score": "EI", "unify_method": unify()}),
     ]:
         policy = make()
-        with patched(physbo.gp.Predictor, "get_predict_samples", on_rank=last):
+        with patched(physbo.gp.Predictor, "get_predict_samples", on_rank=0):
             expect_raised_everywhere(
                 f"{name} bayes_search, samples",
                 lambda: policy.bayes_search(
@@ -376,29 +377,7 @@ def check_scores():
                     is_disp=False,
                     **kwargs,
                 ),
-                failing_rank=last,
-            )
-
-    # the same without samples (multi_probe_num_sampling = 0), where only the
-    # process that failed has no samples to set up predictors for
-    for name, make, simulator, kwargs in [
-        ("range", range_single, sim_x, {"score": "EI"}),
-        ("range_unified", range_unified, f_multi,
-         {"score": "EI", "unify_method": unify()}),
-    ]:
-        policy = make()
-        policy.config.search.multi_probe_num_sampling = 0
-        with patched(physbo.gp.Predictor, "get_predict_samples", on_rank=last):
-            expect_raised_everywhere(
-                f"{name} bayes_search, samples, none drawn",
-                lambda: policy.bayes_search(
-                    max_num_probes=1,
-                    simulator=simulator,
-                    num_search_each_probe=2,
-                    is_disp=False,
-                    **kwargs,
-                ),
-                failing_rank=last,
+                failing_rank=0,
             )
 
     # the setup of the predictors for these samples, before the optimizer
@@ -410,7 +389,7 @@ def check_scores():
     ]:
         policy = make()
         with patched_in(
-            physbo.gp.Predictor, "update", "marginal_score_function", on_rank=last
+            physbo.gp.Predictor, "update", "models_with_virtual_observations", on_rank=last
         ):
             expect_raised_everywhere(
                 f"{name} bayes_search, predictors for the samples",
