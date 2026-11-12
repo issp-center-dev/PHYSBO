@@ -32,7 +32,30 @@ from ..gp import Predictor as gp_predictor
 from ..blm import Predictor as blm_predictor
 from ..misc import SetConfig
 from .._variable import Variable
-from .._rng import LegacyRNG, make_rng
+from .._rng import LegacyRNG, attach_rng, make_rng
+
+
+def _mark_unlearned(predictor):
+    """Mark a predictor a policy made (or is about to learn) as not learned."""
+    predictor._unlearned = True
+
+
+def _mark_learned(predictor):
+    predictor.__dict__.pop("_unlearned", None)
+
+
+def _is_learned(predictor):
+    """Whether a predictor can be used without learning its hyperparameters.
+
+    Any predictor can, except one that a policy made and has not learned
+    (the mark above travels with the predictor, also through pickle), and a
+    Bayesian linear model that was never fitted, which has no basis.
+    """
+    if predictor is None or getattr(predictor, "_unlearned", False):
+        return False
+    if isinstance(predictor, blm_predictor) and predictor.blm is None:
+        return False
+    return True
 
 
 def run_simulator(simulator, action, comm=None):
@@ -84,26 +107,33 @@ class _PolicyBase(CheckpointMixin):
     the loop ``_search_loop`` and use:
 
     - ``_get_random_action(N)`` and the proposal function given by the policy;
-    - ``_current_predictors()``, ``_use_predictor(predictor)`` and
-      ``_new_predictor(is_rand_expans)`` to keep, take or create the
-      predictor(s);
+    - ``_has_predictors()``, ``_current_predictors()``,
+      ``_use_predictor(predictor)`` and ``_new_predictor(is_rand_expans)`` to
+      keep, take or create the predictor(s);
     - ``_learn_hyperparameter(num_rand_basis)``, ``_update_predictor()``,
       ``_prepare_statistics()`` and ``_clear_basis_values()``;
     - ``write(...)`` to record a step;
     - ``_show_search_results(N_indeed, disp_pareto_set)`` to print it.
     """
 
-    # Whether the predictor(s) of the policy have been learned (or were given
-    # to bayes_search, which counts as learned). The constructor sets it to
-    # False; the value here is for a policy restored from a state saved before
-    # the attribute existed, whose predictor, if it has one, was learned.
-    _predictor_learned = True
+    # What the previous bayes_search asked for, as (num_rand_basis, ard). None
+    # if no call has asked for a kind of predictor since the policy got the
+    # one(s) it has: a new policy, one whose predictor was read by load() or
+    # set by hand, or one restored from a state saved before the attribute
+    # existed.
+    _predictor_request = None
+    # Whether the statistics of the predictor(s), and the basis values kept
+    # with the data, may not be those of the predictor(s) and the training
+    # data in use: after load(), or once bayes_search was given a predictor,
+    # training data or (unified policies) another way of unifying.
+    _statistics_stale = False
 
     def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
         self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
-        self._predictor_learned = False
+        self._predictor_request = None
+        self._statistics_stale = False
         self._init_predictor_state()
         self.history = self._new_history()
         if config is None:
@@ -280,9 +310,17 @@ class _PolicyBase(CheckpointMixin):
             return proposal
         return copy.deepcopy(self.history)
 
+    def _has_predictors(self):
+        """Whether the policy has the predictor(s) it needs."""
+        return self.predictor is not None
+
     def _current_predictors(self):
         """The predictor(s) the policy has, as a list (empty if none yet)."""
         return [] if self.predictor is None else [self.predictor]
+
+    def _as_predictor_list(self, predictor):
+        """The predictor(s) given to bayes_search, as a list."""
+        return [predictor]
 
     def _use_predictor(self, predictor):
         """Take the predictor(s) given to bayes_search."""
@@ -298,10 +336,10 @@ class _PolicyBase(CheckpointMixin):
         Gaussian process (``num_rand_basis == 0``) or Bayesian linear model
         with ``num_rand_basis`` basis functions, with ARD or without.
 
-        The kind is read from the predictor itself, so that a predictor
-        given to an earlier bayes_search is judged like one the policy made.
-        What cannot be read (a predictor of another class, a model without
-        the ``ard`` attribute) is taken to match.
+        The kind is read from the predictor itself. What cannot be read (a
+        predictor of another class, a model without the ``ard`` attribute)
+        is taken to match. bayes_search asks this only when a call wants
+        something else than the previous one.
         """
         predictors = self._current_predictors()
         if not predictors:
@@ -331,9 +369,17 @@ class _PolicyBase(CheckpointMixin):
         raise NotImplementedError
 
     def _statistics_missing(self):
-        """Whether the predictor lacks what _prepare_statistics builds
-        although it has been learned (the unified policies after load())."""
-        return False
+        """Whether _prepare_statistics has to run before a search that does
+        not learn."""
+        return self._statistics_stale
+
+    def _after_load(self):
+        """Called at the end of load(): the predictor(s) and the training
+        data were read from files, so nothing remembered about the previous
+        ones holds any more."""
+        self._predictor_request = None
+        self._statistics_stale = True
+        self.new_data = None
 
     def _bayes_search(
         self,
@@ -349,6 +395,7 @@ class _PolicyBase(CheckpointMixin):
         interval,
         num_rand_basis,
         ard,
+        unify_method=None,
         disp_pareto_set=False,
     ):
         """
@@ -359,23 +406,35 @@ class _PolicyBase(CheckpointMixin):
         ``alpha`` are read from the config). ``training`` and ``predictor``
         are what the caller gave (``training_list`` / ``predictor_list`` in
         the multi-objective policies) or None. The other arguments are those
-        of bayes_search; ``disp_pareto_set`` is passed to
-        ``_show_search_results``.
+        of bayes_search; ``unify_method`` is that of the unified policies,
+        and ``disp_pareto_set`` is passed to ``_show_search_results``.
         """
-        # The predictor(s) of the policy are kept between calls, and replaced
-        # only when another kind is asked for (Gaussian process or Bayesian
-        # linear model, the number of basis functions, ARD).
+        # The predictor(s) of the policy are kept between calls. New ones are
+        # made, to be learned, when the policy has none, or when this call
+        # asks for something else than the previous one (num_rand_basis, ard)
+        # and the predictor(s) are not of the kind asked for. A predictor
+        # that was given, read by load() or set by hand therefore stays until
+        # a call asks for another kind.
         is_rand_expans = num_rand_basis != 0
+        request = (num_rand_basis, bool(ard))
         given = predictor is not None
-        keep = given or self._predictor_matches(num_rand_basis, ard)
-        if interval < 0 and not (given or (keep and self._predictor_learned)):
+        if given:
+            keep = True
+            in_use = self._as_predictor_list(predictor)
+        else:
+            keep = self._has_predictors() and (
+                self._predictor_request in (None, request)
+                or self._predictor_matches(num_rand_basis, ard)
+            )
+            in_use = self._current_predictors() if keep else []
+        if interval < 0 and not (in_use and all(_is_learned(p) for p in in_use)):
             # checked before anything is changed; the condition is the same
             # on every process
             raise RuntimeError(
                 "ERROR: bayes_search with interval < 0 does not learn the "
-                "hyperparameters, but the policy has no learned predictor of "
-                "the kind asked for (num_rand_basis, ard). Call bayes_search "
-                "with interval >= 0 first, or give a learned predictor."
+                "hyperparameters, but there is no learned predictor of the "
+                "kind asked for (num_rand_basis, ard). Call bayes_search with "
+                "interval >= 0 first, or give a learned predictor."
             )
 
         if self.mpirank != 0:
@@ -389,36 +448,52 @@ class _PolicyBase(CheckpointMixin):
             simulator = None
 
         self.ard = ard
+        if unify_method is not None:
+            self._set_unify_method(unify_method)
 
         if training is not None:
             self.training = training
             # the points not given to the predictor yet belonged to the
             # training data just replaced
             self.new_data = None
+            self._statistics_stale = True
 
         if given:
             self._use_predictor(predictor)
-            self._predictor_learned = True
+            # the basis values kept with the data are those of the predictor
+            # just replaced, and the statistics of the one given may be those
+            # of other data
+            self._clear_basis_values()
+            self._statistics_stale = True
         elif not keep:
             self._new_predictor(is_rand_expans)
-            self._predictor_learned = False
+            for made in self._current_predictors():
+                _mark_unlearned(made)
             self._clear_basis_values()
+        self._predictor_request = request
 
         if max_num_probes > 0 or interval >= 0:
             utility.require_training_data(self.training)
 
         def learn():
+            # not learned until the learning has gone through
+            predictors = self._current_predictors()
+            for p in predictors:
+                _mark_unlearned(p)
             self._learn_hyperparameter(num_rand_basis)
-            self._predictor_learned = True
+            for p in predictors:
+                _mark_learned(p)
+            self._statistics_stale = False
 
         if max_num_probes == 0 and interval >= 0:
             learn()
-        elif interval < 0 and (training is not None or self._statistics_missing()):
+        elif interval < 0 and self._statistics_missing():
             # nothing is learned in this call, so the statistics of the
-            # predictor are built here from the training data: those given,
-            # or those of a policy whose statistics were not restored
+            # predictor(s) and the basis values kept with the data are
+            # built here from the predictor(s) and the training data in use
             if self.training.X is not None and self.training.X.shape[0] > 0:
                 self._prepare_statistics()
+                self._statistics_stale = False
 
         N = int(num_search_each_probe)
 
@@ -601,8 +676,17 @@ class _MultiObjectiveMethods:
         self.predictor_list = [None for _ in range(self.num_objectives)]
         self.TS_candidate_num = None
 
+    def _has_predictors(self):
+        # a list with a hole is not kept: new predictors are made
+        return len(self.predictor_list) > 0 and all(
+            p is not None for p in self.predictor_list
+        )
+
     def _current_predictors(self):
         return [p for p in self.predictor_list if p is not None]
+
+    def _as_predictor_list(self, predictor_list):
+        return list(predictor_list)
 
     def _use_predictor(self, predictor_list):
         self.predictor_list = predictor_list
@@ -626,10 +710,10 @@ class _MultiObjectiveMethods:
     def _stack_basis(predictors, X):
         """The values at ``X`` of the basis functions of the predictors of
         the objectives, stacked into the (k, N, n) form of the training
-        data, or None with Gaussian process predictors, which have no basis
-        functions."""
+        data, or None if any of them is a Gaussian process predictor, which
+        has no basis functions."""
         z = [p.get_basis(X) for p in predictors]
-        return np.stack(z, axis=0) if z[0] is not None else None
+        return np.stack(z, axis=0) if all(b is not None for b in z) else None
 
     def get_post_fmean(self, xs):
         """
@@ -800,7 +884,6 @@ class _MultiObjectiveMethods:
     def load_predictor_list(self, file_name):
         with open(file_name, "rb") as f:
             self.predictor_list = pickle.load(f)
-        self._predictor_learned = True
 
     def load_training_list(self, file_name):
         with open(file_name, "rb") as f:
@@ -882,9 +965,23 @@ class _UnifiedObjectiveMethods:
         t_unified = self.unify_method(training.t)
         return Variable(X=training.X, t=t_unified.reshape(-1, 1))
 
+    def _set_unify_method(self, unify_method):
+        """Take the unify method given to bayes_search."""
+        if unify_method is not getattr(self, "unify_method", None):
+            # the unified data in use were made by another method
+            self._statistics_stale = True
+        self.unify_method = unify_method
+        # a unify_method without a generator of its own (e.g. ParEGO) draws
+        # from the policy's rng, so that the Generator mode covers it
+        attach_rng(unify_method, self.rng)
+
     def _statistics_missing(self):
-        # load() restores the predictor but not the unified training data
-        return self.training_unified is None
+        return self._statistics_stale or self.training_unified is None
+
+    def _after_load(self):
+        super()._after_load()
+        # load() restores neither the unified training data nor unify_method
+        self.training_unified = None
 
     def _prepare_statistics(self):
         self.training_unified = self._unify_training(self.training)
@@ -892,7 +989,6 @@ class _UnifiedObjectiveMethods:
         # after _learn_hyperparameter, so that virtual observations with
         # Z can be added to them (several proposals per step)
         self._attach_unified_basis(self.training_unified)
-        self.predictor.delete_stats()
         self.predictor.prepare(self.training_unified)
         self.new_data = None
 

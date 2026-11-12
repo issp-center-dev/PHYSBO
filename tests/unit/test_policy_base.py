@@ -119,12 +119,13 @@ def test_random_search_takes_what_is_left_and_then_stops(kind, capsys):
     assert "All actions have already searched" not in capsys.readouterr().out
 
     for interactive in (False, True):
+        # asked for two more steps, it stops at the first
         result = policy.random_search(
-            max_num_probes=1,
+            max_num_probes=2,
             simulator=None if interactive else simulator,
             is_disp=False,
         )
-        assert "All actions have already searched" in capsys.readouterr().out
+        assert capsys.readouterr().out.count("All actions have already searched") == 1
         assert result.total_num_search == n
 
 

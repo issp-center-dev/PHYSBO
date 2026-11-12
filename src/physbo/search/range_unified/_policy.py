@@ -15,7 +15,6 @@ from .. import range as range_single
 from .. import utility
 from .. import score as search_score
 from ..._variable import Variable
-from ..._rng import attach_rng
 from .._policy_common import _UnifiedObjectiveMethods
 
 
@@ -206,14 +205,15 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
-            A negative interval needs a learned predictor of the kind asked for
-            (num_rand_basis, ard): the one learned by an earlier bayes_search, or
-            one given as an argument. Otherwise a RuntimeError is raised.
+            A negative interval needs a learned predictor: the one learned by an
+            earlier bayes_search, or one given as an argument, read by load() or
+            set by hand. Otherwise, or if another kind of predictor is asked for
+            (see num_rand_basis), a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
-            The predictor is kept between calls of bayes_search; it is replaced by
-            a new one, to be learned, when num_rand_basis or ard differ from those
-            it was made with.
+            The predictor is kept between calls of bayes_search. A new one is made,
+            to be learned, when num_rand_basis or ard differ from those of the
+            previous call and the predictor is not of the kind asked for.
         unify_method: callable
             The unified objective function. It is a function or a callable object that maps a (N, num_objectives) numpy.ndarray of original objective functions to a (N, 1) numpy.ndarray of unified objective functions.
             See physbo.search.unify for examples.
@@ -237,10 +237,6 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
         )
 
         assert unify_method is not None, "unify_method must be provided"
-        self.unify_method = unify_method
-        # a unify_method without a generator of its own (e.g. ParEGO) draws
-        # from the policy's rng, so that the Generator mode covers it
-        attach_rng(unify_method, self.rng)
         if optimizer is None:
             optimizer = self._default_optimizer()
 
@@ -259,6 +255,7 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
             interval=interval,
             num_rand_basis=num_rand_basis,
             ard=ard,
+            unify_method=unify_method,
             disp_pareto_set=disp_pareto_set,
         )
 
@@ -606,6 +603,8 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
         if file_predictor is not None:
             self.load_predictor(file_predictor)
 
+        self._after_load()
+
 
     def save_predictor(self, file_name):
         with open(file_name, "wb") as f:
@@ -619,7 +618,6 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
     def load_predictor(self, file_name):
         with open(file_name, "rb") as f:
             self.predictor = pickle.load(f)
-        self._predictor_learned = True
 
     def load_training(self, file_name):
         with open(file_name, "rb") as f:

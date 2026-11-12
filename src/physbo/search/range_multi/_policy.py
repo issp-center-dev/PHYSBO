@@ -208,14 +208,15 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
-            A negative interval needs a learned predictor of the kind asked for
-            (num_rand_basis, ard): the one learned by an earlier bayes_search, or
-            one given as an argument. Otherwise a RuntimeError is raised.
+            A negative interval needs a learned predictor: the one learned by an
+            earlier bayes_search, or one given as an argument, read by load() or
+            set by hand. Otherwise, or if another kind of predictor is asked for
+            (see num_rand_basis), a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
-            The predictor is kept between calls of bayes_search; it is replaced by
-            a new one, to be learned, when num_rand_basis or ard differ from those
-            it was made with.
+            The predictor is kept between calls of bayes_search. A new one is made,
+            to be learned, when num_rand_basis or ard differ from those of the
+            previous call and the predictor is not of the kind asked for.
         optimizer: Optimizer object, optional
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
@@ -545,6 +546,8 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             self.load_predictor_list(file_predictor_list)
 
         N = self.history.total_num_search
+
+        self._after_load()
 
     def _learn_hyperparameter(self, num_rand_basis):
         for i in range(self.num_objectives):
