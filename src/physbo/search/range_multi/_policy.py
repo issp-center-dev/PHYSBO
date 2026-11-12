@@ -541,12 +541,10 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         N = self.history.total_num_search
 
     def _learn_hyperparameter(self, num_rand_basis):
-        # Collect Z for each objective
-        Z_list = []
         training = self.training
+        Z_list = []
         for i in range(self.num_objectives):
             predictor = self.predictor_list[i]
-
             predictor.fit(
                 training,
                 num_rand_basis,
@@ -554,16 +552,14 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
                 objective_index=i,
                 rng=self.rng,
             )
+            Z_list.append(predictor.get_basis(training.X))
 
-            # Collect Z for training (will be combined into (k, N, n))
-            training_Z_basis = predictor.get_basis(training.X)
-            Z_list.append(training_Z_basis)
-            predictor.prepare(training, objective_index=i)
-
-        # Update training.Z with (k, N, n) format
+        # The basis values of the training data, in (k, N, n) format, have to
+        # be those of the predictors just fitted before prepare() reads them
+        # (None with Gaussian process predictors).
         if all(z is not None for z in Z_list):
-            # Stack along first dimension: (k, N, n)
-            self.training.Z = np.stack(
-                Z_list, axis=0
-            )  # Each Z_i is (N, n), stack to (k, N, n)
+            self.training.Z = np.stack(Z_list, axis=0)
+
+        for i in range(self.num_objectives):
+            self.predictor_list[i].prepare(training, objective_index=i)
         self.new_data = None
