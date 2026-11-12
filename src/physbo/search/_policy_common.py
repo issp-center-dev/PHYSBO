@@ -58,6 +58,28 @@ def _is_learned(predictor):
     return True
 
 
+def _num_basis_of(predictors):
+    """The number of basis functions of the Bayesian linear model(s) among
+    ``predictors``: 0 if there is none (Gaussian processes), None if the
+    model was never fitted (it is then fitted with the number of the
+    config)."""
+    for predictor in predictors:
+        if isinstance(predictor, blm_predictor):
+            return None if predictor.blm is None else predictor.blm.nbasis
+    return 0
+
+
+def _ard_of(predictors):
+    """Whether the kernel of the first of ``predictors`` that tells has ARD;
+    False if none does."""
+    for predictor in predictors:
+        model = getattr(predictor, "model", None)
+        cov = getattr(getattr(model, "prior", None), "cov", None)
+        if hasattr(cov, "ard"):
+            return bool(cov.ard)
+    return False
+
+
 def run_simulator(simulator, action, comm=None):
     """
     Run the simulator once for the proposed points of a step.
@@ -116,24 +138,22 @@ class _PolicyBase(CheckpointMixin):
     - ``_show_search_results(N_indeed, disp_pareto_set)`` to print it.
     """
 
-    # What the previous bayes_search asked for, as (num_rand_basis, ard). None
-    # if no call has asked for a kind of predictor since the policy got the
-    # one(s) it has: a new policy, one whose predictor was read by load() or
-    # set by hand, or one restored from a state saved before the attribute
-    # existed.
-    _predictor_request = None
-    # Whether the statistics of the predictor(s), and the basis values kept
-    # with the data, may not be those of the predictor(s) and the training
-    # data in use: after load(), or once bayes_search was given a predictor,
-    # training data or (unified policies) another way of unifying.
-    _statistics_stale = False
+    # What the statistics of the predictor(s), and the basis values kept with
+    # the data, were built from: the predictor(s) and the training data (and
+    # the unify method in the unified policies), as a tuple of the objects
+    # themselves. Before a search that does not learn, bayes_search compares
+    # it with the objects in use and builds the statistics again if one of
+    # them is another object: a predictor that was given, read by load() or
+    # set by hand, other training data. () if nothing was built yet. None in
+    # a policy restored from a state saved before the attribute existed; its
+    # statistics are taken as they are.
+    _statistics_sources = None
 
     def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
         self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
-        self._predictor_request = None
-        self._statistics_stale = False
+        self._statistics_sources = ()
         self._init_predictor_state()
         self.history = self._new_history()
         if config is None:
@@ -334,28 +354,28 @@ class _PolicyBase(CheckpointMixin):
     def _predictor_matches(self, num_rand_basis, ard):
         """Whether the predictor(s) the policy has are of the kind asked for:
         Gaussian process (``num_rand_basis == 0``) or Bayesian linear model
-        with ``num_rand_basis`` basis functions, with ARD or without.
+        with ``num_rand_basis`` basis functions, with ARD or without. None
+        asks for nothing, so that any predictor matches (None, None).
 
         The kind is read from the predictor itself. What cannot be read (a
-        predictor of another class, a model without the ``ard`` attribute)
-        is taken to match. bayes_search asks this only when a call wants
-        something else than the previous one.
+        predictor of another class, a model without the ``ard`` attribute, the
+        number of basis functions of a model that was never fitted) is taken
+        to match.
         """
-        predictors = self._current_predictors()
-        if not predictors:
-            return False
-        for predictor in predictors:
+        for predictor in self._current_predictors():
             if not isinstance(predictor, (gp_predictor, blm_predictor)):
                 continue
-            is_blm = isinstance(predictor, blm_predictor)
-            if is_blm != (num_rand_basis != 0):
-                return False
-            if is_blm and predictor.blm is not None:
-                if predictor.blm.nbasis != num_rand_basis:
+            if num_rand_basis is not None:
+                is_blm = isinstance(predictor, blm_predictor)
+                if is_blm != (num_rand_basis != 0):
                     return False
-            cov = getattr(getattr(predictor.model, "prior", None), "cov", None)
-            if hasattr(cov, "ard") and bool(cov.ard) != bool(ard):
-                return False
+                if is_blm and predictor.blm is not None:
+                    if predictor.blm.nbasis != num_rand_basis:
+                        return False
+            if ard is not None:
+                cov = getattr(getattr(predictor.model, "prior", None), "cov", None)
+                if hasattr(cov, "ard") and bool(cov.ard) != bool(ard):
+                    return False
         return True
 
     def _clear_basis_values(self):
@@ -368,17 +388,27 @@ class _PolicyBase(CheckpointMixin):
         (and the basis values the data carry), without learning."""
         raise NotImplementedError
 
+    def _sources_of_statistics(self):
+        """The objects the statistics are built from (see
+        ``_statistics_sources``)."""
+        return (*self._current_predictors(), self.training)
+
     def _statistics_missing(self):
-        """Whether _prepare_statistics has to run before a search that does
-        not learn."""
-        return self._statistics_stale
+        """Whether the statistics have to be built again before a search
+        that does not learn: they were built from other objects than those
+        in use, or not at all."""
+        built_from = self._statistics_sources
+        if built_from is None:
+            return False
+        in_use = self._sources_of_statistics()
+        return len(built_from) != len(in_use) or any(
+            a is not b for a, b in zip(built_from, in_use)
+        )
 
     def _after_load(self):
-        """Called at the end of load(): the predictor(s) and the training
-        data were read from files, so nothing remembered about the previous
-        ones holds any more."""
-        self._predictor_request = None
-        self._statistics_stale = True
+        """Called at the end of load(): the training data, and the
+        predictor(s) if their file was given, were read from files."""
+        self._statistics_sources = ()
         self.new_data = None
 
     def _bayes_search(
@@ -411,20 +441,17 @@ class _PolicyBase(CheckpointMixin):
         """
         # The predictor(s) of the policy are kept between calls. New ones are
         # made, to be learned, when the policy has none, or when this call
-        # asks for something else than the previous one (num_rand_basis, ard)
-        # and the predictor(s) are not of the kind asked for. A predictor
-        # that was given, read by load() or set by hand therefore stays until
-        # a call asks for another kind.
-        is_rand_expans = num_rand_basis != 0
-        request = (num_rand_basis, bool(ard))
+        # asks for a kind (num_rand_basis, ard; None asks for nothing) that
+        # the predictor(s) are not of. A predictor that was given, read by
+        # load() or set by hand therefore stays until a call asks for another
+        # kind.
         given = predictor is not None
         if given:
             keep = True
             in_use = self._as_predictor_list(predictor)
         else:
-            keep = self._has_predictors() and (
-                self._predictor_request in (None, request)
-                or self._predictor_matches(num_rand_basis, ard)
+            keep = self._has_predictors() and self._predictor_matches(
+                num_rand_basis, ard
             )
             in_use = self._current_predictors() if keep else []
         if interval < 0 and not (in_use and all(_is_learned(p) for p in in_use)):
@@ -447,7 +474,8 @@ class _PolicyBase(CheckpointMixin):
             max_num_probes = 1
             simulator = None
 
-        self.ard = ard
+        if ard is not None:
+            self.ard = ard
         if unify_method is not None:
             self._set_unify_method(unify_method)
 
@@ -456,21 +484,33 @@ class _PolicyBase(CheckpointMixin):
             # the points not given to the predictor yet belonged to the
             # training data just replaced
             self.new_data = None
-            self._statistics_stale = True
 
         if given:
             self._use_predictor(predictor)
-            # the basis values kept with the data are those of the predictor
-            # just replaced, and the statistics of the one given may be those
-            # of other data
-            self._clear_basis_values()
-            self._statistics_stale = True
-        elif not keep:
-            self._new_predictor(is_rand_expans)
+            # a Bayesian linear model is fitted with the number of basis
+            # functions asked for or, if none was, with the number it has
+            num_basis = num_rand_basis or _num_basis_of(in_use)
+        elif keep:
+            num_basis = num_rand_basis or _num_basis_of(in_use)
+        else:
+            # what was not asked for is as in the predictor(s) replaced
+            replaced = self._current_predictors()
+            num_basis = num_rand_basis
+            if num_basis is None:
+                num_basis = _num_basis_of(replaced)
+            if ard is None:
+                self.ard = _ard_of(replaced)
+            self._new_predictor(num_basis != 0)
             for made in self._current_predictors():
                 _mark_unlearned(made)
+
+        if given or not keep or training is not None or self._statistics_missing():
+            # The basis values kept with the data are those of a predictor
+            # that was replaced (here, by load() or by hand), and the
+            # statistics of a predictor that was given may be those of other
+            # data: both are built again, by the learning or below.
             self._clear_basis_values()
-        self._predictor_request = request
+            self._statistics_sources = ()
 
         if max_num_probes > 0 or interval >= 0:
             utility.require_training_data(self.training)
@@ -480,10 +520,10 @@ class _PolicyBase(CheckpointMixin):
             predictors = self._current_predictors()
             for p in predictors:
                 _mark_unlearned(p)
-            self._learn_hyperparameter(num_rand_basis)
+            self._learn_hyperparameter(num_basis)
             for p in predictors:
                 _mark_learned(p)
-            self._statistics_stale = False
+            self._statistics_sources = self._sources_of_statistics()
 
         if max_num_probes == 0 and interval >= 0:
             learn()
@@ -493,7 +533,7 @@ class _PolicyBase(CheckpointMixin):
             # built here from the predictor(s) and the training data in use
             if self.training.X is not None and self.training.X.shape[0] > 0:
                 self._prepare_statistics()
-                self._statistics_stale = False
+                self._statistics_sources = self._sources_of_statistics()
 
         N = int(num_search_each_probe)
 
@@ -967,16 +1007,17 @@ class _UnifiedObjectiveMethods:
 
     def _set_unify_method(self, unify_method):
         """Take the unify method given to bayes_search."""
-        if unify_method is not getattr(self, "unify_method", None):
-            # the unified data in use were made by another method
-            self._statistics_stale = True
         self.unify_method = unify_method
         # a unify_method without a generator of its own (e.g. ParEGO) draws
         # from the policy's rng, so that the Generator mode covers it
         attach_rng(unify_method, self.rng)
 
+    def _sources_of_statistics(self):
+        # the unified data are those of the unify method
+        return (*super()._sources_of_statistics(), getattr(self, "unify_method", None))
+
     def _statistics_missing(self):
-        return self._statistics_stale or self.training_unified is None
+        return super()._statistics_missing() or self.training_unified is None
 
     def _after_load(self):
         super()._after_load()

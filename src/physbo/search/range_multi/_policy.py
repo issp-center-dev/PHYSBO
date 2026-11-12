@@ -172,10 +172,10 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
         simulator=None,
         score="HVPI",
         interval=0,
-        num_rand_basis=0,
+        num_rand_basis=None,
         optimizer=None,
         unify_method=None,
-        ard=False,
+        ard=None,
     ):
         """
         Performing Bayesian optimization by using multi objective function
@@ -214,9 +214,11 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             (see num_rand_basis), a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            If None (default), the predictor the policy has is used, whatever its
+            kind; a Gaussian process is made if it has none yet.
             The predictor is kept between calls of bayes_search. A new one is made,
-            to be learned, when num_rand_basis or ard differ from those of the
-            previous call and the predictor is not of the kind asked for.
+            to be learned, when the predictor is not of the kind asked for by
+            num_rand_basis or ard.
         optimizer: Optimizer object, optional
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
@@ -225,7 +227,8 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
             This is not used.
         ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Default is False.
+            If None (default), as in the predictor the policy has; without ARD if
+            it has none yet.
 
         Returns
         -------
