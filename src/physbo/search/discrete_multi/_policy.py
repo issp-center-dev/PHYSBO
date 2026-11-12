@@ -112,12 +112,7 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
                 self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove action from candidates if exists
-        if len(self.actions) > 0:
-            local_index = np.searchsorted(self.actions, action)
-            local_index = local_index[
-                np.take(self.actions, local_index, mode="clip") == action
-            ]
-            self.actions = self._delete_actions(local_index)
+        self.space.exclude(action)
 
     def random_search(
         self,
@@ -235,20 +230,24 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
         f, error = _mpi.call(
             self.mpicomm, self.get_score, mode=mode, alpha=alpha, parallel=False
         )
-        champion, local_champion, local_index = self._find_champion(f, error)
+        champion, local_champion, local_index = self.space.find_champion(
+            f, error, self.mpicomm
+        )
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
-            self.actions = self._delete_actions(local_index)
+            self.space.remove(local_index)
 
         chosen_actions = [champion]
         for n in range(1, N):
             f, error = self._get_marginal_score(mode, chosen_actions[0:n], K, alpha)
-            champion, local_champion, local_index = self._find_champion(f, error)
+            champion, local_champion, local_index = self.space.find_champion(
+                f, error, self.mpicomm
+            )
             if champion == -1:
                 break
             if champion == local_champion:
-                self.actions = self._delete_actions(local_index)
+                self.space.remove(local_index)
             chosen_actions.append(champion)
         return np.array(chosen_actions)
 
@@ -409,7 +408,7 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
             defined in each mode), or None if ``error`` is not None.
         error: Exception or None
             An exception raised on this process while computing ``f`` in a
-            parallel run, to be passed to :meth:`_find_champion` (in a serial
+            parallel run, to be passed to ``space.find_champion`` (in a serial
             run it is raised).
         """
 
@@ -488,11 +487,7 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
         N = self.history.total_num_search
 
         visited = self.history.chosen_actions[:N]
-        local_index = np.searchsorted(self.actions, visited)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == visited
-        ]
-        self.actions = self._delete_actions(local_index)
+        self.space.exclude(visited)
 
         self._after_load()
 

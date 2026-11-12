@@ -8,22 +8,31 @@
 import numpy as np
 import copy
 import pickle as pickle
-import warnings
 
 from ._history import History
 from .. import utility
 from .. import score as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ... import _mpi
 from ..._variable import Variable, normalize_t
 from .._policy_common import _PolicyBase
+from .._space import _RangeSpace, _space_attribute
 
 
 class Policy(_PolicyBase):
     """Single objective Bayesian optimization with continuous search space"""
 
-    #: No constraint, for subclasses whose constructor does not set it.
-    constraint = None
+    min_X = _space_attribute(
+        "min_X", "The minimum value of each dimension of the search space."
+    )
+    max_X = _space_attribute(
+        "max_X", "The maximum value of each dimension of the search space."
+    )
+    L_X = _space_attribute("L_X", "The width of each dimension, max_X - min_X.")
+    dim = _space_attribute("dim", "The number of dimensions of the search space.")
+    constraint = _space_attribute(
+        "constraint",
+        "The inequality constraints on the search space (a callable), or None.",
+    )
 
     #: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.
     max_trials_per_point = 10000
@@ -67,21 +76,13 @@ class Policy(_PolicyBase):
             Random number generator specification (default: "legacy").
             See physbo.search.discrete.Policy for details.
         """
-        if min_X is None or max_X is None:
-            raise ValueError("min_X and max_X must be specified")
-        self.min_X = np.array(min_X)
-        self.max_X = np.array(max_X)
-        self.dim = self.min_X.shape[0]
-        assert self.dim == self.max_X.shape[0], (
-            "The dimension of min_X and max_X must be the same"
+        super().__init__(
+            space=_RangeSpace(min_X, max_X, constraint),
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
         )
-        assert np.all(self.min_X < self.max_X), (
-            "min_X must be less than max_X for each dimension"
-        )
-        self.L_X = self.max_X - self.min_X
-        self.constraint = constraint
-
-        super().__init__(config=config, initial_data=initial_data, comm=comm, rng=rng)
 
     def _new_history(self):
         return History(dim=self.dim)
@@ -539,100 +540,24 @@ class Policy(_PolicyBase):
 
     def _default_optimizer(self):
         """Optimizer of the acquisition function used when none is given."""
-        return RandomOptimizer(
-            min_X=self.min_X,
-            max_X=self.max_X,
-            nsamples=1000,
-            rng=self.rng,
-            constraint=self.constraint,
-            max_trials_per_point=self.max_trials_per_point,
-        )
-
-    def _constrained(self, fn):
-        """Make the acquisition function -inf at infeasible points."""
-        if self.constraint is None:
-            return fn
-
-        def wrapped(x):
-            x = np.asarray(x)
-            if utility.is_feasible(self.constraint, x.reshape(1, -1))[0]:
-                return fn(x)
-            return -np.inf
-
-        return wrapped
+        return self.space.default_optimizer(self.rng, self.max_trials_per_point)
 
     def _optimize_score(self, fn, optimizer):
-        """
-        Maximize the acquisition function under the constraint.
+        """Maximize the acquisition function ``fn`` (from a point of shape
+        (dim,) to float) with the optimizer, under the constraint; see
+        ``_RangeSpace.argmax``. When the optimizer does not return a
+        feasible point, a random one is proposed."""
+        return self.space.argmax(
+            fn, optimizer, self.mpicomm, lambda: self._get_random_action(1)[0]
+        )
 
-        Parameters
-        ----------
-        fn: callable
-            Acquisition function, from a point of shape (dim,) to float.
-        optimizer: Optimizer object
-            Called as optimizer(fn, mpicomm=...).
-
-        Returns
-        -------
-        X: numpy.ndarray
-            The point to be searched next.
-
-        Notes
-        -----
-        Infeasible points are hidden from the optimizer by -inf, but the optimizer can
-        still fail to return a feasible point (no feasible sample, or a local search
-        started from an infeasible point). The returned point is therefore checked,
-        and replaced with a feasible random point if it is None, not finite or not
-        feasible. A point of the wrong dimension is an error of the optimizer and
-        raises ValueError, as without a constraint.
-        """
-        if isinstance(optimizer, RandomOptimizer) and (
-            # == rather than "is": a bound method (fn.constraint) is a new
-            # object at every attribute access
-            optimizer.constraint == self.constraint
-        ):
-            # the optimizer draws feasible samples only; no need to judge
-            # them one by one again
-            X = optimizer(fn, mpicomm=self.mpicomm)
-        else:
-            X = optimizer(self._constrained(fn), mpicomm=self.mpicomm)
-        if self.constraint is None:
-            return X
-
-        def check():
-            if X is None:
-                return False
-            x = np.asarray(X, dtype=float).reshape(-1)
-            if x.shape[0] != self.dim:
-                raise ValueError(
-                    f"ERROR: the optimizer returned a point of {x.shape[0]} "
-                    f"dimension(s), but the search space has {self.dim}"
-                )
-            x = x.reshape(1, -1)
-            return bool(
-                np.all(np.isfinite(x)) and utility.is_feasible(self.constraint, x)[0]
-            )
-
-        # the verdict of rank 0 decides, so that all the ranks take the same
-        # branch; an exception while judging is raised on every rank
-        comm = self._comm
-        if comm is None or self.mpirank == 0:
-            is_ok, error = _mpi.call(comm, check)
-        else:
-            is_ok, error = None, None
-        if comm is not None:
-            is_ok = _mpi.bcast(comm, is_ok, error, root=0)
-        if is_ok:
-            return X
-
-        if self.mpirank == 0:
-            warnings.warn(
-                "The optimizer of the acquisition function did not return a feasible point. "
-                "A feasible random point is proposed instead.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        return self._get_random_action(1)[0]
+    def _get_random_action(self, N):
+        return self.space.random(
+            N,
+            self.rng,
+            self.mpicomm,
+            max_trials_per_point=self.max_trials_per_point,
+        )
 
     def _get_actions(
         self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
@@ -701,75 +626,6 @@ class Policy(_PolicyBase):
             )
 
         return X
-
-    def _get_random_action(self, N):
-        """
-        Getting indexes of actions randomly.
-
-        Parameters
-        ----------
-        N: int
-            Total number of search candidates.
-        Returns
-        -------
-        action: numpy.ndarray
-            Indexes of actions selected randomly from search candidates.
-        """
-        if self.constraint is None:
-            action = self._sample_uniform(N)
-            if self.mpisize > 1:
-                self.mpicomm.Bcast(action, root=0)
-            return action
-
-        # Only rank 0 samples, since the number of trials depends on the random
-        # numbers; the other ranks then draw the same number of points, so that
-        # the generators of all the ranks stay in step as without a constraint.
-        num_drawn = 0
-
-        def draw(n):
-            nonlocal num_drawn
-            num_drawn += n
-            return self._sample_uniform(n)
-
-        comm = self._comm
-        action, error = None, None
-        if comm is None or self.mpirank == 0:
-            # an exception of the constraint is raised on every rank below
-            action, error = _mpi.call(
-                comm,
-                utility.sample_feasible,
-                draw,
-                N,
-                self.constraint,
-                max_trials_per_point=self.max_trials_per_point,
-            )
-        if comm is not None:
-            # all the ranks must raise the error together
-            found, num_drawn = _mpi.bcast(
-                comm, (action is not None, num_drawn), error, root=0
-            )
-            if found:
-                if self.mpirank != 0:
-                    self._sample_uniform(num_drawn)
-                    action = np.zeros((N, self.dim))
-                comm.Bcast(action, root=0)
-            else:
-                action = None
-        if action is None:
-            raise RuntimeError(
-                "ERROR: feasible points were not found in {} random samples. "
-                "The feasible region may be empty or too small "
-                "(equality constraints are not supported).".format(
-                    self.max_trials_per_point * N
-                )
-            )
-        return action
-
-    def _sample_uniform(self, N):
-        """Draw N points uniformly from the box [min_X, max_X]."""
-        return self.rng.random((N, self.dim)) * self.L_X.reshape(
-            1, -1
-        ) + self.min_X.reshape(1, -1)
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """

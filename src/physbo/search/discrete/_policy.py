@@ -8,7 +8,6 @@
 import numpy as np
 import copy
 import pickle as pickle
-import itertools
 from typing import Optional, Any
 
 from ._history import History
@@ -20,6 +19,7 @@ from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
 from ..._rng import get_rng
 from .._policy_common import _PolicyBase
+from .._space import _DiscreteSpace, _space_attribute
 
 
 class Policy(_PolicyBase):
@@ -44,17 +44,21 @@ class Policy(_PolicyBase):
     Set to None after predictor is updated.
     """
 
-    test: Variable
-    """The set of candidate search points.
+    test = _space_attribute(
+        "test",
+        """The set of candidate search points (physbo.Variable).
 
-    Each row of X represents the feature vector of each search candidate.
-    """
+        Each row of X represents the feature vector of each search candidate.
+        """,
+    )
 
-    actions: np.ndarray
-    """Array of action indices that have not been searched yet.
+    actions = _space_attribute(
+        "actions",
+        """Array of action indices that have not been searched yet.
 
-    Initially contains all candidate indices, and decreases as actions are evaluated.
-    """
+        Initially contains all candidate indices, and decreases as actions are evaluated.
+        """,
+    )
 
     history: History
     """History object storing search results including chosen actions,
@@ -101,9 +105,13 @@ class Policy(_PolicyBase):
             stored on the policy (and thus included when the policy is
             pickled). Under MPI, pass the same specification on all ranks.
         """
-        self.test = self._make_variable_X(test_X)
-        self.actions = np.arange(0, self.test.X.shape[0])
-        super().__init__(config=config, initial_data=initial_data, comm=comm, rng=rng)
+        super().__init__(
+            space=_DiscreteSpace(self._make_variable_X(test_X)),
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
+        )
 
     def _new_history(self):
         return History()
@@ -119,9 +127,6 @@ class Policy(_PolicyBase):
         # Normalize fs to (N, 1) shape before passing to write()
         fs_normalized = normalize_t(fs, k=1)
         self.write(actions, fs_normalized)
-
-    def _split_candidates(self):
-        self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
 
     def _show_search_results(self, N_indeed, disp_pareto_set):
         utility.show_search_results(self.history, N_indeed)
@@ -212,12 +217,7 @@ class Policy(_PolicyBase):
             self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove the selected actions from the list of candidates if exists
-        if len(self.actions) > 0:
-            local_index = np.searchsorted(self.actions, action)
-            local_index = local_index[
-                np.take(self.actions, local_index, mode="clip") == action
-            ]
-            self.actions = self._delete_actions(local_index)
+        self.space.exclude(action)
 
         if np.any(valid):
             if self.new_data is None:
@@ -603,7 +603,7 @@ class Policy(_PolicyBase):
             defined in each mode), or None if ``error`` is not None.
         error: Exception or None
             An exception raised on this process while computing ``f`` in a
-            parallel run, to be passed to :meth:`_find_champion` (in a serial
+            parallel run, to be passed to ``space.find_champion`` (in a serial
             run it is raised).
         """
 
@@ -706,97 +706,28 @@ class Policy(_PolicyBase):
             ucb_beta=ucb_beta,
             parallel=False,
         )
-        champion, local_champion, local_index = self._find_champion(f, error)
+        champion, local_champion, local_index = self.space.find_champion(
+            f, error, self.mpicomm
+        )
         if champion == -1:
             return np.zeros(0, dtype=int)
         if champion == local_champion:
-            self.actions = self._delete_actions(local_index)
+            self.space.remove(local_index)
 
         chosen_actions = [champion]
         for n in range(1, N):
             f, error = self._get_marginal_score(
                 mode, chosen_actions[0:n], K, alpha, ucb_beta
             )
-            champion, local_champion, local_index = self._find_champion(f, error)
+            champion, local_champion, local_index = self.space.find_champion(
+                f, error, self.mpicomm
+            )
             if champion == -1:
                 break
             if champion == local_champion:
-                self.actions = self._delete_actions(local_index)
+                self.space.remove(local_index)
             chosen_actions.append(champion)
         return np.array(chosen_actions)
-
-    def _find_champion(self, f, error=None):
-        """The best candidate over all processes.
-
-        ``error`` is an exception raised on this process while computing the
-        scores ``f`` of its candidates (see :func:`physbo._mpi.call`), raised
-        then on every process.
-        """
-        if error is not None and self.mpisize == 1:
-            raise error
-        if error is not None:
-            local_fmax = None
-            local_index = None
-            local_champion = None
-        elif len(f) == 0:
-            local_fmax = -float("inf")
-            local_index = -1
-            local_champion = -1
-        else:
-            local_fmax = np.max(f)
-            local_index = np.argmax(f)
-            local_champion = self.actions[local_index]
-        if self.mpisize == 1:
-            champion = local_champion
-        else:
-            local_champions = _mpi.allgather(self.mpicomm, local_champion, error)
-            local_fs = self.mpicomm.allgather(local_fmax)
-            champion_rank = np.argmax(local_fs)
-            champion = local_champions[champion_rank]
-        return champion, local_champion, local_index
-
-    def _get_random_action(self, N):
-        """
-        Getting indexes of actions randomly.
-
-        Parameters
-        ----------
-        N: int
-            Total number of search candidates.
-        Returns
-        -------
-        action: numpy.ndarray
-            Indexes of actions selected randomly from search candidates.
-        """
-        if self.mpisize == 1:
-            n = len(self.actions)
-            if n <= N:
-                index = np.arange(0, n)
-            else:
-                index = self.rng.choice(len(self.actions), N, replace=False)
-            action = self.actions[index]
-            self.actions = self._delete_actions(index)
-        else:
-            nactions = self.mpicomm.gather(len(self.actions), root=0)
-            local_indices = [[] for _ in range(self.mpisize)]
-            if self.mpirank == 0:
-                hi = np.add.accumulate(nactions)
-                lo = np.roll(hi, 1)
-                lo[0] = 0
-                if hi[-1] <= N:
-                    index = np.arange(0, hi[-1])
-                else:
-                    index = self.rng.choice(hi[-1], N, replace=False)
-                ranks = np.searchsorted(hi, index, side="right")
-                for r, i in zip(ranks, index):
-                    local_indices[r].append(i - lo[r])
-            local_indices = self.mpicomm.scatter(local_indices, root=0)
-            local_actions = self.actions[local_indices]
-            self.actions = self._delete_actions(local_indices)
-            action = self.mpicomm.allgather(local_actions)
-            action = itertools.chain.from_iterable(action)
-            action = np.array(list(action))
-        return action
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """
@@ -873,11 +804,7 @@ class Policy(_PolicyBase):
         N = self.history.total_num_search
 
         visited = self.history.chosen_actions[:N]
-        local_index = np.searchsorted(self.actions, visited)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == visited
-        ]
-        self.actions = self._delete_actions(local_index)
+        self.space.exclude(visited)
 
         self._after_load()
 
@@ -910,26 +837,3 @@ class Policy(_PolicyBase):
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data)
             self.new_data = None
-
-    def _delete_actions(self, index, actions=None):
-        """
-        Returns remaining actions
-
-        Notes
-        -----
-        This method itself does not modify *self*
-
-        Parameters
-        ----------
-        index: int
-            Index of an action to be deleted.
-        actions: numpy.ndarray
-            Array of actions.
-        Returns
-        -------
-        actions: numpy.ndarray
-            Array of actions which does not include action specified by index.
-        """
-        if actions is None:
-            actions = self.actions
-        return np.delete(actions, index)

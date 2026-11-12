@@ -15,6 +15,8 @@ The script exits with a non-zero status if any check fails; it is
 invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
+import contextlib
+import io
 import os
 import pickle
 import shutil
@@ -770,6 +772,218 @@ def check_negative_interval_needs_a_learned_predictor():
     log("interval < 0 needs a learned predictor: OK")
 
 
+def _random_search_to_the_end(comm_, kind, num_candidates):
+    """Ask for 3 candidates per step until none is left; the candidates
+    searched, in order, and the state of the generator afterwards."""
+    X = make_grid()[:num_candidates]
+    kwargs = {} if kind == "discrete" else {"num_objectives": 2}
+    objective = f if kind == "discrete" else f_multi
+    policy = getattr(physbo.search, kind).Policy(
+        test_X=X, comm=comm_, rng=2468, **kwargs
+    )
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = policy.random_search(
+            max_num_probes=4,
+            num_search_each_probe=3,
+            simulator=lambda action: objective(X[action]),
+            is_disp=False,
+        )
+    searched = res.chosen_actions[: res.total_num_search]
+    return searched, str(policy.rng.bit_generator.state["state"])
+
+
+def check_random_search_until_exhausted():
+    """random_search takes the candidates that are left when they are no
+    more than asked for (6 candidates: 3, then exactly 3; 7 candidates: 3,
+    3, then 1), stops when none is left, and searches at each step the
+    candidates a serial run searches (in the order of the processes that
+    have them), with the same use of the generator on rank 0."""
+    for kind in ["discrete", "discrete_multi", "discrete_unified"]:
+        for num_candidates in (6, 7):
+            label = f"{kind} random_search of all {num_candidates} candidates"
+            parallel, state = _random_search_to_the_end(comm, kind, num_candidates)
+            assert_identical_over_ranks(parallel, label)
+            if sorted(parallel.tolist()) != list(range(num_candidates)):
+                raise AssertionError(f"{label}: searched {parallel.tolist()}")
+            serial, serial_state = _random_search_to_the_end(
+                None, kind, num_candidates
+            )
+            for i in range(0, num_candidates, 3):
+                if sorted(parallel[i : i + 3]) != sorted(serial[i : i + 3]):
+                    raise AssertionError(f"parallel != serial ({label})")
+            # only rank 0 draws, as often as the serial run
+            if comm.rank == 0 and state != serial_state:
+                raise AssertionError(f"generator of rank 0 != serial ({label})")
+    log("random_search until no candidate is left: OK")
+
+
+def check_random_proposals_do_not_repeat():
+    """Candidates proposed at random in the interactive mode are taken from
+    the candidates of the process that has them, so that the next proposal
+    is made of other ones."""
+    X = make_grid()[:8]
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=1357)
+    first = policy.random_search(max_num_probes=1, num_search_each_probe=3, is_disp=False)
+    second = policy.random_search(max_num_probes=1, num_search_each_probe=3, is_disp=False)
+    assert_identical_over_ranks(first, "first random proposal")
+    assert_identical_over_ranks(second, "second random proposal")
+    if len(set(first.tolist()) | set(second.tolist())) != 6:
+        raise AssertionError(
+            f"random proposals overlap: {first.tolist()} and {second.tolist()}"
+        )
+    log("random proposals do not repeat: OK")
+
+
+def _negative_score(predictor, training, test):
+    return -1.0 - np.arange(test.X.shape[0], dtype=float)
+
+
+def check_process_without_candidates_does_not_win():
+    """When the scores are negative, a process that has no candidate left
+    must not be taken for the one with the best candidate."""
+    X = make_grid()[:3]
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=97)
+    policy.random_search(max_num_probes=2, simulator=sim, is_disp=False)
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = policy.bayes_search(
+            max_num_probes=1,
+            simulator=sim,
+            score=_negative_score,
+            interval=0,
+            is_disp=False,
+        )
+    searched = res.chosen_actions[: res.total_num_search]
+    assert_identical_over_ranks(searched, "last candidate")
+    if sorted(searched.tolist()) != [0, 1, 2]:
+        raise AssertionError(f"the last candidate was not proposed: {searched}")
+    log("a process without candidates does not win: OK")
+
+
+def check_range_random_points_are_those_of_rank_0():
+    """The random points of a range policy are broadcast from rank 0, so
+    that the processes agree even if their generators do not."""
+    policy = physbo.search.range.Policy(
+        min_X=[-1.0, -1.0], max_X=[1.0, 1.0], comm=comm, rng=1000 + comm.rank
+    )
+    X = policy.random_search(max_num_probes=1, num_search_each_probe=4, is_disp=False)
+    assert_identical_over_ranks(X, "random points of a range policy")
+    log("random points of a range policy are those of rank 0: OK")
+
+
+def _raised(fn):
+    """(name of the exception, message) of what fn() raises on this
+    process, gathered over the processes; None where it did not raise."""
+    try:
+        fn()
+    except Exception as e:
+        got = (type(e).__name__, str(e))
+    else:
+        got = None
+    return comm.allgather(got)
+
+
+def check_policy_without_communicator_is_refused():
+    """A policy unpickled from a parallel run has no communicator until
+    set_comm() is called; searching with it is refused on every process
+    instead of going on as a serial run on each."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=4321)
+    clone = pickle.loads(pickle.dumps(policy))
+    results = _raised(
+        lambda: clone.random_search(max_num_probes=1, simulator=sim, is_disp=False)
+    )
+    for got in results:
+        if got is None or got[0] != "RuntimeError" or "set_comm" not in got[1]:
+            raise AssertionError(f"search without set_comm(): {results}")
+    # nor is it written to a checkpoint, which would hold one process only
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+    try:
+        results = _raised(lambda: clone.save_checkpoint(fname))
+        for got in results:
+            if got is None or got[0] != "RuntimeError" or "set_comm" not in got[1]:
+                raise AssertionError(f"save_checkpoint without set_comm(): {results}")
+        if comm.rank == 0 and os.path.exists(fname):
+            raise AssertionError("a checkpoint was written without set_comm()")
+    finally:
+        comm.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    clone.set_comm(comm)
+    res = clone.random_search(max_num_probes=2, simulator=sim, is_disp=False)
+    assert_identical_over_ranks(res.chosen_actions[:2], "search after set_comm()")
+    log("policy without its communicator is refused: OK")
+
+
+def check_checkpoint_is_refused_on_every_rank():
+    """A checkpoint that cannot be used or cannot be read is refused on
+    every process; none is left waiting for rank 0."""
+    X = make_grid()
+    cls = physbo.search.discrete.Policy
+
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+    try:
+        cls(test_X=X, comm=comm, rng=1).save_checkpoint(fname)
+        comm.barrier()
+        if comm.rank == 0:
+            with open(fname, "rb") as fp:
+                header = pickle.load(fp)
+                state = fp.read()
+
+        def write(name, header_, state_):
+            if comm.rank == 0:
+                with open(os.path.join(tmpdir, name), "wb") as fp:
+                    pickle.dump(header_, fp)
+                    fp.write(state_)
+            comm.barrier()
+            return os.path.join(tmpdir, name)
+
+        def refused(label, name, exception, text):
+            # the exception of rank 0, or a RuntimeError that names it where
+            # it cannot be copied to the other processes
+            results = _raised(lambda: cls.load_checkpoint(name, comm=comm))
+            for got in results:
+                if got is None or text not in got[1]:
+                    raise AssertionError(f"{label}: {results}")
+                if got[0] != exception and not (
+                    got[0] == "RuntimeError" and exception in got[1]
+                ):
+                    raise AssertionError(f"{label}: {results}")
+
+        other = write(
+            "version.pkl",
+            dict(header, format_version=header["format_version"] + 1)
+            if comm.rank == 0
+            else None,
+            state if comm.rank == 0 else None,
+        )
+        refused("another format version", other, "RuntimeError", "format version")
+
+        missing = os.path.join(tmpdir, "missing.pkl")
+        refused("missing file", missing, "FileNotFoundError", "missing.pkl")
+
+        broken = write(
+            "broken.pkl", header if comm.rank == 0 else None, b"not a pickle"
+        )
+        refused("state that cannot be unpickled", broken, "UnpicklingError", "")
+
+        if comm.rank == 0:
+            with open(os.path.join(tmpdir, "empty.pkl"), "wb"):
+                pass
+        comm.barrier()
+        refused("empty file", os.path.join(tmpdir, "empty.pkl"), "EOFError", "")
+    finally:
+        comm.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    log("unusable checkpoints are refused on every rank: OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     if comm.size < 2:
@@ -801,6 +1015,12 @@ def main():
     check_no_predictor_warning_on_rank_0_only()
     check_multi_probe_header_obeys_is_disp()
     check_negative_interval_needs_a_learned_predictor()
+    check_random_search_until_exhausted()
+    check_random_proposals_do_not_repeat()
+    check_process_without_candidates_does_not_win()
+    check_range_random_points_are_those_of_rank_0()
+    check_policy_without_communicator_is_refused()
+    check_checkpoint_is_refused_on_every_rank()
     log("all MPI checks passed")
 
 

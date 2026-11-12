@@ -114,21 +114,21 @@ def run_simulator(simulator, action, comm=None):
 class _PolicyBase(CheckpointMixin):
     """Base class of the six policies.
 
-    The constructor of a policy sets the attributes of its search space (and
-    ``num_objectives``) and then calls the constructor of this class, which
-    sets up the rest and asks the policy for what depends on its kind:
+    The constructor of a policy makes its search space (an object of
+    ``physbo.search._space``, kept as ``space``), sets ``num_objectives``,
+    and calls the constructor of this class, which sets up the rest and asks
+    the policy for what depends on its kind:
 
     - ``_init_predictor_state()``: the attributes that hold the predictor(s);
     - ``_new_history()``: the history object;
-    - ``_write_initial_data(initial_data)``: check and record the initial data;
-    - ``_split_candidates()``: keep the share of this process of the
-      candidates (discrete search space).
+    - ``_write_initial_data(initial_data)``: check and record the initial data.
 
     random_search and bayes_search of the policies keep their signatures and
     docstrings and call ``_random_search`` and ``_bayes_search``, which run
     the loop ``_search_loop`` and use:
 
-    - ``_get_random_action(N)`` and the proposal function given by the policy;
+    - ``space.random(N, rng, mpicomm)`` (through ``_get_random_action(N)``)
+      and the proposal function given by the policy;
     - ``_has_predictors()``, ``_current_predictors()``,
       ``_use_predictor(predictor)`` and ``_new_predictor(is_rand_expans)`` to
       keep, take or create the predictor(s);
@@ -149,7 +149,8 @@ class _PolicyBase(CheckpointMixin):
     # statistics are taken as they are.
     _statistics_sources = None
 
-    def __init__(self, *, config=None, initial_data=None, comm=None, rng=None):
+    def __init__(self, *, space, config=None, initial_data=None, comm=None, rng=None):
+        self.space = space
         self.rng = make_rng(rng)
         self.training = Variable()
         self.new_data = None
@@ -173,7 +174,7 @@ class _PolicyBase(CheckpointMixin):
             self.mpicomm = comm
             self.mpisize = comm.size
             self.mpirank = comm.rank
-            self._split_candidates()
+            self.space.split(self.mpisize, self.mpirank)
             self.config.learning.is_disp = (
                 self.config.learning.is_disp and self.mpirank == 0
             )
@@ -190,9 +191,11 @@ class _PolicyBase(CheckpointMixin):
         """Check ``initial_data`` and record it with write()."""
         raise NotImplementedError
 
-    def _split_candidates(self):
-        """Keep the share of this process of the candidates. Nothing to do
-        unless the search space is a list of candidates."""
+    def _get_random_action(self, N):
+        """``N`` points of the search space drawn at random (indices of
+        candidates, removed from those not searched yet, or points of the
+        box), the same on every process."""
+        return self.space.random(N, self.rng, self.mpicomm)
 
     @property
     def _comm(self):
@@ -310,6 +313,7 @@ class _PolicyBase(CheckpointMixin):
         disp_pareto_set=False,
     ):
         """The body of random_search of the six policies."""
+        self._require_comm()
         if self.mpirank != 0:
             is_disp = False
 
@@ -439,6 +443,8 @@ class _PolicyBase(CheckpointMixin):
         of bayes_search; ``unify_method`` is that of the unified policies,
         and ``disp_pareto_set`` is passed to ``_show_search_results``.
         """
+        self._require_comm()
+
         # The predictor(s) of the policy are kept between calls. New ones are
         # made, to be learned, when the policy has none, or when this call
         # asks for a kind (num_rand_basis, ard; None asks for nothing) that
