@@ -6,27 +6,22 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
-import itertools
-import time
 from typing import Optional, Any
 
 from ._history import History
 from .. import utility
 from .. import score as search_score
 from ... import _mpi
-from ... import gp
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
 from ...misc import SetConfig
 
 from ..._variable import Variable, normalize_t
-from ..._rng import get_rng, make_rng, LegacyRNG
-from .._checkpoint import CheckpointMixin
+from ..._rng import get_rng
+from .._policy_common import _PolicyBase
+from .._space import _DiscreteSpace, _space_attribute
 
 
-class Policy(CheckpointMixin):
+class Policy(_PolicyBase):
     """Single objective Bayesian optimization with discrete search space"""
 
     predictor: Optional[Any]
@@ -48,17 +43,21 @@ class Policy(CheckpointMixin):
     Set to None after predictor is updated.
     """
 
-    test: Variable
-    """The set of candidate search points.
+    test = _space_attribute(
+        "test",
+        """The set of candidate search points (physbo.Variable).
 
-    Each row of X represents the feature vector of each search candidate.
-    """
+        Each row of X represents the feature vector of each search candidate.
+        """,
+    )
 
-    actions: np.ndarray
-    """Array of action indices that have not been searched yet.
+    actions = _space_attribute(
+        "actions",
+        """Array of action indices that have not been searched yet.
 
-    Initially contains all candidate indices, and decreases as actions are evaluated.
-    """
+        Initially contains all candidate indices, and decreases as actions are evaluated.
+        """,
+    )
 
     history: History
     """History object storing search results including chosen actions,
@@ -105,65 +104,42 @@ class Policy(CheckpointMixin):
             stored on the policy (and thus included when the policy is
             pickled). Under MPI, pass the same specification on all ranks.
         """
-        self.predictor = None
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.new_data = None
-        self.test = self._make_variable_X(test_X)
-        self.actions = np.arange(0, self.test.X.shape[0])
-        self.history = History()
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
+        super().__init__(
+            space=_DiscreteSpace(self._make_variable_X(test_X)),
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
+        )
 
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
-                raise RuntimeError(msg)
-            actions, fs = initial_data
-            if len(actions) != len(fs):
-                msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
-                raise RuntimeError(msg)
-            # Normalize fs to (N, 1) shape before passing to write()
-            fs_normalized = normalize_t(fs, k=1)
-            self.write(actions, fs_normalized)
+    def _new_history(self):
+        return History()
 
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.actions = np.array_split(self.actions, self.mpisize)[self.mpirank]
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+    def _share_sample(self, mode, comm):
+        # TS: one posterior sample for every process, drawn on rank 0
+        predictor, training = self._current_model()
+        return search_score.share_sample(mode, predictor, training, comm)
 
-    def set_seed(self, seed):
-        """
-        Setting a seed parameter.
+    def _share_samples(self, mode, model, K, comm):
+        # TS: one posterior sample per model for every process, drawn on
+        # rank 0
+        predictor, _ = self._current_model()
+        return search_score.share_samples(mode, predictor, model, K, comm)
 
-        In the legacy RNG mode (default), this seeds the global
-        ``numpy.random`` state, as before. In the Generator mode
-        (``rng=`` given as int or Generator), the policy-owned generator
-        is re-created from the seed and the global state is not touched.
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+            raise RuntimeError(msg)
+        actions, fs = initial_data
+        if len(actions) != len(fs):
+            msg = "ERROR: len(initial_data[0]) != len(initial_data[1])"
+            raise RuntimeError(msg)
+        # Normalize fs to (N, 1) shape before passing to write()
+        fs_normalized = normalize_t(fs, k=1)
+        self.write(actions, fs_normalized)
 
-        Parameters
-        ----------
-        seed: int
-            seed number
-        -------
-
-        """
-        self.seed = seed
-        if isinstance(self.rng, LegacyRNG):
-            self.rng.seed(self.seed)
-        else:
-            self.rng = np.random.default_rng(self.seed)
+    def _show_search_results(self, N_indeed, disp_pareto_set):
+        utility.show_search_results(self.history, N_indeed)
 
     def write(
         self,
@@ -251,12 +227,7 @@ class Policy(CheckpointMixin):
             self.training.add(X=X_ok, t=t_ok, Z=Z_ok)
 
         # remove the selected actions from the list of candidates if exists
-        if len(self.actions) > 0:
-            local_index = np.searchsorted(self.actions, action)
-            local_index = local_index[
-                np.take(self.actions, local_index, mode="clip") == action
-            ]
-            self.actions = self._delete_actions(local_index)
+        self.space.exclude(action)
 
         if np.any(valid):
             if self.new_data is None:
@@ -285,51 +256,9 @@ class Policy(CheckpointMixin):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-            time_total = time.time()
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(self.history.num_runs)
-
-            time_get_action = time.time()
-            action = self._get_random_action(N)
-            time_get_action = time.time() - time_get_action
-
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                return copy.deepcopy(self.history)
-
-            if simulator is None:
-                return action
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=np.zeros(N_indeed, dtype=float),
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
-            )
-
-            if is_disp:
-                utility.show_search_results(self.history, N_indeed)
-
-        return copy.deepcopy(self.history)
+        return self._random_search(
+            max_num_probes, num_search_each_probe, simulator, is_disp
+        )
 
     def bayes_search(
         self,
@@ -341,10 +270,10 @@ class Policy(CheckpointMixin):
         simulator=None,
         score="TS",
         interval=0,
-        num_rand_basis=0,
+        num_rand_basis=None,
         optimizer=None,
         unify_method=None,
-        ard=False,
+        ard=None,
         ucb_beta=1.0,
     ):
         """
@@ -376,14 +305,24 @@ class Policy(CheckpointMixin):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
-        num_rand_basis: int
+            A negative interval needs a learned predictor: the one learned by an
+            earlier bayes_search, or one given as an argument, read by load() or
+            set by hand. Otherwise, or if another kind of predictor is asked for
+            (see num_rand_basis), a RuntimeError is raised.
+        num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            If None (default), the predictor the policy has is used, whatever its
+            kind; a Gaussian process is made if it has none yet.
+            The predictor is kept between calls of bayes_search. A new one is made,
+            to be learned, when the predictor is not of the kind asked for by
+            num_rand_basis or ard.
         optimizer: optimizer object, optional
             This is for compatibility with the range-based Policies.
             This is not used.
-        ard: bool
+        ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Default is False.
+            If None (default), as in the predictor the policy has; without ARD if
+            it has none yet.
         ucb_beta: float
             Trade-off parameter between exploitation and exploration used when
             ``score == "UCB"``. The score is ``fmean + ucb_beta * fstd``;
@@ -393,99 +332,22 @@ class Policy(CheckpointMixin):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
         score = search_score.resolve(
             score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
         )
 
-        if self.mpirank != 0:
-            is_disp = False
-
-        old_disp = self.config.learning.is_disp
-        self.config.learning.is_disp = is_disp
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = num_rand_basis != 0
-        self.ard = ard
-
-        if training is not None:
-            self.training = training
-
-        if predictor is not None:
-            self.predictor = predictor
-        elif self.predictor is None:
-            self._init_predictor(is_rand_expans)
-
-        if max_num_probes > 0 or interval >= 0:
-            utility.require_training_data(self.training)
-
-        if max_num_probes == 0 and interval >= 0:
-            self._learn_hyperparameter(num_rand_basis)
-
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-            time_total = time.time()
-
-            time_update_predictor = time.time()
-            if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
-            else:
-                self._update_predictor()
-            time_update_predictor = time.time() - time_update_predictor
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, utility.score_name(score)
-                )
-
-            time_get_action = time.time()
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self._get_actions(score, N, K, alpha, ucb_beta)
-            time_get_action = time.time() - time_get_action
-
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                break
-
-            if simulator is None:
-                self.config.learning.is_disp = old_disp
-                return action
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=[time_update_predictor] * N_indeed,
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
-            )
-
-            if is_disp:
-                utility.show_search_results(self.history, N_indeed)
-        self._update_predictor()
-        self.config.learning.is_disp = old_disp
-        return copy.deepcopy(self.history)
-
-    def _warn_no_predictor(self, method_name):
-        if self.mpirank != 0:
-            return
-        print("Warning: Since policy.predictor is not yet set,")
-        print("         a GP predictor (num_rand_basis=0) is used for predicting")
-        print("         If you want to use a BLM predictor (num_rand_basis>0),")
-        print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
-        print("         before calling {}.".format(method_name))
+        return self._bayes_search(
+            score,
+            training=training,
+            predictor=predictor,
+            max_num_probes=max_num_probes,
+            num_search_each_probe=num_search_each_probe,
+            simulator=simulator,
+            is_disp=is_disp,
+            interval=interval,
+            num_rand_basis=num_rand_basis,
+            ard=ard,
+        )
 
     def get_post_fmean(self, xs):
         """
@@ -542,29 +404,6 @@ class Policy(CheckpointMixin):
         else:
             self._update_predictor()
             return self.predictor.get_post_fcov(self.training, X, diag)
-
-    def get_kernel_length_scale(self):
-        """
-        Return the Gaussian kernel length scale(s) (width) of the predictor.
-
-        With ARD, returns one length scale per input dimension; otherwise a single value.
-
-        Returns
-        -------
-        numpy.ndarray or None
-            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.
-            None if the predictor is not set or not a GP with Gaussian kernel.
-        """
-        if self.predictor is None:
-            return None
-        self._update_predictor()
-        try:
-            cov = self.predictor.model.prior.cov
-        except AttributeError:
-            return None
-        if not hasattr(cov, "width"):
-            return None
-        return np.atleast_1d(np.asarray(cov.width).flatten())
 
     def get_num_dim(self):
         """
@@ -746,225 +585,6 @@ class Policy(CheckpointMixin):
             f = np.hstack(fs)
         return f
 
-    def _get_marginal_score(self, mode, chosen_actions, K, alpha, ucb_beta=1.0):
-        """
-        Getting marginal scores.
-
-        Parameters
-        ----------
-        mode: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        chosen_actions: numpy.ndarray
-            Array of selected actions.
-        K: int
-            The number of samples for evaluating score.
-        alpha: float
-            not used.
-
-        Returns
-        -------
-        f: numpy.ndarray or None
-            The marginal scores of the candidates of this process (score is
-            defined in each mode), or None if ``error`` is not None.
-        error: Exception or None
-            An exception raised on this process while computing ``f`` in a
-            parallel run, to be passed to :meth:`_find_champion` (in a serial
-            run it is raised).
-        """
-
-        comm = self.mpicomm if self.mpisize > 1 else None
-
-        # Draw K samples of the values of objective function of chosen actions.
-        # self.test is not partitioned over ranks, so the chosen points are
-        # identical on every rank; the virtual values are drawn on rank 0 and
-        # broadcast so that all ranks fantasize the same observations.
-        new_test = self.test.get_subset(chosen_actions)
-        if comm is None or self.mpirank == 0:
-            virtual_t, error = _mpi.call(
-                comm,
-                self.predictor.get_predict_samples,
-                self.training,
-                new_test,
-                K,
-                rng=self.rng,
-            )
-        else:
-            virtual_t, error = None, None
-        if comm is not None:
-            virtual_t = _mpi.bcast(comm, virtual_t, error, root=0)
-
-        def model(k):
-            # the predictor and the training data with the k-th virtual
-            # observations added (the same on every process)
-            predictor = copy.deepcopy(self.predictor)
-            train = copy.deepcopy(self.training)
-            virtual_train = new_test
-            # Normalize virtual_t[k, :] to (N, 1) shape
-            virtual_train.t = normalize_t(virtual_t[k, :], k=1)
-
-            if virtual_train.Z is None:
-                train.add(virtual_train.X, virtual_train.t)
-            else:
-                train.add(virtual_train.X, virtual_train.t, virtual_train.Z)
-
-            predictor.update(train, virtual_train)
-            return predictor, train
-
-        # TS: one posterior sample per virtual data set for every process,
-        # drawn on rank 0
-        samples = search_score.share_samples(mode, self.predictor, model, K, comm)
-        return _mpi.call(comm, self._marginal_score, mode, model, K, ucb_beta, samples)
-
-    def _marginal_score(self, mode, model, K, ucb_beta, samples=None):
-        """The marginal scores of this process's candidates: the mean of the
-        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.
-        ``samples`` are their posterior samples for Thompson sampling (see
-        :func:`physbo.search.score.share_samples`), or None."""
-        f = np.zeros((K, len(self.actions)), dtype=float)
-        for k in range(K):
-            predictor, train = model(k)
-            mode_k = mode if samples is None else mode.with_sample(samples[k])
-            f[k, :] = self.get_score(
-                mode_k,
-                predictor=predictor,
-                training=train,
-                ucb_beta=ucb_beta,
-                parallel=False,
-            )
-        return np.mean(f, axis=0)
-
-    def _get_actions(self, mode, N, K, alpha, ucb_beta=1.0):
-        """
-        Getting next candidates
-
-        Parameters
-        ----------
-        mode: str
-            The type of aquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        N: int
-            The total number of actions to return.
-        K: int
-            The total number of samples to evaluate marginal score
-        alpha: float
-            Tuning parameter which is used if mode = TS.
-            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
-
-        Returns
-        -------
-        chosen_actions: numpy.ndarray
-            An N-dimensional array of actions selected in each search process.
-        """
-        comm = self.mpicomm if self.mpisize > 1 else None
-        # TS: one posterior sample for every process, drawn on rank 0
-        first_mode = search_score.share_sample(
-            mode, self.predictor, self.training, comm
-        )
-        f, error = _mpi.call(
-            self.mpicomm,
-            self.get_score,
-            first_mode,
-            predictor=self.predictor,
-            training=self.training,
-            alpha=alpha,
-            ucb_beta=ucb_beta,
-            parallel=False,
-        )
-        champion, local_champion, local_index = self._find_champion(f, error)
-        if champion == -1:
-            return np.zeros(0, dtype=int)
-        if champion == local_champion:
-            self.actions = self._delete_actions(local_index)
-
-        chosen_actions = [champion]
-        for n in range(1, N):
-            f, error = self._get_marginal_score(
-                mode, chosen_actions[0:n], K, alpha, ucb_beta
-            )
-            champion, local_champion, local_index = self._find_champion(f, error)
-            if champion == -1:
-                break
-            if champion == local_champion:
-                self.actions = self._delete_actions(local_index)
-            chosen_actions.append(champion)
-        return np.array(chosen_actions)
-
-    def _find_champion(self, f, error=None):
-        """The best candidate over all processes.
-
-        ``error`` is an exception raised on this process while computing the
-        scores ``f`` of its candidates (see :func:`physbo._mpi.call`), raised
-        then on every process.
-        """
-        if error is not None and self.mpisize == 1:
-            raise error
-        if error is not None:
-            local_fmax = None
-            local_index = None
-            local_champion = None
-        elif len(f) == 0:
-            local_fmax = -float("inf")
-            local_index = -1
-            local_champion = -1
-        else:
-            local_fmax = np.max(f)
-            local_index = np.argmax(f)
-            local_champion = self.actions[local_index]
-        if self.mpisize == 1:
-            champion = local_champion
-        else:
-            local_champions = _mpi.allgather(self.mpicomm, local_champion, error)
-            local_fs = self.mpicomm.allgather(local_fmax)
-            champion_rank = np.argmax(local_fs)
-            champion = local_champions[champion_rank]
-        return champion, local_champion, local_index
-
-    def _get_random_action(self, N):
-        """
-        Getting indexes of actions randomly.
-
-        Parameters
-        ----------
-        N: int
-            Total number of search candidates.
-        Returns
-        -------
-        action: numpy.ndarray
-            Indexes of actions selected randomly from search candidates.
-        """
-        if self.mpisize == 1:
-            n = len(self.actions)
-            if n <= N:
-                index = np.arange(0, n)
-            else:
-                index = self.rng.choice(len(self.actions), N, replace=False)
-            action = self.actions[index]
-            self.actions = self._delete_actions(index)
-        else:
-            nactions = self.mpicomm.gather(len(self.actions), root=0)
-            local_indices = [[] for _ in range(self.mpisize)]
-            if self.mpirank == 0:
-                hi = np.add.accumulate(nactions)
-                lo = np.roll(hi, 1)
-                lo[0] = 0
-                if hi[-1] <= N:
-                    index = np.arange(0, hi[-1])
-                else:
-                    index = self.rng.choice(hi[-1], N, replace=False)
-                ranks = np.searchsorted(hi, index, side="right")
-                for r, i in zip(ranks, index):
-                    local_indices[r].append(i - lo[r])
-            local_indices = self.mpicomm.scatter(local_indices, root=0)
-            local_actions = self.actions[local_indices]
-            self.actions = self._delete_actions(local_indices)
-            action = self.mpicomm.allgather(local_actions)
-            action = itertools.chain.from_iterable(action)
-            action = np.array(list(action))
-        return action
-
     def save(self, file_history, file_training=None, file_predictor=None):
         """
 
@@ -1040,75 +660,17 @@ class Policy(CheckpointMixin):
         N = self.history.total_num_search
 
         visited = self.history.chosen_actions[:N]
-        local_index = np.searchsorted(self.actions, visited)
-        local_index = local_index[
-            np.take(self.actions, local_index, mode="clip") == visited
-        ]
-        self.actions = self._delete_actions(local_index)
+        self.space.exclude(visited)
 
-    def export_predictor(self):
-        """
-        Returning the predictor dataset
-
-        Returns
-        -------
-
-        """
-        return self.predictor
-
-    def export_training(self):
-        """
-        Returning the training dataset
-
-        Returns
-        -------
-
-        """
-        return self.training
-
-    def export_history(self):
-        """
-        Returning the information of the history.
-
-        Returns
-        -------
-
-        """
-        return self.history
-
-    def _init_predictor(self, is_rand_expans):
-        """
-        Initialize predictor.
-
-        Parameters
-        ----------
-        is_rand_expans: bool
-            If true, physbo.blm.predictor is selected.
-            If false, physbo.gp.Predictor is selected.
-        """
-        if is_rand_expans:
-            self.predictor = self._make_blm_predictor()
-        else:
-            self.predictor = self._make_gp_predictor()
-
-    def _make_gp_predictor(self):
-        """Create a GP predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return gp_predictor(self.config, model=model)
-
-    def _make_blm_predictor(self):
-        """Create a BLM predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return blm_predictor(self.config, model=model)
+        self._after_load()
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
             self.training, num_rand_basis, comm=self.mpicomm, rng=self.rng
         )
+        self._prepare_statistics()
+
+    def _prepare_statistics(self):
         # Get basis and convert to (1, N, n) format for single-objective
         test_Z_basis = self.predictor.get_basis(self.test.X)
         training_Z_basis = self.predictor.get_basis(self.training.X)
@@ -1119,6 +681,10 @@ class Policy(CheckpointMixin):
         self.predictor.prepare(self.training)
         self.new_data = None
 
+    def _clear_basis_values(self):
+        self.training.Z = None
+        self.test.Z = None
+
     def _update_predictor(self):
         """
         Updating predictor by using new_data, which means a subset of the trained data (self.training) that is not yet added to the predictor.
@@ -1127,77 +693,3 @@ class Policy(CheckpointMixin):
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data)
             self.new_data = None
-
-    def _make_variable_X(self, test_X):
-        """
-        Make a new *Variable* with X=test_X
-
-        Parameters
-        ----------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        Returns
-        -------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        """
-        if isinstance(test_X, np.ndarray):
-            test = Variable(X=test_X)
-        elif isinstance(test_X, Variable):
-            test = test_X
-        else:
-            raise TypeError("The type of test_X must be ndarray or physbo.Variable")
-        return test
-
-    def _delete_actions(self, index, actions=None):
-        """
-        Returns remaining actions
-
-        Notes
-        -----
-        This method itself does not modify *self*
-
-        Parameters
-        ----------
-        index: int
-            Index of an action to be deleted.
-        actions: numpy.ndarray
-            Array of actions.
-        Returns
-        -------
-        actions: numpy.ndarray
-            Array of actions which does not include action specified by index.
-        """
-        if actions is None:
-            actions = self.actions
-        return np.delete(actions, index)
-
-
-def _run_simulator(simulator, action, comm=None):
-    """
-    Run simulator and normalize return value to (N, 1) shape.
-
-    Parameters
-    ----------
-    simulator: callable
-        Function that takes action and returns t value(s)
-    action: numpy.ndarray
-        Array of actions
-    comm: MPI.Comm, optional
-        MPI communicator
-
-    Returns
-    -------
-    numpy.ndarray
-        Normalized array with shape (N, 1)
-    """
-    if comm is None:
-        t = simulator(action)
-    else:
-        if comm.rank == 0:
-            t, error = _mpi.call(comm, simulator, action)
-        else:
-            t, error = 0.0, None
-        t = _mpi.bcast(comm, t, error, root=0)
-
-    return normalize_t(t, k=1)

@@ -80,6 +80,13 @@ The checkpoint file records the PHYSBO version (a mismatch emits a
 warning: bit-exact resumption is guaranteed only within the same
 version) and the checkpoint format version.
 
+A checkpoint is meant for resuming a run, not for keeping results. It
+is guaranteed to be readable only by the minor version of PHYSBO that
+wrote it: when the format changes, the format version is raised, a
+file of another format version is refused with a ``RuntimeError``, and
+no conversion is provided. To keep results across versions, use
+``policy.save()`` / ``policy.load()``.
+
 A checkpoint holds the complete policy. Besides the history, the
 training data and the predictor, this includes the candidate set of a
 discrete policy (``test_X`` and, with the Bayesian linear model, the
@@ -157,3 +164,10 @@ match the stored state. If the policy uses the Generator mode
 (``rng=`` given), its RNG state is included in the pickle
 automatically; in the legacy mode the host must additionally save and
 restore ``numpy.random.get_state()`` itself (as ODAT-SE already does).
+
+A pickled policy carries the format version of its state, like a
+checkpoint file: unpickling a policy that was pickled by a version of
+PHYSBO with another format raises a ``RuntimeError``. A policy restored
+from a parallel run has no communicator until ``set_comm()`` is called;
+``random_search`` and ``bayes_search`` raise a ``RuntimeError`` if it
+is used without.

@@ -66,6 +66,22 @@ def test_serial_run_keeps_is_disp(kind):
     assert policy.config.learning.is_disp is True
 
 
+@pytest.mark.parametrize("kind", KINDS)
+def test_comm_for_collective_calls(kind):
+    """_comm is the communicator in a parallel run, and None when there is
+    nothing to communicate with: no communicator, or one of a single process."""
+    assert make_policy(kind, None)._comm is None
+
+    single = SimpleNamespace(size=1, rank=0)
+    policy = make_policy(kind, single)
+    assert policy.mpicomm is single
+    assert policy._comm is None
+
+    for rank in (0, 1):
+        comm = SimpleNamespace(size=2, rank=rank)
+        assert make_policy(kind, comm)._comm is comm
+
+
 @pytest.mark.parametrize("kind", ["discrete", "discrete_multi", "discrete_unified"])
 def test_discrete_candidates_are_split_over_ranks(kind):
     policies = [make_policy(kind, SimpleNamespace(size=3, rank=r)) for r in range(3)]

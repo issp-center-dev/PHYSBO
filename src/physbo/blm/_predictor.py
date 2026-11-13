@@ -97,6 +97,9 @@ class Predictor(physbo.predictor.BasePredictor):
         Psi: numpy.ndarray
             feature maps
         """
+        if self.blm is None:
+            # not fitted yet: there is no basis, as for a Gaussian process
+            return None
         return self.blm.lik.get_basis(X)
 
     def get_post_fmean(self, training, test, objective_index=0):
