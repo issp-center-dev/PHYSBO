@@ -89,17 +89,124 @@ def test_set_comm_rejects_wrong_size():
         policy.set_comm(None)
 
 
+def _edit_header(fname, **changes):
+    """Change entries of the header of a checkpoint file; the state that
+    follows it is kept as it is."""
+    with open(fname, "rb") as f:
+        header = pickle.load(f)
+        state = f.read()
+    header.update(changes)
+    with open(fname, "wb") as f:
+        pickle.dump(header, f)
+        f.write(state)
+
+
+def test_checkpoint_file_is_a_header_followed_by_the_state(tmp_path):
+    fname = str(tmp_path / "ckpt.pkl")
+    policy = _make_policy()
+    policy.save_checkpoint(fname)
+    with open(fname, "rb") as f:
+        header = pickle.load(f)
+        state = pickle.load(f)
+        assert f.read() == b""
+    assert header == {
+        "format_version": FORMAT_VERSION,
+        "physbo_version": physbo.__version__,
+        "policy_class": "physbo.search.discrete._policy.Policy",
+        "mpisize": 1,
+    }
+    assert set(state) == {"shared", "per_rank"}
+    assert len(state["per_rank"]) == 1
+
+
+@pytest.mark.parametrize(
+    "changes,message",
+    [
+        (dict(format_version=FORMAT_VERSION + 1), "format version"),
+        (dict(policy_class="physbo.search.range._policy.Policy"), "saved by"),
+        (dict(mpisize=2), "mpisize=2"),
+    ],
+    ids=["format version", "policy class", "mpisize"],
+)
+def test_load_checkpoint_checks_the_header_before_the_state(tmp_path, changes, message):
+    """A file that cannot be used is refused without unpickling its state,
+    which may not be loadable at all."""
+    fname = str(tmp_path / "ckpt.pkl")
+    policy = _make_policy()
+    policy.save_checkpoint(fname)
+    with open(fname, "rb") as f:
+        header = pickle.load(f)
+    header.update(changes)
+    with open(fname, "wb") as f:
+        pickle.dump(header, f)
+        f.write(b"this is not a pickle")
+    with pytest.raises(RuntimeError, match=message):
+        physbo.search.discrete.Policy.load_checkpoint(fname)
+
+
+def test_load_checkpoint_rejects_a_file_of_the_first_format(tmp_path):
+    """Format version 1 was a single pickle of everything."""
+    fname = str(tmp_path / "ckpt.pkl")
+    old = {
+        "format_version": 1,
+        "physbo_version": physbo.__version__,
+        "policy_class": "physbo.search.discrete._policy.Policy",
+        "mpisize": 1,
+        "shared": {},
+        "per_rank": [{}],
+    }
+    with open(fname, "wb") as f:
+        pickle.dump(old, f)
+    with pytest.raises(RuntimeError, match="format version 1"):
+        physbo.search.discrete.Policy.load_checkpoint(fname)
+
+
+def test_load_checkpoint_rejects_a_file_without_a_header(tmp_path):
+    fname = str(tmp_path / "ckpt.pkl")
+    with open(fname, "wb") as f:
+        pickle.dump(["not", "a", "checkpoint"], f)
+    with pytest.raises(RuntimeError, match="format version None"):
+        physbo.search.discrete.Policy.load_checkpoint(fname)
+
+
+def test_pickled_policy_carries_the_format_version():
+    """A policy pickled on its own, as an embedding application does, is
+    checked like a checkpoint file."""
+    policy = _make_policy()
+    state = policy.__getstate__()
+    assert state["_format_version"] == FORMAT_VERSION
+    clone = pickle.loads(pickle.dumps(policy))
+    assert "_format_version" not in vars(clone)
+    assert "_format_version" not in vars(policy)
+
+    other = dict(state, _format_version=FORMAT_VERSION + 1)
+    with pytest.raises(RuntimeError, match=f"format version {FORMAT_VERSION + 1}"):
+        physbo.search.discrete.Policy.__new__(physbo.search.discrete.Policy).__setstate__(
+            other
+        )
+
+
+def test_policy_pickled_before_the_format_version_is_refused():
+    """The state of the first format had the candidates as attributes of
+    the policy and no version; unpickling it must not give a policy that
+    fails later."""
+    policy = _make_policy()
+    old = policy.__getstate__()
+    del old["_format_version"]
+    space = old.pop("space")
+    old["test"], old["actions"] = space.test, space.actions
+    with pytest.raises(RuntimeError, match="format version 1"):
+        physbo.search.discrete.Policy.__new__(physbo.search.discrete.Policy).__setstate__(
+            old
+        )
+
+
 def test_load_checkpoint_rejects_wrong_mpisize(tmp_path):
     fname = str(tmp_path / "ckpt.pkl")
     policy = _make_policy()
     policy.save_checkpoint(fname)
 
-    with open(fname, "rb") as f:
-        ckpt = pickle.load(f)
-    ckpt["mpisize"] = 2
-    ckpt["per_rank"] = ckpt["per_rank"] * 2
-    with open(fname, "wb") as f:
-        pickle.dump(ckpt, f)
+    _edit_header(fname, mpisize=2)
 
     with pytest.raises(RuntimeError, match="mpisize=2"):
         physbo.search.discrete.Policy.load_checkpoint(fname)
@@ -110,11 +217,7 @@ def test_load_checkpoint_rejects_wrong_format_version(tmp_path):
     policy = _make_policy()
     policy.save_checkpoint(fname)
 
-    with open(fname, "rb") as f:
-        ckpt = pickle.load(f)
-    ckpt["format_version"] = FORMAT_VERSION + 1
-    with open(fname, "wb") as f:
-        pickle.dump(ckpt, f)
+    _edit_header(fname, format_version=FORMAT_VERSION + 1)
 
     with pytest.raises(RuntimeError, match="format version"):
         physbo.search.discrete.Policy.load_checkpoint(fname)
@@ -133,11 +236,7 @@ def test_load_checkpoint_warns_on_version_mismatch(tmp_path):
     policy = _make_policy()
     policy.save_checkpoint(fname)
 
-    with open(fname, "rb") as f:
-        ckpt = pickle.load(f)
-    ckpt["physbo_version"] = "0.0.1"
-    with open(fname, "wb") as f:
-        pickle.dump(ckpt, f)
+    _edit_header(fname, physbo_version="0.0.1")
 
     with pytest.warns(RuntimeWarning, match="0.0.1"):
         physbo.search.discrete.Policy.load_checkpoint(fname)

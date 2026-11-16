@@ -6,30 +6,32 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
-import time
-import warnings
 
 from ._history import History
 from .. import utility
 from .. import score as search_score
-from ..optimize.random import Optimizer as RandomOptimizer
 from ... import _mpi
-from ... import gp
-from ...gp import Predictor as gp_predictor
-from ...blm import Predictor as blm_predictor
-from ...misc import SetConfig
 from ..._variable import Variable, normalize_t
-from ..._rng import make_rng, LegacyRNG
-from .._checkpoint import CheckpointMixin
+from .._policy_common import _PolicyBase
+from .._space import _RangeSpace, _space_attribute
 
 
-class Policy(CheckpointMixin):
+class Policy(_PolicyBase):
     """Single objective Bayesian optimization with continuous search space"""
 
-    #: No constraint, for subclasses whose constructor does not set it.
-    constraint = None
+    min_X = _space_attribute(
+        "min_X", "The minimum value of each dimension of the search space."
+    )
+    max_X = _space_attribute(
+        "max_X", "The maximum value of each dimension of the search space."
+    )
+    L_X = _space_attribute("L_X", "The width of each dimension, max_X - min_X.")
+    dim = _space_attribute("dim", "The number of dimensions of the search space.")
+    constraint = _space_attribute(
+        "constraint",
+        "The inequality constraints on the search space (a callable), or None.",
+    )
 
     #: Rejection sampling of N feasible points is given up after max_trials_per_point * N samples.
     max_trials_per_point = 10000
@@ -73,74 +75,33 @@ class Policy(CheckpointMixin):
             Random number generator specification (default: "legacy").
             See physbo.search.discrete.Policy for details.
         """
-
-        self.predictor = None
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.new_data = None
-
-        if min_X is None or max_X is None:
-            raise ValueError("min_X and max_X must be specified")
-        self.min_X = np.array(min_X)
-        self.max_X = np.array(max_X)
-        self.dim = self.min_X.shape[0]
-        assert self.dim == self.max_X.shape[0], (
-            "The dimension of min_X and max_X must be the same"
+        super().__init__(
+            space=_RangeSpace(min_X, max_X, constraint),
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
         )
-        assert np.all(self.min_X < self.max_X), (
-            "min_X must be less than max_X for each dimension"
+
+    def _new_history(self):
+        return History(dim=self.dim)
+
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
+            raise RuntimeError(msg)
+        init_X, fs = initial_data
+        fs_normalized = normalize_t(fs, k=1)
+        assert init_X.shape[0] == fs_normalized.shape[0], (
+            "The number of initial data must be the same"
         )
-        self.L_X = self.max_X - self.min_X
-        self.constraint = constraint
-        self.history = History(dim=self.dim)
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
+        assert init_X.shape[1] == self.dim, (
+            "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+        )
+        self.write(init_X, fs_normalized)
 
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (X and objectives)"
-                raise RuntimeError(msg)
-            init_X, fs = initial_data
-            fs_normalized = normalize_t(fs, k=1)
-            assert init_X.shape[0] == fs_normalized.shape[0], (
-                "The number of initial data must be the same"
-            )
-            assert init_X.shape[1] == self.dim, (
-                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
-            )
-            self.write(init_X, fs_normalized)
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
-
-    def set_seed(self, seed):
-        """
-        Setting a seed parameter for np.random.
-
-        Parameters
-        ----------
-        seed: int
-            seed number
-        -------
-
-        """
-        self.seed = seed
-        if isinstance(self.rng, LegacyRNG):
-            self.rng.seed(self.seed)
-        else:
-            self.rng = np.random.default_rng(self.seed)
+    def _show_search_results(self, N_indeed, disp_pareto_set):
+        self.history.show_search_results(N_indeed)
 
     def write(
         self,
@@ -233,51 +194,9 @@ class Policy(CheckpointMixin):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-            time_total = time.time()
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(self.history.num_runs)
-
-            time_get_action = time.time()
-            action = self._get_random_action(N)
-            time_get_action = time.time() - time_get_action
-
-            N_indeed = len(action)
-            if N_indeed == 0:
-                if self.mpirank == 0:
-                    print("WARNING: All actions have already searched.")
-                return copy.deepcopy(self.history)
-
-            if simulator is None:
-                return action
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N_indeed,
-                time_update_predictor=np.zeros(N_indeed, dtype=float),
-                time_get_action=[time_get_action] * N_indeed,
-                time_run_simulator=[time_run_simulator] * N_indeed,
-            )
-
-            if is_disp:
-                self.history.show_search_results(N_indeed)
-
-        return copy.deepcopy(self.history)
+        return self._random_search(
+            max_num_probes, num_search_each_probe, simulator, is_disp
+        )
 
     def bayes_search(
         self,
@@ -289,9 +208,9 @@ class Policy(CheckpointMixin):
         simulator=None,
         score="TS",
         interval=0,
-        num_rand_basis=0,
+        num_rand_basis=None,
         optimizer=None,
-        ard=False,
+        ard=None,
         ucb_beta=1.0,
     ):
         """
@@ -323,14 +242,24 @@ class Policy(CheckpointMixin):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
-        num_rand_basis: int
+            A negative interval needs a learned predictor: the one learned by an
+            earlier bayes_search, or one given as an argument, read by load() or
+            set by hand. Otherwise, or if another kind of predictor is asked for
+            (see num_rand_basis), a RuntimeError is raised.
+        num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            If None (default), the predictor the policy has is used, whatever its
+            kind; a Gaussian process is made if it has none yet.
+            The predictor is kept between calls of bayes_search. A new one is made,
+            to be learned, when the predictor is not of the kind asked for by
+            num_rand_basis or ard.
         optimizer: Optimizer object
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
-        ard: bool
+        ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Default is False.
+            If None (default), as in the predictor the policy has; without ARD if
+            it has none yet.
         ucb_beta: float
             Trade-off parameter between exploitation and exploration used for
             string "UCB". The score is ``fmean + ucb_beta * fstd``.
@@ -340,104 +269,25 @@ class Policy(CheckpointMixin):
         -------
         history: history object (physbo.search.discrete.results.history)
         """
-
         score = search_score.resolve(
             score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
         )
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        old_disp = self.config.learning.is_disp
-        self.config.learning.is_disp = is_disp
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = num_rand_basis != 0
-        self.ard = ard
-
-        if training is not None:
-            self.training = training
-
-        if predictor is not None:
-            self.predictor = predictor
-        elif self.predictor is None:
-            self._init_predictor(is_rand_expans)
-
-        if max_num_probes > 0 or interval >= 0:
-            utility.require_training_data(self.training)
-
-        if max_num_probes == 0 and interval >= 0:
-            self._learn_hyperparameter(num_rand_basis)
-
         if optimizer is None:
             optimizer = self._default_optimizer()
 
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-            time_total = time.time()
-
-            time_update_predictor = time.time()
-            if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
-            else:
-                self._update_predictor()
-            time_update_predictor = time.time() - time_update_predictor
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, utility.score_name(score)
-                )
-
-            time_get_action = time.time()
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action = self._get_actions(
-                score,
-                N,
-                K,
-                alpha,
-                optimizer,
-                num_rand_basis=num_rand_basis,
-                ucb_beta=ucb_beta,
-            )
-            time_get_action = time.time() - time_get_action
-
-            if simulator is None:
-                self.config.learning.is_disp = old_disp
-                return action
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action,
-                t,
-                time_total=[time_total] * N,
-                time_update_predictor=[time_update_predictor] * N,
-                time_get_action=[time_get_action] * N,
-                time_run_simulator=[time_run_simulator] * N,
-            )
-
-            if is_disp:
-                self.history.show_search_results(N)
-        self._update_predictor()
-        self.config.learning.is_disp = old_disp
-        return copy.deepcopy(self.history)
-
-    def _warn_no_predictor(self, method_name):
-        if self.mpirank != 0:
-            return
-        print("Warning: Since policy.predictor is not yet set,")
-        print("         a GP predictor (num_rand_basis=0) is used for predicting")
-        print("         If you want to use a BLM predictor (num_rand_basis>0),")
-        print("         call bayes_search(max_num_probes=0, num_rand_basis=nrb)")
-        print("         before calling {}.".format(method_name))
+        return self._bayes_search(
+            score,
+            optimizer=optimizer,
+            training=training,
+            predictor=predictor,
+            max_num_probes=max_num_probes,
+            num_search_each_probe=num_search_each_probe,
+            simulator=simulator,
+            is_disp=is_disp,
+            interval=interval,
+            num_rand_basis=num_rand_basis,
+            ard=ard,
+        )
 
     def get_post_fmean(self, xs):
         """
@@ -496,29 +346,6 @@ class Policy(CheckpointMixin):
             return self.predictor.get_post_fcov(
                 self.training, X, diag, objective_index=0
             )
-
-    def get_kernel_length_scale(self):
-        """
-        Return the Gaussian kernel length scale(s) (width) of the predictor.
-
-        With ARD, returns one length scale per input dimension; otherwise a single value.
-
-        Returns
-        -------
-        numpy.ndarray or None
-            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.
-            None if the predictor is not set or not a GP with Gaussian kernel.
-        """
-        if self.predictor is None:
-            return None
-        self._update_predictor()
-        try:
-            cov = self.predictor.model.prior.cov
-        except AttributeError:
-            return None
-        if not hasattr(cov, "width"):
-            return None
-        return np.atleast_1d(np.asarray(cov.width).flatten())
 
     def get_num_dim(self):
         """
@@ -637,301 +464,25 @@ class Policy(CheckpointMixin):
             f = np.hstack(fs)
         return f
 
-    def _argmax_score(
-        self,
-        mode,
-        predictor,
-        training,
-        extra_trainings,
-        optimizer,
-        ucb_beta=1.0,
-        error=None,
-        samples_drawn=False,
-    ):
-        """``error``: an exception raised on this process while drawing the
-        samples in ``extra_trainings`` (see :func:`physbo._mpi.call`);
-        ``samples_drawn``: whether they were drawn (on every process alike),
-        so that the processes exchange whether one of them raised."""
-        if error is None and len(extra_trainings) == 0:
-            predictor.prepare(training, objective_index=0)
-
-            def fn(x):
-                return self.get_score(
-                    mode,
-                    xs=x.reshape(1, -1),
-                    predictor=predictor,
-                    ucb_beta=ucb_beta,
-                    parallel=False,
-                )[0]
-        elif error is None:  # marginal score
-
-            def marginal_score_function():
-                K = len(extra_trainings)
-                trains = [copy.deepcopy(training) for _ in range(K)]
-                predictors = [copy.deepcopy(predictor) for _ in range(K)]
-                for k in range(K):
-                    extra_train = extra_trainings[k]
-                    # Ensure t is normalized
-                    if extra_train.t is not None:
-                        extra_train.t = normalize_t(extra_train.t, k=1)
-                    trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
-                    predictors[k].update(trains[k], extra_train, objective_index=0)
-
-                def fn(x):
-                    f = np.zeros(K)
-                    for k in range(K):
-                        f[k] = self.get_score(
-                            mode,
-                            xs=x.reshape(1, -1),
-                            predictor=predictors[k],
-                            training=trains[k],
-                            ucb_beta=ucb_beta,
-                            parallel=False,
-                        )[0]
-                    return np.mean(f)
-
-                return fn
-
-            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
-        if self.mpisize > 1 and (samples_drawn or len(extra_trainings) > 0):
-            # the samples, and so the predictors, differ between the processes
-            _mpi.allgather(self.mpicomm, None, error)
-
-        return self._optimize_score(fn, optimizer)
+    def _proposal_model(self):
+        # copies of the predictor(s), prepared afresh from the training
+        # data (which are not copied)
+        predictors, training = self._current_model()
+        model = (self._copy_predictors(predictors), training)
+        self._prepare_model(model)
+        return model
 
     def _default_optimizer(self):
         """Optimizer of the acquisition function used when none is given."""
-        return RandomOptimizer(
-            min_X=self.min_X,
-            max_X=self.max_X,
-            nsamples=1000,
-            rng=self.rng,
-            constraint=self.constraint,
-            max_trials_per_point=self.max_trials_per_point,
-        )
-
-    def _constrained(self, fn):
-        """Make the acquisition function -inf at infeasible points."""
-        if self.constraint is None:
-            return fn
-
-        def wrapped(x):
-            x = np.asarray(x)
-            if utility.is_feasible(self.constraint, x.reshape(1, -1))[0]:
-                return fn(x)
-            return -np.inf
-
-        return wrapped
-
-    def _optimize_score(self, fn, optimizer):
-        """
-        Maximize the acquisition function under the constraint.
-
-        Parameters
-        ----------
-        fn: callable
-            Acquisition function, from a point of shape (dim,) to float.
-        optimizer: Optimizer object
-            Called as optimizer(fn, mpicomm=...).
-
-        Returns
-        -------
-        X: numpy.ndarray
-            The point to be searched next.
-
-        Notes
-        -----
-        Infeasible points are hidden from the optimizer by -inf, but the optimizer can
-        still fail to return a feasible point (no feasible sample, or a local search
-        started from an infeasible point). The returned point is therefore checked,
-        and replaced with a feasible random point if it is None, not finite or not
-        feasible. A point of the wrong dimension is an error of the optimizer and
-        raises ValueError, as without a constraint.
-        """
-        if isinstance(optimizer, RandomOptimizer) and (
-            # == rather than "is": a bound method (fn.constraint) is a new
-            # object at every attribute access
-            optimizer.constraint == self.constraint
-        ):
-            # the optimizer draws feasible samples only; no need to judge
-            # them one by one again
-            X = optimizer(fn, mpicomm=self.mpicomm)
-        else:
-            X = optimizer(self._constrained(fn), mpicomm=self.mpicomm)
-        if self.constraint is None:
-            return X
-
-        def check():
-            if X is None:
-                return False
-            x = np.asarray(X, dtype=float).reshape(-1)
-            if x.shape[0] != self.dim:
-                raise ValueError(
-                    f"ERROR: the optimizer returned a point of {x.shape[0]} "
-                    f"dimension(s), but the search space has {self.dim}"
-                )
-            x = x.reshape(1, -1)
-            return bool(
-                np.all(np.isfinite(x)) and utility.is_feasible(self.constraint, x)[0]
-            )
-
-        # the verdict of rank 0 decides, so that all the ranks take the same
-        # branch; an exception while judging is raised on every rank
-        comm = self.mpicomm if self.mpisize > 1 else None
-        if comm is None or self.mpirank == 0:
-            is_ok, error = _mpi.call(comm, check)
-        else:
-            is_ok, error = None, None
-        if comm is not None:
-            is_ok = _mpi.bcast(comm, is_ok, error, root=0)
-        if is_ok:
-            return X
-
-        if self.mpirank == 0:
-            warnings.warn(
-                "The optimizer of the acquisition function did not return a feasible point. "
-                "A feasible random point is proposed instead.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        return self._get_random_action(1)[0]
-
-    def _get_actions(
-        self, mode, N, K, alpha, optimizer, num_rand_basis=0, ucb_beta=1.0
-    ):
-        """
-        Getting next candidates
-
-        Parameters
-        ----------
-        mode: str
-            The type of aquisition funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        N: int
-            The total number of actions to return.
-        K: int
-            The total number of samples to evaluate marginal score
-        alpha: float
-            Tuning parameter which is used if mode = TS.
-            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).
-
-        Returns
-        -------
-        chosen_actions: numpy.ndarray
-            An N-dimensional array of actions selected in each search process.
-        """
-
-        X = np.zeros((N, self.dim))
-
-        self._update_predictor()
-        predictor = copy.deepcopy(self.predictor)
-        predictor.config.is_disp = False
-        X[0, :] = self._argmax_score(
-            mode, predictor, self.training, [], optimizer=optimizer, ucb_beta=ucb_beta
-        )
-
-        for n in range(1, N):
-
-            def draw_samples():
-                # with a Bayesian linear model the training data carry the
-                # values of the basis functions, so the virtual observations
-                # must too (the GP predictor has no basis: None)
-                extra_training = Variable(
-                    X=X[0:n, :], Z=self.predictor.get_basis(X[0:n, :])
-                )
-                t = self.predictor.get_predict_samples(
-                    self.training, extra_training, K, objective_index=0, rng=self.rng
-                )
-                extra_trainings = [copy.deepcopy(extra_training) for _ in range(K)]
-                for k in range(K):
-                    # Normalize t to (N, 1) shape
-                    t_normalized = normalize_t(t[k, :], k=1)
-                    extra_trainings[k].t = t_normalized
-                return extra_trainings
-
-            extra_trainings, error = _mpi.call(self.mpicomm, draw_samples)
-            X[n, :] = self._argmax_score(
-                mode,
-                predictor,
-                self.training,
-                extra_trainings,
-                optimizer=optimizer,
-                ucb_beta=ucb_beta,
-                error=error,
-                samples_drawn=True,
-            )
-
-        return X
+        return self.space.default_optimizer(self.rng, self.max_trials_per_point)
 
     def _get_random_action(self, N):
-        """
-        Getting indexes of actions randomly.
-
-        Parameters
-        ----------
-        N: int
-            Total number of search candidates.
-        Returns
-        -------
-        action: numpy.ndarray
-            Indexes of actions selected randomly from search candidates.
-        """
-        if self.constraint is None:
-            action = self._sample_uniform(N)
-            if self.mpisize > 1:
-                self.mpicomm.Bcast(action, root=0)
-            return action
-
-        # Only rank 0 samples, since the number of trials depends on the random
-        # numbers; the other ranks then draw the same number of points, so that
-        # the generators of all the ranks stay in step as without a constraint.
-        num_drawn = 0
-
-        def draw(n):
-            nonlocal num_drawn
-            num_drawn += n
-            return self._sample_uniform(n)
-
-        comm = self.mpicomm if self.mpisize > 1 else None
-        action, error = None, None
-        if comm is None or self.mpirank == 0:
-            # an exception of the constraint is raised on every rank below
-            action, error = _mpi.call(
-                comm,
-                utility.sample_feasible,
-                draw,
-                N,
-                self.constraint,
-                max_trials_per_point=self.max_trials_per_point,
-            )
-        if comm is not None:
-            # all the ranks must raise the error together
-            found, num_drawn = _mpi.bcast(
-                comm, (action is not None, num_drawn), error, root=0
-            )
-            if found:
-                if self.mpirank != 0:
-                    self._sample_uniform(num_drawn)
-                    action = np.zeros((N, self.dim))
-                comm.Bcast(action, root=0)
-            else:
-                action = None
-        if action is None:
-            raise RuntimeError(
-                "ERROR: feasible points were not found in {} random samples. "
-                "The feasible region may be empty or too small "
-                "(equality constraints are not supported).".format(
-                    self.max_trials_per_point * N
-                )
-            )
-        return action
-
-    def _sample_uniform(self, N):
-        """Draw N points uniformly from the box [min_X, max_X]."""
-        return self.rng.random((N, self.dim)) * self.L_X.reshape(
-            1, -1
-        ) + self.min_X.reshape(1, -1)
+        return self.space.random(
+            N,
+            self.rng,
+            self.mpicomm,
+            max_trials_per_point=self.max_trials_per_point,
+        )
 
     def save(self, file_history, file_training=None, file_predictor=None):
         """
@@ -1006,64 +557,7 @@ class Policy(CheckpointMixin):
             with open(file_predictor, "rb") as f:
                 self.predictor = pickle.load(f)
 
-    def export_predictor(self):
-        """
-        Returning the predictor dataset
-
-        Returns
-        -------
-
-        """
-        return self.predictor
-
-    def export_training(self):
-        """
-        Returning the training dataset
-
-        Returns
-        -------
-
-        """
-        return self.training
-
-    def export_history(self):
-        """
-        Returning the information of the history.
-
-        Returns
-        -------
-
-        """
-        return self.history
-
-    def _init_predictor(self, is_rand_expans):
-        """
-        Initialize predictor.
-
-        Parameters
-        ----------
-        is_rand_expans: bool
-            If true, physbo.blm.predictor is selected.
-            If false, physbo.gp.Predictor is selected.
-        """
-        if is_rand_expans:
-            self.predictor = self._make_blm_predictor()
-        else:
-            self.predictor = self._make_gp_predictor()
-
-    def _make_gp_predictor(self):
-        """Create a GP predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return gp_predictor(self.config, model=model)
-
-    def _make_blm_predictor(self):
-        """Create a BLM predictor, with ARD if self.ard is True."""
-        ard = self.ard
-        num_dim = self.get_num_dim()
-        model = gp.core.Model.create_default(ard=ard, num_dim=num_dim)
-        return blm_predictor(self.config, model=model)
+        self._after_load()
 
     def _learn_hyperparameter(self, num_rand_basis):
         self.predictor.fit(
@@ -1073,6 +567,9 @@ class Policy(CheckpointMixin):
             objective_index=0,
             rng=self.rng,
         )
+        self._prepare_statistics()
+
+    def _prepare_statistics(self):
         # Get basis and convert to (1, N, n) format for single-objective
         training_Z_basis = self.predictor.get_basis(self.training.X)
         if training_Z_basis is not None:
@@ -1084,54 +581,3 @@ class Policy(CheckpointMixin):
         if self.new_data is not None:
             self.predictor.update(self.training, self.new_data, objective_index=0)
             self.new_data = None
-
-    def _make_variable_X(self, test_X):
-        """
-        Make a new *Variable* with X=test_X
-
-        Parameters
-        ----------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        Returns
-        -------
-        test_X: numpy.ndarray or physbo.Variable
-                The set of candidates. Each row vector represents the feature vector of each search candidate.
-        """
-        if isinstance(test_X, np.ndarray):
-            test = Variable(X=test_X)
-        elif isinstance(test_X, Variable):
-            test = test_X
-        else:
-            raise TypeError("The type of test_X must be ndarray or physbo.Variable")
-        return test
-
-
-def _run_simulator(simulator, action, comm=None):
-    """
-    Run simulator and normalize return value to (N, 1) shape.
-
-    Parameters
-    ----------
-    simulator: callable
-        Function that takes action and returns t value(s)
-    action: numpy.ndarray
-        Array of actions
-    comm: MPI.Comm, optional
-        MPI communicator
-
-    Returns
-    -------
-    numpy.ndarray
-        Normalized array with shape (N, 1)
-    """
-    if comm is None:
-        t = simulator(action)
-    else:
-        if comm.rank == 0:
-            t, error = _mpi.call(comm, simulator, action)
-        else:
-            t, error = 0.0, None
-        t = _mpi.bcast(comm, t, error, root=0)
-
-    return normalize_t(t, k=1)

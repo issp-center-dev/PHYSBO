@@ -6,21 +6,18 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import copy
 import pickle as pickle
-import time
 
 from ._history import History
 from ... import _mpi
 from .. import range as range_single
 from .. import utility
 from .. import score_multi as search_score
-from ...misc import SetConfig
 from ..._variable import Variable
-from ..._rng import make_rng
+from .._policy_common import _MultiObjectiveMethods
 
 
-class Policy(range_single.Policy):
+class Policy(_MultiObjectiveMethods, range_single.Policy):
     """Multi objective Bayesian optimization with continuous search space"""
 
     def __init__(
@@ -62,63 +59,45 @@ class Policy(range_single.Policy):
             Random number generator specification (default: "legacy").
             See physbo.search.discrete.Policy for details.
         """
-        # The constructor of range.Policy is not called: it sets up the history, the
-        # training data and initial_data for a single objective. This class inherits
-        # range.Policy only to share its helper methods, so everything the base
-        # constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)
-        # must be set here as well.
-        if min_X is None or max_X is None:
-            raise ValueError("min_X and max_X must be specified")
-        self.min_X = np.array(min_X)
-        self.max_X = np.array(max_X)
-        self.L_X = self.max_X - self.min_X
-        self.dim = self.min_X.shape[0]
-        self.constraint = constraint
-
         self.num_objectives = num_objectives
-        self.history = History(num_objectives=self.num_objectives, dim=self.dim)
+        super().__init__(
+            min_X=min_X,
+            max_X=max_X,
+            constraint=constraint,
+            config=config,
+            initial_data=initial_data,
+            comm=comm,
+            rng=rng,
+        )
 
-        self.rng = make_rng(rng)
-        self.training = Variable()
-        self.predictor_list = [None for _ in range(self.num_objectives)]
-        self.new_data = None
+    def _prepare_scoring(self, mode):
+        pareto = self.history.pareto
+        upper = search_score._reference_points_upper(mode)
+        if upper is not None and pareto.front.shape[0] > 0:
+            # on every process before the optimizer, which may evaluate the
+            # scores on some processes only, so that they all use the same
+            # reference points and warn (or raise) together
+            pareto.prepare_reference_points(upper=upper)
 
-        if config is None:
-            self.config = SetConfig()
-        else:
-            self.config = config
+    def _new_history(self):
+        return History(num_objectives=self.num_objectives, dim=self.dim)
 
-        self.TS_candidate_num = None
+    def _write_initial_data(self, initial_data):
+        if len(initial_data) != 2:
+            msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
+            raise RuntimeError(msg)
+        init_X, fs = initial_data
+        assert init_X.shape[0] == len(fs), (
+            "The number of initial data must be the same"
+        )
+        assert init_X.shape[1] == self.dim, (
+            "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
+        )
+        assert fs.shape[1] == self.num_objectives, (
+            "The number of objectives in initial_data[1] must be the same as num_objectives"
+        )
 
-        self.ard = False
-        if initial_data is not None:
-            if len(initial_data) != 2:
-                msg = "ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"
-                raise RuntimeError(msg)
-            init_X, fs = initial_data
-            assert init_X.shape[0] == len(fs), (
-                "The number of initial data must be the same"
-            )
-            assert init_X.shape[1] == self.dim, (
-                "The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"
-            )
-            assert fs.shape[1] == self.num_objectives, (
-                "The number of objectives in initial_data[1] must be the same as num_objectives"
-            )
-
-            self.write(init_X, fs)
-
-        if comm is None:
-            self.mpicomm = None
-            self.mpisize = 1
-            self.mpirank = 0
-        else:
-            self.mpicomm = comm
-            self.mpisize = comm.size
-            self.mpirank = comm.rank
-            self.config.learning.is_disp = (
-                self.config.learning.is_disp and self.mpirank == 0
-            )
+        self.write(init_X, fs)
 
     def write(
         self,
@@ -159,13 +138,7 @@ class Policy(range_single.Policy):
         )
 
         if self.predictor_list[0] is not None:
-            z = []
-            for p in self.predictor_list:
-                z.append(p.get_basis(X))
-            if z[0] is not None:
-                Z = np.stack(z, axis=0)
-            else:
-                Z = None
+            Z = self._stack_basis(self.predictor_list, X)
         else:
             Z = None
 
@@ -188,48 +161,13 @@ class Policy(range_single.Policy):
         is_disp=True,
         disp_pareto_set=False,
     ):
-        if self.mpirank != 0:
-            is_disp = False
-
-        N = int(num_search_each_probe)
-
-        if is_disp:
-            utility.show_interactive_mode(simulator, self.history)
-
-        for n in range(0, max_num_probes):
-            time_total = time.time()
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, score="random"
-                )
-
-            time_get_action = time.time()
-            action_X = self._get_random_action(N)
-            time_get_action = time.time() - time_get_action
-
-            if simulator is None:
-                return action_X
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action_X, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action_X,
-                t,
-                time_total=[time_total] * N,
-                time_update_predictor=np.zeros(N, dtype=float),
-                time_get_action=[time_get_action] * N,
-                time_run_simulator=[time_run_simulator] * N,
-            )
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-
-        return copy.deepcopy(self.history)
+        return self._random_search(
+            max_num_probes,
+            num_search_each_probe,
+            simulator,
+            is_disp,
+            disp_pareto_set=disp_pareto_set,
+        )
 
     def bayes_search(
         self,
@@ -242,10 +180,10 @@ class Policy(range_single.Policy):
         simulator=None,
         score="HVPI",
         interval=0,
-        num_rand_basis=0,
+        num_rand_basis=None,
         optimizer=None,
         unify_method=None,
-        ard=False,
+        ard=None,
     ):
         """
         Performing Bayesian optimization by using multi objective function
@@ -278,8 +216,17 @@ class Policy(range_single.Policy):
             The interval number of learning the hyper parameter.
             If you set the negative value to interval, the hyper parameter learning is not performed.
             If you set zero to interval, the hyper parameter learning is performed only at the first step.
+            A negative interval needs a learned predictor: the one learned by an
+            earlier bayes_search, or one given as an argument, read by load() or
+            set by hand. Otherwise, or if another kind of predictor is asked for
+            (see num_rand_basis), a RuntimeError is raised.
         num_rand_basis: int, optional
             The number of basis function. If you choose 0, ordinary Gaussian process run.
+            If None (default), the predictor the policy has is used, whatever its
+            kind; a Gaussian process is made if it has none yet.
+            The predictor is kept between calls of bayes_search. A new one is made,
+            to be learned, when the predictor is not of the kind asked for by
+            num_rand_basis or ard.
         optimizer: Optimizer object, optional
             Optimizer object for optimizing the acquisition function.
             If None, the default optimizer is used.
@@ -288,348 +235,36 @@ class Policy(range_single.Policy):
             This is not used.
         ard: bool, optional
             If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.
-            Default is False.
+            If None (default), as in the predictor the policy has; without ARD if
+            it has none yet.
 
         Returns
         -------
         history: history object (physbo.search.range_multi.results.history)
         """
-
         score = search_score.resolve(
             score,
             alpha=self.config.search.alpha,
             reduced_candidate_num=self.TS_candidate_num,
             rng=self.rng,
         )
-
-        if self.mpirank != 0:
-            is_disp = False
-
-        old_disp = self.config.learning.is_disp
-        self.config.learning.is_disp = is_disp
-
-        if max_num_probes is None:
-            max_num_probes = 1
-            simulator = None
-
-        is_rand_expans = False if num_rand_basis == 0 else True
-        self.ard = ard
-
-        if training_list is not None:
-            self.training = training_list
-
-        if predictor_list is None:
-            if is_rand_expans:
-                self.predictor_list = [
-                    self._make_blm_predictor()
-                    for i in range(self.num_objectives)
-                ]
-            else:
-                self.predictor_list = [
-                    self._make_gp_predictor() for i in range(self.num_objectives)
-                ]
-        else:
-            self.predictor_list = predictor_list
-
-        if max_num_probes > 0 or interval >= 0:
-            utility.require_training_data(self.training)
-
-        if max_num_probes == 0 and interval >= 0:
-            self._learn_hyperparameter(num_rand_basis)
-
         if optimizer is None:
             optimizer = self._default_optimizer()
 
-        N = int(num_search_each_probe)
-
-        for n in range(max_num_probes):
-            time_total = time.time()
-            time_update_predictor = time.time()
-            if utility.is_learning(n, interval):
-                self._learn_hyperparameter(num_rand_basis)
-            else:
-                self._update_predictor()
-            time_update_predictor = time.time() - time_update_predictor
-
-            if is_disp and N > 1:
-                utility.show_start_message_multi_search(
-                    self.history.num_runs, utility.score_name(score)
-                )
-
-            time_get_action = time.time()
-            K = self.config.search.multi_probe_num_sampling
-            alpha = self.config.search.alpha
-            action_X = self._get_actions(score, N, K, alpha, optimizer=optimizer)
-            time_get_action = time.time() - time_get_action
-
-            if simulator is None:
-                self.config.learning.is_disp = old_disp
-                return action_X
-
-            time_run_simulator = time.time()
-            t = _run_simulator(simulator, action_X, self.mpicomm)
-            time_run_simulator = time.time() - time_run_simulator
-
-            time_total = time.time() - time_total
-            self.write(
-                action_X,
-                t,
-                time_total=[time_total] * N,
-                time_update_predictor=[time_update_predictor] * N,
-                time_get_action=[time_get_action] * N,
-                time_run_simulator=[time_run_simulator] * N,
-            )
-
-            if is_disp:
-                utility.show_search_results_mo(
-                    self.history, N, disp_pareto_set=disp_pareto_set
-                )
-        self._update_predictor()
-        self.config.learning.is_disp = old_disp
-        return copy.deepcopy(self.history)
-
-    def _argmax_score(
-        self,
-        mode,
-        predictors,
-        training,
-        virtual_trainings,
-        optimizer,
-        error=None,
-        samples_drawn=False,
-    ):
-        """
-        Get the action that maximizes the score.
-
-        Arguments
-        ----------
-        mode: str
-            The type of aquision funciton.
-            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.
-            These functions are defined in score.py.
-        predictors: list[Predictor]
-            List of predictors.
-        training: Variable
-            Training data.
-        virtual_trainings: list[Variable]
-            List of extra training data.
-        optimizer: Function or Optimizer object
-            Optimizer object for optimizing the acquisition function.
-        error: Exception or None
-            An exception raised on this process while drawing the samples in
-            ``virtual_trainings`` (see :func:`physbo._mpi.call`).
-        samples_drawn: bool
-            Whether the samples were drawn (on every process alike), so that
-            the processes exchange whether one of them raised.
-        """
-
-        if error is None and len(virtual_trainings) == 0:
-            for i, predictor in enumerate(predictors):
-                predictor.prepare(training, objective_index=i)
-
-            def fn(x):
-                return self.get_score(
-                    mode,
-                    xs=x.reshape(1, -1),
-                    predictor_list=predictors,
-                    training_list=training,
-                    parallel=False,
-                )[0]
-        elif error is None:  # marginal score
-
-            def marginal_score_function():
-                K = len(virtual_trainings)
-                trains_k = [copy.deepcopy(training) for _ in range(K)]
-                predictors_k = [copy.deepcopy(predictors) for _ in range(K)]
-                for predictor_k, training_k, virtual_training in zip(
-                    predictors_k, trains_k, virtual_trainings
-                ):
-                    training_k.add(
-                        X=virtual_training.X, t=virtual_training.t, Z=virtual_training.Z
-                    )
-                    for i in range(self.num_objectives):
-                        predictor_k[i].update(
-                            training_k, virtual_training, objective_index=i
-                        )
-
-                def fn(x):
-                    f = np.zeros(K)
-                    for k in range(K):
-                        f[k] = self.get_score(
-                            mode,
-                            xs=x.reshape(1, -1),
-                            predictor_list=predictors_k[k],
-                            training_list=trains_k[k],
-                            parallel=False,
-                        )[0]
-                    return np.mean(f)
-
-                return fn
-
-            fn, error = _mpi.call(self.mpicomm, marginal_score_function)
-        if self.mpisize > 1 and (samples_drawn or len(virtual_trainings) > 0):
-            # the samples, and so the predictors, differ between the processes
-            _mpi.allgather(self.mpicomm, None, error)
-
-        pareto = self.history.pareto
-        upper = search_score._reference_points_upper(mode)
-        if upper is not None and pareto.front.shape[0] > 0:
-            # on every process before the optimizer, which may evaluate fn on
-            # some processes only, so that they all use the same reference
-            # points and warn (or raise) together
-            pareto.prepare_reference_points(upper=upper)
-        return self._optimize_score(fn, optimizer)
-
-    def _get_actions(self, mode, N, K, alpha, optimizer, num_rand_basis=0):
-        X = np.zeros((N, self.dim))
-        self._update_predictor()
-        predictors = [copy.deepcopy(predictor) for predictor in self.predictor_list]
-
-        for i, predictor in enumerate(predictors):
-            predictor.config.is_disp = False
-            predictor.prepare(self.training, objective_index=i)
-        X[0, :] = self._argmax_score(
-            mode, predictors, self.training, [], optimizer=optimizer
+        return self._bayes_search(
+            score,
+            optimizer=optimizer,
+            training=training_list,
+            predictor=predictor_list,
+            max_num_probes=max_num_probes,
+            num_search_each_probe=num_search_each_probe,
+            simulator=simulator,
+            is_disp=is_disp,
+            interval=interval,
+            num_rand_basis=num_rand_basis,
+            ard=ard,
+            disp_pareto_set=disp_pareto_set,
         )
-
-        for n in range(1, N):
-
-            def draw_samples():
-                # with Bayesian linear models the training data carry the
-                # values of the basis functions of every objective, so the
-                # virtual observations must too (as in write)
-                z = [p.get_basis(X[0:n, :]) for p in predictors]
-                Z = np.stack(z, axis=0) if z[0] is not None else None
-                virtual_trainings = [Variable(X=X[0:n, :], Z=Z) for _ in range(K)]
-                virtual_t = np.zeros((K, n, self.num_objectives))
-                for i in range(self.num_objectives):
-                    virtual_t[:, :, i] = predictors[i].get_predict_samples(
-                        self.training,
-                        virtual_trainings[0],
-                        K,
-                        objective_index=i,
-                        rng=self.rng,
-                    )
-                for k in range(K):
-                    virtual_trainings[k].t = virtual_t[k, :, :]
-                return virtual_trainings
-
-            virtual_trainings, error = _mpi.call(self.mpicomm, draw_samples)
-            X[n, :] = self._argmax_score(
-                mode,
-                predictors,
-                self.training,
-                virtual_trainings,
-                optimizer=optimizer,
-                error=error,
-                samples_drawn=True,
-            )
-        return X
-
-    def get_post_fmean(self, xs):
-        """
-        Calculate mean value of predictors (post distribution)
-
-        Parameters
-        ----------
-        xs: physbo.Variable or np.ndarray
-            input parameters to calculate covariance
-            shape is (num_points, num_parameters)
-        diag: bool
-            If true, only variances (diagonal elements) are returned.
-
-        Returns
-        -------
-        fcov: numpy.ndarray
-            Covariance matrix of the post distribution.
-            Returned shape is (num_points, num_objectives).
-        """
-        if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_post_fmean()")
-            predictor_list = []
-            for i in range(self.num_objectives):
-                predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
-                predictor.prepare(self.training, objective_index=i)
-                predictor_list.append(predictor)
-        else:
-            self._update_predictor()
-            predictor_list = self.predictor_list[:]
-        X = self._make_variable_X(xs)
-        fmean = [
-            predictor.get_post_fmean(self.training, X, objective_index=i)
-            for i, predictor in enumerate(predictor_list)
-        ]
-        return np.array(fmean).T
-
-    def get_kernel_length_scale(self):
-        """
-        Return the Gaussian kernel length scale(s) for each objective.
-
-        Returns
-        -------
-        list of numpy.ndarray or None
-            List of length num_objectives; each element is the length scale(s)
-            for that objective's GP, or None if not available.
-        """
-        if self.predictor_list is None or all(p is None for p in self.predictor_list):
-            return None
-        self._update_predictor()
-        result = []
-        for predictor in self.predictor_list:
-            if predictor is None:
-                result.append(None)
-                continue
-            try:
-                cov = predictor.model.prior.cov
-            except AttributeError:
-                result.append(None)
-                continue
-            if not hasattr(cov, "width"):
-                result.append(None)
-                continue
-            result.append(np.atleast_1d(np.asarray(cov.width).flatten()))
-        return result
-
-    def get_post_fcov(self, xs, diag=True):
-        """
-        Calculate covariance of predictors (post distribution)
-
-        Parameters
-        ----------
-        xs: physbo.Variable or np.ndarray
-            input parameters to calculate covariance
-            shape is (num_points, num_parameters)
-        diag: bool
-            If true, only variances (diagonal elements) are returned.
-
-        Returns
-        -------
-        fcov: numpy.ndarray
-            Covariance matrix of the post distribution.
-            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.
-        """
-        if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_post_fcov()")
-            predictor_list = []
-            for i in range(self.num_objectives):
-                predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, comm=self.mpicomm, objective_index=i, rng=self.rng)
-                predictor.prepare(self.training, objective_index=i)
-                predictor_list.append(predictor)
-        else:
-            self._update_predictor()
-            predictor_list = self.predictor_list[:]
-        X = self._make_variable_X(xs)
-        fcov = [
-            predictor.get_post_fcov(self.training, X, diag, objective_index=i)
-            for i, predictor in enumerate(predictor_list)
-        ]
-        arr = np.array(fcov)
-        if diag:
-            return arr.T
-        else:
-            return np.einsum("nij->ijn", arr)
 
     def get_score(
         self,
@@ -750,54 +385,6 @@ class Policy(range_single.Policy):
             f = np.hstack(fs)
         return f
 
-    def get_permutation_importance(self, n_perm: int, split_features_parallel=False):
-        """
-        Calculate permutation importance of models
-
-        Parameters
-        ----------
-        n_perm: int
-            The number of permutations
-        split_features_parallel: bool
-            If true, split features in parallel.
-
-        Returns
-        -------
-        importance_mean: numpy.ndarray
-            importance_mean (num_parameters, num_objectives)
-        importance_std: numpy.ndarray
-            importance_std (num_parameters, num_objectives)
-        """
-
-        if self.predictor_list == [None] * self.num_objectives:
-            self._warn_no_predictor("get_permutation_importance()")
-            predictor_list = []
-            for i in range(self.num_objectives):
-                predictor = self._make_gp_predictor()
-                predictor.fit(self.training, 0, objective_index=i, rng=self.rng)
-                predictor.prepare(self.training, objective_index=i)
-                predictor_list.append(predictor)
-        else:
-            self._update_predictor()
-            predictor_list = self.predictor_list[:]
-
-        importance_mean = [None for _ in range(self.num_objectives)]
-        importance_std = [None for _ in range(self.num_objectives)]
-
-        for i in range(self.num_objectives):
-            importance_mean[i], importance_std[i] = predictor_list[
-                i
-            ].get_permutation_importance(
-                self.training,
-                n_perm,
-                comm=self.mpicomm,
-                split_features_parallel=split_features_parallel,
-                objective_index=i,
-                rng=self.rng,
-            )
-
-        return np.array(importance_mean).T, np.array(importance_std).T
-
     def save(self, file_history, file_training_list=None, file_predictor_list=None):
         """Save the history, the training data and the predictors into files.
 
@@ -831,79 +418,27 @@ class Policy(range_single.Policy):
 
         N = self.history.total_num_search
 
-    def save_predictor_list(self, file_name):
-        with open(file_name, "wb") as f:
-            pickle.dump(self.predictor_list, f, 2)
-
-    def save_training_list(self, file_name):
-        obj = {"X": self.training.X, "t": self.training.t, "Z": self.training.Z}
-        with open(file_name, "wb") as f:
-            pickle.dump(obj, f, 2)
-
-    def load_predictor_list(self, file_name):
-        with open(file_name, "rb") as f:
-            self.predictor_list = pickle.load(f)
-
-    def load_training_list(self, file_name):
-        with open(file_name, "rb") as f:
-            data = pickle.load(f)
-
-        # Handle both old format (list) and new format (dict/Variable)
-        if isinstance(data, list):
-            # Old format: list of dicts, convert to single Variable
-            X = data[0]["X"]
-            Z = np.stack([d["Z"] for d in data], axis=0)
-            t = np.stack([d["t"] for d in data], axis=1)
-            self.training = Variable(X=X, t=t, Z=Z)
-        elif isinstance(data, dict):
-            # New format: single dict
-            self.training = Variable(X=data["X"], t=data["t"], Z=data["Z"])
-        else:
-            # Assume it's already a Variable
-            self.training = data
+        self._after_load()
 
     def _learn_hyperparameter(self, num_rand_basis):
-        # Collect Z for each objective
-        Z_list = []
-        training = self.training
         for i in range(self.num_objectives):
-            predictor = self.predictor_list[i]
-
-            predictor.fit(
-                training,
+            self.predictor_list[i].fit(
+                self.training,
                 num_rand_basis,
                 comm=self.mpicomm,
                 objective_index=i,
                 rng=self.rng,
             )
+        self._prepare_statistics()
 
-            # Collect Z for training (will be combined into (k, N, n))
-            training_Z_basis = predictor.get_basis(training.X)
-            Z_list.append(training_Z_basis)
-            predictor.prepare(training, objective_index=i)
+    def _prepare_statistics(self):
+        # The basis values of the training data, in (k, N, n) format, are
+        # those of the current predictors (None with Gaussian process
+        # predictors) before prepare() reads them.
+        training_Z = self._stack_basis(self.predictor_list, self.training.X)
+        if training_Z is not None:
+            self.training.Z = training_Z
 
-        # Update training.Z with (k, N, n) format
-        if all(z is not None for z in Z_list):
-            # Stack along first dimension: (k, N, n)
-            self.training.Z = np.stack(
-                Z_list, axis=0
-            )  # Each Z_i is (N, n), stack to (k, N, n)
+        for i in range(self.num_objectives):
+            self.predictor_list[i].prepare(self.training, objective_index=i)
         self.new_data = None
-
-    def _update_predictor(self):
-        if self.new_data is not None:
-            for i in range(self.num_objectives):
-                self.predictor_list[i].update(
-                    self.training, self.new_data, objective_index=i
-                )
-            self.new_data = None
-
-
-def _run_simulator(simulator, action_X, comm=None):
-    if comm is None:
-        return simulator(action_X)
-    if comm.rank == 0:
-        t, error = _mpi.call(comm, simulator, action_X)
-    else:
-        t, error = 0.0, None
-    return _mpi.bcast(comm, t, error, root=0)

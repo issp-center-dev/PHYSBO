@@ -59,9 +59,14 @@ class TestDiscreteUnify:
             ("PI", "NDS", 0): 0.18343541849063327,
             ("EI", "NDS", 0): 0.18343541849063327,
             ("TS", "NDS", 0): 0.2354556931288171,
-            ("PI", "ParEGO", 10): 0.14710521168216184,
-            ("EI", "ParEGO", 10): 0.13288175153331716,
-            ("TS", "ParEGO", 10): 0.13374086517165518,
+            # ParEGO with a Bayesian linear model: recorded again after the
+            # fix of #140 (the statistics of the model are rebuilt when the
+            # objectives are unified again; before, they mixed points unified
+            # with different weights). The values before the fix were
+            # 0.14710521168216184, 0.13288175153331716, 0.13374086517165518.
+            ("PI", "ParEGO", 10): 0.20069517460094444,
+            ("EI", "ParEGO", 10): 0.1954734380647939,
+            ("TS", "ParEGO", 10): 0.2315082867743492,
             ("PI", "NDS", 10): 0.1954734380647939,
             ("EI", "NDS", 10): 0.16112209109885733,
             ("TS", "NDS", 10): 0.09917790729602605,

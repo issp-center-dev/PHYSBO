@@ -15,6 +15,8 @@ The script exits with a non-zero status if any check fails; it is
 invoked by tests/mpi/test_mpi.py via subprocess.
 """
 
+import contextlib
+import io
 import os
 import pickle
 import shutil
@@ -745,6 +747,440 @@ def check_multi_probe_header_obeys_is_disp():
     log("multi-probe header obeys is_disp: OK")
 
 
+def check_negative_interval_needs_a_learned_predictor():
+    """bayes_search with interval < 0 and no learned predictor is refused on
+    every process before anything is communicated, and the policy is usable
+    afterwards."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm)
+    policy.set_seed(12345)
+    policy.random_search(max_num_probes=4, simulator=sim, is_disp=False)
+    try:
+        policy.bayes_search(max_num_probes=1, simulator=sim, interval=-1, is_disp=False)
+    except RuntimeError:
+        refused = True
+    else:
+        refused = False
+    if not all(comm.allgather(refused)):
+        raise AssertionError("interval < 0 without a learned predictor was not refused")
+    res = policy.bayes_search(max_num_probes=1, simulator=sim, interval=0, is_disp=False)
+    res = policy.bayes_search(max_num_probes=1, simulator=sim, interval=-1, is_disp=False)
+    N = res.total_num_search
+    assert N == 6
+    assert_identical_over_ranks(res.chosen_actions[:N], "actions after interval < 0")
+    log("interval < 0 needs a learned predictor: OK")
+
+
+def _random_search_to_the_end(comm_, kind, num_candidates):
+    """Ask for 3 candidates per step until none is left; the candidates
+    searched, in order, and the state of the generator afterwards."""
+    X = make_grid()[:num_candidates]
+    kwargs = {} if kind == "discrete" else {"num_objectives": 2}
+    objective = f if kind == "discrete" else f_multi
+    policy = getattr(physbo.search, kind).Policy(
+        test_X=X, comm=comm_, rng=2468, **kwargs
+    )
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = policy.random_search(
+            max_num_probes=4,
+            num_search_each_probe=3,
+            simulator=lambda action: objective(X[action]),
+            is_disp=False,
+        )
+    searched = res.chosen_actions[: res.total_num_search]
+    return searched, str(policy.rng.bit_generator.state["state"])
+
+
+def check_random_search_until_exhausted():
+    """random_search takes the candidates that are left when they are no
+    more than asked for (6 candidates: 3, then exactly 3; 7 candidates: 3,
+    3, then 1), stops when none is left, and searches at each step the
+    candidates a serial run searches (in the order of the processes that
+    have them), with the same use of the generator on rank 0."""
+    for kind in ["discrete", "discrete_multi", "discrete_unified"]:
+        for num_candidates in (6, 7):
+            label = f"{kind} random_search of all {num_candidates} candidates"
+            parallel, state = _random_search_to_the_end(comm, kind, num_candidates)
+            assert_identical_over_ranks(parallel, label)
+            if sorted(parallel.tolist()) != list(range(num_candidates)):
+                raise AssertionError(f"{label}: searched {parallel.tolist()}")
+            serial, serial_state = _random_search_to_the_end(
+                None, kind, num_candidates
+            )
+            for i in range(0, num_candidates, 3):
+                if sorted(parallel[i : i + 3]) != sorted(serial[i : i + 3]):
+                    raise AssertionError(f"parallel != serial ({label})")
+            # only rank 0 draws, as often as the serial run
+            if comm.rank == 0 and state != serial_state:
+                raise AssertionError(f"generator of rank 0 != serial ({label})")
+    log("random_search until no candidate is left: OK")
+
+
+def check_random_proposals_do_not_repeat():
+    """Candidates proposed at random in the interactive mode are taken from
+    the candidates of the process that has them, so that the next proposal
+    is made of other ones."""
+    X = make_grid()[:8]
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=1357)
+    first = policy.random_search(max_num_probes=1, num_search_each_probe=3, is_disp=False)
+    second = policy.random_search(max_num_probes=1, num_search_each_probe=3, is_disp=False)
+    assert_identical_over_ranks(first, "first random proposal")
+    assert_identical_over_ranks(second, "second random proposal")
+    if len(set(first.tolist()) | set(second.tolist())) != 6:
+        raise AssertionError(
+            f"random proposals overlap: {first.tolist()} and {second.tolist()}"
+        )
+    log("random proposals do not repeat: OK")
+
+
+def _negative_score(predictor, training, test):
+    return -1.0 - np.arange(test.X.shape[0], dtype=float)
+
+
+def check_process_without_candidates_does_not_win():
+    """When the scores are negative, a process that has no candidate left
+    must not be taken for the one with the best candidate."""
+    X = make_grid()[:3]
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=97)
+    policy.random_search(max_num_probes=2, simulator=sim, is_disp=False)
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = policy.bayes_search(
+            max_num_probes=1,
+            simulator=sim,
+            score=_negative_score,
+            interval=0,
+            is_disp=False,
+        )
+    searched = res.chosen_actions[: res.total_num_search]
+    assert_identical_over_ranks(searched, "last candidate")
+    if sorted(searched.tolist()) != [0, 1, 2]:
+        raise AssertionError(f"the last candidate was not proposed: {searched}")
+    log("a process without candidates does not win: OK")
+
+
+def check_range_random_points_are_those_of_rank_0():
+    """The random points of a range policy are broadcast from rank 0, so
+    that the processes agree even if their generators do not."""
+    policy = physbo.search.range.Policy(
+        min_X=[-1.0, -1.0], max_X=[1.0, 1.0], comm=comm, rng=1000 + comm.rank
+    )
+    X = policy.random_search(max_num_probes=1, num_search_each_probe=4, is_disp=False)
+    assert_identical_over_ranks(X, "random points of a range policy")
+    log("random points of a range policy are those of rank 0: OK")
+
+
+class _GridOptimizer:
+    """Maximize over the points of a grid, without random numbers and
+    without communication: every process evaluates every point."""
+
+    def __init__(self):
+        a = np.linspace(-1.0, 1.0, 9)
+        self.points = np.array(list(product(a, a)))
+
+    def __call__(self, fn, mpicomm=None):
+        return self.points[int(np.argmax([fn(x) for x in self.points]))]
+
+
+def _range_multi_point_search(kind, comm_, rng, num_rand_basis, unify="NDS"):
+    """Two steps of three points each with the grid optimizer, after the
+    hyperparameters were learned; the points searched, and whether the
+    generator of this process was used by these steps."""
+    kwargs = {} if kind == "range" else {"num_objectives": 2}
+    policy = getattr(physbo.search, kind).Policy(
+        min_X=[-1.0, -1.0], max_X=[1.0, 1.0], comm=comm_, rng=rng, **kwargs
+    )
+    objective = f if kind == "range" else f_multi
+    search = {"score": "HVPI"} if kind == "range_multi" else {"score": "EI"}
+    if kind == "range_unified":
+        search["unify_method"] = getattr(physbo.search.unify, unify)(num_objectives=2)
+    policy.random_search(max_num_probes=6, simulator=objective, is_disp=False)
+    policy.bayes_search(
+        max_num_probes=0,
+        interval=0,
+        num_rand_basis=num_rand_basis,
+        is_disp=False,
+        **search,
+    )
+    before = str(policy.rng.bit_generator.state["state"])
+    res = policy.bayes_search(
+        max_num_probes=2,
+        num_search_each_probe=3,
+        simulator=objective,
+        optimizer=_GridOptimizer(),
+        interval=-1,
+        is_disp=False,
+        **search,
+    )
+    drew = str(policy.rng.bit_generator.state["state"]) != before
+    return res.action_X[: res.total_num_search], drew
+
+
+def check_range_multi_point_proposal_vs_serial():
+    """The virtual observations of a multi-point proposal of the range
+    policies are drawn on rank 0 and broadcast, as in the discrete ones:
+    the processes maximize the same function, so that, with an optimizer
+    that uses no random numbers, they propose the points of a serial run
+    with the generator of rank 0, even if their own generators differ.
+    Only rank 0 draws."""
+    cases = [("range", "NDS"), ("range_multi", "NDS")]
+    # ParEGO draws the weights of the unified objective, on rank 0
+    cases += [("range_unified", "NDS"), ("range_unified", "ParEGO")]
+    for kind, unify in cases:
+        for num_rand_basis in (0, 20):
+            label = f"{kind} multi-point proposal (num_rand_basis={num_rand_basis}"
+            label += f", {unify})" if kind == "range_unified" else ")"
+            rng = 4711 if comm.rank == 0 else 9000 + comm.rank
+            parallel, drew = _range_multi_point_search(
+                kind, comm, rng, num_rand_basis, unify
+            )
+            assert_identical_over_ranks(parallel, label)
+            if drew != (comm.rank == 0):
+                raise AssertionError(
+                    f"generator of rank {comm.rank} used: {drew} ({label})"
+                )
+            serial, _ = _range_multi_point_search(
+                kind, None, 4711, num_rand_basis, unify
+            )
+            if comm.rank == 0 and not np.array_equal(parallel, serial):
+                raise AssertionError(f"parallel != serial ({label})")
+    log("range multi-point proposals vs serial: OK")
+
+
+def _unified_search(kind, comm_, rng):
+    """A search of a unified policy with ParEGO, two points per step; the
+    unified objective at the end and the points searched."""
+    X = make_grid()
+    discrete = kind.startswith("discrete")
+    space = {"test_X": X} if discrete else {"min_X": [-1.0, -1.0], "max_X": [1.0, 1.0]}
+    policy = getattr(physbo.search, kind).Policy(
+        num_objectives=2, comm=comm_, rng=rng, **space
+    )
+    sim = (lambda action: f_multi(X[action])) if discrete else f_multi
+    search = dict(
+        simulator=sim,
+        score="EI",
+        unify_method=physbo.search.unify.ParEGO(num_objectives=2),
+        is_disp=False,
+    )
+    if not discrete:
+        search["optimizer"] = _GridOptimizer()
+    policy.random_search(max_num_probes=6, simulator=sim, is_disp=False)
+    res = policy.bayes_search(
+        max_num_probes=3, num_search_each_probe=2, interval=1, **search
+    )
+    N = res.total_num_search
+    searched = res.chosen_actions[:N] if discrete else res.action_X[:N]
+    return policy.training_unified.t.copy(), searched
+
+
+def check_unified_objective_is_the_same_on_every_rank():
+    """The objectives are unified on rank 0 for every process: ParEGO draws
+    its weights there, so that the processes agree on the unified objective
+    and on the search even if their generators differ, and find what a
+    serial run with the generator of rank 0 finds."""
+    for kind in ["discrete_unified", "range_unified"]:
+        label = f"{kind} with ParEGO"
+        rng = 2718 if comm.rank == 0 else 7000 + comm.rank
+        unified, searched = _unified_search(kind, comm, rng)
+        assert_identical_over_ranks(unified, f"unified objective ({label})")
+        assert_identical_over_ranks(searched, f"points searched ({label})")
+        serial_unified, serial_searched = _unified_search(kind, None, 2718)
+        if comm.rank == 0 and not (
+            np.array_equal(unified, serial_unified)
+            and np.array_equal(searched, serial_searched)
+        ):
+            raise AssertionError(f"parallel != serial ({label})")
+    log("unified objective is the same on every rank: OK")
+
+
+def check_unified_posterior_on_one_rank_alone():
+    """Outside a search, a method of a unified policy may be called by one
+    process alone (post-processing on rank 0), also when observations were
+    added since the predictor was updated: it does not wait for the others.
+    The search that follows unifies the objectives anew for every process."""
+    X = make_grid()
+    sim = lambda action: f_multi(X[action])
+    for kind in ["discrete_unified", "range_unified"]:
+        discrete = kind.startswith("discrete")
+        space = {"test_X": X} if discrete else {"min_X": [-1.0, -1.0], "max_X": [1.0, 1.0]}
+        simulator = sim if discrete else f_multi
+        policy = getattr(physbo.search, kind).Policy(
+            num_objectives=2, comm=comm, rng=1618, **space
+        )
+        search = dict(
+            simulator=simulator,
+            score="EI",
+            unify_method=physbo.search.unify.ParEGO(num_objectives=2),
+            is_disp=False,
+        )
+        if not discrete:
+            search["optimizer"] = _GridOptimizer()
+        policy.random_search(max_num_probes=5, simulator=simulator, is_disp=False)
+        policy.bayes_search(max_num_probes=2, interval=0, **search)
+        policy.random_search(max_num_probes=1, simulator=simulator, is_disp=False)
+        if comm.rank == 0:
+            fmean = policy.get_post_fmean(X[:3])
+            if fmean.shape[0] != 3 or not np.all(np.isfinite(fmean)):
+                raise AssertionError(f"{kind}: posterior on rank 0: {fmean}")
+        comm.barrier()
+        res = policy.bayes_search(
+            max_num_probes=2, num_search_each_probe=2, interval=-1, **search
+        )
+        label = f"{kind} after a posterior on rank 0 alone"
+        assert_identical_over_ranks(policy.training_unified.t, f"unified ({label})")
+        N = res.total_num_search
+        searched = res.chosen_actions[:N] if discrete else res.action_X[:N]
+        assert_identical_over_ranks(searched, f"points searched ({label})")
+    log("unified posterior on one rank alone: OK")
+
+
+def check_proposal_without_virtual_observations():
+    """multi_probe_num_sampling = 0: nothing is drawn; the processes agree
+    on the points of a multi-point proposal."""
+    X = make_grid()
+    for kind in ["discrete", "range", "range_multi", "range_unified"]:
+        discrete = kind == "discrete"
+        kwargs = {} if kind in ("discrete", "range") else {"num_objectives": 2}
+        space = (
+            {"test_X": X} if discrete else {"min_X": [-1.0, -1.0], "max_X": [1.0, 1.0]}
+        )
+        policy = getattr(physbo.search, kind).Policy(
+            comm=comm, rng=1234, **space, **kwargs
+        )
+        policy.config.search.multi_probe_num_sampling = 0
+        objective = f if kind in ("discrete", "range") else f_multi
+        sim = (lambda action: objective(X[action])) if discrete else objective
+        search = {"score": "HVPI"} if kind == "range_multi" else {"score": "EI"}
+        if kind == "range_unified":
+            search["unify_method"] = physbo.search.unify.NDS(num_objectives=2)
+        policy.random_search(max_num_probes=5, simulator=sim, is_disp=False)
+        res = policy.bayes_search(
+            max_num_probes=2, num_search_each_probe=3, simulator=sim,
+            is_disp=False, **search,
+        )
+        N = res.total_num_search
+        if N != 11:
+            raise AssertionError(f"{kind} without virtual observations: {N} points")
+        searched = res.chosen_actions[:N] if discrete else res.action_X[:N]
+        assert_identical_over_ranks(searched, f"{kind} without virtual observations")
+    log("proposals without virtual observations: OK")
+
+
+def _raised(fn):
+    """(name of the exception, message) of what fn() raises on this
+    process, gathered over the processes; None where it did not raise."""
+    try:
+        fn()
+    except Exception as e:
+        got = (type(e).__name__, str(e))
+    else:
+        got = None
+    return comm.allgather(got)
+
+
+def check_policy_without_communicator_is_refused():
+    """A policy unpickled from a parallel run has no communicator until
+    set_comm() is called; searching with it is refused on every process
+    instead of going on as a serial run on each."""
+    X = make_grid()
+    sim = lambda action: f(X[action])
+    policy = physbo.search.discrete.Policy(test_X=X, comm=comm, rng=4321)
+    clone = pickle.loads(pickle.dumps(policy))
+    results = _raised(
+        lambda: clone.random_search(max_num_probes=1, simulator=sim, is_disp=False)
+    )
+    for got in results:
+        if got is None or got[0] != "RuntimeError" or "set_comm" not in got[1]:
+            raise AssertionError(f"search without set_comm(): {results}")
+    # nor is it written to a checkpoint, which would hold one process only
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+    try:
+        results = _raised(lambda: clone.save_checkpoint(fname))
+        for got in results:
+            if got is None or got[0] != "RuntimeError" or "set_comm" not in got[1]:
+                raise AssertionError(f"save_checkpoint without set_comm(): {results}")
+        if comm.rank == 0 and os.path.exists(fname):
+            raise AssertionError("a checkpoint was written without set_comm()")
+    finally:
+        comm.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    clone.set_comm(comm)
+    res = clone.random_search(max_num_probes=2, simulator=sim, is_disp=False)
+    assert_identical_over_ranks(res.chosen_actions[:2], "search after set_comm()")
+    log("policy without its communicator is refused: OK")
+
+
+def check_checkpoint_is_refused_on_every_rank():
+    """A checkpoint that cannot be used or cannot be read is refused on
+    every process; none is left waiting for rank 0."""
+    X = make_grid()
+    cls = physbo.search.discrete.Policy
+
+    tmpdir = tempfile.mkdtemp() if comm.rank == 0 else None
+    tmpdir = comm.bcast(tmpdir, root=0)
+    fname = os.path.join(tmpdir, "ckpt.pkl")
+    try:
+        cls(test_X=X, comm=comm, rng=1).save_checkpoint(fname)
+        comm.barrier()
+        if comm.rank == 0:
+            with open(fname, "rb") as fp:
+                header = pickle.load(fp)
+                state = fp.read()
+
+        def write(name, header_, state_):
+            if comm.rank == 0:
+                with open(os.path.join(tmpdir, name), "wb") as fp:
+                    pickle.dump(header_, fp)
+                    fp.write(state_)
+            comm.barrier()
+            return os.path.join(tmpdir, name)
+
+        def refused(label, name, exception, text):
+            # the exception of rank 0, or a RuntimeError that names it where
+            # it cannot be copied to the other processes
+            results = _raised(lambda: cls.load_checkpoint(name, comm=comm))
+            for got in results:
+                if got is None or text not in got[1]:
+                    raise AssertionError(f"{label}: {results}")
+                if got[0] != exception and not (
+                    got[0] == "RuntimeError" and exception in got[1]
+                ):
+                    raise AssertionError(f"{label}: {results}")
+
+        other = write(
+            "version.pkl",
+            dict(header, format_version=header["format_version"] + 1)
+            if comm.rank == 0
+            else None,
+            state if comm.rank == 0 else None,
+        )
+        refused("another format version", other, "RuntimeError", "format version")
+
+        missing = os.path.join(tmpdir, "missing.pkl")
+        refused("missing file", missing, "FileNotFoundError", "missing.pkl")
+
+        broken = write(
+            "broken.pkl", header if comm.rank == 0 else None, b"not a pickle"
+        )
+        refused("state that cannot be unpickled", broken, "UnpicklingError", "")
+
+        if comm.rank == 0:
+            with open(os.path.join(tmpdir, "empty.pkl"), "wb"):
+                pass
+        comm.barrier()
+        refused("empty file", os.path.join(tmpdir, "empty.pkl"), "EOFError", "")
+    finally:
+        comm.barrier()
+        if comm.rank == 0:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    log("unusable checkpoints are refused on every rank: OK")
+
+
 def main():
     log(f"running on {comm.size} MPI process(es)")
     if comm.size < 2:
@@ -775,6 +1211,17 @@ def main():
         check_range_constraint(kind)
     check_no_predictor_warning_on_rank_0_only()
     check_multi_probe_header_obeys_is_disp()
+    check_negative_interval_needs_a_learned_predictor()
+    check_random_search_until_exhausted()
+    check_random_proposals_do_not_repeat()
+    check_process_without_candidates_does_not_win()
+    check_range_random_points_are_those_of_rank_0()
+    check_range_multi_point_proposal_vs_serial()
+    check_unified_objective_is_the_same_on_every_rank()
+    check_unified_posterior_on_one_rank_alone()
+    check_proposal_without_virtual_observations()
+    check_policy_without_communicator_is_refused()
+    check_checkpoint_is_refused_on_every_rank()
     log("all MPI checks passed")
 
 

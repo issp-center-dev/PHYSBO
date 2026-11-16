@@ -88,8 +88,9 @@ In a parallel run (a communicator passed as ``comm``), give the same
 all ranks must agree on are drawn on rank 0 and broadcast: the
 hyperparameters of the model, the random Fourier basis, the posterior
 sample of Thompson sampling with the Bayesian linear model, the virtual
-observations of a multi-point proposal in the discrete policies, the
-point returned by the random optimizer, the random points of
+observations of a multi-point proposal, the unified objective of the
+unified policies (for which ParEGO draws its weights), the point returned
+by the random optimizer, the random points of
 ``random_search`` in the range policies with a ``constraint`` (the other
 ranks then draw the same number of points, so that their generators stay
 in step with rank 0), and the result of the simulator. The remaining draws are made
