@@ -303,14 +303,111 @@ def test_elapsed_time_of_a_step_without_observations(kind):
 # the arguments of write
 
 
-def test_discrete_write_checks_the_shape_of_t():
-    history = physbo.search.discrete.History()
-    with pytest.raises(ValueError, match="must be the same"):
-        history.write(np.zeros((2, 1)), np.array([0, 1, 2]))
-    with pytest.raises(ValueError, match="must be 1"):
-        history.write(np.zeros((2, 2)), np.array([0, 1]))
-    assert history.total_num_search == 0
-    assert history.num_runs == 0
+def state_of(history, kind):
+    """What a write that is refused must leave as it is."""
+    N = history.total_num_search
+    M = history.num_runs
+    state = [N, M, history.fx[0:N].copy(), recorded_inputs(history, kind).copy()]
+    state.append(history.terminal_num_run[0:M].copy())
+    state.extend(getattr(history, name) for name in D.TIMES)
+    if D.is_multi(kind):
+        state.extend(history.export_pareto_front())
+    else:
+        state.extend(history.export_all_sequence_best_fx())
+    return state
+
+
+def assert_same_state(history, kind, state):
+    for now, before in zip(state_of(history, kind), state):
+        numpy.testing.assert_array_equal(now, before)
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_single_objective_write_takes_a_vector_or_a_column(kind):
+    # the discrete class took only the column, the range class only the vector
+    for as_t in (lambda t: t, lambda t: t.reshape(-1, 1), lambda t: t.tolist()):
+        history = D.new_history(kind)
+        history.write(as_t(D.FX_SINGLE[0:3]), D.inputs(kind)[0:3])
+        assert history.total_num_search == 3
+        numpy.testing.assert_array_equal(history.fx[0:3], D.FX_SINGLE[0:3])
+        numpy.testing.assert_array_equal(
+            recorded_inputs(history, kind), D.inputs(kind)[0:3]
+        )
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_single_objective_write_takes_one_observation(kind):
+    # a value and a point, not arrays of them
+    history = D.new_history(kind)
+    history.write(1.5, D.inputs(kind)[0])
+    history.write(np.array([2.5]), D.inputs(kind)[1].tolist())
+    assert history.num_runs == 2
+    assert history.total_num_search == 2
+    numpy.testing.assert_array_equal(history.fx[0:2], [1.5, 2.5])
+    numpy.testing.assert_array_equal(
+        recorded_inputs(history, kind), D.inputs(kind)[0:2]
+    )
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_single_objective_write_checks_the_shape_of_t(kind):
+    history = written(kind, steps=D.STEPS[0:2])
+    state = state_of(history, kind)
+    for t in [np.zeros((2, 2)), np.zeros((1, 2)), np.zeros((2, 1, 1))]:
+        with pytest.raises(ValueError, match="t must be N values"):
+            history.write(t, D.inputs(kind)[0:2])
+    assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_write_checks_the_shape_of_the_points(kind):
+    history = written(kind, steps=D.STEPS[0:2])
+    state = state_of(history, kind)
+    t = D.objective(kind)[0:2]
+    if D.is_range(kind):
+        # points of another dimension, and too many axes
+        bad = [np.zeros((2, D.DIM + 1)), np.zeros(D.DIM + 1), np.zeros((2, 1, D.DIM))]
+        match = "action_X must be"
+    else:
+        bad = [np.zeros((2, 1), dtype=int), np.zeros((1, 2), dtype=int)]
+        match = "action must be"
+    for points in bad:
+        with pytest.raises(ValueError, match=match):
+            history.write(t, points)
+    assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_write_checks_the_numbers_of_values_and_points(kind):
+    # the range and the multi-objective classes recorded the one point twice
+    history = written(kind, steps=D.STEPS[0:2])
+    state = state_of(history, kind)
+    t = D.objective(kind)
+    points = D.inputs(kind)
+    for num_t, num_points in [(2, 1), (1, 2), (3, 2), (0, 1), (1, 0)]:
+        with pytest.raises(ValueError, match=f"{num_t} != {num_points}"):
+            history.write(t[0:num_t], points[0:num_points])
+    assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_write_checks_the_elapsed_times(kind):
+    history = written(kind, steps=D.STEPS[0:2])
+    state = state_of(history, kind)
+    t = D.objective(kind)[0:2]
+    points = D.inputs(kind)[0:2]
+    for name in D.TIMES:
+        for values in ([1.0, 2.0, 3.0], np.zeros((2, 1)), []):
+            with pytest.raises(ValueError, match=name + " must have"):
+                history.write(t, points, **{name: values})
+    # the counters used to be raised before the times were looked at
+    assert_same_state(history, kind, state)
+
+    # one value is that of the step
+    history.write(t, points, time_total=7.0, time_get_action=[0.5])
+    assert history.time_total[-1] == 7.0
+    assert history.time_get_action[-1] == 0.5
+    assert history.time_run_simulator[-1] == 0.0
 
 
 @pytest.mark.parametrize("kind", D.MULTI)
@@ -333,6 +430,8 @@ def test_multi_write_checks_the_number_of_objectives(kind):
         history.write(np.zeros(3), D.inputs(kind)[0])
     with pytest.raises(ValueError, match="number of objectives"):
         history.write(np.zeros((2, 3)), D.inputs(kind)[0:2])
+    with pytest.raises(ValueError, match="number of objectives"):
+        history.write(np.zeros((2, 1, D.NUM_OBJECTIVES)), D.inputs(kind)[0:2])
     assert history.total_num_search == 0
     assert history.num_runs == 0
 

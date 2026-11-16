@@ -160,7 +160,10 @@ class _HistoryBase:
         time_run_simulator=None,
     ):
         """Record the observations of one step (the body of ``write``)."""
+        # everything is checked before anything is written
         t, points, N = self._check_observations(t, points)
+        times = (time_total, time_update_predictor, time_get_action, time_run_simulator)
+        times = [self._check_times(name, v, N) for name, v in zip(_TIMES, times)]
         st = self.total_num_search
         en = st + N
 
@@ -168,25 +171,58 @@ class _HistoryBase:
         self.fx[st:en] = t
         self._points[st:en] = points
         self._update_summary(st, en, t)
+        for name, values in zip(_TIMES, times):
+            getattr(self, "_" + name)[st:en] = values
 
         self.num_runs += 1
         self.total_num_search += N
 
-        times = (time_total, time_update_predictor, time_get_action, time_run_simulator)
-        for name, values in zip(_TIMES, times):
-            if values is None:
-                values = np.zeros(N, dtype=float)
-            getattr(self, "_" + name)[st:en] = values
-
     def _check_observations(self, t, points):
-        """Check the arguments of ``write``.
+        """Check the arguments of ``write`` and give them the shape of the
+        arrays: one row per observation.
 
         Returns
         -------
-        The objective values and the points as they are assigned to the
-        arrays, and the number of observations.
+        The objective values, the points, and the number of observations.
+
+        Raises
+        ------
+        ValueError
+            If an argument does not have a shape the class accepts, or if
+            the numbers of objective values and of points differ.
         """
+        t = self._as_objective_values(np.asarray(t, dtype=float))
+        points = self._as_points(np.asarray(points))
+        if t.shape[0] != points.shape[0]:
+            raise ValueError(
+                "The numbers of objective values and of points must be the same:"
+                f" {t.shape[0]} != {points.shape[0]}"
+            )
+        return t, points, t.shape[0]
+
+    def _as_objective_values(self, t):
+        """The objective values with one row per observation; ValueError if
+        the array does not have a shape the class accepts."""
         raise NotImplementedError
+
+    def _as_points(self, points):
+        """The points with one row per observation; ValueError if the array
+        does not have a shape the class accepts."""
+        raise NotImplementedError
+
+    @staticmethod
+    def _check_times(name, values, N):
+        """An elapsed time for each of N observations: zero if not given, and
+        one value for all of them or one each otherwise."""
+        if values is None:
+            return np.zeros(N, dtype=float)
+        values = np.asarray(values, dtype=float)
+        if values.shape not in ((), (1,), (N,)):
+            raise ValueError(
+                f"{name} must have one value, or one for each of the {N}"
+                f" observations: its shape is {values.shape}"
+            )
+        return np.broadcast_to(values, (N,))
 
     def _update_summary(self, st, en, t):
         """Bring the summary up to date with the observations st to en."""
@@ -233,6 +269,16 @@ class _ActionColumn:
     def _column_shape(self):
         return ()
 
+    def _as_points(self, points):
+        if points.ndim == 0:
+            points = points.reshape(1)
+        if points.ndim != 1:
+            raise ValueError(
+                "action must be the index of an action or N of them:"
+                f" its shape is {points.shape}"
+            )
+        return points
+
     @staticmethod
     def _format_point(point):
         return "%d" % point
@@ -253,12 +299,12 @@ class _ActionColumn:
         ----------
         t: numpy.ndarray
             The values of the objective function(s) of the observations
-            (to be maximized). For a single objective, an N x 1 array; for
-            several objectives, an N x num_objectives array, or an array of
-            num_objectives values for one observation.
+            (to be maximized). For a single objective, an N dimensional or
+            an N x 1 array; for several objectives, an N x num_objectives
+            array, or an array of num_objectives values for one observation.
         action: numpy.ndarray
             N dimensional array. The indexes of the actions of the
-            observations.
+            observations (or one index, for one observation).
         time_total: numpy.ndarray
             N dimensional array. The total elapsed time of the step, for
             each observation. If None (default), filled by 0.0.
@@ -272,6 +318,16 @@ class _ActionColumn:
         time_run_simulator: numpy.ndarray
             N dimensional array. The elapsed time for running the simulator.
             If None (default), filled by 0.0.
+
+        Each elapsed time is that of the step, given once or repeated for
+        each observation.
+
+        Raises
+        ------
+        ValueError
+            If the numbers of objective values and of points differ, or if
+            an argument does not have one of the shapes above. Nothing is
+            written in this case.
         """
         self._write(
             t,
@@ -295,6 +351,16 @@ class _PointColumn:
     def _column_shape(self):
         return (self.dim,)
 
+    def _as_points(self, points):
+        if points.ndim == 1:
+            points = points.reshape(1, -1)
+        if points.ndim != 2 or points.shape[1] != self.dim:
+            raise ValueError(
+                f"action_X must be a point of {self.dim} coordinates or an"
+                f" N x {self.dim} array: its shape is {points.shape}"
+            )
+        return points
+
     @staticmethod
     def _format_point(point):
         return str(point)
@@ -315,11 +381,12 @@ class _PointColumn:
         ----------
         t: numpy.ndarray
             The values of the objective function(s) of the observations
-            (to be maximized). For a single objective, an N dimensional
-            array; for several objectives, an N x num_objectives array, or
-            an array of num_objectives values for one observation.
+            (to be maximized). For a single objective, an N dimensional or
+            an N x 1 array; for several objectives, an N x num_objectives
+            array, or an array of num_objectives values for one observation.
         action_X: numpy.ndarray
-            N x d dimensional array. The inputs of the observations.
+            N x d dimensional array. The inputs of the observations (or an
+            array of d values, for one observation).
         time_total: numpy.ndarray
             N dimensional array. The total elapsed time of the step, for
             each observation. If None (default), filled by 0.0.
@@ -333,6 +400,16 @@ class _PointColumn:
         time_run_simulator: numpy.ndarray
             N dimensional array. The elapsed time for running the simulator.
             If None (default), filled by 0.0.
+
+        Each elapsed time is that of the step, given once or repeated for
+        each observation.
+
+        Raises
+        ------
+        ValueError
+            If the numbers of objective values and of points differ, or if
+            an argument does not have one of the shapes above. Nothing is
+            written in this case.
         """
         self._write(
             t,
@@ -363,6 +440,19 @@ class _SingleObjectiveHistory(_HistoryBase):
 
     def _fx_shape(self):
         return ()
+
+    def _as_objective_values(self, t):
+        shape = t.shape
+        if t.ndim == 0:
+            t = t.reshape(1)
+        elif t.ndim == 2 and t.shape[1] == 1:
+            t = t[:, 0]
+        if t.ndim != 1:
+            raise ValueError(
+                "t must be N values of the objective, or an N x 1 array:"
+                f" its shape is {shape}"
+            )
+        return t
 
     # the arrays of the elapsed times under their earlier names
     time_total_ = _time_array("time_total")
@@ -524,19 +614,16 @@ class _MultiObjectiveHistory(_HistoryBase):
     def _fx_shape(self):
         return (self.num_objectives,)
 
-    def _check_observations(self, t, points):
-        t = np.array(t)
-        points = np.array(points)
-
+    def _as_objective_values(self, t):
+        shape = t.shape
         if t.ndim == 1:
-            N = 1
-            if len(t) != self.num_objectives:
-                raise ValueError("t does not match the number of objectives")
-        else:
-            N = t.shape[0]
-            if t.shape[1] != self.num_objectives:
-                raise ValueError("t does not match the number of objectives")
-        return t, points, N
+            t = t.reshape(1, -1)
+        if t.ndim != 2 or t.shape[1] != self.num_objectives:
+            raise ValueError(
+                f"t does not match the number of objectives"
+                f" ({self.num_objectives}): its shape is {shape}"
+            )
+        return t
 
     def _update_summary(self, st, en, t):
         self.pareto.update_front(t)
@@ -648,17 +735,6 @@ class _DiscreteHistory(_ActionColumn, _SingleObjectiveHistory):
     def __init__(self):
         self._allocate()
 
-    def _check_observations(self, t, points):
-        N = utility.length_vector(points)
-        t_shape = t.shape
-        if t_shape[0] != N:
-            raise ValueError(
-                f"Number of actions and t must be the same: {N} != {t_shape[0]}"
-            )
-        if t_shape[1] != 1:
-            raise ValueError(f"t.shape[1] must be 1: {t_shape}")
-        return t[:, 0], points, N
-
 
 class _RangeHistory(_PointColumn, _SingleObjectiveHistory):
     """Single objective, continuous search space. Unlike the other classes,
@@ -667,9 +743,6 @@ class _RangeHistory(_PointColumn, _SingleObjectiveHistory):
     def __init__(self, dim: int):
         self.dim = dim
         self._allocate()
-
-    def _check_observations(self, t, points):
-        return t, points, utility.length_vector(t)
 
     def _saved_arrays(self):
         N = self.total_num_search
