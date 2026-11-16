@@ -22,6 +22,11 @@ The six ``History`` classes differ in two ways only:
 
 Everything else is in :class:`_HistoryBase`. The classes of the search
 modules derive from the four combinations at the end of this module.
+
+The arrays of a history (``fx``, the points, ``terminal_num_run``, ...) have
+as many entries as there are observations or steps. They are views of
+storage that grows as observations are written, so an array obtained before
+a call of ``write`` does not show what is written afterwards.
 """
 
 import pickle
@@ -31,8 +36,9 @@ import numpy as np
 from . import pareto
 from . import utility
 
-#: the number of observations a history has room for
-MAX_SEARCH = int(30000)
+#: the number of observations and of steps a new history has room for; the
+#: storage is doubled whenever it is full
+_INITIAL_ROOM = 64
 
 #: the elapsed times recorded with each observation, and what they measure
 _TIMES = {
@@ -63,21 +69,31 @@ def _elapsed_time(name):
     return property(getter, doc=f"The elapsed time of {_TIMES[name]}, for each step.")
 
 
-def _time_array(name):
-    """The property that gives the array of an elapsed time itself, under the
-    name it had as an attribute of the single-objective classes."""
+def _recorded(storage, count, doc):
+    """The property that gives the used part of an array of the storage: its
+    first ``count`` entries (the name of the counter), as a view.
+
+    Assigning to the property assigns these entries; it does not replace the
+    storage.
+    """
 
     def getter(self):
-        return getattr(self, "_" + name)
+        return getattr(self, storage)[0 : getattr(self, count)]
 
     def setter(self, values):
-        setattr(self, "_" + name, values)
+        getter(self)[...] = values
 
-    doc = (
-        f"The array behind ``{name}``, with one entry per observation"
-        " (kept for compatibility)."
-    )
     return property(getter, setter, doc=doc)
+
+
+def _grown(array, rows):
+    """The array with room for ``rows`` rows: itself, or a copy at least
+    twice as long."""
+    if rows <= len(array):
+        return array
+    grown = np.zeros((max(rows, 2 * len(array)),) + array.shape[1:], array.dtype)
+    grown[0 : len(array)] = array
+    return grown
 
 
 class _HistoryBase:
@@ -86,30 +102,93 @@ class _HistoryBase:
     A class of a search module combines a class of this kind with a
     description of the column of the points (:class:`_ActionColumn` or
     :class:`_PointColumn`), and calls :meth:`_allocate` in its constructor.
+
+    The storage has one array per quantity, with room for more entries than
+    are used: ``_fx``, ``_recorded`` (the points) and the elapsed times have
+    one row per observation, ``_terminal`` one entry per step. The public
+    arrays are the used parts of them.
     """
 
+    #: the arrays of the storage with one row per observation
+    _per_observation = ("_fx", "_recorded") + tuple("_" + name for name in _TIMES)
+
     def _allocate(self):
-        """Make the arrays of an empty history."""
+        """Make the storage of an empty history."""
         self.num_runs = int(0)
         self.total_num_search = int(0)
-        self.fx = np.zeros((MAX_SEARCH,) + self._fx_shape(), dtype=float)
-        setattr(
-            self,
-            self._column_name,
-            np.zeros((MAX_SEARCH,) + self._column_shape(), dtype=self._column_dtype),
+        self._set_storage(
+            np.zeros((0,) + self._fx_shape(), dtype=float),
+            np.zeros((0,) + self._column_shape(), dtype=self._column_dtype),
+            np.zeros(0, dtype=int),
         )
-        self.terminal_num_run = np.zeros(MAX_SEARCH, dtype=int)
+        self._reserve(_INITIAL_ROOM, _INITIAL_ROOM)
+
+    def _set_storage(self, fx, points, terminal_num_run):
+        """Take the observations given as arrays (of exactly their number)
+        as the storage, with elapsed times of zero."""
+        self._fx = fx
+        self._recorded = points
+        self._terminal = terminal_num_run
         for name in _TIMES:
-            setattr(self, "_" + name, np.zeros(MAX_SEARCH, dtype=float))
+            setattr(self, "_" + name, np.zeros(len(fx), dtype=float))
+
+    def _reserve(self, num_observations, num_steps):
+        """Make room for this many observations and steps."""
+        for name in self._per_observation:
+            setattr(self, name, _grown(getattr(self, name), num_observations))
+        self._terminal = _grown(self._terminal, num_steps)
 
     def _fx_shape(self):
         """The shape of the objective value(s) of one observation."""
         raise NotImplementedError
 
-    @property
-    def _points(self):
-        """The array that records the points (chosen_actions or action_X)."""
-        return getattr(self, self._column_name)
+    fx = _recorded(
+        "_fx",
+        "total_num_search",
+        "The objective values of the observations (total_num_search rows).",
+    )
+    terminal_num_run = _recorded(
+        "_terminal",
+        "num_runs",
+        "The number of observations at the end of each step (num_runs entries).",
+    )
+    #: the points of the observations (chosen_actions or action_X)
+    _points = _recorded("_recorded", "total_num_search", None)
+
+    def __getstate__(self):
+        # the used part of the storage, so that a pickle or a copy does not
+        # depend on the room the history happens to have
+        state = dict(self.__dict__)
+        for name in self._per_observation:
+            state[name] = state[name][0 : self.total_num_search].copy()
+        state["_terminal"] = self._terminal[0 : self.num_runs].copy()
+        return state
+
+    def __setstate__(self, state):
+        if "fx" in state:
+            state = self._from_arrays_of_fixed_length(state)
+        self.__dict__.update(state)
+
+    def _from_arrays_of_fixed_length(self, state):
+        """The state of a history pickled by a version in which the arrays
+        had 30,000 rows and were attributes under their public names (the
+        elapsed times as ``_time_total`` or, before that in the
+        single-objective classes, ``time_total_``, and so on)."""
+        state = dict(state)
+        N = state["total_num_search"]
+        M = state["num_runs"]
+        new = {
+            "_fx": state.pop("fx")[0:N].copy(),
+            "_recorded": state.pop(self._column_name)[0:N].copy(),
+            "_terminal": state.pop("terminal_num_run")[0:M].copy(),
+        }
+        for name in _TIMES:
+            earlier = name + "_" if name + "_" in state else "_" + name
+            new["_" + name] = state.pop(earlier)[0:N].copy()
+        # it is made again from fx (single objective)
+        state.pop("best_index", None)
+        state.update(new)
+        return state
 
     time_total = _elapsed_time("time_total")
     time_update_predictor = _elapsed_time("time_update_predictor")
@@ -130,7 +209,7 @@ class _HistoryBase:
         -------
         numpy.ndarray of bool, shape (total_num_search,)
         """
-        return utility.finite_mask(self.fx[0 : self.total_num_search])
+        return utility.finite_mask(self.fx)
 
     def export_valid(self):
         """
@@ -146,9 +225,8 @@ class _HistoryBase:
             Objective values of the valid observations (N_valid x
             num_objectives for several objectives).
         """
-        N = self.total_num_search
         mask = self.valid_mask
-        return self._points[0:N][mask], self.fx[0:N][mask]
+        return self._points[mask], self.fx[mask]
 
     def _write(
         self,
@@ -167,15 +245,16 @@ class _HistoryBase:
         st = self.total_num_search
         en = st + N
 
-        self.terminal_num_run[self.num_runs] = en
-        self.fx[st:en] = t
-        self._points[st:en] = points
-        self._update_summary(st, en, t)
+        self._reserve(en, self.num_runs + 1)
+        self._fx[st:en] = t
+        self._recorded[st:en] = points
         for name, values in zip(_TIMES, times):
             getattr(self, "_" + name)[st:en] = values
-
+        self._terminal[self.num_runs] = en
         self.num_runs += 1
-        self.total_num_search += N
+        self.total_num_search = en
+
+        self._update_summary(st, en, t)
 
     def _check_observations(self, t, points):
         """Check the arguments of ``write`` and give them the shape of the
@@ -230,25 +309,29 @@ class _HistoryBase:
 
     def _saved_arrays(self):
         """The entries of the file of ``save`` that all classes write."""
-        N = self.total_num_search
-        M = self.num_runs
         return {
-            "num_runs": M,
-            "total_num_search": N,
-            "fx": self.fx[0:N],
-            self._column_name: self._points[0:N],
-            "terminal_num_run": self.terminal_num_run[0:M],
+            "num_runs": self.num_runs,
+            "total_num_search": self.total_num_search,
+            "fx": self.fx,
+            self._column_name: self._points,
+            "terminal_num_run": self.terminal_num_run,
         }
 
     def _restore_arrays(self, data):
-        """Take the entries of :meth:`_saved_arrays` from a loaded file."""
+        """Take the entries of :meth:`_saved_arrays` from a loaded file, in
+        place of what the history holds."""
         M = int(data["num_runs"])
         N = int(data["total_num_search"])
+        fx = np.zeros((N,) + self._fx_shape(), dtype=float)
+        points = np.zeros((N,) + self._column_shape(), dtype=self._column_dtype)
+        terminal_num_run = np.zeros(M, dtype=int)
+        fx[...] = data["fx"]
+        points[...] = data[self._column_name]
+        terminal_num_run[...] = data["terminal_num_run"]
+
         self.num_runs = M
         self.total_num_search = N
-        self.fx[0:N] = data["fx"]
-        self._points[0:N] = data[self._column_name]
-        self.terminal_num_run[0:M] = data["terminal_num_run"]
+        self._set_storage(fx, points, terminal_num_run)
 
 
 # ---------------------------------------------------------------------------
@@ -268,6 +351,12 @@ class _ActionColumn:
 
     def _column_shape(self):
         return ()
+
+    chosen_actions = _recorded(
+        "_recorded",
+        "total_num_search",
+        "The indexes of the actions of the observations (total_num_search entries).",
+    )
 
     def _as_points(self, points):
         if points.ndim == 0:
@@ -350,6 +439,12 @@ class _PointColumn:
 
     def _column_shape(self):
         return (self.dim,)
+
+    action_X = _recorded(
+        "_recorded",
+        "total_num_search",
+        "The inputs of the observations (total_num_search x dim).",
+    )
 
     def _as_points(self, points):
         if points.ndim == 1:
@@ -434,12 +529,22 @@ class _SingleObjectiveHistory(_HistoryBase):
     #: points (the two search spaces have differed in this)
     _best_message_end = ""
 
-    def _allocate(self):
-        super()._allocate()
-        self.best_index = np.full(MAX_SEARCH, -1, dtype=int)
+    _per_observation = _HistoryBase._per_observation + ("_best_index",)
+
+    def _set_storage(self, fx, points, terminal_num_run):
+        super()._set_storage(fx, points, terminal_num_run)
+        self._best_index = np.full(len(fx), -1, dtype=int)
+        self._update_best_index(0, len(fx))
 
     def _fx_shape(self):
         return ()
+
+    best_index = _recorded(
+        "_best_index",
+        "total_num_search",
+        "The index of the best valid observation after each observation, -1"
+        " until the first valid one (total_num_search entries).",
+    )
 
     def _as_objective_values(self, t):
         shape = t.shape
@@ -454,24 +559,22 @@ class _SingleObjectiveHistory(_HistoryBase):
             )
         return t
 
-    # the arrays of the elapsed times under their earlier names
-    time_total_ = _time_array("time_total")
-    time_update_predictor_ = _time_array("time_update_predictor")
-    time_get_action_ = _time_array("time_get_action")
-    time_run_simulator_ = _time_array("time_run_simulator")
+    # the elapsed times with one entry per observation, under the names
+    # these arrays had as attributes (kept for compatibility)
+    time_total_ = _recorded("_time_total", "total_num_search", None)
+    time_update_predictor_ = _recorded(
+        "_time_update_predictor", "total_num_search", None
+    )
+    time_get_action_ = _recorded("_time_get_action", "total_num_search", None)
+    time_run_simulator_ = _recorded("_time_run_simulator", "total_num_search", None)
 
     def __setstate__(self, state):
-        # A history pickled before the classes shared their base has the
-        # arrays of the elapsed times under their earlier names and, for a
-        # discrete search space, no best_index.
-        state = dict(state)
-        for name in _TIMES:
-            if name + "_" in state:
-                state["_" + name] = state.pop(name + "_")
-        self.__dict__.update(state)
-        if "best_index" not in state:
-            self.best_index = np.full(len(self.fx), -1, dtype=int)
-            self._update_best_index(0, self.total_num_search)
+        super().__setstate__(state)
+        if "_best_index" not in state:
+            # pickled by a version with arrays of fixed length
+            N = self.total_num_search
+            self._best_index = np.full(N, -1, dtype=int)
+            self._update_best_index(0, N)
 
     def _update_summary(self, st, en, t):
         self._update_best_index(st, en)
@@ -483,12 +586,14 @@ class _SingleObjectiveHistory(_HistoryBase):
         Failed (non-finite) observations are skipped, and best_index stays -1
         until the first valid one. Of equal values the earlier one is kept.
         """
+        fx = self._fx
+        best_index = self._best_index
         for n in range(st, en):
-            prev = self.best_index[n - 1] if n > 0 else -1
-            if np.isfinite(self.fx[n]) and (prev < 0 or self.fx[n] > self.fx[prev]):
-                self.best_index[n] = n
+            prev = best_index[n - 1] if n > 0 else -1
+            if np.isfinite(fx[n]) and (prev < 0 or fx[n] > fx[prev]):
+                best_index[n] = n
             else:
-                self.best_index[n] = prev
+                best_index[n] = prev
 
     def _best(self, index):
         """The values and the points of the observations ``index``, with NaN
@@ -521,8 +626,11 @@ class _SingleObjectiveHistory(_HistoryBase):
             The index of its action (num_runs) in a discrete search space,
             its input (num_runs, dim) in a continuous one.
         """
-        last = self.terminal_num_run[0 : self.num_runs] - 1
-        return self._best(self.best_index[last])
+        last = self.terminal_num_run - 1
+        # a step before the first observation has nothing to refer to
+        index = np.full(len(last), -1, dtype=int)
+        index[last >= 0] = self.best_index[last[last >= 0]]
+        return self._best(index)
 
     def export_all_sequence_best_fx(self):
         """
@@ -540,7 +648,7 @@ class _SingleObjectiveHistory(_HistoryBase):
             search space, the inputs (total_num_search, dim) in a continuous
             one.
         """
-        return self._best(self.best_index[0 : self.total_num_search])
+        return self._best(self.best_index)
 
     def save(self, filename):
         """
@@ -564,10 +672,9 @@ class _SingleObjectiveHistory(_HistoryBase):
             The name of the file which stores the information of the history
         """
         data = np.load(filename)
+        # best_index is made from fx: the saved one may refer to a failed
+        # observation if the file was written by an older version
         self._restore_arrays(data)
-        # best_index is recomputed from fx: the saved one may refer to a
-        # failed observation if the file was written by an older version
-        self._update_best_index(0, self.total_num_search)
         self._restore_more(data)
 
     def _restore_more(self, data):
@@ -576,8 +683,9 @@ class _SingleObjectiveHistory(_HistoryBase):
     def show_search_results(self, N):
         """Print the last N observations and the best value so far."""
         n = self.total_num_search
+        N = min(N, n)
         fmt = self._format_point
-        index = self.best_index[n - 1]
+        index = self.best_index[n - 1] if n > 0 else -1
         if index >= 0:
             best_msg = "current best f(x) = %f (best action=%s)" % (
                 self.fx[index],
@@ -673,16 +781,14 @@ class _MultiObjectiveHistory(_HistoryBase):
         self.pareto = data["pareto"]
         # the front is recomputed from fx: the saved one may contain failed
         # observations if the file was written by an older version
-        self.pareto.rebuild_front(
-            self.fx[0 : self.total_num_search],
-            self.terminal_num_run[0 : self.num_runs],
-        )
+        self.pareto.rebuild_front(self.fx, self.terminal_num_run)
 
     def show_search_results_mo(self, N, disp_pareto_set=False):
         """Print the last N observations, and the Pareto front if they have
         changed it (the front itself with ``disp_pareto_set``, else its
         size)."""
         n = self.total_num_search
+        N = min(N, n)
         pset, step = self.pareto.export_front()
 
         def point(i):
@@ -745,14 +851,13 @@ class _RangeHistory(_PointColumn, _SingleObjectiveHistory):
         self._allocate()
 
     def _saved_arrays(self):
-        N = self.total_num_search
         data = super()._saved_arrays()
         # in the order of the entries of the files written so far
         terminal_num_run = data.pop("terminal_num_run")
-        data["best_index"] = self.best_index[0:N]
+        data["best_index"] = self.best_index
         data["terminal_num_run"] = terminal_num_run
         for name in _TIMES:
-            data[name] = getattr(self, "_" + name)[0:N]
+            data[name] = getattr(self, "_" + name)[0 : self.total_num_search]
         return data
 
     def _restore_more(self, data):

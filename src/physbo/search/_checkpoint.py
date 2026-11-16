@@ -44,7 +44,8 @@ from .._rng import LegacyRNG, get_rng
 
 # 2: the search space is an object of the policy
 # 3: the History classes share their base; the names of their arrays
-FORMAT_VERSION = 3
+# 4: the storage of a history grows, and its state holds the used part
+FORMAT_VERSION = 4
 
 # the entry of the pickled state of a policy that holds FORMAT_VERSION
 _STATE_VERSION_KEY = "_format_version"

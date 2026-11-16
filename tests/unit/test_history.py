@@ -770,79 +770,282 @@ def test_message_when_the_last_observation_is_the_best(kind, capsys):
     )
 
 
-#: the number of observations a history has room for (#156, A-2)
+# ---------------------------------------------------------------------------
+# the arrays have the length of the data, and no limit (#156, A-2, B-4)
+
+
+@pytest.mark.parametrize("failed", FAILED)
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_arrays_have_the_length_of_the_data(kind, failed):
+    history = written(kind, failed)
+    fx = D.objective(kind, failed)
+    assert history.fx.shape == fx.shape
+    assert recorded_inputs(history, kind).shape == D.inputs(kind).shape
+    assert history.terminal_num_run.shape == (D.NUM_RUNS,)
+    numpy.testing.assert_array_equal(history.fx, fx)
+    numpy.testing.assert_array_equal(history.terminal_num_run, D.TERMINAL)
+    points = history.action_X if D.is_range(kind) else history.chosen_actions
+    numpy.testing.assert_array_equal(points, D.inputs(kind))
+    # no padding: the last entry is the last observation
+    numpy.testing.assert_array_equal(history.fx[-1], fx[-1])
+    if not D.is_multi(kind):
+        assert history.best_index.shape == (D.TOTAL,)
+        if not failed:
+            assert history.fx.max() == fx.max()
+            assert history.fx.min() == fx.min() < 0.0
+
+    empty = D.new_history(kind)
+    assert len(empty.fx) == 0
+    assert len(empty.terminal_num_run) == 0
+    assert len(recorded_inputs(empty, kind)) == 0
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_arrays_can_be_written_to(kind):
+    history = written(kind)
+    # an entry
+    history.fx[0] = -7.0
+    assert np.all(history.fx[0] == -7.0)
+    # all of them; the array is not replaced, its entries are assigned
+    history.fx = D.objective(kind)
+    assert_record(history, kind)
+    history.terminal_num_run = D.TERMINAL
+    assert_record(history, kind)
+    with pytest.raises(ValueError):
+        history.fx = np.zeros(D.TOTAL + 1)
+    assert history.total_num_search == D.TOTAL
+    if not D.is_multi(kind):
+        history.best_index[0:2] = 0
+        numpy.testing.assert_array_equal(history.best_index[0:2], [0, 0])
+
+
+def many_observations(kind, total, seed=0):
+    """Random steps of one to nine points up to ``total`` observations, with
+    the values and points that were written."""
+    rng = np.random.default_rng(seed)
+    if D.is_multi(kind):
+        fx = np.round(rng.normal(size=(total, D.NUM_OBJECTIVES)), 2)
+    else:
+        fx = np.round(rng.normal(size=total), 2)
+    if D.is_range(kind):
+        points = rng.normal(size=(total, D.DIM))
+    else:
+        points = rng.integers(0, 10**6, size=total)
+    history = D.new_history(kind)
+    terminal = []
+    st = 0
+    while st < total:
+        en = min(total, st + int(rng.integers(1, 10)))
+        history.write(fx[st:en], points[st:en], time_total=float(len(terminal)))
+        terminal.append(en)
+        st = en
+    return history, fx, points, np.array(terminal)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_storage_grows(kind):
+    total = 1500
+    history, fx, points, terminal = many_observations(kind, total)
+    assert history.total_num_search == total
+    assert history.num_runs == len(terminal)
+    numpy.testing.assert_array_equal(history.fx, fx)
+    numpy.testing.assert_array_equal(recorded_inputs(history, kind), points)
+    numpy.testing.assert_array_equal(history.terminal_num_run, terminal)
+    numpy.testing.assert_array_equal(history.time_total, np.arange(len(terminal)))
+    if D.is_multi(kind):
+        front, front_num = history.export_pareto_front()
+        numpy.testing.assert_array_equal(np.sort(front_num), np.sort(front_indices(fx)))
+        numpy.testing.assert_array_equal(front, fx[front_num])
+    else:
+        best = best_indices(fx)
+        numpy.testing.assert_array_equal(history.best_index, best)
+        best_fx, best_points = history.export_all_sequence_best_fx()
+        numpy.testing.assert_array_equal(best_fx, fx[best])
+        numpy.testing.assert_array_equal(best_points, points[best])
+        step_fx, _ = history.export_sequence_best_fx()
+        numpy.testing.assert_array_equal(step_fx, fx[best][terminal - 1])
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_more_than_30000_observations(kind):
+    # the arrays had 30,000 entries, and writing beyond them failed in
+    # different ways or dropped the observation
+    total = 30000
+    t = np.arange(total, dtype=float)
+    points = np.zeros((total, D.DIM)) if D.is_range(kind) else np.arange(total)
+    history = D.new_history(kind)
+    history.write(t, points)
+    history.write(np.array([-1.0]), points[0:1])
+    history.write(np.array([total + 1.0, 0.0]), points[0:2])
+    assert history.total_num_search == total + 3
+    assert history.num_runs == 3
+    assert len(history.fx) == total + 3
+    numpy.testing.assert_array_equal(history.fx[-3:], [-1.0, total + 1.0, 0.0])
+    best_fx, _ = history.export_sequence_best_fx()
+    numpy.testing.assert_array_equal(best_fx, [total - 1.0, total - 1.0, total + 1.0])
+
+
+@pytest.mark.parametrize("kind", D.MULTI)
+def test_more_than_30000_observations_of_several_objectives(kind):
+    # on a line where every observation dominates the one before
+    total = 30000
+    t = np.arange(total, dtype=float)[:, None] * np.ones(D.NUM_OBJECTIVES)
+    points = np.zeros((total, D.DIM)) if D.is_range(kind) else np.arange(total)
+    history = D.new_history(kind)
+    history.write(t, points)
+    # these used to be dropped without notice
+    history.write(t[-1] + 1.0, points[0])
+    history.write(t[0:2] - 1.0, points[0:2])
+    assert history.total_num_search == total + 3
+    assert len(history.fx) == total + 3
+    front, front_num = history.export_pareto_front()
+    numpy.testing.assert_array_equal(front, [t[-1] + 1.0])
+    numpy.testing.assert_array_equal(front_num, [total])
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_best_of_the_steps_when_the_first_ones_are_empty(kind):
+    history = D.new_history(kind)
+    none = D.objective(kind)[0:0]
+    history.write(none, D.inputs(kind)[0:0])
+    history.write(none, D.inputs(kind)[0:0])
+    history.write(D.objective(kind)[0:2], D.inputs(kind)[0:2])
+    best_fx, best_points = history.export_sequence_best_fx()
+    numpy.testing.assert_array_equal(best_fx, [np.nan, np.nan, 1.5])
+    assert np.all(best_points[2] == D.inputs(kind)[0])
+    if D.is_range(kind):
+        assert np.all(np.isnan(best_points[0:2]))
+    else:
+        numpy.testing.assert_array_equal(best_points[0:2], [-1, -1])
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_messages_of_more_observations_than_there_are(kind, capsys):
+    def show(history, N):
+        capsys.readouterr()
+        if D.is_multi(kind):
+            history.show_search_results_mo(N)
+        else:
+            history.show_search_results(N)
+        return capsys.readouterr().out
+
+    history = written(kind, steps=D.STEPS[0:2])
+    assert show(history, 100) == show(history, history.total_num_search)
+    assert show(history, 100).count("f(x)") >= history.total_num_search
+
+    empty = show(D.new_history(kind), 1)
+    assert "list of simulation results" in empty
+    assert "step" not in empty
+    if not D.is_multi(kind):
+        assert "(no valid observation yet)" in empty
+
+
+def assert_same_pickled_state(history, other):
+    """The two histories pickle to the same state."""
+    state = history.__getstate__()
+    other_state = other.__getstate__()
+    assert set(state) == set(other_state)
+    for name, value in state.items():
+        if isinstance(value, Pareto):
+            numpy.testing.assert_array_equal(value.front, other_state[name].front)
+            numpy.testing.assert_array_equal(
+                value.front_num, other_state[name].front_num
+            )
+            assert value.num_compared == other_state[name].num_compared
+        elif isinstance(value, np.ndarray):
+            assert value.dtype == other_state[name].dtype
+            numpy.testing.assert_array_equal(value, other_state[name])
+        else:
+            assert value == other_state[name]
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_pickle_holds_the_used_part_of_the_storage(kind):
+    assert len(pickle.dumps(D.new_history(kind))) < 2500
+
+    # whatever room the history has
+    total = 100
+    history, *_ = many_observations(kind, total)
+    assert len(history._fx) > total
+    state = history.__getstate__()
+    for name in history._per_observation:
+        assert len(state[name]) == total
+    assert len(state["_terminal"]) == history.num_runs
+
+    for duplicate in (copy.deepcopy, lambda h: pickle.loads(pickle.dumps(h))):
+        clone = duplicate(history)
+        assert len(clone._fx) == total
+        assert_same_pickled_state(clone, history)
+        assert pickle.dumps(clone) == pickle.dumps(history)
+
+
+#: the number of rows of the arrays before the storage grew
 ROOM = 30000
 
 
-def full_history(kind):
-    history = D.new_history(kind)
-    t = np.arange(ROOM, dtype=float)
-    points = np.zeros((ROOM, D.DIM)) if D.is_range(kind) else np.arange(ROOM)
-    history.write(t.reshape(-1, 1) if kind == "discrete" else t, points)
-    assert history.total_num_search == ROOM
-    best_fx, _ = history.export_all_sequence_best_fx()
-    assert best_fx[-1] == ROOM - 1
-    return history
-
-
-def write_one_more(history, kind):
-    t = np.array([-1.0])
-    history.write(t.reshape(-1, 1) if kind == "discrete" else t, D.inputs(kind)[0:1])
-
-
-def test_a_full_range_history_refuses_more():
-    history = full_history("range")
-    with pytest.raises(IndexError):
-        write_one_more(history, "range")
-    assert history.total_num_search == ROOM
-    assert history.num_runs == 1
-
-
-def test_a_full_discrete_history_refuses_more_as_well():
-    # it used to drop the observation and count it
-    history = full_history("discrete")
-    with pytest.raises(IndexError):
-        write_one_more(history, "discrete")
-    assert history.total_num_search == ROOM
-    assert history.num_runs == 1
-
-
 class PickledEarlier:
-    """Pickles as a single-objective history did before the classes shared
-    their base: the arrays of the elapsed times were time_total_ and so on,
-    and the discrete class had no best_index."""
+    """Pickles as a history did when its arrays had 30,000 rows and were
+    attributes under their public names.
 
-    def __init__(self, history):
+    With ``before_the_common_base`` the state is that of the classes before
+    they shared their base: the single-objective ones had the arrays of the
+    elapsed times as time_total_ and so on, and the discrete one had no
+    best_index.
+    """
+
+    def __init__(self, history, kind, before_the_common_base):
+        def padded(array, fill=0):
+            out = np.full((ROOM,) + array.shape[1:], fill, dtype=array.dtype)
+            out[0 : len(array)] = array
+            return out
+
         self.cls = type(history)
-        self.state = dict(vars(history))
+        # the counters, dim, num_objectives and pareto
+        self.state = {k: v for k, v in vars(history).items() if k[0] != "_"}
+        self.state["fx"] = padded(history.fx)
+        column = "action_X" if D.is_range(kind) else "chosen_actions"
+        self.state[column] = padded(recorded_inputs(history, kind))
+        self.state["terminal_num_run"] = padded(history.terminal_num_run)
+        single = not D.is_multi(kind)
         for name in D.TIMES:
-            self.state[name + "_"] = self.state.pop("_" + name)
-        if "chosen_actions" in self.state:
-            del self.state["best_index"]
+            earlier = name + "_" if single and before_the_common_base else "_" + name
+            times = getattr(history, "_" + name)[0 : history.total_num_search]
+            self.state[earlier] = padded(times)
+        if single and not (before_the_common_base and kind == "discrete"):
+            self.state["best_index"] = padded(history.best_index, fill=-1)
 
     def __reduce__(self):
         # an instance made without __init__, then given the state
         return (copyreg._reconstructor, (self.cls, object, None), self.state)
 
 
+@pytest.mark.parametrize("before_the_common_base", [True, False])
 @pytest.mark.parametrize("failed", FAILED)
-@pytest.mark.parametrize("kind", D.SINGLE)
-def test_history_pickled_before_the_common_base(kind, failed):
-    earlier = pickle.loads(pickle.dumps(PickledEarlier(written(kind, failed))))
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_history_pickled_with_arrays_of_fixed_length(
+    kind, failed, before_the_common_base
+):
+    pickled = PickledEarlier(written(kind, failed), kind, before_the_common_base)
+    assert pickled.state["fx"].shape[0] == ROOM
+    earlier = pickle.loads(pickle.dumps(pickled))
     assert type(earlier) is history_class(kind)
+    assert len(earlier.fx) == D.TOTAL
     assert_record(earlier, kind, failed)
     assert_summary(earlier, kind, failed)
-    numpy.testing.assert_array_equal(
-        earlier.best_index[0 : D.TOTAL], best_indices(D.objective(kind, failed))
-    )
     for name, values in D.TIMES.items():
         numpy.testing.assert_array_equal(getattr(earlier, name), values)
+    if not D.is_multi(kind):
+        numpy.testing.assert_array_equal(
+            earlier.best_index, best_indices(D.objective(kind, failed))
+        )
+    # nothing of the earlier layout is left beside the storage
+    assert not {"fx", "terminal_num_run", "best_index"} & set(vars(earlier))
 
-    # and it goes on
-    write_one_more(earlier, kind)
-    assert earlier.total_num_search == D.TOTAL + 1
-    best_fx, _ = earlier.export_all_sequence_best_fx()
-    assert best_fx[-1] == 2.5
+    # and it goes on, as the history it was pickled from does
+    now = written(kind, failed)
+    for history in (earlier, now):
+        history.write(D.objective(kind)[0:1], D.inputs(kind)[0:1], time_total=[9.0])
+    assert_same_pickled_state(earlier, now)
 
 
 # ---------------------------------------------------------------------------
