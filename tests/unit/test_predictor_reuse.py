@@ -591,6 +591,38 @@ def test_unfitted_bayesian_linear_model_given_is_refused(kind):
     assert all(p is None for p in predictors(policy, kind))
 
 
+@pytest.mark.parametrize("kind", KINDS)
+@pytest.mark.parametrize("how", ["given", "set by hand", "replaced"])
+def test_unfitted_bayesian_linear_model_needs_the_number_of_basis_functions(kind, how):
+    """A Bayesian linear model that was never fitted does not tell with how
+    many basis functions it is to be learned. Without num_rand_basis the
+    search is refused before anything is changed, whether the model is given,
+    set by hand, or to be replaced by one with ARD; with num_rand_basis it is
+    learned."""
+    policy, kwargs = started(kind)
+    del kwargs["num_rand_basis"]
+    model = physbo.gp.core.Model.create_default(ard=False, num_dim=2)
+    unfitted = physbo.blm.Predictor(policy.config, model=model)
+    blms = [unfitted, copy.deepcopy(unfitted)] if kind.endswith("multi") else unfitted
+    if how == "given":
+        kwargs.update(predictor_argument(kind, blms))
+    else:
+        set_predictors(policy, kind, blms)
+        if how == "replaced":
+            kwargs["ard"] = True
+    before = predictors(policy, kind)
+
+    with pytest.raises(RuntimeError, match="num_rand_basis > 0"):
+        policy.bayes_search(max_num_probes=1, interval=0, **kwargs)
+    assert all(a is b for a, b in zip(before, predictors(policy, kind)))
+    assert all(p is None or p.blm is None for p in predictors(policy, kind))
+    assert policy.history.total_num_search == 5
+
+    policy.bayes_search(max_num_probes=1, interval=0, num_rand_basis=20, **kwargs)
+    assert kinds_of(policy, kind) == [("blm", 20, how == "replaced")] * len(before)
+    assert policy.history.total_num_search == 6
+
+
 # ---------------------------------------------------------------------------
 # predictors that come from outside
 
