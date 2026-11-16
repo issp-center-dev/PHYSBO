@@ -14,6 +14,7 @@ total_num_search entries of the arrays are looked at.
 """
 
 import copy
+import copyreg
 import inspect
 import os
 import pickle
@@ -205,6 +206,14 @@ def test_range_keeps_the_index_of_the_best(failed):
     history = written("range", failed)
     numpy.testing.assert_array_equal(
         history.best_index[0 : D.TOTAL], best_indices(D.objective("range", failed))
+    )
+
+
+@pytest.mark.parametrize("failed", FAILED)
+def test_discrete_keeps_the_index_of_the_best_as_well(failed):
+    history = written("discrete", failed)
+    numpy.testing.assert_array_equal(
+        history.best_index[0 : D.TOTAL], best_indices(D.objective("discrete", failed))
     )
 
 
@@ -677,6 +686,55 @@ def test_a_full_range_history_refuses_more():
         write_one_more(history, "range")
     assert history.total_num_search == ROOM
     assert history.num_runs == 1
+
+
+def test_a_full_discrete_history_refuses_more_as_well():
+    # it used to drop the observation and count it
+    history = full_history("discrete")
+    with pytest.raises(IndexError):
+        write_one_more(history, "discrete")
+    assert history.total_num_search == ROOM
+    assert history.num_runs == 1
+
+
+class PickledEarlier:
+    """Pickles as a single-objective history did before the classes shared
+    their base: the arrays of the elapsed times were time_total_ and so on,
+    and the discrete class had no best_index."""
+
+    def __init__(self, history):
+        self.cls = type(history)
+        self.state = dict(vars(history))
+        for name in D.TIMES:
+            self.state[name + "_"] = self.state.pop("_" + name)
+        if "chosen_actions" in self.state:
+            del self.state["best_index"]
+
+    def __reduce__(self):
+        # an instance made without __init__, then given the state
+        return (copyreg._reconstructor, (self.cls, object, None), self.state)
+
+
+@pytest.mark.parametrize("failed", FAILED)
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_history_pickled_before_the_common_base(kind, failed):
+    earlier = pickle.loads(pickle.dumps(PickledEarlier(written(kind, failed))))
+    assert type(earlier) is history_class(kind)
+    assert_record(earlier, kind, failed)
+    assert_summary(earlier, kind, failed)
+    numpy.testing.assert_array_equal(
+        earlier.best_index[0 : D.TOTAL], best_indices(D.objective(kind, failed))
+    )
+    for name, values in D.TIMES.items():
+        numpy.testing.assert_array_equal(
+            getattr(earlier, name), np.repeat(values, D.STEPS)[0 : D.NUM_RUNS]
+        )
+
+    # and it goes on
+    write_one_more(earlier, kind)
+    assert earlier.total_num_search == D.TOTAL + 1
+    best_fx, _ = earlier.export_all_sequence_best_fx()
+    assert best_fx[-1] == 2.5
 
 
 # ---------------------------------------------------------------------------
