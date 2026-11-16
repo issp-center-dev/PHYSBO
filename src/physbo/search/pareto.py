@@ -633,11 +633,15 @@ class Pareto(object):
         if front.shape[0] == 0:  # nothing is dominated
             return np.full((1, M), -np.inf), np.full((1, M), np.inf)
         # Any point strictly below the front gives the same boxes, so they do
-        # not depend on reference_min.  The next double below the front stays
-        # strictly below it at any magnitude, unlike front.min - 1, which
-        # rounds back to front.min beyond about 2**53; lo == rmin below would
-        # then also turn coordinates of the front into reference_min.
-        rmin = np.nextafter(np.min(front, axis=0), -np.inf)
+        # not depend on reference_min.  For a finite front the next double
+        # below it stays strictly below at any magnitude, unlike front.min - 1,
+        # which can round back to front.min at large magnitudes (e.g. 1e17);
+        # lo == rmin below would then also turn coordinates of the front into
+        # reference_min.  It is -inf below -DBL_MAX (overflow) and a subnormal
+        # below 0.0 (underflow); both are valid placeholders, so these flags
+        # are not raised.
+        with np.errstate(over="ignore", under="ignore"):
+            rmin = np.nextafter(np.min(front, axis=0), -np.inf)
         # pass 1: minimization of -front with reference point -rmin
         U1, _ = Pareto._local_upper_bounds(-front, -rmin, np.full(M, -np.inf))
         L = -U1  # local lower bounds of the maximization problem
