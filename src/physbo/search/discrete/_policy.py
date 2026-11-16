@@ -254,7 +254,7 @@ class Policy(_PolicyBase):
             If true, process messages are outputted.
         Returns
         -------
-        history: history object (physbo.search.discrete.results.history)
+        history: history object (physbo.search.discrete.History)
         """
         return self._random_search(
             max_num_probes, num_search_each_probe, simulator, is_disp
@@ -330,7 +330,7 @@ class Policy(_PolicyBase):
 
         Returns
         -------
-        history: history object (physbo.search.discrete.results.history)
+        history: history object (physbo.search.discrete.History)
         """
         score = search_score.resolve(
             score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng
