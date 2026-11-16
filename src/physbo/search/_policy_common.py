@@ -61,8 +61,8 @@ def _is_learned(predictor):
 def _num_basis_of(predictors):
     """The number of basis functions of the Bayesian linear model(s) among
     ``predictors``: 0 if there is none (Gaussian processes), None if the
-    model was never fitted (it is then fitted with the number of the
-    config)."""
+    model was never fitted (it has no basis yet, so the number is not
+    known)."""
     for predictor in predictors:
         if isinstance(predictor, blm_predictor):
             return None if predictor.blm is None else predictor.blm.nbasis
@@ -705,6 +705,23 @@ class _PolicyBase(CheckpointMixin):
                 "kind asked for (num_rand_basis, ard). Call bayes_search with "
                 "interval >= 0 first, or give a learned predictor."
             )
+        # A Bayesian linear model is fitted with the number of basis functions
+        # asked for or, if none was, with the number that the predictor(s) in
+        # use have (those replaced, when new ones are made). A model that was
+        # never fitted has none; this too is checked before anything is
+        # changed.
+        if keep:
+            num_basis = num_rand_basis or _num_basis_of(in_use)
+        else:
+            num_basis = num_rand_basis
+            if num_basis is None:
+                num_basis = _num_basis_of(self._current_predictors())
+        if num_basis is None:
+            raise RuntimeError(
+                "ERROR: the Bayesian linear model in use was never fitted, so "
+                "the number of its basis functions is not known. Call "
+                "bayes_search with num_rand_basis > 0."
+            )
 
         if self.mpirank != 0:
             is_disp = False
@@ -729,19 +746,10 @@ class _PolicyBase(CheckpointMixin):
 
         if given:
             self._use_predictor(predictor)
-            # a Bayesian linear model is fitted with the number of basis
-            # functions asked for or, if none was, with the number it has
-            num_basis = num_rand_basis or _num_basis_of(in_use)
-        elif keep:
-            num_basis = num_rand_basis or _num_basis_of(in_use)
-        else:
+        elif not keep:
             # what was not asked for is as in the predictor(s) replaced
-            replaced = self._current_predictors()
-            num_basis = num_rand_basis
-            if num_basis is None:
-                num_basis = _num_basis_of(replaced)
             if ard is None:
-                self.ard = _ard_of(replaced)
+                self.ard = _ard_of(self._current_predictors())
             self._new_predictor(num_basis != 0)
             for made in self._current_predictors():
                 _mark_unlearned(made)
