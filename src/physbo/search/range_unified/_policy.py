@@ -232,7 +232,7 @@ class Policy(_UnifiedObjectiveMethods, range_single.Policy):
 
         Returns
         -------
-        history: history object (physbo.search.range_unified.results.history)
+        history: history object (physbo.search.range_unified.History)
         """
         score = search_score.resolve(
             score, alpha=self.config.search.alpha, ucb_beta=ucb_beta, rng=self.rng

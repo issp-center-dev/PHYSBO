@@ -240,7 +240,7 @@ class Policy(_MultiObjectiveMethods, range_single.Policy):
 
         Returns
         -------
-        history: history object (physbo.search.range_multi.results.history)
+        history: history object (physbo.search.range_multi.History)
         """
         score = search_score.resolve(
             score,
