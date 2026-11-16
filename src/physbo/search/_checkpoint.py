@@ -73,6 +73,9 @@ class CheckpointMixin:
         # be re-attached with set_comm() after unpickling.
         state = self.__dict__.copy()
         state["mpicomm"] = None
+        # A policy pickled while its bayes_search runs (from the simulator,
+        # say) is not in a search when it is restored.
+        state.pop("_in_search", None)
         state[_STATE_VERSION_KEY] = FORMAT_VERSION
         return state
 

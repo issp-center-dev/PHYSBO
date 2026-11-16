@@ -18,6 +18,7 @@ predictor(s) and the training data in use, however these came to the policy.
 
 import copy
 import inspect
+import pickle
 
 import numpy as np
 import pytest
@@ -475,6 +476,31 @@ def test_checkpoint_remembers_whether_the_predictor_was_learned(kind, tmp_path):
     restored = type(policy).load_checkpoint(learned)
     restored.bayes_search(max_num_probes=1, interval=-1, **kwargs)
     assert restored.history.total_num_search == 7
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_checkpoint_taken_during_a_search_is_not_in_a_search(kind, tmp_path):
+    """A policy saved or pickled while its bayes_search runs (here from the
+    simulator) is restored as a policy that is not in a search. Otherwise a
+    unified policy of a parallel run would communicate in a method that one
+    process may call alone."""
+    policy, kwargs = started(kind)
+    simulator = kwargs.pop("simulator")
+    fname = str(tmp_path / "policy.ckpt")
+    pickled = []
+
+    def saving(x):
+        if not pickled:
+            assert policy._in_search
+            policy.save_checkpoint(fname)
+            pickled.append(pickle.dumps(policy))
+        return simulator(x)
+
+    policy.bayes_search(max_num_probes=2, interval=0, simulator=saving, **kwargs)
+    assert pickled and not policy._in_search
+    for restored in (type(policy).load_checkpoint(fname), pickle.loads(pickled[0])):
+        assert "_in_search" not in restored.__dict__
+        assert not restored._in_search
 
 
 @pytest.mark.parametrize("kind", KINDS)
