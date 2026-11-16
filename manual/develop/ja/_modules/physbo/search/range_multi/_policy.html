@@ -96,23 +96,20 @@
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pickle</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">History</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="nb">range</span> <span class="k">as</span> <span class="n">range_single</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score_multi</span> <span class="k">as</span> <span class="n">search_score</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_rng</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._policy_common</span><span class="w"> </span><span class="kn">import</span> <span class="n">_MultiObjectiveMethods</span>
 
 
 <div class="viewcode-block" id="Policy">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy">[ドキュメント]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">range_single</span><span class="o">.</span><span class="n">Policy</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">_MultiObjectiveMethods</span><span class="p">,</span> <span class="n">range_single</span><span class="o">.</span><span class="n">Policy</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Multi objective Bayesian optimization with continuous search space"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -154,63 +151,45 @@
 <span class="sd">            Random number generator specification (default: "legacy").</span>
 <span class="sd">            See physbo.search.discrete.Policy for details.</span>
 <span class="sd">        """</span>
-        <span class="c1"># The constructor of range.Policy is not called: it sets up the history, the</span>
-        <span class="c1"># training data and initial_data for a single objective. This class inherits</span>
-        <span class="c1"># range.Policy only to share its helper methods, so everything the base</span>
-        <span class="c1"># constructor sets (min_X, max_X, constraint, config, the MPI attributes, ...)</span>
-        <span class="c1"># must be set here as well.</span>
-        <span class="k">if</span> <span class="n">min_X</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">max_X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"min_X and max_X must be specified"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">min_X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">L_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">constraint</span> <span class="o">=</span> <span class="n">constraint</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">History</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">min_X</span><span class="o">=</span><span class="n">min_X</span><span class="p">,</span>
+            <span class="n">max_X</span><span class="o">=</span><span class="n">max_X</span><span class="p">,</span>
+            <span class="n">constraint</span><span class="o">=</span><span class="n">constraint</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">initial_data</span><span class="o">=</span><span class="n">initial_data</span><span class="p">,</span>
+            <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">make_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_scoring</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="n">pareto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">_reference_points_upper</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># on every process before the optimizer, which may evaluate the</span>
+            <span class="c1"># scores on some processes only, so that they all use the same</span>
+            <span class="c1"># reference points and warn (or raise) together</span>
+            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">SetConfig</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_new_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">History</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">TS_candidate_num</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_initial_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">init_X</span><span class="p">,</span> <span class="n">fs</span> <span class="o">=</span> <span class="n">initial_data</span>
+        <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">"The number of initial data must be the same"</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">fs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">"The number of objectives in initial_data[1] must be the same as num_objectives"</span>
+        <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">initial_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="n">init_X</span><span class="p">,</span> <span class="n">fs</span> <span class="o">=</span> <span class="n">initial_data</span>
-            <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">),</span> <span class="p">(</span>
-                <span class="s2">"The number of initial data must be the same"</span>
-            <span class="p">)</span>
-            <span class="k">assert</span> <span class="n">init_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="p">(</span>
-                <span class="s2">"The dimension of initial_data[0] must be the same as the dimension of min_X and max_X"</span>
-            <span class="p">)</span>
-            <span class="k">assert</span> <span class="n">fs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">,</span> <span class="p">(</span>
-                <span class="s2">"The number of objectives in initial_data[1] must be the same as num_objectives"</span>
-            <span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">init_X</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="o">=</span> <span class="n">comm</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">size</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">init_X</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Policy.write">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.write">[ドキュメント]</a>
@@ -253,13 +232,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">:</span>
-                <span class="n">z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stack_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -285,48 +258,13 @@
         <span class="n">is_disp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-            <span class="n">utility</span><span class="o">.</span><span class="n">show_interactive_mode</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_num_probes</span><span class="p">):</span>
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">is_disp</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="s2">"random"</span>
-                <span class="p">)</span>
-
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">action_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_random_action</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_get_action</span>
-
-            <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">action_X</span>
-
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action_X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_run_simulator</span>
-
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_total</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">action_X</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">,</span>
-                <span class="n">time_total</span><span class="o">=</span><span class="p">[</span><span class="n">time_total</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-                <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
-                <span class="n">time_get_action</span><span class="o">=</span><span class="p">[</span><span class="n">time_get_action</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-                <span class="n">time_run_simulator</span><span class="o">=</span><span class="p">[</span><span class="n">time_run_simulator</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="n">disp_pareto_set</span>
-                <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_search</span><span class="p">(</span>
+            <span class="n">max_num_probes</span><span class="p">,</span>
+            <span class="n">num_search_each_probe</span><span class="p">,</span>
+            <span class="n">simulator</span><span class="p">,</span>
+            <span class="n">is_disp</span><span class="p">,</span>
+            <span class="n">disp_pareto_set</span><span class="o">=</span><span class="n">disp_pareto_set</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.bayes_search">
@@ -342,10 +280,10 @@
         <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">score</span><span class="o">=</span><span class="s2">"HVPI"</span><span class="p">,</span>
         <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">num_rand_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">ard</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Performing Bayesian optimization by using multi objective function</span>
@@ -378,8 +316,17 @@
 <span class="sd">            The interval number of learning the hyper parameter.</span>
 <span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
 <span class="sd">            If you set zero to interval, the hyper parameter learning is performed only at the first step.</span>
+<span class="sd">            A negative interval needs a learned predictor: the one learned by an</span>
+<span class="sd">            earlier bayes_search, or one given as an argument, read by load() or</span>
+<span class="sd">            set by hand. Otherwise, or if another kind of predictor is asked for</span>
+<span class="sd">            (see num_rand_basis), a RuntimeError is raised.</span>
 <span class="sd">        num_rand_basis: int, optional</span>
 <span class="sd">            The number of basis function. If you choose 0, ordinary Gaussian process run.</span>
+<span class="sd">            If None (default), the predictor the policy has is used, whatever its</span>
+<span class="sd">            kind; a Gaussian process is made if it has none yet.</span>
+<span class="sd">            The predictor is kept between calls of bayes_search. A new one is made,</span>
+<span class="sd">            to be learned, when the predictor is not of the kind asked for by</span>
+<span class="sd">            num_rand_basis or ard.</span>
 <span class="sd">        optimizer: Optimizer object, optional</span>
 <span class="sd">            Optimizer object for optimizing the acquisition function.</span>
 <span class="sd">            If None, the default optimizer is used.</span>
@@ -388,357 +335,36 @@
 <span class="sd">            This is not used.</span>
 <span class="sd">        ard: bool, optional</span>
 <span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
-<span class="sd">            Default is False.</span>
+<span class="sd">            If None (default), as in the predictor the policy has; without ARD if</span>
+<span class="sd">            it has none yet.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        history: history object (physbo.search.range_multi.results.history)</span>
 <span class="sd">        """</span>
-
         <span class="n">score</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
             <span class="n">score</span><span class="p">,</span>
             <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
             <span class="n">reduced_candidate_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TS_candidate_num</span><span class="p">,</span>
             <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="n">old_disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">is_disp</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">max_num_probes</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="n">is_rand_expans</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">num_rand_basis</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">ard</span>
-
-        <span class="k">if</span> <span class="n">training_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">training_list</span>
-
-        <span class="k">if</span> <span class="n">predictor_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">is_rand_expans</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_make_blm_predictor</span><span class="p">()</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
-                <span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
-                <span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="n">predictor_list</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">utility</span><span class="o">.</span><span class="n">require_training_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">optimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_optimizer</span><span class="p">()</span>
 
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_num_probes</span><span class="p">):</span>
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">utility</span><span class="o">.</span><span class="n">is_learning</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_update_predictor</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">utility</span><span class="o">.</span><span class="n">score_name</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-                <span class="p">)</span>
-
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">multi_probe_num_sampling</span>
-            <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span>
-            <span class="n">action_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_actions</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_get_action</span>
-
-            <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
-                <span class="k">return</span> <span class="n">action_X</span>
-
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action_X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_run_simulator</span>
-
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_total</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">action_X</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">,</span>
-                <span class="n">time_total</span><span class="o">=</span><span class="p">[</span><span class="n">time_total</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-                <span class="n">time_update_predictor</span><span class="o">=</span><span class="p">[</span><span class="n">time_update_predictor</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-                <span class="n">time_get_action</span><span class="o">=</span><span class="p">[</span><span class="n">time_get_action</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-                <span class="n">time_run_simulator</span><span class="o">=</span><span class="p">[</span><span class="n">time_run_simulator</span><span class="p">]</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results_mo</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="n">disp_pareto_set</span>
-                <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_argmax_score</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">mode</span><span class="p">,</span>
-        <span class="n">predictors</span><span class="p">,</span>
-        <span class="n">training</span><span class="p">,</span>
-        <span class="n">virtual_trainings</span><span class="p">,</span>
-        <span class="n">optimizer</span><span class="p">,</span>
-        <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">samples_drawn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Get the action that maximizes the score.</span>
-
-<span class="sd">        Arguments</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mode: str</span>
-<span class="sd">            The type of aquision funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
-<span class="sd">            These functions are defined in score.py.</span>
-<span class="sd">        predictors: list[Predictor]</span>
-<span class="sd">            List of predictors.</span>
-<span class="sd">        training: Variable</span>
-<span class="sd">            Training data.</span>
-<span class="sd">        virtual_trainings: list[Variable]</span>
-<span class="sd">            List of extra training data.</span>
-<span class="sd">        optimizer: Function or Optimizer object</span>
-<span class="sd">            Optimizer object for optimizing the acquisition function.</span>
-<span class="sd">        error: Exception or None</span>
-<span class="sd">            An exception raised on this process while drawing the samples in</span>
-<span class="sd">            ``virtual_trainings`` (see :func:`physbo._mpi.call`).</span>
-<span class="sd">        samples_drawn: bool</span>
-<span class="sd">            Whether the samples were drawn (on every process alike), so that</span>
-<span class="sd">            the processes exchange whether one of them raised.</span>
-<span class="sd">        """</span>
-
-        <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">virtual_trainings</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictors</span><span class="p">):</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                    <span class="n">mode</span><span class="p">,</span>
-                    <span class="n">xs</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                    <span class="n">predictor_list</span><span class="o">=</span><span class="n">predictors</span><span class="p">,</span>
-                    <span class="n">training_list</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
-                    <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">error</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># marginal score</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">marginal_score_function</span><span class="p">():</span>
-                <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">virtual_trainings</span><span class="p">)</span>
-                <span class="n">trains_k</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">training</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
-                <span class="n">predictors_k</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">predictors</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
-                <span class="k">for</span> <span class="n">predictor_k</span><span class="p">,</span> <span class="n">training_k</span><span class="p">,</span> <span class="n">virtual_training</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                    <span class="n">predictors_k</span><span class="p">,</span> <span class="n">trains_k</span><span class="p">,</span> <span class="n">virtual_trainings</span>
-                <span class="p">):</span>
-                    <span class="n">training_k</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-                        <span class="n">X</span><span class="o">=</span><span class="n">virtual_training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">virtual_training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">virtual_training</span><span class="o">.</span><span class="n">Z</span>
-                    <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                        <span class="n">predictor_k</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                            <span class="n">training_k</span><span class="p">,</span> <span class="n">virtual_training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span>
-                        <span class="p">)</span>
-
-                <span class="k">def</span><span class="w"> </span><span class="nf">fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-                    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
-                        <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                            <span class="n">mode</span><span class="p">,</span>
-                            <span class="n">xs</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                            <span class="n">predictor_list</span><span class="o">=</span><span class="n">predictors_k</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
-                            <span class="n">training_list</span><span class="o">=</span><span class="n">trains_k</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
-                            <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-                <span class="k">return</span> <span class="n">fn</span>
-
-            <span class="n">fn</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">marginal_score_function</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">samples_drawn</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">virtual_trainings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="c1"># the samples, and so the predictors, differ between the processes</span>
-            <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-
-        <span class="n">pareto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">pareto</span>
-        <span class="n">upper</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">_reference_points_upper</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pareto</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># on every process before the optimizer, which may evaluate fn on</span>
-            <span class="c1"># some processes only, so that they all use the same reference</span>
-            <span class="c1"># points and warn (or raise) together</span>
-            <span class="n">pareto</span><span class="o">.</span><span class="n">prepare_reference_points</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">upper</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimize_score</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-        <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span> <span class="k">for</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">]</span>
-
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictors</span><span class="p">):</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-        <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmax_score</span><span class="p">(</span>
-            <span class="n">mode</span><span class="p">,</span> <span class="n">predictors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="p">[],</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span>
-        <span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">draw_samples</span><span class="p">():</span>
-                <span class="c1"># with Bayesian linear models the training data carry the</span>
-                <span class="c1"># values of the basis functions of every objective, so the</span>
-                <span class="c1"># virtual observations must too (as in write)</span>
-                <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">,</span> <span class="p">:])</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">predictors</span><span class="p">]</span>
-                <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-                <span class="n">virtual_trainings</span> <span class="o">=</span> <span class="p">[</span><span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)]</span>
-                <span class="n">virtual_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                    <span class="n">virtual_t</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-                        <span class="n">virtual_trainings</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">K</span><span class="p">,</span>
-                        <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-                        <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
-                    <span class="n">virtual_trainings</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">virtual_t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
-                <span class="k">return</span> <span class="n">virtual_trainings</span>
-
-            <span class="n">virtual_trainings</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">draw_samples</span><span class="p">)</span>
-            <span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argmax_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span>
-                <span class="n">predictors</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-                <span class="n">virtual_trainings</span><span class="p">,</span>
-                <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
-                <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">,</span>
-                <span class="n">samples_drawn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">X</span>
-
-<div class="viewcode-block" id="Policy.get_post_fmean">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.get_post_fmean">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calculate mean value of predictors (post distribution)</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xs: physbo.Variable or np.ndarray</span>
-<span class="sd">            input parameters to calculate covariance</span>
-<span class="sd">            shape is (num_points, num_parameters)</span>
-<span class="sd">        diag: bool</span>
-<span class="sd">            If true, only variances (diagonal elements) are returned.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        fcov: numpy.ndarray</span>
-<span class="sd">            Covariance matrix of the post distribution.</span>
-<span class="sd">            Returned shape is (num_points, num_objectives).</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fmean()"</span><span class="p">)</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-                <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
-        <span class="n">fmean</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fmean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
-
-
-<div class="viewcode-block" id="Policy.get_kernel_length_scale">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.get_kernel_length_scale">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_kernel_length_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Return the Gaussian kernel length scale(s) for each objective.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list of numpy.ndarray or None</span>
-<span class="sd">            List of length num_objectives; each element is the length scale(s)</span>
-<span class="sd">            for that objective's GP, or None if not available.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                <span class="k">continue</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">cov</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="s2">"width"</span><span class="p">):</span>
-                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                <span class="k">continue</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
-        <span class="k">return</span> <span class="n">result</span></div>
-
-
-<div class="viewcode-block" id="Policy.get_post_fcov">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.get_post_fcov">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calculate covariance of predictors (post distribution)</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xs: physbo.Variable or np.ndarray</span>
-<span class="sd">            input parameters to calculate covariance</span>
-<span class="sd">            shape is (num_points, num_parameters)</span>
-<span class="sd">        diag: bool</span>
-<span class="sd">            If true, only variances (diagonal elements) are returned.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        fcov: numpy.ndarray</span>
-<span class="sd">            Covariance matrix of the post distribution.</span>
-<span class="sd">            Returned shape is (num_points, num_objectives) if diag=true, (num_points, num_points, num_objectives) if diag=false.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_post_fcov()"</span><span class="p">)</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-                <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
-        <span class="n">fcov</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">predictor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictor_list</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fcov</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">diag</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">arr</span><span class="o">.</span><span class="n">T</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"nij-&gt;ijn"</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bayes_search</span><span class="p">(</span>
+            <span class="n">score</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">training</span><span class="o">=</span><span class="n">training_list</span><span class="p">,</span>
+            <span class="n">predictor</span><span class="o">=</span><span class="n">predictor_list</span><span class="p">,</span>
+            <span class="n">max_num_probes</span><span class="o">=</span><span class="n">max_num_probes</span><span class="p">,</span>
+            <span class="n">num_search_each_probe</span><span class="o">=</span><span class="n">num_search_each_probe</span><span class="p">,</span>
+            <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+            <span class="n">is_disp</span><span class="o">=</span><span class="n">is_disp</span><span class="p">,</span>
+            <span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span>
+            <span class="n">num_rand_basis</span><span class="o">=</span><span class="n">num_rand_basis</span><span class="p">,</span>
+            <span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span>
+            <span class="n">disp_pareto_set</span><span class="o">=</span><span class="n">disp_pareto_set</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.get_score">
@@ -863,57 +489,6 @@
         <span class="k">return</span> <span class="n">f</span></div>
 
 
-<div class="viewcode-block" id="Policy.get_permutation_importance">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.get_permutation_importance">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_permutation_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_perm</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">split_features_parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calculate permutation importance of models</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_perm: int</span>
-<span class="sd">            The number of permutations</span>
-<span class="sd">        split_features_parallel: bool</span>
-<span class="sd">            If true, split features in parallel.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        importance_mean: numpy.ndarray</span>
-<span class="sd">            importance_mean (num_parameters, num_objectives)</span>
-<span class="sd">        importance_std: numpy.ndarray</span>
-<span class="sd">            importance_std (num_parameters, num_objectives)</span>
-<span class="sd">        """</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">==</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_no_predictor</span><span class="p">(</span><span class="s2">"get_permutation_importance()"</span><span class="p">)</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
-                <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-                <span class="n">predictor_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="n">predictor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[:]</span>
-
-        <span class="n">importance_mean</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
-        <span class="n">importance_std</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)]</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-            <span class="n">importance_mean</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">importance_std</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictor_list</span><span class="p">[</span>
-                <span class="n">i</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">get_permutation_importance</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-                <span class="n">n_perm</span><span class="p">,</span>
-                <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
-                <span class="n">split_features_parallel</span><span class="o">=</span><span class="n">split_features_parallel</span><span class="p">,</span>
-                <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-                <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">importance_mean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">importance_std</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
-
-
 <div class="viewcode-block" id="Policy.save">
 <a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.save">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -950,98 +525,34 @@
         <span class="k">if</span> <span class="n">file_predictor_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load_predictor_list</span><span class="p">(</span><span class="n">file_predictor_list</span><span class="p">)</span>
 
-        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span></div>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
 
-
-<div class="viewcode-block" id="Policy.save_predictor_list">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.save_predictor_list">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_predictor_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Policy.save_training_list">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.save_training_list">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_training_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="n">obj</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"X"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="s2">"t"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="s2">"Z"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span><span class="p">}</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Policy.load_predictor_list">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.load_predictor_list">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_predictor_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Policy.load_training_list">
-<a class="viewcode-back" href="../../../../api/physbo.search.range_multi.html#physbo.search.range_multi.Policy.load_training_list">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_training_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-        <span class="c1"># Handle both old format (list) and new format (dict/Variable)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="c1"># Old format: list of dicts, convert to single Variable</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"X"</span><span class="p">]</span>
-            <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="s2">"Z"</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="s2">"t"</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="c1"># New format: single dict</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">"X"</span><span class="p">],</span> <span class="n">t</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">Z</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">"Z"</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Assume it's already a Variable</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">data</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_after_load</span><span class="p">()</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_learn_hyperparameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">):</span>
-        <span class="c1"># Collect Z for each objective</span>
-        <span class="n">Z_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-            <span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-            <span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                <span class="n">training</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
                 <span class="n">num_rand_basis</span><span class="p">,</span>
                 <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
                 <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
                 <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_statistics</span><span class="p">()</span>
 
-            <span class="c1"># Collect Z for training (will be combined into (k, N, n))</span>
-            <span class="n">training_Z_basis</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-            <span class="n">Z_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">training_Z_basis</span><span class="p">)</span>
-            <span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># The basis values of the training data, in (k, N, n) format, are</span>
+        <span class="c1"># those of the current predictors (None with Gaussian process</span>
+        <span class="c1"># predictors) before prepare() reads them.</span>
+        <span class="n">training_Z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stack_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">training_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">training_Z</span>
 
-        <span class="c1"># Update training.Z with (k, N, n) format</span>
-        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">Z_list</span><span class="p">):</span>
-            <span class="c1"># Stack along first dimension: (k, N, n)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-                <span class="n">Z_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
-            <span class="p">)</span>  <span class="c1"># Each Z_i is (N, n), stack to (k, N, n)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">predictor_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="p">,</span> <span class="n">objective_index</span><span class="o">=</span><span class="n">i</span>
-                <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span></div>
-
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action_X</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action_X</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">action_X</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
-    <span class="k">return</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
            </div>

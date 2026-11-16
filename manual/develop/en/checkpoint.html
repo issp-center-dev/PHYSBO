@@ -168,6 +168,12 @@ the checkpoint; loading with a different policy class raises an error.
 The checkpoint file records the PHYSBO version (a mismatch emits a
 warning: bit-exact resumption is guaranteed only within the same
 version) and the checkpoint format version.</p>
+<p>A checkpoint is meant for resuming a run, not for keeping results. It
+is guaranteed to be readable only by the minor version of PHYSBO that
+wrote it: when the format changes, the format version is raised, a
+file of another format version is refused with a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>, and
+no conversion is provided. To keep results across versions, use
+<code class="docutils literal notranslate"><span class="pre">policy.save()</span></code> / <code class="docutils literal notranslate"><span class="pre">policy.load()</span></code>.</p>
 <p>A checkpoint holds the complete policy. Besides the history, the
 training data and the predictor, this includes the candidate set of a
 discrete policy (<code class="docutils literal notranslate"><span class="pre">test_X</span></code> and, with the Bayesian linear model, the
@@ -239,6 +245,12 @@ match the stored state. If the policy uses the Generator mode
 (<code class="docutils literal notranslate"><span class="pre">rng=</span></code> given), its RNG state is included in the pickle
 automatically; in the legacy mode the host must additionally save and
 restore <code class="docutils literal notranslate"><span class="pre">numpy.random.get_state()</span></code> itself (as ODAT-SE already does).</p>
+<p>A pickled policy carries the format version of its state, like a
+checkpoint file: unpickling a policy that was pickled by a version of
+PHYSBO with another format raises a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>. A policy restored
+from a parallel run has no communicator until <code class="docutils literal notranslate"><span class="pre">set_comm()</span></code> is called;
+<code class="docutils literal notranslate"><span class="pre">random_search</span></code> and <code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> raise a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> if it
+is used without.</p>
 </section>
 </section>
 

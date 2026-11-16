@@ -165,6 +165,12 @@ legacy モードでは乱数状態はグローバルな <code class="docutils li
 ポイントファイルには PHYSBO のバージョンが記録され、不一致の場合は
 警告が出ます(bit-exact な再開が保証されるのは同一バージョン内のみ
 です)。チェックポイント形式のバージョンも検証されます。</p>
+<p>チェックポイントは実行を再開するためのもので、結果の保管用ではありません。
+読み込めることが保証されるのは、書き出したのと同じマイナーバージョンの
+PHYSBO だけです。形式が変わるときは形式のバージョンが上がり、異なる形式
+バージョンのファイルは <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> で拒否されます(変換は提供しません)。
+バージョンをまたいで結果を残すには <code class="docutils literal notranslate"><span class="pre">policy.save()</span></code> / <code class="docutils literal notranslate"><span class="pre">policy.load()</span></code> を
+使ってください。</p>
 <p>チェックポイントは policy 全体を保存します。history、訓練データ、
 predictor に加えて、離散 policy では候補集合(<code class="docutils literal notranslate"><span class="pre">test_X</span></code> と、ベイズ線形
 モデルの場合は全候補での基底関数の値)も含まれるため、ファイルの大きさは
@@ -232,6 +238,11 @@ pickle できます。MPI コミュニケータは pickle 時に自動的に除�
 あれば乱数状態は pickle に自動的に含まれます。legacy モードの場合は、
 ホスト側で <code class="docutils literal notranslate"><span class="pre">numpy.random.get_state()</span></code> の保存・復元も併せて行って
 ください(ODAT-SE は既にこれを行っています)。</p>
+<p>pickle した policy にも、チェックポイントファイルと同じく状態の形式バージョンが
+入ります。形式の異なるバージョンの PHYSBO で pickle した policy を読み込むと
+<code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> になります。並列実行から復元した policy は <code class="docutils literal notranslate"><span class="pre">set_comm()</span></code> を
+呼ぶまでコミュニケータを持ちません。そのまま <code class="docutils literal notranslate"><span class="pre">random_search</span></code> や
+<code class="docutils literal notranslate"><span class="pre">bayes_search</span></code> を呼ぶと <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> になります。</p>
 </section>
 </section>
 

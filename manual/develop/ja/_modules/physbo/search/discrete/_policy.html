@@ -96,29 +96,24 @@
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pickle</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">History</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">score</span> <span class="k">as</span> <span class="n">search_score</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mpi</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...</span><span class="w"> </span><span class="kn">import</span> <span class="n">gp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">gp_predictor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...blm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Predictor</span> <span class="k">as</span> <span class="n">blm_predictor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SetConfig</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..._variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">normalize_t</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span><span class="p">,</span> <span class="n">make_rng</span><span class="p">,</span> <span class="n">LegacyRNG</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._checkpoint</span><span class="w"> </span><span class="kn">import</span> <span class="n">CheckpointMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..._rng</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_rng</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._policy_common</span><span class="w"> </span><span class="kn">import</span> <span class="n">_PolicyBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._space</span><span class="w"> </span><span class="kn">import</span> <span class="n">_DiscreteSpace</span><span class="p">,</span> <span class="n">_space_attribute</span>
 
 
 <div class="viewcode-block" id="Policy">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy">[ドキュメント]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">CheckpointMixin</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">(</span><span class="n">_PolicyBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Single objective Bayesian optimization with discrete search space"""</span>
 
     <span class="n">predictor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
@@ -140,17 +135,21 @@
 <span class="sd">    Set to None after predictor is updated.</span>
 <span class="sd">    """</span>
 
-    <span class="n">test</span><span class="p">:</span> <span class="n">Variable</span>
-<span class="w">    </span><span class="sd">"""The set of candidate search points.</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">_space_attribute</span><span class="p">(</span>
+        <span class="s2">"test"</span><span class="p">,</span>
+<span class="w">        </span><span class="sd">"""The set of candidate search points (physbo.Variable).</span>
 
-<span class="sd">    Each row of X represents the feature vector of each search candidate.</span>
-<span class="sd">    """</span>
+<span class="sd">        Each row of X represents the feature vector of each search candidate.</span>
+<span class="sd">        """</span><span class="p">,</span>
+    <span class="p">)</span>
 
-    <span class="n">actions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-<span class="w">    </span><span class="sd">"""Array of action indices that have not been searched yet.</span>
+    <span class="n">actions</span> <span class="o">=</span> <span class="n">_space_attribute</span><span class="p">(</span>
+        <span class="s2">"actions"</span><span class="p">,</span>
+<span class="w">        </span><span class="sd">"""Array of action indices that have not been searched yet.</span>
 
-<span class="sd">    Initially contains all candidate indices, and decreases as actions are evaluated.</span>
-<span class="sd">    """</span>
+<span class="sd">        Initially contains all candidate indices, and decreases as actions are evaluated.</span>
+<span class="sd">        """</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="n">history</span><span class="p">:</span> <span class="n">History</span>
 <span class="w">    </span><span class="sd">"""History object storing search results including chosen actions,</span>
@@ -197,68 +196,42 @@
 <span class="sd">            stored on the policy (and thus included when the policy is</span>
 <span class="sd">            pickled). Under MPI, pass the same specification on all ranks.</span>
 <span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">make_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">test_X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">History</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">SetConfig</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">space</span><span class="o">=</span><span class="n">_DiscreteSpace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_make_variable_X</span><span class="p">(</span><span class="n">test_X</span><span class="p">)),</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">initial_data</span><span class="o">=</span><span class="n">initial_data</span><span class="p">,</span>
+            <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">initial_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="n">actions</span><span class="p">,</span> <span class="n">fs</span> <span class="o">=</span> <span class="n">initial_data</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: len(initial_data[0]) != len(initial_data[1])"</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="c1"># Normalize fs to (N, 1) shape before passing to write()</span>
-            <span class="n">fs_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">fs_normalized</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_new_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">History</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="o">=</span> <span class="n">comm</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">size</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_share_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+        <span class="c1"># TS: one posterior sample for every process, drawn on rank 0</span>
+        <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_model</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_sample</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">training</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Policy.set_seed">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.set_seed">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Setting a seed parameter.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_share_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+        <span class="c1"># TS: one posterior sample per model for every process, drawn on</span>
+        <span class="c1"># rank 0</span>
+        <span class="n">predictor</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_model</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_samples</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
 
-<span class="sd">        In the legacy RNG mode (default), this seeds the global</span>
-<span class="sd">        ``numpy.random`` state, as before. In the Generator mode</span>
-<span class="sd">        (``rng=`` given as int or Generator), the policy-owned generator</span>
-<span class="sd">        is re-created from the seed and the global state is not touched.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_initial_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: initial_data should be 2-elements tuple or list (actions and objectives)"</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">actions</span><span class="p">,</span> <span class="n">fs</span> <span class="o">=</span> <span class="n">initial_data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"ERROR: len(initial_data[0]) != len(initial_data[1])"</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="c1"># Normalize fs to (N, 1) shape before passing to write()</span>
+        <span class="n">fs_normalized</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">fs_normalized</span><span class="p">)</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        seed: int</span>
-<span class="sd">            seed number</span>
-<span class="sd">        -------</span>
-
-<span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span> <span class="n">LegacyRNG</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span></div>
-
+    <span class="k">def</span><span class="w"> </span><span class="nf">_show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N_indeed</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="p">):</span>
+        <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N_indeed</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Policy.write">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.write">[ドキュメント]</a>
@@ -348,12 +321,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_ok</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_ok</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z_ok</span><span class="p">)</span>
 
         <span class="c1"># remove the selected actions from the list of candidates if exists</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">local_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
-            <span class="n">local_index</span> <span class="o">=</span> <span class="n">local_index</span><span class="p">[</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">local_index</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"clip"</span><span class="p">)</span> <span class="o">==</span> <span class="n">action</span>
-            <span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -385,51 +353,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        history: history object (physbo.search.discrete.results.history)</span>
 <span class="sd">        """</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-            <span class="n">utility</span><span class="o">.</span><span class="n">show_interactive_mode</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_num_probes</span><span class="p">):</span>
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">is_disp</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">)</span>
-
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_random_action</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_get_action</span>
-
-            <span class="n">N_indeed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">N_indeed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">"WARNING: All actions have already searched."</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">action</span>
-
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_run_simulator</span>
-
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_total</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">action</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">,</span>
-                <span class="n">time_total</span><span class="o">=</span><span class="p">[</span><span class="n">time_total</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-                <span class="n">time_update_predictor</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_indeed</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
-                <span class="n">time_get_action</span><span class="o">=</span><span class="p">[</span><span class="n">time_get_action</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-                <span class="n">time_run_simulator</span><span class="o">=</span><span class="p">[</span><span class="n">time_run_simulator</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N_indeed</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_search</span><span class="p">(</span>
+            <span class="n">max_num_probes</span><span class="p">,</span> <span class="n">num_search_each_probe</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">is_disp</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Policy.bayes_search">
@@ -444,10 +370,10 @@
         <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">score</span><span class="o">=</span><span class="s2">"TS"</span><span class="p">,</span>
         <span class="n">interval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">num_rand_basis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">num_rand_basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">unify_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">ard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">ard</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -479,14 +405,24 @@
 <span class="sd">            The interval number of learning the hyper parameter.</span>
 <span class="sd">            If you set the negative value to interval, the hyper parameter learning is not performed.</span>
 <span class="sd">            If you set zero to interval, the hyper parameter learning is performed only at the first step.</span>
-<span class="sd">        num_rand_basis: int</span>
+<span class="sd">            A negative interval needs a learned predictor: the one learned by an</span>
+<span class="sd">            earlier bayes_search, or one given as an argument, read by load() or</span>
+<span class="sd">            set by hand. Otherwise, or if another kind of predictor is asked for</span>
+<span class="sd">            (see num_rand_basis), a RuntimeError is raised.</span>
+<span class="sd">        num_rand_basis: int, optional</span>
 <span class="sd">            The number of basis function. If you choose 0, ordinary Gaussian process run.</span>
+<span class="sd">            If None (default), the predictor the policy has is used, whatever its</span>
+<span class="sd">            kind; a Gaussian process is made if it has none yet.</span>
+<span class="sd">            The predictor is kept between calls of bayes_search. A new one is made,</span>
+<span class="sd">            to be learned, when the predictor is not of the kind asked for by</span>
+<span class="sd">            num_rand_basis or ard.</span>
 <span class="sd">        optimizer: optimizer object, optional</span>
 <span class="sd">            This is for compatibility with the range-based Policies.</span>
 <span class="sd">            This is not used.</span>
-<span class="sd">        ard: bool</span>
+<span class="sd">        ard: bool, optional</span>
 <span class="sd">            If True, use Automatic Relevance Determination (ARD) for the Gaussian kernel.</span>
-<span class="sd">            Default is False.</span>
+<span class="sd">            If None (default), as in the predictor the policy has; without ARD if</span>
+<span class="sd">            it has none yet.</span>
 <span class="sd">        ucb_beta: float</span>
 <span class="sd">            Trade-off parameter between exploitation and exploration used when</span>
 <span class="sd">            ``score == "UCB"``. The score is ``fmean + ucb_beta * fstd``;</span>
@@ -496,100 +432,23 @@
 <span class="sd">        -------</span>
 <span class="sd">        history: history object (physbo.search.discrete.results.history)</span>
 <span class="sd">        """</span>
-
         <span class="n">score</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
             <span class="n">score</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">is_disp</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bayes_search</span><span class="p">(</span>
+            <span class="n">score</span><span class="p">,</span>
+            <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
+            <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
+            <span class="n">max_num_probes</span><span class="o">=</span><span class="n">max_num_probes</span><span class="p">,</span>
+            <span class="n">num_search_each_probe</span><span class="o">=</span><span class="n">num_search_each_probe</span><span class="p">,</span>
+            <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+            <span class="n">is_disp</span><span class="o">=</span><span class="n">is_disp</span><span class="p">,</span>
+            <span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span>
+            <span class="n">num_rand_basis</span><span class="o">=</span><span class="n">num_rand_basis</span><span class="p">,</span>
+            <span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
-        <span class="n">old_disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">is_disp</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">max_num_probes</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">simulator</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="n">is_rand_expans</span> <span class="o">=</span> <span class="n">num_rand_basis</span> <span class="o">!=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ard</span> <span class="o">=</span> <span class="n">ard</span>
-
-        <span class="k">if</span> <span class="n">training</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">training</span>
-
-        <span class="k">if</span> <span class="n">predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="n">predictor</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_init_predictor</span><span class="p">(</span><span class="n">is_rand_expans</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">utility</span><span class="o">.</span><span class="n">require_training_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">max_num_probes</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">interval</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
-
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_search_each_probe</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_num_probes</span><span class="p">):</span>
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-            <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">utility</span><span class="o">.</span><span class="n">is_learning</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_learn_hyperparameter</span><span class="p">(</span><span class="n">num_rand_basis</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-            <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_update_predictor</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span> <span class="ow">and</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_start_message_multi_search</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">utility</span><span class="o">.</span><span class="n">score_name</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-                <span class="p">)</span>
-
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">multi_probe_num_sampling</span>
-            <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">search</span><span class="o">.</span><span class="n">alpha</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_actions</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">)</span>
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_get_action</span>
-
-            <span class="n">N_indeed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">N_indeed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">"WARNING: All actions have already searched."</span><span class="p">)</span>
-                <span class="k">break</span>
-
-            <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
-                <span class="k">return</span> <span class="n">action</span>
-
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_run_simulator</span>
-
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_total</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">action</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">,</span>
-                <span class="n">time_total</span><span class="o">=</span><span class="p">[</span><span class="n">time_total</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-                <span class="n">time_update_predictor</span><span class="o">=</span><span class="p">[</span><span class="n">time_update_predictor</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-                <span class="n">time_get_action</span><span class="o">=</span><span class="p">[</span><span class="n">time_get_action</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-                <span class="n">time_run_simulator</span><span class="o">=</span><span class="p">[</span><span class="n">time_run_simulator</span><span class="p">]</span> <span class="o">*</span> <span class="n">N_indeed</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">is_disp</span><span class="p">:</span>
-                <span class="n">utility</span><span class="o">.</span><span class="n">show_search_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">N_indeed</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning</span><span class="o">.</span><span class="n">is_disp</span> <span class="o">=</span> <span class="n">old_disp</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_warn_no_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Warning: Since policy.predictor is not yet set,"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"         a GP predictor (num_rand_basis=0) is used for predicting"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"         If you want to use a BLM predictor (num_rand_basis&gt;0),"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"         call bayes_search(max_num_probes=0, num_rand_basis=nrb)"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"         before calling </span><span class="si">{}</span><span class="s2">."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method_name</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Policy.get_post_fmean">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.get_post_fmean">[ドキュメント]</a>
@@ -653,34 +512,8 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_post_fcov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Policy.get_kernel_length_scale">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.get_kernel_length_scale">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_kernel_length_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Return the Gaussian kernel length scale(s) (width) of the predictor.</span>
-
-<span class="sd">        With ARD, returns one length scale per input dimension; otherwise a single value.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        numpy.ndarray or None</span>
-<span class="sd">            Length scale(s). Shape (num_dim,) when ARD is used, (1,) otherwise.</span>
-<span class="sd">            None if the predictor is not set or not a GP with Gaussian kernel.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_predictor</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">cov</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="s2">"width"</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span></div>
-
-
 <div class="viewcode-block" id="Policy.get_num_dim">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.get_num_dim">[ドキュメント]</a>
+<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete.Policy.get_num_dim">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_num_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the input dimension (number of features) of the search space.</span>
@@ -868,225 +701,6 @@
         <span class="k">return</span> <span class="n">f</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Getting marginal scores.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mode: str</span>
-<span class="sd">            The type of aquision funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
-<span class="sd">            These functions are defined in score.py.</span>
-<span class="sd">        chosen_actions: numpy.ndarray</span>
-<span class="sd">            Array of selected actions.</span>
-<span class="sd">        K: int</span>
-<span class="sd">            The number of samples for evaluating score.</span>
-<span class="sd">        alpha: float</span>
-<span class="sd">            not used.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        f: numpy.ndarray or None</span>
-<span class="sd">            The marginal scores of the candidates of this process (score is</span>
-<span class="sd">            defined in each mode), or None if ``error`` is not None.</span>
-<span class="sd">        error: Exception or None</span>
-<span class="sd">            An exception raised on this process while computing ``f`` in a</span>
-<span class="sd">            parallel run, to be passed to :meth:`_find_champion` (in a serial</span>
-<span class="sd">            run it is raised).</span>
-<span class="sd">        """</span>
-
-        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
-
-        <span class="c1"># Draw K samples of the values of objective function of chosen actions.</span>
-        <span class="c1"># self.test is not partitioned over ranks, so the chosen points are</span>
-        <span class="c1"># identical on every rank; the virtual values are drawn on rank 0 and</span>
-        <span class="c1"># broadcast so that all ranks fantasize the same observations.</span>
-        <span class="n">new_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
-                <span class="n">comm</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_predict_samples</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-                <span class="n">new_test</span><span class="p">,</span>
-                <span class="n">K</span><span class="p">,</span>
-                <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">virtual_t</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">virtual_t</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
-            <span class="c1"># the predictor and the training data with the k-th virtual</span>
-            <span class="c1"># observations added (the same on every process)</span>
-            <span class="n">predictor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">)</span>
-            <span class="n">train</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-            <span class="n">virtual_train</span> <span class="o">=</span> <span class="n">new_test</span>
-            <span class="c1"># Normalize virtual_t[k, :] to (N, 1) shape</span>
-            <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">virtual_t</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">train</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">train</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">virtual_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">virtual_train</span><span class="o">.</span><span class="n">Z</span><span class="p">)</span>
-
-            <span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">virtual_train</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">train</span>
-
-        <span class="c1"># TS: one posterior sample per virtual data set for every process,</span>
-        <span class="c1"># drawn on rank 0</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_samples</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_marginal_score</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_marginal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""The marginal scores of this process's candidates: the mean of the</span>
-<span class="sd">        scores over the K models ``model(k)`` of :meth:`_get_marginal_score`.</span>
-<span class="sd">        ``samples`` are their posterior samples for Thompson sampling (see</span>
-<span class="sd">        :func:`physbo.search.score.share_samples`), or None."""</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
-            <span class="n">predictor</span><span class="p">,</span> <span class="n">train</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
-            <span class="n">mode_k</span> <span class="o">=</span> <span class="n">mode</span> <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mode</span><span class="o">.</span><span class="n">with_sample</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-            <span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">(</span>
-                <span class="n">mode_k</span><span class="p">,</span>
-                <span class="n">predictor</span><span class="o">=</span><span class="n">predictor</span><span class="p">,</span>
-                <span class="n">training</span><span class="o">=</span><span class="n">train</span><span class="p">,</span>
-                <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
-                <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Getting next candidates</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mode: str</span>
-<span class="sd">            The type of aquisition funciton.</span>
-<span class="sd">            TS (Thompson Sampling), EI (Expected Improvement) and PI (Probability of Improvement) are available.</span>
-<span class="sd">            These functions are defined in score.py.</span>
-<span class="sd">        N: int</span>
-<span class="sd">            The total number of actions to return.</span>
-<span class="sd">        K: int</span>
-<span class="sd">            The total number of samples to evaluate marginal score</span>
-<span class="sd">        alpha: float</span>
-<span class="sd">            Tuning parameter which is used if mode = TS.</span>
-<span class="sd">            In TS, multi variation is tuned as np.random.multivariate_normal(mean, cov*alpha**2, size).</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        chosen_actions: numpy.ndarray</span>
-<span class="sd">            An N-dimensional array of actions selected in each search process.</span>
-<span class="sd">        """</span>
-        <span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="c1"># TS: one posterior sample for every process, drawn on rank 0</span>
-        <span class="n">first_mode</span> <span class="o">=</span> <span class="n">search_score</span><span class="o">.</span><span class="n">share_sample</span><span class="p">(</span>
-            <span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">comm</span>
-        <span class="p">)</span>
-        <span class="n">f</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_score</span><span class="p">,</span>
-            <span class="n">first_mode</span><span class="p">,</span>
-            <span class="n">predictor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="p">,</span>
-            <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
-            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
-            <span class="n">ucb_beta</span><span class="o">=</span><span class="n">ucb_beta</span><span class="p">,</span>
-            <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="n">local_champion</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
-
-        <span class="n">chosen_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">champion</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-            <span class="n">f</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_marginal_score</span><span class="p">(</span>
-                <span class="n">mode</span><span class="p">,</span> <span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span> <span class="n">K</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ucb_beta</span>
-            <span class="p">)</span>
-            <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_champion</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="k">break</span>
-            <span class="k">if</span> <span class="n">champion</span> <span class="o">==</span> <span class="n">local_champion</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span>
-            <span class="n">chosen_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">champion</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chosen_actions</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_find_champion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""The best candidate over all processes.</span>
-
-<span class="sd">        ``error`` is an exception raised on this process while computing the</span>
-<span class="sd">        scores ``f`` of its candidates (see :func:`physbo._mpi.call`), raised</span>
-<span class="sd">        then on every process.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">error</span>
-        <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">local_fmax</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">local_index</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">local_champion</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">local_fmax</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">)</span>
-            <span class="n">local_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-            <span class="n">local_champion</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">local_fmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="n">local_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="n">local_champion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="n">local_index</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">champion</span> <span class="o">=</span> <span class="n">local_champion</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">local_champions</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-            <span class="n">local_fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_fmax</span><span class="p">)</span>
-            <span class="n">champion_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">local_fs</span><span class="p">)</span>
-            <span class="n">champion</span> <span class="o">=</span> <span class="n">local_champions</span><span class="p">[</span><span class="n">champion_rank</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">champion</span><span class="p">,</span> <span class="n">local_champion</span><span class="p">,</span> <span class="n">local_index</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_random_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Getting indexes of actions randomly.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        N: int</span>
-<span class="sd">            Total number of search candidates.</span>
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        action: numpy.ndarray</span>
-<span class="sd">            Indexes of actions selected randomly from search candidates.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">N</span><span class="p">:</span>
-                <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">),</span> <span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">nactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">),</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">local_indices</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpisize</span><span class="p">)]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpirank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">nactions</span><span class="p">)</span>
-                <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                <span class="n">lo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">if</span> <span class="n">hi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">N</span><span class="p">:</span>
-                    <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">hi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="n">ranks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ranks</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-                    <span class="n">local_indices</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">lo</span><span class="p">[</span><span class="n">r</span><span class="p">])</span>
-            <span class="n">local_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">local_indices</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">local_actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="n">local_indices</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_indices</span><span class="p">)</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_actions</span><span class="p">)</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-            <span class="n">action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">action</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">action</span>
-
 <div class="viewcode-block" id="Policy.save">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.save">[ドキュメント]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_history</span><span class="p">,</span> <span class="n">file_training</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1167,85 +781,18 @@
         <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
 
         <span class="n">visited</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[:</span><span class="n">N</span><span class="p">]</span>
-        <span class="n">local_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">visited</span><span class="p">)</span>
-        <span class="n">local_index</span> <span class="o">=</span> <span class="n">local_index</span><span class="p">[</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">,</span> <span class="n">local_index</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"clip"</span><span class="p">)</span> <span class="o">==</span> <span class="n">visited</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_actions</span><span class="p">(</span><span class="n">local_index</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_after_load</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Policy.export_predictor">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.export_predictor">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returning the predictor dataset</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span></div>
-
-
-<div class="viewcode-block" id="Policy.export_training">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.export_training">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returning the training dataset</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span></div>
-
-
-<div class="viewcode-block" id="Policy.export_history">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete.html#physbo.search.discrete.Policy.export_history">[ドキュメント]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returning the information of the history.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_init_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_rand_expans</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Initialize predictor.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        is_rand_expans: bool</span>
-<span class="sd">            If true, physbo.blm.predictor is selected.</span>
-<span class="sd">            If false, physbo.gp.Predictor is selected.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">is_rand_expans</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_blm_predictor</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_gp_predictor</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Create a GP predictor, with ARD if self.ard is True."""</span>
-        <span class="n">ard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span>
-        <span class="n">num_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_dim</span><span class="p">()</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Model</span><span class="o">.</span><span class="n">create_default</span><span class="p">(</span><span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span> <span class="n">num_dim</span><span class="o">=</span><span class="n">num_dim</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gp_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Create a BLM predictor, with ARD if self.ard is True."""</span>
-        <span class="n">ard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span>
-        <span class="n">num_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_dim</span><span class="p">()</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Model</span><span class="o">.</span><span class="n">create_default</span><span class="p">(</span><span class="n">ard</span><span class="o">=</span><span class="n">ard</span><span class="p">,</span> <span class="n">num_dim</span><span class="o">=</span><span class="n">num_dim</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">blm_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_learn_hyperparameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="n">num_rand_basis</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_statistics</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Get basis and convert to (1, N, n) format for single-objective</span>
         <span class="n">test_Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
         <span class="n">training_Z_basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">get_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
@@ -1256,6 +803,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clear_basis_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="kc">None</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Updating predictor by using new_data, which means a subset of the trained data (self.training) that is not yet added to the predictor.</span>
@@ -1263,82 +814,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_variable_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_X</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Make a new *Variable* with X=test_X</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        test_X: numpy.ndarray or physbo.Variable</span>
-<span class="sd">                The set of candidates. Each row vector represents the feature vector of each search candidate.</span>
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        test_X: numpy.ndarray or physbo.Variable</span>
-<span class="sd">                The set of candidates. Each row vector represents the feature vector of each search candidate.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">test</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">test_X</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_X</span><span class="p">,</span> <span class="n">Variable</span><span class="p">):</span>
-            <span class="n">test</span> <span class="o">=</span> <span class="n">test_X</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"The type of test_X must be ndarray or physbo.Variable"</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">test</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_delete_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">actions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returns remaining actions</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This method itself does not modify *self*</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        index: int</span>
-<span class="sd">            Index of an action to be deleted.</span>
-<span class="sd">        actions: numpy.ndarray</span>
-<span class="sd">            Array of actions.</span>
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        actions: numpy.ndarray</span>
-<span class="sd">            Array of actions which does not include action specified by index.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">actions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span></div>
-
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_run_simulator</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Run simulator and normalize return value to (N, 1) shape.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    simulator: callable</span>
-<span class="sd">        Function that takes action and returns t value(s)</span>
-<span class="sd">    action: numpy.ndarray</span>
-<span class="sd">        Array of actions</span>
-<span class="sd">    comm: MPI.Comm, optional</span>
-<span class="sd">        MPI communicator</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    numpy.ndarray</span>
-<span class="sd">        Normalized array with shape (N, 1)</span>
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">t</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">_mpi</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">normalize_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
            </div>
