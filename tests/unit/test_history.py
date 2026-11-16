@@ -278,14 +278,25 @@ def test_elapsed_times_default_to_zero(kind):
 
 @pytest.mark.parametrize("kind", D.KINDS)
 def test_elapsed_times_of_several_points_per_step(kind):
-    # The times are stored per point and read as if per step (#156, A-1):
-    # the first num_runs entries, not one entry of each step.
+    # one value per step, whatever the number of its points (#156, A-1)
     history = written(kind)
     for name, values in D.TIMES.items():
-        per_point = np.repeat(values, D.STEPS)
-        numpy.testing.assert_array_equal(
-            getattr(history, name), per_point[0 : D.NUM_RUNS]
-        )
+        numpy.testing.assert_array_equal(getattr(history, name), values)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_elapsed_time_of_a_step_without_observations(kind):
+    history = D.new_history(kind)
+    fx = D.objective(kind)
+    points = D.inputs(kind)
+    as_t = (lambda t: t.reshape(-1, 1)) if kind == "discrete" else (lambda t: t)
+    history.write(as_t(fx[0:2]), points[0:2], time_total=[3.0, 3.0])
+    history.write(as_t(fx[0:0]), points[0:0], time_total=[])
+    history.write(as_t(fx[2:3]), points[2:3], time_total=[5.0])
+    history.write(as_t(fx[0:0]), points[0:0])
+    assert history.num_runs == 4
+    assert history.total_num_search == 3
+    numpy.testing.assert_array_equal(history.time_total, [3.0, 0.0, 5.0, 0.0])
 
 
 # ---------------------------------------------------------------------------
@@ -482,7 +493,7 @@ def assert_times_after_load(history, kind):
     """Only the single-objective range class saves the times (#156, A-4)."""
     for name, values in D.TIMES.items():
         if kind == "range":
-            expected = np.repeat(values, D.STEPS)[0 : D.NUM_RUNS]
+            expected = values
         else:
             expected = np.zeros(D.NUM_RUNS)
         numpy.testing.assert_array_equal(getattr(history, name), expected)
@@ -726,9 +737,7 @@ def test_history_pickled_before_the_common_base(kind, failed):
         earlier.best_index[0 : D.TOTAL], best_indices(D.objective(kind, failed))
     )
     for name, values in D.TIMES.items():
-        numpy.testing.assert_array_equal(
-            getattr(earlier, name), np.repeat(values, D.STEPS)[0 : D.NUM_RUNS]
-        )
+        numpy.testing.assert_array_equal(getattr(earlier, name), values)
 
     # and it goes on
     write_one_more(earlier, kind)
@@ -779,3 +788,25 @@ def test_policy_writes_to_the_history_of_its_module(kind):
     )
     points = recorded_inputs(history, kind)
     numpy.testing.assert_array_equal(history.fx[0:4], simulator(points))
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_policy_records_the_times_of_the_steps(kind):
+    policy = make_policy(kind)
+
+    def simulator(action):
+        x = action if D.is_range(kind) else policy.test.X[action]
+        f = -np.sum(x**2, axis=1)
+        return np.c_[f, -np.sum((x - 1) ** 2, axis=1)] if D.is_multi(kind) else f
+
+    policy.random_search(
+        max_num_probes=3, num_search_each_probe=4, simulator=simulator, is_disp=False
+    )
+    history = policy.history
+    for name in D.TIMES:
+        times = getattr(history, name)
+        assert times.shape == (3,)
+        assert np.all(times >= 0.0)
+    assert np.all(history.time_total > 0.0)
+    assert np.all(history.time_total >= history.time_run_simulator)
+    assert np.all(history.time_total >= history.time_get_action)

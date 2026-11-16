@@ -24,7 +24,6 @@ Everything else is in :class:`_HistoryBase`. The classes of the search
 modules derive from the four combinations at the end of this module.
 """
 
-import copy
 import pickle
 
 import numpy as np
@@ -45,10 +44,21 @@ _TIMES = {
 
 
 def _elapsed_time(name):
-    """The property that returns a copy of the times of the steps."""
+    """The property that returns the times of the steps.
+
+    The times are stored with each observation, those of a step with the
+    same value; the time of a step is read from its first observation (and
+    is zero for a step without observations).
+    """
 
     def getter(self):
-        return copy.copy(getattr(self, "_" + name)[0 : self.num_runs])
+        end = self.terminal_num_run[0 : self.num_runs]
+        start = np.zeros_like(end)
+        start[1:] = end[:-1]
+        times = np.zeros(self.num_runs, dtype=float)
+        filled = end > start
+        times[filled] = getattr(self, "_" + name)[start[filled]]
+        return times
 
     return property(getter, doc=f"The elapsed time of {_TIMES[name]}, for each step.")
 
