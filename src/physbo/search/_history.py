@@ -665,14 +665,19 @@ class _SingleObjectiveHistory(_HistoryBase):
         Failed (non-finite) observations are skipped, and best_index stays -1
         until the first valid one. Of equal values the earlier one is kept.
         """
-        fx = self._fx
-        best_index = self._best_index
-        for n in range(st, en):
-            prev = best_index[n - 1] if n > 0 else -1
-            if np.isfinite(fx[n]) and (prev < 0 or fx[n] > fx[prev]):
-                best_index[n] = n
-            else:
-                best_index[n] = prev
+        fx = self._fx[st:en]
+        valid = np.isfinite(fx)
+        previous = self._best_index[st - 1] if st > 0 else -1
+        best_so_far = self._fx[previous] if previous >= 0 else -np.inf
+
+        # the best value before each observation; an observation is the new
+        # best if it is valid and larger than that
+        values = np.where(valid, fx, -np.inf)
+        before = np.maximum.accumulate(np.concatenate(([best_so_far], values)))[:-1]
+        index = np.where(valid & (values > before), np.arange(st, en), previous)
+        # the indexes of the new bests increase, so the last one so far is
+        # the largest
+        self._best_index[st:en] = np.maximum.accumulate(index)
 
     def _best(self, index):
         """The values and the points of the observations ``index``, with NaN

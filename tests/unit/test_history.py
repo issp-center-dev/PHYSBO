@@ -235,6 +235,25 @@ def test_arrays_of_the_times_under_their_earlier_names(kind):
     numpy.testing.assert_array_equal(history.time_get_action, np.full(D.NUM_RUNS, 7.0))
 
 
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_index_of_the_best_of_random_histories(kind):
+    # equal values, failed observations (some, most, all), steps of any size
+    rng = np.random.default_rng(0)
+    for _ in range(300):
+        total = int(rng.integers(0, 40))
+        fx = np.round(rng.normal(size=total), 1)
+        failed = rng.random(total) < rng.choice([0.0, 0.3, 0.9, 1.0])
+        fx[failed] = rng.choice([np.nan, np.inf, -np.inf], size=failed.sum())
+        points = np.zeros((total, D.DIM)) if D.is_range(kind) else np.arange(total)
+        history = D.new_history(kind)
+        st = 0
+        while st < total:
+            en = min(total, st + int(rng.integers(0, 6)))
+            history.write(fx[st:en], points[st:en])
+            st = en
+        numpy.testing.assert_array_equal(history.best_index, best_indices(fx))
+
+
 @pytest.mark.parametrize("kind", D.MULTI)
 def test_front_after_each_step(kind):
     history = D.new_history(kind)
