@@ -16,6 +16,7 @@ total_num_search entries of the arrays are looked at.
 import copy
 import copyreg
 import inspect
+import io
 import os
 import pickle
 
@@ -588,10 +589,11 @@ def test_functions_of_utility_print_the_same(kind, capsys):
 # save and load
 
 
-def assert_times_after_load(history, kind):
-    """Only the single-objective range class saves the times (#156, A-4)."""
+def assert_times_after_load(history, kind, version=None):
+    """The times are saved with the history. Before the classes had one file
+    format, only the single-objective range class saved them (#156, A-4)."""
     for name, values in D.TIMES.items():
-        if kind == "range":
+        if version is None or kind == "range":
             expected = values
         else:
             expected = np.zeros(D.NUM_RUNS)
@@ -617,19 +619,169 @@ def test_save_and_load(kind, failed, tmp_path):
         assert isinstance(loaded.pareto, Pareto)
         numpy.testing.assert_array_equal(loaded.pareto.reference_min, D.REFERENCE_MIN)
         assert loaded.pareto.reference_max is None
-    if kind == "range":
+    else:
         numpy.testing.assert_array_equal(
-            loaded.best_index[0 : D.TOTAL], best_indices(D.objective(kind, failed))
+            loaded.best_index, best_indices(D.objective(kind, failed))
         )
+    assert_same_pickled_state(loaded, history)
 
 
 @pytest.mark.parametrize("kind", D.SINGLE)
 def test_save_appends_the_suffix_of_numpy(kind, tmp_path):
     written(kind).save(str(tmp_path / "history"))
     assert os.listdir(tmp_path) == ["history.npz"]
+    # load finds the file under the name given to save, and under its own
+    for name in ("history", "history.npz"):
+        loaded = D.new_history(kind)
+        loaded.load(str(tmp_path / name))
+        assert_record(loaded, kind)
+    with pytest.raises(FileNotFoundError):
+        D.new_history(kind).load(str(tmp_path / "another"))
+
+
+@pytest.mark.parametrize("kind", D.MULTI)
+def test_multi_save_keeps_the_name_of_the_file(kind, tmp_path):
+    for name in ("history", "history.pkl", "history.npz"):
+        written(kind).save(str(tmp_path / name))
+        loaded = D.new_history(kind)
+        loaded.load(str(tmp_path / name))
+        assert_record(loaded, kind)
+    assert sorted(os.listdir(tmp_path)) == ["history", "history.npz", "history.pkl"]
+    with pytest.raises(FileNotFoundError):
+        D.new_history(kind).load(str(tmp_path / "another"))
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_save_and_load_take_a_path(kind, tmp_path):
+    path = tmp_path / D.file_name(kind)
+    history = written(kind)
+    history.save(path)
     loaded = D.new_history(kind)
-    loaded.load(str(tmp_path / "history.npz"))
-    assert_record(loaded, kind)
+    loaded.load(path)
+    assert_same_pickled_state(loaded, history)
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_single_objective_save_and_load_take_an_open_file(kind):
+    history = written(kind)
+    buffer = io.BytesIO()
+    history.save(buffer)
+    buffer.seek(0)
+    loaded = D.new_history(kind)
+    loaded.load(buffer)
+    assert_same_pickled_state(loaded, history)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_replaces_what_the_history_holds(kind, tmp_path):
+    # the elapsed times of the history that was in use stayed behind
+    file_name = str(tmp_path / D.file_name(kind))
+    saved = written(kind, steps=D.STEPS[0:2], with_times=False)
+    saved.save(file_name)
+
+    used, *_ = many_observations(kind, 200)
+    if D.is_multi(kind):
+        used.pareto.set_reference_min(D.REFERENCE_MIN)
+    used.load(file_name)
+    assert_same_pickled_state(used, saved)
+    numpy.testing.assert_array_equal(used.time_total, [0.0, 0.0])
+    if D.is_multi(kind):
+        assert used.pareto.reference_min is None
+
+
+def files_of_another_kind(kind, directory):
+    """Files that the history of the kind must refuse, by what is wrong."""
+    files = {}
+    for other in D.KINDS:
+        if D.is_range(other) != D.is_range(kind) or D.is_multi(other) != D.is_multi(
+            kind
+        ):
+            files[other] = os.path.join(directory, "of_" + other)
+            written(other).save(files[other])
+            if not D.is_multi(other):
+                files[other] += ".npz"
+    # the same kind with another dimension or number of objectives
+    cls = history_class(kind)
+    if D.is_range(kind):
+        kwargs = {"dim": D.DIM + 1}
+        if D.is_multi(kind):
+            kwargs["num_objectives"] = D.NUM_OBJECTIVES
+        other = cls(**kwargs)
+        t = D.objective(kind)[0:2]
+        other.write(t, np.zeros((2, D.DIM + 1)))
+        files["dim"] = os.path.join(directory, "of_another_dim.npz")
+        other.save(files["dim"])
+    if D.is_multi(kind):
+        kwargs = {"num_objectives": D.NUM_OBJECTIVES + 1}
+        if D.is_range(kind):
+            kwargs["dim"] = D.DIM
+        other = cls(**kwargs)
+        other.write(np.zeros((2, D.NUM_OBJECTIVES + 1)), D.inputs(kind)[0:2])
+        files["objectives"] = os.path.join(directory, "of_other_objectives.npz")
+        other.save(files["objectives"])
+    return files
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_refuses_the_file_of_another_kind_of_history(kind, tmp_path):
+    history = written(kind)
+    state = state_of(history, kind)
+    files = files_of_another_kind(kind, str(tmp_path))
+    assert len(files) >= 4
+    for what, file_name in files.items():
+        with pytest.raises(ValueError, match="not the file of a history of this kind"):
+            history.load(file_name)
+        assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.SINGLE)
+def test_single_objective_load_does_not_unpickle(kind, tmp_path):
+    # only the multi-objective classes ever saved pickles
+    file_name = str(tmp_path / "pickled")
+    with open(file_name, "wb") as f:
+        pickle.dump({"num_runs": 0, "total_num_search": 0}, f)
+    with pytest.raises(ValueError, match="allow_pickle"):
+        D.new_history(kind).load(file_name)
+
+
+@pytest.mark.parametrize("kind", D.MULTI)
+def test_reference_points_are_saved(kind, tmp_path):
+    file_name = str(tmp_path / "history")
+
+    def reloaded(history):
+        history.save(file_name)
+        loaded = D.new_history(kind)
+        loaded.load(file_name)
+        return loaded
+
+    # none
+    loaded = reloaded(written(kind))
+    assert loaded.pareto.reference_min is None
+    assert loaded.pareto.reference_max is None
+
+    # one estimated from the front, one given
+    history = written(kind)
+    history.pareto.set_reference_min()
+    history.pareto.set_reference_max([50.0, 60.0])
+    loaded = reloaded(history)
+    numpy.testing.assert_array_equal(
+        loaded.pareto.reference_min, history.pareto.reference_min
+    )
+    assert loaded.pareto.reference_min.shape == history.pareto.reference_min.shape
+    numpy.testing.assert_array_equal(loaded.pareto.reference_max, [50.0, 60.0])
+
+    # an estimated one follows the front, a given one stays: a point beyond
+    # both, in the loaded history as in the one it was saved from
+    beyond = np.array([[-100.0, 100.0]])
+    for h in (history, loaded):
+        h.write(beyond, D.inputs(kind)[0:1])
+        with pytest.warns(RuntimeWarning, match="reference_max"):
+            h.pareto.prepare_reference_points()
+    assert np.all(history.pareto.reference_min <= beyond)
+    numpy.testing.assert_array_equal(
+        loaded.pareto.reference_min, history.pareto.reference_min
+    )
+    numpy.testing.assert_array_equal(loaded.pareto.reference_max, [50.0, 60.0])
 
 
 @pytest.mark.parametrize("kind", D.KINDS)
@@ -663,7 +815,7 @@ def test_files_of_earlier_versions(kind, version):
     history.load(os.path.join(DATA, version, D.file_name(kind)))
     assert_record(history, kind)
     assert_summary(history, kind)
-    assert_times_after_load(history, kind)
+    assert_times_after_load(history, kind, version)
     if D.is_multi(kind):
         numpy.testing.assert_array_equal(history.pareto.reference_min, D.REFERENCE_MIN)
         assert history.pareto.reference_max is None
@@ -729,28 +881,39 @@ def test_signature_of_write(kind):
 @pytest.mark.parametrize("kind", D.KINDS)
 def test_entries_of_the_saved_file(kind, tmp_path):
     file_name = str(tmp_path / D.file_name(kind))
-    written(kind).save(file_name)
+    history = written(kind)
+    if D.is_multi(kind):
+        history.pareto.set_reference_min(D.REFERENCE_MIN)
+        history.pareto.set_reference_max()
+    history.save(file_name)
 
+    # an archive of numpy, without pickles, for all classes
+    with np.load(file_name, allow_pickle=False) as archive:
+        data = dict(archive)
     expected = {"num_runs", "total_num_search", "fx", "terminal_num_run"}
     expected.add("action_X" if D.is_range(kind) else "chosen_actions")
+    expected |= set(D.TIMES)
     if D.is_multi(kind):
-        expected.add("pareto")
-        with open(file_name, "rb") as f:
-            data = pickle.load(f)
-        assert isinstance(data["pareto"], Pareto)
+        expected |= {"reference_min", "reference_min_estimated"}
+        expected |= {"reference_max", "reference_max_estimated"}
+        numpy.testing.assert_array_equal(data["reference_min"], D.REFERENCE_MIN)
+        assert not data["reference_min_estimated"]
+        assert data["reference_max_estimated"]
     else:
-        if kind == "range":
-            expected |= {"best_index"} | set(D.TIMES)
-        data = dict(np.load(file_name))
+        expected.add("best_index")
+        numpy.testing.assert_array_equal(
+            data["best_index"], best_indices(D.objective(kind))
+        )
     assert set(data) == expected
     assert int(data["num_runs"]) == D.NUM_RUNS
     assert int(data["total_num_search"]) == D.TOTAL
     numpy.testing.assert_array_equal(data["fx"], D.objective(kind))
     numpy.testing.assert_array_equal(data["terminal_num_run"], D.TERMINAL)
-    if kind == "range":
-        # the times, per observation
-        for name, values in D.TIMES.items():
-            numpy.testing.assert_array_equal(data[name], np.repeat(values, D.STEPS))
+    column = "action_X" if D.is_range(kind) else "chosen_actions"
+    numpy.testing.assert_array_equal(data[column], D.inputs(kind))
+    # the times, per observation
+    for name, values in D.TIMES.items():
+        numpy.testing.assert_array_equal(data[name], np.repeat(values, D.STEPS))
 
 
 @pytest.mark.parametrize("kind", D.SINGLE)

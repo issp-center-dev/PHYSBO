@@ -29,6 +29,7 @@ storage that grows as observations are written, so an array obtained before
 a call of ``write`` does not show what is written afterwards.
 """
 
+import os
 import pickle
 
 import numpy as np
@@ -308,30 +309,108 @@ class _HistoryBase:
         raise NotImplementedError
 
     def _saved_arrays(self):
-        """The entries of the file of ``save`` that all classes write."""
-        return {
+        """The entries of the file of ``save``."""
+        N = self.total_num_search
+        data = {
             "num_runs": self.num_runs,
-            "total_num_search": self.total_num_search,
+            "total_num_search": N,
             "fx": self.fx,
             self._column_name: self._points,
-            "terminal_num_run": self.terminal_num_run,
         }
+        data.update(self._saved_summary())
+        data["terminal_num_run"] = self.terminal_num_run
+        # with one entry per observation, as they are stored
+        for name in _TIMES:
+            data[name] = getattr(self, "_" + name)[0:N]
+        return data
 
-    def _restore_arrays(self, data):
-        """Take the entries of :meth:`_saved_arrays` from a loaded file, in
-        place of what the history holds."""
-        M = int(data["num_runs"])
-        N = int(data["total_num_search"])
-        fx = np.zeros((N,) + self._fx_shape(), dtype=float)
-        points = np.zeros((N,) + self._column_shape(), dtype=self._column_dtype)
-        terminal_num_run = np.zeros(M, dtype=int)
-        fx[...] = data["fx"]
-        points[...] = data[self._column_name]
-        terminal_num_run[...] = data["terminal_num_run"]
+    def _saved_summary(self):
+        """What the class saves of its summary."""
+        raise NotImplementedError
+
+    def load(self, filename):
+        """
+        Load the information of the history, in place of what it holds.
+
+        The file is one written by ``save``, of this or of an earlier
+        version. If there is no file of this name but one with ".npz"
+        appended (as numpy does when saving), that one is read.
+
+        Parameters
+        ----------
+        filename: str
+            The name of the file which stores the information of the history
+
+        Raises
+        ------
+        ValueError
+            If the file is not that of a history of this kind (an entry is
+            missing, or the arrays do not have the shape of this history).
+            The history is left as it was.
+        """
+        data = self._read_saved(filename)
+        try:
+            M = int(data["num_runs"])
+            N = int(data["total_num_search"])
+            arrays = {
+                "fx": ((N,) + self._fx_shape(), float),
+                self._column_name: ((N,) + self._column_shape(), self._column_dtype),
+                "terminal_num_run": ((M,), int),
+            }
+            # a file of an earlier version may not have the times
+            arrays.update({name: ((N,), float) for name in _TIMES if name in data})
+            loaded = {}
+            for name, (shape, dtype) in arrays.items():
+                loaded[name] = np.array(data[name], dtype=dtype)
+                if loaded[name].shape != shape:
+                    raise ValueError(
+                        f"{name} has the shape {loaded[name].shape}, not {shape}"
+                    )
+        except (KeyError, ValueError) as error:
+            what = f"no entry {error}" if isinstance(error, KeyError) else str(error)
+            raise ValueError(
+                f"{filename} is not the file of a history of this kind"
+                f" ({type(self).__module__}.{type(self).__name__}): {what}"
+            ) from None
 
         self.num_runs = M
         self.total_num_search = N
-        self._set_storage(fx, points, terminal_num_run)
+        self._set_storage(
+            loaded["fx"], loaded[self._column_name], loaded["terminal_num_run"]
+        )
+        for name in _TIMES:
+            if name in loaded:
+                setattr(self, "_" + name, loaded[name])
+        self._restore_summary(data)
+
+    #: whether ``load`` also reads the pickles that the multi-objective
+    #: classes used to save
+    _loads_pickles = False
+
+    def _read_saved(self, filename):
+        """The entries of a file written by ``save``, as a dict."""
+        if not isinstance(filename, (str, os.PathLike)):
+            # an open file: numpy reads it
+            with np.load(filename) as archive:
+                return dict(archive)
+
+        path = os.fspath(filename)
+        if not os.path.exists(path) and os.path.exists(path + ".npz"):
+            path += ".npz"
+        if self._loads_pickles:
+            # an archive of numpy is a zip file
+            with open(path, "rb") as f:
+                is_archive = f.read(2) == b"PK"
+            if not is_archive:
+                with open(path, "rb") as f:
+                    return pickle.load(f)
+        with np.load(path) as archive:
+            return dict(archive)
+
+    def _restore_summary(self, data):
+        """Make the summary of the observations that were loaded, with what
+        the file holds of it."""
+        raise NotImplementedError
 
 
 # ---------------------------------------------------------------------------
@@ -652,7 +731,8 @@ class _SingleObjectiveHistory(_HistoryBase):
 
     def save(self, filename):
         """
-        Save the information of the history.
+        Save the information of the history, as an archive of numpy
+        (``numpy.savez_compressed``).
 
         Parameters
         ----------
@@ -662,23 +742,14 @@ class _SingleObjectiveHistory(_HistoryBase):
         """
         np.savez_compressed(filename, **self._saved_arrays())
 
-    def load(self, filename):
-        """
-        Load the information of the history.
+    def _saved_summary(self):
+        return {"best_index": self.best_index}
 
-        Parameters
-        ----------
-        filename: str
-            The name of the file which stores the information of the history
-        """
-        data = np.load(filename)
-        # best_index is made from fx: the saved one may refer to a failed
-        # observation if the file was written by an older version
-        self._restore_arrays(data)
-        self._restore_more(data)
-
-    def _restore_more(self, data):
-        """Take what the class saves in addition from a loaded file."""
+    def _restore_summary(self, data):
+        # best_index has been made from fx with the storage: the saved one
+        # may refer to a failed observation if the file was written by an
+        # older version
+        pass
 
     def show_search_results(self, N):
         """Print the last N observations and the best value so far."""
@@ -750,36 +821,55 @@ class _MultiObjectiveHistory(_HistoryBase):
         """
         return self.pareto.export_front()
 
+    _loads_pickles = True
+
     def save(self, filename):
         """
-        Save the information of the history, with the Pareto front.
+        Save the information of the history, as an archive of numpy
+        (``numpy.savez_compressed``). The reference points of the Pareto
+        front are saved with it; the front itself is made again from the
+        observations when the file is loaded.
 
         Parameters
         ----------
         filename: str
-            The name of the file which stores the information of the history
+            The name of the file which stores the information of the
+            history. It is used as it is (".npz" is not appended).
         """
-        obj = self._saved_arrays()
-        obj["pareto"] = self.pareto
-
         with open(filename, "wb") as f:
-            pickle.dump(obj, f)
+            np.savez_compressed(f, **self._saved_arrays())
 
-    def load(self, filename):
-        """
-        Load the information of the history.
+    def _saved_summary(self):
+        # the reference points that are set, and whether they were estimated
+        # from the front (then they follow it) or given
+        data = {}
+        for side in ("min", "max"):
+            reference = getattr(self.pareto, "reference_" + side)
+            if reference is None:
+                continue
+            estimated = getattr(self.pareto, "_estimated_reference_" + side, None)
+            data["reference_" + side] = np.asarray(reference, dtype=float)
+            data["reference_" + side + "_estimated"] = reference is estimated
+        return data
 
-        Parameters
-        ----------
-        filename: str
-            The name of the file which stores the information of the history
-        """
-        with open(filename, "rb") as f:
-            data = pickle.load(f)
-
-        self._restore_arrays(data)
-        self.pareto = data["pareto"]
-        # the front is recomputed from fx: the saved one may contain failed
+    def _restore_summary(self, data):
+        if "pareto" in data:
+            # a pickle of an earlier version, with the Pareto object
+            self.pareto = data["pareto"]
+        else:
+            self.pareto = pareto.Pareto(num_objectives=self.num_objectives)
+            for side in ("min", "max"):
+                if "reference_" + side not in data:
+                    continue
+                reference = np.array(data["reference_" + side], dtype=float)
+                estimated = bool(data["reference_" + side + "_estimated"])
+                setattr(self.pareto, "reference_" + side, reference)
+                setattr(
+                    self.pareto,
+                    "_estimated_reference_" + side,
+                    reference if estimated else None,
+                )
+        # the front is made from fx: a saved one may contain failed
         # observations if the file was written by an older version
         self.pareto.rebuild_front(self.fx, self.terminal_num_run)
 
@@ -843,27 +933,11 @@ class _DiscreteHistory(_ActionColumn, _SingleObjectiveHistory):
 
 
 class _RangeHistory(_PointColumn, _SingleObjectiveHistory):
-    """Single objective, continuous search space. Unlike the other classes,
-    it saves ``best_index`` and the elapsed times."""
+    """Single objective, continuous search space."""
 
     def __init__(self, dim: int):
         self.dim = dim
         self._allocate()
-
-    def _saved_arrays(self):
-        data = super()._saved_arrays()
-        # in the order of the entries of the files written so far
-        terminal_num_run = data.pop("terminal_num_run")
-        data["best_index"] = self.best_index
-        data["terminal_num_run"] = terminal_num_run
-        for name in _TIMES:
-            data[name] = getattr(self, "_" + name)[0 : self.total_num_search]
-        return data
-
-    def _restore_more(self, data):
-        N = self.total_num_search
-        for name in _TIMES:
-            getattr(self, "_" + name)[0:N] = data[name]
 
 
 class _DiscreteMultiHistory(_ActionColumn, _MultiObjectiveHistory):
