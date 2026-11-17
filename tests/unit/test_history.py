@@ -305,6 +305,17 @@ def test_elapsed_times_of_several_points_per_step(kind):
 
 
 @pytest.mark.parametrize("kind", D.KINDS)
+def test_elapsed_time_of_a_step_is_that_of_its_first_observation(kind):
+    # the policies give the same value for the observations of a step
+    history = D.new_history(kind)
+    history.write(D.objective(kind)[0:1], D.inputs(kind)[0:1], time_total=[1.0])
+    history.write(
+        D.objective(kind)[1:4], D.inputs(kind)[1:4], time_total=[2.0, 3.0, 4.0]
+    )
+    numpy.testing.assert_array_equal(history.time_total, [1.0, 2.0])
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
 def test_elapsed_time_of_a_step_without_observations(kind):
     history = D.new_history(kind)
     fx = D.objective(kind)
@@ -417,8 +428,17 @@ def test_write_checks_the_elapsed_times(kind):
     t = D.objective(kind)[0:2]
     points = D.inputs(kind)[0:2]
     for name in D.TIMES:
-        for values in ([1.0, 2.0, 3.0], np.zeros((2, 1)), []):
+        for values in (
+            [1.0, 2.0, 3.0],
+            np.zeros((2, 1)),
+            np.zeros((1, 2)),
+            [[1.0]],
+            [],
+        ):
             with pytest.raises(ValueError, match=name + " must have"):
+                history.write(t, points, **{name: values})
+        for values in ([None, 1.0], "12", ["1.0", "2.0"]):
+            with pytest.raises(ValueError, match=name + " must be numbers"):
                 history.write(t, points, **{name: values})
     # the counters used to be raised before the times were looked at
     assert_same_state(history, kind, state)
@@ -428,6 +448,50 @@ def test_write_checks_the_elapsed_times(kind):
     assert history.time_total[-1] == 7.0
     assert history.time_get_action[-1] == 0.5
     assert history.time_run_simulator[-1] == 0.0
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_write_refuses_what_is_not_a_number(kind):
+    # numpy would make NaN of None, numbers of strings and integers of floats
+    history = written(kind, steps=D.STEPS[0:2])
+    state = state_of(history, kind)
+    t = D.objective(kind)[0:2]
+    points = D.inputs(kind)[0:2]
+    for bad in (None, [None, None], t.astype(str), t.astype(object), "1.5", t > 0):
+        with pytest.raises(ValueError, match="t must be numbers"):
+            history.write(bad, points)
+    name = "action_X" if D.is_range(kind) else "action"
+    for bad in (None, points.astype(str), points.astype(object), [None, None]):
+        with pytest.raises(ValueError, match=name + " must be"):
+            history.write(t, bad)
+    if not D.is_range(kind):
+        for bad in (points.astype(float), points + 0.7, points > 0):
+            with pytest.raises(ValueError, match="action must be integers"):
+                history.write(t, bad)
+    assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_write_takes_integers_as_objective_values(kind):
+    t = np.array([[1, 5], [2, 2]]) if D.is_multi(kind) else np.array([3, -4])
+    for values in (t, t.tolist(), t.astype(np.float32)):
+        history = D.new_history(kind)
+        history.write(values, D.inputs(kind)[0:2])
+        assert history.fx.dtype == float
+        numpy.testing.assert_array_equal(history.fx, t)
+    if D.is_range(kind):
+        history = D.new_history(kind)
+        history.write(t, np.array([[1, 2], [3, 4]]))
+        assert history.action_X.dtype == float
+        numpy.testing.assert_array_equal(history.action_X, [[1.0, 2.0], [3.0, 4.0]])
+
+
+def test_message_names_the_shape_that_was_given():
+    history = physbo.search.range.History(dim=2)
+    with pytest.raises(ValueError, match=r"its shape is \(3,\)"):
+        history.write(np.zeros(1), np.zeros(3))
+    with pytest.raises(ValueError, match=r"its shape is \(2, 1, 1\)"):
+        history.write(np.zeros((2, 1, 1)), np.zeros((2, 2)))
 
 
 @pytest.mark.parametrize("kind", D.MULTI)

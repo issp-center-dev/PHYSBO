@@ -25,8 +25,11 @@ modules derive from the four combinations at the end of this module.
 
 The arrays of a history (``fx``, the points, ``terminal_num_run``, ...) have
 as many entries as there are observations or steps. They are views of
-storage that grows as observations are written, so an array obtained before
-a call of ``write`` does not show what is written afterwards.
+storage that grows as observations are written. An array obtained before a
+call of ``write`` or ``load`` is to be taken from the history again
+afterwards: it does not show what was written since, and what is assigned
+to its entries may no longer reach the history, whose storage may have
+moved.
 """
 
 import os
@@ -95,6 +98,16 @@ def _grown(array, rows):
     grown = np.zeros((max(rows, 2 * len(array)),) + array.shape[1:], array.dtype)
     grown[0 : len(array)] = array
     return grown
+
+
+def _numbers(values, name, kinds="fiu", what="numbers"):
+    """The values as an array, if they are numbers: neither None, nor
+    strings, nor objects, which numpy would turn into NaN or into numbers
+    without notice. (An empty array is taken whatever its type.)"""
+    array = np.asarray(values)
+    if array.dtype.kind not in kinds and array.size > 0:
+        raise ValueError(f"{name} must be {what}: its type is {array.dtype}")
+    return array
 
 
 class _HistoryBase:
@@ -268,10 +281,11 @@ class _HistoryBase:
         Raises
         ------
         ValueError
-            If an argument does not have a shape the class accepts, or if
-            the numbers of objective values and of points differ.
+            If an argument does not hold numbers, does not have a shape the
+            class accepts, or if the numbers of objective values and of
+            points differ.
         """
-        t = self._as_objective_values(np.asarray(t, dtype=float))
+        t = self._as_objective_values(_numbers(t, "t").astype(float))
         points = self._as_points(np.asarray(points))
         if t.shape[0] != points.shape[0]:
             raise ValueError(
@@ -296,7 +310,7 @@ class _HistoryBase:
         one value for all of them or one each otherwise."""
         if values is None:
             return np.zeros(N, dtype=float)
-        values = np.asarray(values, dtype=float)
+        values = _numbers(values, name).astype(float)
         if values.shape not in ((), (1,), (N,)):
             raise ValueError(
                 f"{name} must have one value, or one for each of the {N}"
@@ -438,6 +452,8 @@ class _ActionColumn:
     )
 
     def _as_points(self, points):
+        # an index given as a float would be cut to an integer
+        points = _numbers(points, "action", kinds="iu", what="integers")
         if points.ndim == 0:
             points = points.reshape(1)
         if points.ndim != 1:
@@ -526,12 +542,14 @@ class _PointColumn:
     )
 
     def _as_points(self, points):
+        points = _numbers(points, "action_X").astype(float)
+        shape = points.shape
         if points.ndim == 1:
             points = points.reshape(1, -1)
         if points.ndim != 2 or points.shape[1] != self.dim:
             raise ValueError(
                 f"action_X must be a point of {self.dim} coordinates or an"
-                f" N x {self.dim} array: its shape is {points.shape}"
+                f" N x {self.dim} array: its shape is {shape}"
             )
         return points
 
