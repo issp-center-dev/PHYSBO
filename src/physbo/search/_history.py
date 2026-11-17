@@ -363,24 +363,42 @@ class _HistoryBase:
             The history is left as it was.
         """
         data = self._read_saved(filename)
+        # everything is read and checked before anything is replaced
         try:
+            if not hasattr(data, "keys"):
+                raise ValueError("it does not hold named entries")
             M = int(data["num_runs"])
             N = int(data["total_num_search"])
+            integers = ("iu", "integers")
+            numbers = ("fiu", "numbers")
             arrays = {
-                "fx": ((N,) + self._fx_shape(), float),
-                self._column_name: ((N,) + self._column_shape(), self._column_dtype),
-                "terminal_num_run": ((M,), int),
+                "fx": ((N,) + self._fx_shape(), float, numbers),
+                self._column_name: (
+                    (N,) + self._column_shape(),
+                    self._column_dtype,
+                    integers if self._column_dtype is int else numbers,
+                ),
+                "terminal_num_run": ((M,), int, integers),
             }
             # a file of an earlier version may not have the times
-            arrays.update({name: ((N,), float) for name in _TIMES if name in data})
+            for name in _TIMES:
+                if name in data:
+                    arrays[name] = ((N,), float, numbers)
             loaded = {}
-            for name, (shape, dtype) in arrays.items():
-                loaded[name] = np.array(data[name], dtype=dtype)
-                if loaded[name].shape != shape:
-                    raise ValueError(
-                        f"{name} has the shape {loaded[name].shape}, not {shape}"
-                    )
-        except (KeyError, ValueError) as error:
+            for name, (shape, dtype, (kinds, what)) in arrays.items():
+                array = _numbers(data[name], name, kinds, what).astype(dtype)
+                if array.shape != shape:
+                    raise ValueError(f"{name} has the shape {array.shape}, not {shape}")
+                loaded[name] = array
+            # the steps follow one another and end with the last observation
+            ends = np.concatenate(([0], loaded["terminal_num_run"]))
+            if np.any(np.diff(ends) < 0) or ends[-1] != N:
+                raise ValueError(
+                    f"terminal_num_run does not lead to {N} observations:"
+                    f" {loaded['terminal_num_run']}"
+                )
+            summary = self._read_summary(data)
+        except (KeyError, ValueError, TypeError) as error:
             what = f"no entry {error}" if isinstance(error, KeyError) else str(error)
             raise ValueError(
                 f"{filename} is not the file of a history of this kind"
@@ -395,7 +413,7 @@ class _HistoryBase:
         for name in _TIMES:
             if name in loaded:
                 setattr(self, "_" + name, loaded[name])
-        self._restore_summary(data)
+        self._set_summary(summary)
 
     #: whether ``load`` also reads the pickles that the multi-objective
     #: classes used to save
@@ -403,27 +421,43 @@ class _HistoryBase:
 
     def _read_saved(self, filename):
         """The entries of a file written by ``save``, as a dict."""
-        if not isinstance(filename, (str, os.PathLike)):
-            # an open file: numpy reads it
-            with np.load(filename) as archive:
-                return dict(archive)
-
-        path = os.fspath(filename)
-        if not os.path.exists(path) and os.path.exists(path + ".npz"):
-            path += ".npz"
-        if self._loads_pickles:
-            # an archive of numpy is a zip file
-            with open(path, "rb") as f:
-                is_archive = f.read(2) == b"PK"
-            if not is_archive:
+        source = filename
+        if isinstance(filename, (str, bytes, os.PathLike)):
+            path = os.fspath(filename)
+            suffix = b".npz" if isinstance(path, bytes) else ".npz"
+            if not os.path.isfile(path) and os.path.isfile(path + suffix):
+                path += suffix
+            if self._loads_pickles:
+                # an archive of numpy is a zip file
                 with open(path, "rb") as f:
-                    return pickle.load(f)
-        with np.load(path) as archive:
-            return dict(archive)
+                    is_archive = f.read(2) == b"PK"
+                if not is_archive:
+                    try:
+                        with open(path, "rb") as f:
+                            return pickle.load(f)
+                    except Exception as error:
+                        raise ValueError(
+                            f"{filename} is neither an archive of numpy (.npz),"
+                            " as save writes, nor a pickle of an earlier"
+                            f" version: {error}"
+                        ) from error
+            source = path
+        # else an open file, which numpy reads
+        archive = np.load(source)
+        if not hasattr(archive, "files"):
+            raise ValueError(
+                f"{filename} is not an archive of numpy (.npz), as save writes"
+            )
+        with archive:
+            return {name: archive[name] for name in archive.files}
 
-    def _restore_summary(self, data):
-        """Make the summary of the observations that were loaded, with what
-        the file holds of it."""
+    def _read_summary(self, data):
+        """What the file holds of the summary, checked and ready for
+        :meth:`_set_summary`. It does not change the history."""
+        raise NotImplementedError
+
+    def _set_summary(self, summary):
+        """Make the summary of the observations that were loaded."""
         raise NotImplementedError
 
 
@@ -768,10 +802,13 @@ class _SingleObjectiveHistory(_HistoryBase):
     def _saved_summary(self):
         return {"best_index": self.best_index}
 
-    def _restore_summary(self, data):
-        # best_index has been made from fx with the storage: the saved one
-        # may refer to a failed observation if the file was written by an
-        # older version
+    def _read_summary(self, data):
+        # best_index is made from fx with the storage: the saved one may
+        # refer to a failed observation if the file was written by an older
+        # version
+        return None
+
+    def _set_summary(self, summary):
         pass
 
     def show_search_results(self, N):
@@ -859,6 +896,10 @@ class _MultiObjectiveHistory(_HistoryBase):
             The name of the file which stores the information of the
             history. It is used as it is (".npz" is not appended).
         """
+        if hasattr(filename, "write"):
+            # an open file
+            np.savez_compressed(filename, **self._saved_arrays())
+            return
         with open(filename, "wb") as f:
             np.savez_compressed(f, **self._saved_arrays())
 
@@ -875,26 +916,46 @@ class _MultiObjectiveHistory(_HistoryBase):
             data["reference_" + side + "_estimated"] = reference is estimated
         return data
 
-    def _restore_summary(self, data):
+    def _read_summary(self, data):
         if "pareto" in data:
             # a pickle of an earlier version, with the Pareto object
-            self.pareto = data["pareto"]
-        else:
-            self.pareto = pareto.Pareto(num_objectives=self.num_objectives)
-            for side in ("min", "max"):
-                if "reference_" + side not in data:
-                    continue
-                reference = np.array(data["reference_" + side], dtype=float)
-                estimated = bool(data["reference_" + side + "_estimated"])
-                setattr(self.pareto, "reference_" + side, reference)
-                setattr(
-                    self.pareto,
-                    "_estimated_reference_" + side,
-                    reference if estimated else None,
+            if not isinstance(data["pareto"], pareto.Pareto):
+                raise ValueError("pareto is not a Pareto front")
+            return data["pareto"]
+
+        front = pareto.Pareto(num_objectives=self.num_objectives)
+        for side in ("min", "max"):
+            name = "reference_" + side
+            if name not in data:
+                continue
+            reference = _numbers(data[name], name).astype(float)
+            if reference.size != self.num_objectives:
+                raise ValueError(
+                    f"{name} has {reference.size} values for"
+                    f" {self.num_objectives} objectives"
                 )
+            estimated = np.asarray(data[name + "_estimated"])
+            if estimated.size != 1:
+                raise ValueError(f"{name}_estimated is not one value")
+            setattr(front, name, reference)
+            setattr(
+                front,
+                "_estimated_" + name,
+                reference if bool(estimated.reshape(-1)[0]) else None,
+            )
+        return front
+
+    def _set_summary(self, summary):
+        self.pareto = summary
         # the front is made from fx: a saved one may contain failed
         # observations if the file was written by an older version
         self.pareto.rebuild_front(self.fx, self.terminal_num_run)
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        if "fx" in state:
+            # pickled by an earlier version, as its files were
+            self.pareto.rebuild_front(self.fx, self.terminal_num_run)
 
     def show_search_results_mo(self, N, disp_pareto_set=False):
         """Print the last N observations, and the Pareto front if they have
