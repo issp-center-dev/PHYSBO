@@ -9,14 +9,14 @@ from .._history import _DiscreteMultiHistory
 
 
 class History(_DiscreteMultiHistory):
-    """The history of a search with unified objectives in a discrete search
-    space (physbo.search.discrete_unified.Policy).
+    """The history of a search with unified objectives in a discrete search space
+    (physbo.search.discrete_unified.Policy).
 
-    It records the objectives themselves, not the unified one. The
-    observations are in ``fx`` (the objective values, one column per
-    objective) and ``chosen_actions`` (the indexes of the actions); the first
-    ``total_num_search`` rows of these arrays are used. ``pareto`` is the
-    Pareto front of the observations.
+    It records the objectives themselves, not the unified one. The observations
+    are in ``fx`` (the objective values, one column per objective) and
+    ``chosen_actions`` (the indexes of the actions), with one row per
+    observation (``total_num_search`` of them). ``pareto`` is the Pareto front
+    of the observations.
 
     Parameters
     ----------

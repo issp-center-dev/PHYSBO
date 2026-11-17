@@ -9,12 +9,11 @@ from .._history import _RangeHistory
 
 
 class History(_RangeHistory):
-    """The history of a search for a single objective in a continuous search
-    space (physbo.search.range.Policy).
+    """The history of a search for a single objective in a continuous search space
+    (physbo.search.range.Policy).
 
-    The observations are in ``fx`` (the objective values) and ``action_X``
-    (the inputs); the first ``total_num_search`` rows of these arrays are
-    used.
+    The observations are in ``fx`` (the objective values) and ``action_X`` (the
+    inputs), with one row per observation (``total_num_search`` of them).
 
     Parameters
     ----------
