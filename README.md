@@ -80,6 +80,19 @@ For an introductory tutorial please consult the documentation. ([English](https:
 
 ['examples/simple.py'](./examples/simple.py) is a simple example.
 
+### JSON ask-tell API, MCP server and Skills (for tools and AI agents)
+
+- `physbo.api`: a stateless JSON-in/JSON-out interface for discrete single-objective search. It provides `schema()`, `validate(request)`, `suggest(request)`, `predict(request)` and `versions()`. It writes no files, restores the global NumPy RNG state, and returns structured issues instead of raising on bad input.
+- `physbo-mcp`: an MCP server over the same functions (`pip install "physbo[mcp]"`). Its tools are `get_schema`, `validate_request`, `suggest_next`, `predict_posterior` and `versions`. PHYSBO only proposes candidates, so there is no tool that runs a calculation.
+- `skills/`: task-oriented guidance for AI coding agents (`physbo-practice`, `physbo-search-pitfalls`).
+- `integration/vlab/manifest.yaml`: the catalog entry for workflow tools such as V-Lab Platform.
+
+Example MCP client configuration:
+
+```json
+{ "mcpServers": { "physbo": { "command": "physbo-mcp" } } }
+```
+
 ## Data repository
 
 A tutorial and a dataset of a paper about PHYSBO can be found in [PHYSBO Gallery](https://isspns-gitlab.issp.u-tokyo.ac.jp/physbo-dev/physbo-gallery).

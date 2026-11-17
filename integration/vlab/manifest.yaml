@@ -1,0 +1,30 @@
+# Catalog entry for V-Lab Platform (module-pack template v1).
+# V-Lab calls PHYSBO through its own allowlisted adapter; MCP and Skills are for people and AI agents.
+- id: O02
+  name: "PHYSBO"
+  kind: optimizer
+  version: "3.2.1"
+  availability: optional
+  enabled: true
+  capabilities: [bayesian, discrete]
+  cost_class: medium
+  adapter_status: verified          # set by V-Lab after its adapter tests pass
+  summary_ja: "離散候補集合に対するベイズ最適化 (ガウス過程)"
+  upstream: "https://github.com/issp-center-dev/PHYSBO"
+  repository: { url: "https://github.com/issp-center-dev/PHYSBO", ref: "v3.2.1" }
+  license: { spdx: "MPL-2.0", verified: true, source: "pyproject.toml" }
+  python_import: physbo
+  install_hint: "pip install physbo   (MCP server: pip install \"physbo[mcp]\")"
+  docs:
+    readme: "README.md"
+    manual: "https://issp-center-dev.github.io/PHYSBO/"
+  skills:
+    - { name: physbo-practice, path: "skills/physbo-practice/SKILL.md" }
+    - { name: physbo-search-pitfalls, path: "skills/physbo-search-pitfalls/SKILL.md" }
+  mcp: { status: available, server: "physbo-mcp", notes: "stateless ask-tell tools over physbo.api; no run tool" }
+  optimizer:
+    supported_spaces: [discrete]
+    directions: [maximize, minimize]
+    requires_grad: false
+    requires_bounds: true
+    methods: [EI, PI, TS]
