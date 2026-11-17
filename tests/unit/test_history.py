@@ -1525,8 +1525,25 @@ def test_policy_writes_to_the_history_of_its_module(kind):
     numpy.testing.assert_array_equal(history.fx[0:4], simulator(points))
 
 
+class Clock:
+    """A clock for the search loop that goes faster and faster: the n-th
+    reading is n (n + 1) / 2, so that every interval is longer than those
+    before it. (The clock of the system may not move at all during a step:
+    that of Windows is as coarse as 16 ms.)"""
+
+    def __init__(self):
+        self.readings = 0
+
+    def time(self):
+        self.readings += 1
+        return self.readings * (self.readings + 1) / 2
+
+
 @pytest.mark.parametrize("kind", D.KINDS)
-def test_policy_records_the_times_of_the_steps(kind):
+def test_policy_records_the_times_of_the_steps(kind, monkeypatch):
+    from physbo.search import _policy_common
+
+    monkeypatch.setattr(_policy_common, "time", Clock())
     policy = make_policy(kind)
 
     def simulator(action):
@@ -1538,13 +1555,19 @@ def test_policy_records_the_times_of_the_steps(kind):
         max_num_probes=3, num_search_each_probe=4, simulator=simulator, is_disp=False
     )
     history = policy.history
+    assert history.total_num_search == 12
     for name in D.TIMES:
+        assert getattr(history, name).shape == (3,)
+    # each step takes longer than the one before, by this clock; with the
+    # times of the first three observations they would be equal
+    for name in ("time_total", "time_get_action", "time_run_simulator"):
         times = getattr(history, name)
-        assert times.shape == (3,)
-        assert np.all(times >= 0.0)
-    assert np.all(history.time_total > 0.0)
-    assert np.all(history.time_total >= history.time_run_simulator)
-    assert np.all(history.time_total >= history.time_get_action)
+        assert np.all(times > 0.0)
+        assert np.all(np.diff(times) > 0.0)
+    assert np.all(history.time_total > history.time_run_simulator)
+    assert np.all(history.time_total > history.time_get_action)
+    # random_search does not update a predictor
+    numpy.testing.assert_array_equal(history.time_update_predictor, np.zeros(3))
 
 
 @pytest.mark.parametrize("kind", D.MULTI)

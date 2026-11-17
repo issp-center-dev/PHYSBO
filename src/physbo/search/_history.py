@@ -34,6 +34,7 @@ moved.
 
 import os
 import pickle
+import sys
 
 import numpy as np
 
@@ -181,7 +182,12 @@ class _HistoryBase:
     def __setstate__(self, state):
         if "fx" in state:
             state = self._from_arrays_of_fixed_length(state)
-        self.__dict__.update(state)
+        # The names of the attributes are interned, as pickle does for a
+        # class without __setstate__. Otherwise (before Python 3.13) a
+        # restored history does not pickle to the same bytes as the one it
+        # came from: a name it shares with an object it holds would be
+        # written twice.
+        self.__dict__.update({sys.intern(name): v for name, v in state.items()})
 
     def _from_arrays_of_fixed_length(self, state):
         """The state of a history pickled by a version in which the arrays
