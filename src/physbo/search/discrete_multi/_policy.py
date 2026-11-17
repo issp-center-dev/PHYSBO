@@ -198,7 +198,7 @@ class Policy(_MultiObjectiveMethods, discrete.Policy):
 
         Returns
         -------
-        history: history object (physbo.search.discrete_multi.results.history)
+        history: history object (physbo.search.discrete_multi.History)
         """
         score = search_score.resolve(
             score,

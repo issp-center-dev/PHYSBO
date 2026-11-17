@@ -674,7 +674,7 @@ def test_policy_without_the_communicator_of_its_state_does_not_search(
 
 @pytest.mark.parametrize("kind", DISCRETE + RANGE)
 def test_checkpoint_keeps_the_space(kind, tmp_path):
-    assert FORMAT_VERSION == 2
+    assert FORMAT_VERSION == 4
     policy = make_policy(kind)
     policy.random_search(max_num_probes=3, simulator=simulator(kind), is_disp=False)
     fname = str(tmp_path / "policy.ckpt")
@@ -683,7 +683,7 @@ def test_checkpoint_keeps_the_space(kind, tmp_path):
     with open(fname, "rb") as f:
         header = pickle.load(f)
         state = pickle.load(f)
-    assert header["format_version"] == 2
+    assert header["format_version"] == 4
     local = state["per_rank"][0]
     assert set(local) == {"rng", "space"}
     if kind.startswith("discrete"):

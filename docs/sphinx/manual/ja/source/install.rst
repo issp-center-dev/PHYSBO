@@ -136,7 +136,7 @@ PHYSBO では以下の手順により最適化を実行します(それぞれの
 
 4. 結果の確認
 
-  探索結果 res は history クラスのオブジェクト (``physbo.search.discrete.results.History``) として返されます。以下より探索結果を参照します。
+  探索結果 res は history クラスのオブジェクト (``physbo.search.discrete.History``) として返されます。以下より探索結果を参照します。
 
   - ``res.fx`` : simulator (目的関数) の評価値の履歴。失敗した観測は ``NaN`` （または simulator が返した無限大）のまま記録されます。
   - ``res.chosen_actions``: simulator を評価したときのaction ID(パラメータ)の履歴。
