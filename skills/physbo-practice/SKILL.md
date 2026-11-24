@@ -39,6 +39,8 @@ while len(req["observations"]) < budget:
 - Already-observed candidates are never suggested again. When all candidates are used, `suggestions` is empty.
 - `api.predict(req)` gives the surrogate's mean and std on every candidate, in your units and sign convention.
 - Every result has `provenance` (PHYSBO/NumPy/SciPy versions, seed, API schema version). Store it with your data.
+- Each candidate may be observed once; average repeated evaluations yourself. `api.validate(req)` reports duplicates, `x` values that are not candidates, and out-of-range options (`seed` must be in [0, 2**32 - 1]) before anything runs.
+- A `NUMERICAL_FAILURE` issue means the inputs were too extreme for floating point (e.g. values near 1e308). Rescale features and values to a moderate range.
 
 The MCP server (`pip install "physbo[mcp]"`, then run `physbo-mcp`) exposes the same functions as the tools `get_schema`, `validate_request`, `suggest_next`, `predict_posterior` and `versions`.
 
