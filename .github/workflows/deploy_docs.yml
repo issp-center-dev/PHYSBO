@@ -32,6 +32,9 @@ jobs:
         sudo apt install pandoc
         uv sync --extra docs
     - name: Build docs
+      env:
+        TARGET_NAME: ${{ github.ref_name }}
+        TUTORIAL_REF: ${{ (github.ref_type == 'tag' || github.ref_name == 'master') && 'master' || 'develop' }}
       run: |
         uv run bash ${{ github.workspace }}/docs/make_docs.sh
 

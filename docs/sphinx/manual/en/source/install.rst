@@ -71,7 +71,7 @@ PHYSBO package includes the following modules. ::
 
 Each module is created with the following structure.
 
-- ``blm`` :Module for Baysean linear model
+- ``blm`` :Module for Bayesian linear model
 - ``gp`` :Module for Gaussian Process regression model
 - ``opt`` :Module for optimazation of hyperparameters of Gaussian Process
 - ``search`` :Module for Bayesian optimization
