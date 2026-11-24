@@ -73,9 +73,9 @@ github_doc_root = "https://github.com/rtfd/recommonmark/tree/master/doc/"
 pygments_style = "sphinx"
 nbsphinx_execute = "never"
 
-current_version = os.environ.get("TARGET_NAME", "")
-if current_version:
-    branch = current_version
+tutorial_ref = os.environ.get("TUTORIAL_REF", "")
+if tutorial_ref:
+    branch = tutorial_ref
 else:
     supported_branches = ["master", "develop"]
     if find_spec("git"):
