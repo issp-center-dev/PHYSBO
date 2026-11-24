@@ -62,6 +62,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#Definition-of-simulator">Definition of simulator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Performing-optimizations">Performing optimizations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Checking-results">Checking results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Grain-boundary-examples">Grain-boundary examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#1.-Automatic-search-—-tutorial.ipynb">1. Automatic search — <code class="docutils literal notranslate"><span class="pre">tutorial.ipynb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#2.-Interactive-search-—-tutorial_interactive_mode.ipynb">2. Interactive search — <code class="docutils literal notranslate"><span class="pre">tutorial_interactive_mode.ipynb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#3.-Batch-search-—-tutorial_multi_probe.ipynb">3. Batch search — <code class="docutils literal notranslate"><span class="pre">tutorial_multi_probe.ipynb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Dataset-and-preparation">Dataset and preparation</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial_multi_objective.html">Multi-objective optimization</a></li>
@@ -518,6 +525,32 @@ f(x)=-0.990559 (action = 1554)
 </div>
 </div>
 </section>
+<section id="Grain-boundary-examples">
+<h2>Grain-boundary examples<a class="headerlink" href="#Grain-boundary-examples" title="Link to this heading"></a></h2>
+<p>The following notebooks demonstrate three ways to search for stable copper grain-boundary structures using PHYSBO. They use a dataset of previously calculated energies, so the examples do not run new structural-relaxation calculations. PHYSBO maximizes the negative energy, which corresponds to minimizing the original energy.</p>
+<section id="1.-Automatic-search-—-tutorial.ipynb">
+<h3>1. Automatic search — <code class="docutils literal notranslate"><span class="pre">tutorial.ipynb</span></code><a class="headerlink" href="#1.-Automatic-search-—-tutorial.ipynb" title="Link to this heading"></a></h3>
+<p>This notebook demonstrates a complete search controlled by PHYSBO. It first evaluates 20 randomly selected candidates, then performs 80 Bayesian search steps using Thompson sampling. A simulator retrieves the stored energy for each selected candidate. The notebook also shows how to inspect the best result and save and reload the search history.</p>
+<p><a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/tutorial.ipynb">Download the automatic-search notebook</a></p>
+</section>
+<section id="2.-Interactive-search-—-tutorial_interactive_mode.ipynb">
+<h3>2. Interactive search — <code class="docutils literal notranslate"><span class="pre">tutorial_interactive_mode.ipynb</span></code><a class="headerlink" href="#2.-Interactive-search-—-tutorial_interactive_mode.ipynb" title="Link to this heading"></a></h3>
+<p>This notebook separates candidate selection from evaluation. PHYSBO proposes candidates, the user evaluates them, and the resulting objective values are registered using <code class="docutils literal notranslate"><span class="pre">policy.write</span></code>. In this example, evaluations are simulated by looking up stored energies. In an experimental workflow, these values could instead come from measurements. The notebook also demonstrates saving and resuming the search.</p>
+<p><a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/tutorial_interactive_mode.ipynb">Download the interactive-search notebook</a></p>
+</section>
+<section id="3.-Batch-search-—-tutorial_multi_probe.ipynb">
+<h3>3. Batch search — <code class="docutils literal notranslate"><span class="pre">tutorial_multi_probe.ipynb</span></code><a class="headerlink" href="#3.-Batch-search-—-tutorial_multi_probe.ipynb" title="Link to this heading"></a></h3>
+<p>This notebook demonstrates selecting multiple candidates in each search step. It performs two random-search steps followed by eight Bayesian-search steps, selecting ten candidates per step. It uses Expected Improvement (EI) and shows how to inspect the evaluated values and the best result after each batch.</p>
+<p>Batch selection allows several candidates to be evaluated together, but it does not automatically make the simulator execute evaluations in parallel.</p>
+<p><a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/tutorial_multi_probe.ipynb">Download the batch-search notebook</a></p>
+</section>
+<section id="Dataset-and-preparation">
+<h3>Dataset and preparation<a class="headerlink" href="#Dataset-and-preparation" title="Link to this heading"></a></h3>
+<p>All three notebooks use the same dataset:</p>
+<p><a class="reference external" href="https://raw.githubusercontent.com/issp-center-dev/PHYSBO/master/examples/grain_bound/data/s5-210.csv">s5-210.csv</a></p>
+<p>Place the notebooks in one folder and create a <code class="docutils literal notranslate"><span class="pre">data</span></code> subfolder containing <code class="docutils literal notranslate"><span class="pre">s5-210.csv</span></code>. Run the notebooks with the notebook folder as the working directory, so that their existing <code class="docutils literal notranslate"><span class="pre">data/s5-210.csv</span></code> paths resolve correctly.</p>
+</section>
+</section>
 </section>
 
 
@@ -552,7 +585,7 @@ f(x)=-0.990559 (action = 1554)
 <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
   <span class="rst-current-version" data-toggle="rst-current-version">
     <span class="fa fa-book"> Read the Docs</span>
-    v: 3.3-dev
+    v: develop
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
@@ -562,14 +595,14 @@ f(x)=-0.990559 (action = 1554)
         
         <dd>
         <strong>
-          <a href="../../../3.3-dev/en/notebook/tutorial_multi_probe.html">en</a>
+          <a href="../../../develop/en/notebook/tutorial_multi_probe.html">en</a>
         </strong>
         </dd>
       
         
         <dd>
         
-          <a href="../../../3.3-dev/ja/notebook/tutorial_multi_probe.html">ja</a>
+          <a href="../../../develop/ja/notebook/tutorial_multi_probe.html">ja</a>
         
         </dd>
       
@@ -578,9 +611,9 @@ f(x)=-0.990559 (action = 1554)
       
         
         <dd>
-        
+        <strong>
           <a href="../../../develop/en/notebook/tutorial_multi_probe.html">develop</a>
-        
+        </strong>
         </dd>
       
         
@@ -588,13 +621,6 @@ f(x)=-0.990559 (action = 1554)
         
           <a href="../../../master/en/notebook/tutorial_multi_probe.html">master</a>
         
-        </dd>
-      
-        
-        <dd>
-        <strong>
-          <a href="../../../3.3-dev/en/notebook/tutorial_multi_probe.html">3.3-dev</a>
-        </strong>
         </dd>
       
 
