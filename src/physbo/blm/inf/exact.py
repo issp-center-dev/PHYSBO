@@ -9,6 +9,7 @@ import numpy as np
 import scipy
 
 import physbo.misc as misc
+from ..._rng import get_rng
 
 
 def prepare(blm, X, t, Psi=None):
@@ -79,7 +80,7 @@ def update_stats(blm, x, t, psi=None):
     return (U, b, alpha)
 
 
-def sampling(blm, w_mu=None, N=1, alpha=1.0):
+def sampling(blm, w_mu=None, N=1, alpha=1.0, rng=None):
     """
     draws samples of weights
 
@@ -95,18 +96,21 @@ def sampling(blm, w_mu=None, N=1, alpha=1.0):
     alpha: float
         noise for sampling source
         (default: 1.0)
+    rng: rng object, optional
+        random number generator (default: global numpy.random state)
 
     Returns
     =======
     numpy.ndarray
         samples of weights
     """
+    rng = get_rng(rng)
     if w_mu is None:
         w_mu = get_post_params_mean(blm)
     if N == 1:
-        z = np.random.randn(blm.nbasis) * alpha
+        z = rng.standard_normal(blm.nbasis) * alpha
     else:
-        z = np.random.randn(blm.nbasis, N) * alpha
+        z = rng.standard_normal((blm.nbasis, N)) * alpha
 
     U = blm.stats[0]
     invUz = scipy.linalg.solve_triangular(

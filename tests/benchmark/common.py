@@ -12,8 +12,6 @@ import os
 
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 import physbo
 
 
@@ -50,9 +48,19 @@ def benchmark(
     if use_range:
         sim = fn
         if use_unify:
-            policy = physbo.search.range_unified.Policy(min_X=min_X, max_X=max_X, num_objectives=fn.nobj)
+            policy = physbo.search.range_unified.Policy(
+                min_X=min_X,
+                max_X=max_X,
+                constraint=fn.constraint,
+                num_objectives=fn.nobj,
+            )
         else:
-            policy = physbo.search.range_multi.Policy(min_X=min_X, max_X=max_X, num_objectives=fn.nobj)
+            policy = physbo.search.range_multi.Policy(
+                min_X=min_X,
+                max_X=max_X,
+                constraint=fn.constraint,
+                num_objectives=fn.nobj,
+            )
     else:
         sim = physbo.search.utility.Simulator(test_X=X, test_function=fn)
         if use_unify:
@@ -82,6 +90,10 @@ def benchmark(
 
     nobj = fn.nobj
     if pdffilename_prefix is not None:
+        # matplotlib is required only when plotting; import lazily so that
+        # the benchmark logic can run without it
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(nobj - 1, nobj - 1, figsize=(5 * (nobj - 1), 5 * (nobj - 1)), sharex="col", sharey="row")
     else:
         fig = None
@@ -102,10 +114,16 @@ def benchmark(
         vid.append(v)
         if fig is not None:
             physbo.search.utility.plot_pareto_front_all(
-                res[i], steps_end=num_random_search, marker="+", ax=ax
+                res[i],
+                steps_end=num_random_search,
+                style_common={"marker": "+"},
+                ax=ax,
             )
             physbo.search.utility.plot_pareto_front_all(
-                res[i], steps_begin=num_random_search, marker="o", ax=ax
+                res[i],
+                steps_begin=num_random_search,
+                style_common={"marker": "o"},
+                ax=ax,
             )
             filename = os.path.join(
                 output_dir,
@@ -147,7 +165,12 @@ def set_parameters(
     unify_method_name: str,
 ):
     if use_range:
-        optimizer = physbo.search.optimize.random.Optimizer(min_X=fn.min_X, max_X=fn.max_X, nsamples=N*N)
+        optimizer = physbo.search.optimize.random.Optimizer(
+            min_X=fn.min_X,
+            max_X=fn.max_X,
+            nsamples=N * N,
+            constraint=fn.constraint,
+        )
     else:
         optimizer = None
 

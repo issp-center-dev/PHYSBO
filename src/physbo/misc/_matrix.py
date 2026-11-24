@@ -5,6 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Small matrix utilities (diagonal of products and weighted traces)."""
+
 import numpy as np
 
 def diagAB(A, B):
