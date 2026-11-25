@@ -13,8 +13,8 @@ class History(_RangeMultiHistory):
     (physbo.search.range_multi.Policy).
 
     The observations are in ``fx`` (the objective values, one column per
-    objective) and ``action_X`` (the inputs); the first ``total_num_search``
-    rows of these arrays are used. ``pareto`` is the Pareto front of the
+    objective) and ``action_X`` (the inputs), with one row per observation
+    (``total_num_search`` of them). ``pareto`` is the Pareto front of the
     observations.
 
     Parameters

@@ -9,10 +9,10 @@ from .._history import _DiscreteHistory
 
 
 class History(_DiscreteHistory):
-    """The history of a search for a single objective in a discrete search
-    space (physbo.search.discrete.Policy).
+    """The history of a search for a single objective in a discrete search space
+    (physbo.search.discrete.Policy).
 
     The observations are in ``fx`` (the objective values) and
-    ``chosen_actions`` (the indexes of the actions); the first
-    ``total_num_search`` entries of these arrays are used.
+    ``chosen_actions`` (the indexes of the actions), with one entry per
+    observation (``total_num_search`` of them).
     """

@@ -12,10 +12,10 @@ class History(_RangeMultiHistory):
     """The history of a search with unified objectives in a continuous search
     space (physbo.search.range_unified.Policy).
 
-    It records the objectives themselves, not the unified one. The
-    observations are in ``fx`` (the objective values, one column per
-    objective) and ``action_X`` (the inputs); the first ``total_num_search``
-    rows of these arrays are used. ``pareto`` is the Pareto front of the
+    It records the objectives themselves, not the unified one. The observations
+    are in ``fx`` (the objective values, one column per objective) and
+    ``action_X`` (the inputs), with one row per observation
+    (``total_num_search`` of them). ``pareto`` is the Pareto front of the
     observations.
 
     Parameters

@@ -13,8 +13,8 @@ class History(_DiscreteMultiHistory):
     (physbo.search.discrete_multi.Policy).
 
     The observations are in ``fx`` (the objective values, one column per
-    objective) and ``chosen_actions`` (the indexes of the actions); the first
-    ``total_num_search`` rows of these arrays are used. ``pareto`` is the
+    objective) and ``chosen_actions`` (the indexes of the actions), with one
+    row per observation (``total_num_search`` of them). ``pareto`` is the
     Pareto front of the observations.
 
     Parameters
