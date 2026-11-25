@@ -116,18 +116,24 @@
 <dt class="sig sig-object py" id="physbo.search.discrete_unified.History">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.discrete_unified.</span></span><span class="sig-name descname"><span class="pre">History</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_objectives</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/discrete_unified/_history.html#History"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.discrete_unified.History" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_DiscreteMultiHistory</span></code></p>
-<p>The history of a search with unified objectives in a discrete search
-space (physbo.search.discrete_unified.Policy).</p>
-<p>It records the objectives themselves, not the unified one. The
-observations are in <code class="docutils literal notranslate"><span class="pre">fx</span></code> (the objective values, one column per
-objective) and <code class="docutils literal notranslate"><span class="pre">chosen_actions</span></code> (the indexes of the actions); the first
-<code class="docutils literal notranslate"><span class="pre">total_num_search</span></code> rows of these arrays are used. <code class="docutils literal notranslate"><span class="pre">pareto</span></code> is the
-Pareto front of the observations.</p>
+<p>The history of a search with unified objectives in a discrete search space
+(physbo.search.discrete_unified.Policy).</p>
+<p>It records the objectives themselves, not the unified one. The observations
+are in <code class="docutils literal notranslate"><span class="pre">fx</span></code> (the objective values, one column per objective) and
+<code class="docutils literal notranslate"><span class="pre">chosen_actions</span></code> (the indexes of the actions), with one row per
+observation (<code class="docutils literal notranslate"><span class="pre">total_num_search</span></code> of them). <code class="docutils literal notranslate"><span class="pre">pareto</span></code> is the Pareto front
+of the observations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>num_objectives</strong> (<em>int</em>) – The number of objectives.</p>
 </dd>
 </dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.search.discrete_unified.History.chosen_actions">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">chosen_actions</span></span><a class="headerlink" href="#physbo.search.discrete_unified.History.chosen_actions" title="Link to this definition"></a></dt>
+<dd><p>The indexes of the actions of the observations (total_num_search entries).</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete_unified.History.export_pareto_front">
 <span class="sig-name descname"><span class="pre">export_pareto_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete_unified.History.export_pareto_front" title="Link to this definition"></a></dt>
@@ -162,13 +168,27 @@ num_objectives for several objectives).</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.search.discrete_unified.History.fx">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fx</span></span><a class="headerlink" href="#physbo.search.discrete_unified.History.fx" title="Link to this definition"></a></dt>
+<dd><p>The objective values of the observations (total_num_search rows).</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete_unified.History.load">
 <span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete_unified.History.load" title="Link to this definition"></a></dt>
-<dd><p>Load the information of the history.</p>
+<dd><p>Load the information of the history, in place of what it holds.</p>
+<p>The file is one written by <code class="docutils literal notranslate"><span class="pre">save</span></code>, of this or of an earlier
+version. If there is no file of this name but one with “.npz”
+appended (as numpy does when saving), that one is read.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file which stores the information of the history</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the file is not that of a history of this kind (an entry is
+    missing, or the arrays do not have the shape of this history).
+    The history is left as it was.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -176,10 +196,14 @@ num_objectives for several objectives).</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.discrete_unified.History.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.discrete_unified.History.save" title="Link to this definition"></a></dt>
-<dd><p>Save the information of the history, with the Pareto front.</p>
+<dd><p>Save the information of the history, as an archive of numpy
+(<code class="docutils literal notranslate"><span class="pre">numpy.savez_compressed</span></code>). The reference points of the Pareto
+front are saved with it; the front itself is made again from the
+observations when the file is loaded.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file which stores the information of the history</p>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file which stores the information of the
+history. It is used as it is (“.npz” is not appended).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -190,6 +214,12 @@ num_objectives for several objectives).</p></li>
 <dd><p>Print the last N observations, and the Pareto front if they have
 changed it (the front itself with <code class="docutils literal notranslate"><span class="pre">disp_pareto_set</span></code>, else its
 size).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="physbo.search.discrete_unified.History.terminal_num_run">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">terminal_num_run</span></span><a class="headerlink" href="#physbo.search.discrete_unified.History.terminal_num_run" title="Link to this definition"></a></dt>
+<dd><p>The number of observations at the end of each step (num_runs entries).</p>
 </dd></dl>
 
 <dl class="py property">
@@ -239,11 +269,11 @@ the best value so far or the Pareto front.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>t</strong> (<em>numpy.ndarray</em>) – The values of the objective function(s) of the observations
-(to be maximized). For a single objective, an N x 1 array; for
-several objectives, an N x num_objectives array, or an array of
-num_objectives values for one observation.</p></li>
+(to be maximized). For a single objective, an N dimensional or
+an N x 1 array; for several objectives, an N x num_objectives
+array, or an array of num_objectives values for one observation.</p></li>
 <li><p><strong>action</strong> (<em>numpy.ndarray</em>) – N dimensional array. The indexes of the actions of the
-observations.</p></li>
+observations (or one index, for one observation).</p></li>
 <li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) – N dimensional array. The total elapsed time of the step, for
 each observation. If None (default), filled by 0.0.</p></li>
 <li><p><strong>time_update_predictor</strong> (<em>numpy.ndarray</em>) – N dimensional array. The elapsed time for updating the predictor
@@ -253,7 +283,15 @@ by 0.0.</p></li>
 action. If None (default), filled by 0.0.</p></li>
 <li><p><strong>time_run_simulator</strong> (<em>numpy.ndarray</em>) – N dimensional array. The elapsed time for running the simulator.
 If None (default), filled by 0.0.</p></li>
+<li><p><strong>step</strong> (<em>Each elapsed time is that</em><em> of </em><em>the</em>)</p></li>
+<li><p><strong>for</strong> (<em>given once</em><em> or </em><em>repeated</em>)</p></li>
+<li><p><strong>observation.</strong> (<em>each</em>)</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the numbers of objective values and of points differ, or if
+    an argument does not have one of the shapes above. Nothing is
+    written in this case.</p>
 </dd>
 </dl>
 </dd></dl>

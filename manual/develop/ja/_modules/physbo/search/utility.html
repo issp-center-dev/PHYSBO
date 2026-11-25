@@ -293,8 +293,10 @@
 
     <span class="n">undominated</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">dominated</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">steps_end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">steps_end</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
+    <span class="c1"># only the observations there are</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">total_num_search</span>
+    <span class="n">steps_begin</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">steps_begin</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">steps_end</span> <span class="o">=</span> <span class="n">total</span> <span class="k">if</span> <span class="n">steps_end</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">steps_end</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_begin</span><span class="p">,</span> <span class="n">steps_end</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">front_num</span><span class="p">:</span>
             <span class="n">undominated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
