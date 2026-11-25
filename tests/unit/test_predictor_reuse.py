@@ -18,6 +18,7 @@ predictor(s) and the training data in use, however these came to the policy.
 
 import copy
 import inspect
+import pickle
 
 import numpy as np
 import pytest
@@ -478,6 +479,31 @@ def test_checkpoint_remembers_whether_the_predictor_was_learned(kind, tmp_path):
 
 
 @pytest.mark.parametrize("kind", KINDS)
+def test_checkpoint_taken_during_a_search_is_not_in_a_search(kind, tmp_path):
+    """A policy saved or pickled while its bayes_search runs (here from the
+    simulator) is restored as a policy that is not in a search. Otherwise a
+    unified policy of a parallel run would communicate in a method that one
+    process may call alone."""
+    policy, kwargs = started(kind)
+    simulator = kwargs.pop("simulator")
+    fname = str(tmp_path / "policy.ckpt")
+    pickled = []
+
+    def saving(x):
+        if not pickled:
+            assert policy._in_search
+            policy.save_checkpoint(fname)
+            pickled.append(pickle.dumps(policy))
+        return simulator(x)
+
+    policy.bayes_search(max_num_probes=2, interval=0, simulator=saving, **kwargs)
+    assert pickled and not policy._in_search
+    for restored in (type(policy).load_checkpoint(fname), pickle.loads(pickled[0])):
+        assert "_in_search" not in restored.__dict__
+        assert not restored._in_search
+
+
+@pytest.mark.parametrize("kind", KINDS)
 @pytest.mark.parametrize("num_rand_basis", [0, 20], ids=["gp", "blm"])
 def test_checkpoint_keeps_the_statistics(kind, num_rand_basis, tmp_path):
     """The predictor(s) and the training data restored from a checkpoint are
@@ -589,6 +615,38 @@ def test_unfitted_bayesian_linear_model_given_is_refused(kind):
             max_num_probes=1, interval=-1, **predictor_argument(kind, given), **kwargs
         )
     assert all(p is None for p in predictors(policy, kind))
+
+
+@pytest.mark.parametrize("kind", KINDS)
+@pytest.mark.parametrize("how", ["given", "set by hand", "replaced"])
+def test_unfitted_bayesian_linear_model_needs_the_number_of_basis_functions(kind, how):
+    """A Bayesian linear model that was never fitted does not tell with how
+    many basis functions it is to be learned. Without num_rand_basis the
+    search is refused before anything is changed, whether the model is given,
+    set by hand, or to be replaced by one with ARD; with num_rand_basis it is
+    learned."""
+    policy, kwargs = started(kind)
+    del kwargs["num_rand_basis"]
+    model = physbo.gp.core.Model.create_default(ard=False, num_dim=2)
+    unfitted = physbo.blm.Predictor(policy.config, model=model)
+    blms = [unfitted, copy.deepcopy(unfitted)] if kind.endswith("multi") else unfitted
+    if how == "given":
+        kwargs.update(predictor_argument(kind, blms))
+    else:
+        set_predictors(policy, kind, blms)
+        if how == "replaced":
+            kwargs["ard"] = True
+    before = predictors(policy, kind)
+
+    with pytest.raises(RuntimeError, match="num_rand_basis > 0"):
+        policy.bayes_search(max_num_probes=1, interval=0, **kwargs)
+    assert all(a is b for a, b in zip(before, predictors(policy, kind)))
+    assert all(p is None or p.blm is None for p in predictors(policy, kind))
+    assert policy.history.total_num_search == 5
+
+    policy.bayes_search(max_num_probes=1, interval=0, num_rand_basis=20, **kwargs)
+    assert kinds_of(policy, kind) == [("blm", 20, how == "replaced")] * len(before)
+    assert policy.history.total_num_search == 6
 
 
 # ---------------------------------------------------------------------------
