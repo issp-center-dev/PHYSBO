@@ -42,7 +42,9 @@ import numpy as np
 from .. import _mpi
 from .._rng import LegacyRNG, get_rng
 
-FORMAT_VERSION = 2
+# 2: the search space is an object of the policy
+# 3: the History classes share their base; the names of their arrays
+FORMAT_VERSION = 3
 
 # the entry of the pickled state of a policy that holds FORMAT_VERSION
 _STATE_VERSION_KEY = "_format_version"
