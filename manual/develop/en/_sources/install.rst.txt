@@ -134,7 +134,7 @@ In PHYSBO, the following steps are used to perform the optimization (please refe
 
 4. Check numerical results
 
-  The search result ``res`` is returned as an object of the ``history`` class ( ``physbo.search.discrete.results.history`` ). The following is a reference to the search results.
+  The search result ``res`` is returned as an object of the ``history`` class ( ``physbo.search.discrete.History`` ). The following is a reference to the search results.
 
   - ``res.fx``: The logs of evaluation values for simulator (objective function) simulator. Failed observations are stored as ``NaN`` (or the infinite value returned by the simulator).
   - ``res.chosen_actions``: The logs of the action ID (parameter) when the simulator has executed.

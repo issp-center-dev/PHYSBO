@@ -115,21 +115,50 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">physbo.search.range_unified.</span></span><span class="sig-name descname"><span class="pre">History</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_objectives</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_RangeMultiHistory</span></code></p>
+<p>The history of a search with unified objectives in a continuous search
+space (physbo.search.range_unified.Policy).</p>
+<p>It records the objectives themselves, not the unified one. The
+observations are in <code class="docutils literal notranslate"><span class="pre">fx</span></code> (the objective values, one column per
+objective) and <code class="docutils literal notranslate"><span class="pre">action_X</span></code> (the inputs); the first <code class="docutils literal notranslate"><span class="pre">total_num_search</span></code>
+rows of these arrays are used. <code class="docutils literal notranslate"><span class="pre">pareto</span></code> is the Pareto front of the
+observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_objectives</strong> (<em>int</em>) – The number of objectives.</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – The dimension of the search space.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.export_pareto_front">
-<span class="sig-name descname"><span class="pre">export_pareto_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.export_pareto_front"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.export_pareto_front" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">export_pareto_front</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.export_pareto_front" title="Link to this definition"></a></dt>
+<dd><p>Export the Pareto front of the valid observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>front</strong> (<em>numpy.ndarray</em>) – The objective values of the non-dominated observations, in
+ascending order of the first objective.</p></li>
+<li><p><strong>front_num</strong> (<em>numpy.ndarray</em>) – The indexes of these observations in the history.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.export_valid">
-<span class="sig-name descname"><span class="pre">export_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.export_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.export_valid" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">export_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.export_valid" title="Link to this definition"></a></dt>
 <dd><p>Export the valid (successfully evaluated) observations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – Inputs of the valid observations (N_valid x dim).</p></li>
-<li><p><strong>fx</strong> (<em>numpy.ndarray</em>) – Objective values of the valid observations (N_valid x num_objectives).</p></li>
+<li><p><strong>points</strong> (<em>numpy.ndarray</em>) – The points of the valid observations: the indexes of the actions
+in a discrete search space, the inputs (N_valid x dim) in a
+continuous one.</p></li>
+<li><p><strong>fx</strong> (<em>numpy.ndarray</em>) – Objective values of the valid observations (N_valid x
+num_objectives for several objectives).</p></li>
 </ul>
 </p>
 </dd>
@@ -138,46 +167,66 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.load">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.load" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.load" title="Link to this definition"></a></dt>
+<dd><p>Load the information of the history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file which stores the information of the history</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.save" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.save" title="Link to this definition"></a></dt>
+<dd><p>Save the information of the history, with the Pareto front.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file which stores the information of the history</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.show_search_results_mo">
-<span class="sig-name descname"><span class="pre">show_search_results_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disp_pareto_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.show_search_results_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.show_search_results_mo" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">show_search_results_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disp_pareto_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.show_search_results_mo" title="Link to this definition"></a></dt>
+<dd><p>Print the last N observations, and the Pareto front if they have
+changed it (the front itself with <code class="docutils literal notranslate"><span class="pre">disp_pareto_set</span></code>, else its
+size).</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.time_get_action">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">time_get_action</span></span><a class="headerlink" href="#physbo.search.range_unified.History.time_get_action" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>The elapsed time of choosing the next points, for each step.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.time_run_simulator">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">time_run_simulator</span></span><a class="headerlink" href="#physbo.search.range_unified.History.time_run_simulator" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>The elapsed time of running the simulator, for each step.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.time_total">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">time_total</span></span><a class="headerlink" href="#physbo.search.range_unified.History.time_total" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>The elapsed time of the whole step, for each step.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.time_update_predictor">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">time_update_predictor</span></span><a class="headerlink" href="#physbo.search.range_unified.History.time_update_predictor" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>The elapsed time of updating the predictor, for each step.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.valid_mask">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">valid_mask</span></span><a class="headerlink" href="#physbo.search.range_unified.History.valid_mask" title="Link to this definition"></a></dt>
 <dd><p>Mask of valid observations (True) vs failed ones (False).</p>
-<p>An observation is failed when any of its objective values is not
-finite (NaN or +-Inf). Failed observations are kept in the history
-but excluded from the training data and the Pareto front.</p>
+<p>An observation is failed when its objective value (any of them, for
+several objectives) is not finite (NaN or +-Inf). Failed observations
+are kept in the history but excluded from the training data and from
+the best value so far or the Pareto front.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>numpy.ndarray of bool, shape (total_num_search,)</p>
@@ -187,20 +236,24 @@ but excluded from the training data and the Pareto front.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="physbo.search.range_unified.History.write">
-<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_total</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_get_action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_run_simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/physbo/search/range_unified/_history.html#History.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#physbo.search.range_unified.History.write" title="Link to this definition"></a></dt>
-<dd><p>Overwrite fx and action_X by t and action_X.</p>
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_total</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_get_action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_run_simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physbo.search.range_unified.History.write" title="Link to this definition"></a></dt>
+<dd><p>Record the observations of one step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – N dimensional array. The negative energy of each search candidate (value of the objective function to be optimized).</p></li>
-<li><p><strong>action_X</strong> (<em>numpy.ndarray</em>) – N x d dimensional array. The input of each search candidate.</p></li>
-<li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) – N dimenstional array. The total elapsed time in each step.
-If None (default), filled by 0.0.</p></li>
-<li><p><strong>time_update_predictor</strong> (<em>numpy.ndarray</em>) – N dimenstional array. The elapsed time for updating predictor (e.g., learning hyperparemters) in each step.
-If None (default), filled by 0.0.</p></li>
-<li><p><strong>time_get_action</strong> (<em>numpy.ndarray</em>) – N dimenstional array. The elapsed time for getting next action in each step.
-If None (default), filled by 0.0.</p></li>
-<li><p><strong>time_run_simulator</strong> (<em>numpy.ndarray</em>) – N dimenstional array. The elapsed time for running the simulator in each step.
+<li><p><strong>t</strong> (<em>numpy.ndarray</em>) – The values of the objective function(s) of the observations
+(to be maximized). For a single objective, an N dimensional
+array; for several objectives, an N x num_objectives array, or
+an array of num_objectives values for one observation.</p></li>
+<li><p><strong>action_X</strong> (<em>numpy.ndarray</em>) – N x d dimensional array. The inputs of the observations.</p></li>
+<li><p><strong>time_total</strong> (<em>numpy.ndarray</em>) – N dimensional array. The total elapsed time of the step, for
+each observation. If None (default), filled by 0.0.</p></li>
+<li><p><strong>time_update_predictor</strong> (<em>numpy.ndarray</em>) – N dimensional array. The elapsed time for updating the predictor
+(e.g., learning the hyperparameters). If None (default), filled
+by 0.0.</p></li>
+<li><p><strong>time_get_action</strong> (<em>numpy.ndarray</em>) – N dimensional array. The elapsed time for getting the next
+action. If None (default), filled by 0.0.</p></li>
+<li><p><strong>time_run_simulator</strong> (<em>numpy.ndarray</em>) – N dimensional array. The elapsed time for running the simulator.
 If None (default), filled by 0.0.</p></li>
 </ul>
 </dd>
@@ -290,7 +343,7 @@ Default is 1.0; ignored for callable scores.</p></li>
 <dd class="field-even"><p><strong>history</strong></p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>history object (physbo.search.range_unified.results.history)</p>
+<dd class="field-odd"><p>history object (<a class="reference internal" href="#physbo.search.range_unified.History" title="physbo.search.range_unified.History">physbo.search.range_unified.History</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -547,7 +600,7 @@ Here, action is an integer which represents the index of the candidate.</p></li>
 <dd class="field-even"><p><strong>history</strong></p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>history object (physbo.search.discrete.results.history)</p>
+<dd class="field-odd"><p>history object (<a class="reference internal" href="physbo.search.range.html#physbo.search.range.History" title="physbo.search.range.History">physbo.search.range.History</a>)</p>
 </dd>
 </dl>
 </dd></dl>

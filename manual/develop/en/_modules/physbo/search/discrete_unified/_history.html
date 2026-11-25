@@ -94,222 +94,26 @@
 <span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
 <span class="c1"># file, You can obtain one at https://mozilla.org/MPL/2.0/.</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">pareto</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">utility</span>
-
-<span class="n">MAX_SEARCH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30000</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._history</span><span class="w"> </span><span class="kn">import</span> <span class="n">_DiscreteMultiHistory</span>
 
 
 <div class="viewcode-block" id="History">
 <a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">History</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_objectives</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span> <span class="o">=</span> <span class="n">num_objectives</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span> <span class="o">=</span> <span class="n">pareto</span><span class="o">.</span><span class="n">Pareto</span><span class="p">(</span><span class="n">num_objectives</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">History</span><span class="p">(</span><span class="n">_DiscreteMultiHistory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The history of a search with unified objectives in a discrete search</span>
+<span class="sd">    space (physbo.search.discrete_unified.Policy).</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="sd">    It records the objectives themselves, not the unified one. The</span>
+<span class="sd">    observations are in ``fx`` (the objective values, one column per</span>
+<span class="sd">    objective) and ``chosen_actions`` (the indexes of the actions); the first</span>
+<span class="sd">    ``total_num_search`` rows of these arrays are used. ``pareto`` is the</span>
+<span class="sd">    Pareto front of the observations.</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_update_predictor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_get_action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_run_simulator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MAX_SEARCH</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">time_total</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_total</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">time_update_predictor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_update_predictor</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">time_get_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_get_action</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">time_run_simulator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_run_simulator</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">])</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">valid_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Mask of valid observations (True) vs failed ones (False).</span>
-
-<span class="sd">        An observation is failed when any of its objective values is not</span>
-<span class="sd">        finite (NaN or +-Inf). Failed observations are kept in the history</span>
-<span class="sd">        but excluded from the training data and the Pareto front.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        numpy.ndarray of bool, shape (total_num_search,)</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">utility</span><span class="o">.</span><span class="n">finite_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span><span class="p">])</span>
-
-<div class="viewcode-block" id="History.export_valid">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.export_valid">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Export the valid (successfully evaluated) observations.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        actions: numpy.ndarray</span>
-<span class="sd">            Indexes of the actions of the valid observations.</span>
-<span class="sd">        fx: numpy.ndarray</span>
-<span class="sd">            Objective values of the valid observations (N_valid x num_objectives).</span>
-<span class="sd">        """</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">][</span><span class="n">mask</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="History.write">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.write">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">t</span><span class="p">,</span>
-        <span class="n">action</span><span class="p">,</span>
-        <span class="n">time_total</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">time_update_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">time_get_action</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">time_run_simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"t does not match the number of objectives"</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_objectives</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"t does not match the number of objectives"</span><span class="p">)</span>
-
-        <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="n">en</span> <span class="o">=</span> <span class="n">st</span> <span class="o">+</span> <span class="n">N</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">]</span> <span class="o">=</span> <span class="n">en</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">+=</span> <span class="n">N</span>
-
-        <span class="c1"># update Pareto set</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">update_front</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">time_total</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">time_total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_total</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_total</span>
-
-        <span class="k">if</span> <span class="n">time_update_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">time_update_predictor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_update_predictor</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_update_predictor</span>
-
-        <span class="k">if</span> <span class="n">time_get_action</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">time_get_action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_get_action</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_get_action</span>
-
-        <span class="k">if</span> <span class="n">time_run_simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">time_run_simulator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_run_simulator</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">en</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_run_simulator</span></div>
-
-
-<div class="viewcode-block" id="History.export_pareto_front">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.export_pareto_front">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_pareto_front</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">export_front</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="History.save">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.save">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span>
-
-        <span class="n">obj</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"num_runs"</span><span class="p">:</span> <span class="n">M</span><span class="p">,</span>
-            <span class="s2">"total_num_search"</span><span class="p">:</span> <span class="n">N</span><span class="p">,</span>
-            <span class="s2">"fx"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span>
-            <span class="s2">"chosen_actions"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span>
-            <span class="s2">"terminal_num_run"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">],</span>
-            <span class="s2">"pareto"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="p">,</span>
-        <span class="p">}</span>
-
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="History.load">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.load">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-        <span class="n">M</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"num_runs"</span><span class="p">])</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"total_num_search"</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="n">M</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">=</span> <span class="n">N</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"fx"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"chosen_actions"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"terminal_num_run"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"pareto"</span><span class="p">]</span>
-        <span class="c1"># the front is recomputed from fx: the saved one may contain failed</span>
-        <span class="c1"># observations if the file was written by an older version</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">rebuild_front</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">N</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminal_num_run</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">M</span><span class="p">])</span></div>
-
-
-<div class="viewcode-block" id="History.show_search_results_mo">
-<a class="viewcode-back" href="../../../../api/physbo.search.discrete_unified.html#physbo.search.discrete_unified.History.show_search_results_mo">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">show_search_results_mo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">disp_pareto_set</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-        <span class="n">pset</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">export_front</span><span class="p">()</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">msg_pareto_set_updated</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-            <span class="n">prefix</span> <span class="o">=</span> <span class="s2">"   "</span> <span class="k">if</span> <span class="n">indent</span> <span class="k">else</span> <span class="s2">""</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto</span><span class="o">.</span><span class="n">front_updated</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">"Pareto set updated."</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">disp_pareto_set</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span>
-                        <span class="n">prefix</span>
-                        <span class="o">+</span> <span class="s2">"current Pareto set = </span><span class="si">%s</span><span class="s2"> (steps = </span><span class="si">%s</span><span class="s2">) </span><span class="se">\n</span><span class="s2">"</span>
-                        <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pset</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span>
-                        <span class="n">prefix</span>
-                        <span class="o">+</span> <span class="s2">"the number of Pareto frontiers = </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
-                    <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">"</span><span class="si">%04d</span><span class="s2">-th step: f(x) = </span><span class="si">%s</span><span class="s2"> (action = </span><span class="si">%d</span><span class="s2">)"</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
-            <span class="p">)</span>
-
-            <span class="n">msg_pareto_set_updated</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">msg_pareto_set_updated</span><span class="p">()</span>
-
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"list of simulation results"</span><span class="p">)</span>
-            <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span> <span class="o">-</span> <span class="n">N</span>
-            <span class="n">en</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_num_search</span>
-            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">en</span><span class="p">):</span>
-                <span class="nb">print</span><span class="p">(</span>
-                    <span class="s2">"f(x) = </span><span class="si">%s</span><span class="s2"> (action = </span><span class="si">%d</span><span class="s2">)"</span>
-                    <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fx</span><span class="p">[</span><span class="n">n</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_actions</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-                <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></div>
-</div>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    num_objectives: int</span>
+<span class="sd">        The number of objectives.</span>
+<span class="sd">    """</span></div>
 
 </pre></div>
 
