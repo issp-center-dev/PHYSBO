@@ -35,6 +35,8 @@ moved.
 import os
 import pickle
 import sys
+import zipfile
+import zlib
 
 import numpy as np
 
@@ -99,6 +101,10 @@ def _grown(array, rows):
     grown = np.zeros((max(rows, 2 * len(array)),) + array.shape[1:], array.dtype)
     grown[0 : len(array)] = array
     return grown
+
+
+#: what reading an archive of numpy fails with when the file is damaged
+_UNREADABLE_ARCHIVE = (zipfile.BadZipFile, zlib.error, EOFError, ValueError)
 
 
 def _numbers(values, name, kinds="fiu", what="numbers"):
@@ -364,9 +370,14 @@ class _HistoryBase:
         Raises
         ------
         ValueError
-            If the file is not that of a history of this kind (an entry is
-            missing, or the arrays do not have the shape of this history).
-            The history is left as it was.
+            If the file cannot be read as one that ``save`` writes (it is
+            not an archive of numpy, or a damaged or empty one), or is not
+            that of a history of this kind (an entry is missing, or the
+            arrays do not have the shape of this history). The message
+            names the file, and the history is left as it was.
+        OSError
+            If the file cannot be opened (``FileNotFoundError`` if there is
+            none).
         """
         data = self._read_saved(filename)
         # everything is read and checked before anything is replaced
@@ -426,36 +437,65 @@ class _HistoryBase:
     _loads_pickles = False
 
     def _read_saved(self, filename):
-        """The entries of a file written by ``save``, as a dict."""
-        source = filename
-        if isinstance(filename, (str, bytes, os.PathLike)):
-            path = os.fspath(filename)
-            suffix = b".npz" if isinstance(path, bytes) else ".npz"
-            if not os.path.isfile(path) and os.path.isfile(path + suffix):
-                path += suffix
-            if self._loads_pickles:
-                # an archive of numpy is a zip file
-                with open(path, "rb") as f:
-                    is_archive = f.read(2) == b"PK"
-                if not is_archive:
-                    try:
-                        with open(path, "rb") as f:
-                            return pickle.load(f)
-                    except Exception as error:
-                        raise ValueError(
-                            f"{filename} is neither an archive of numpy (.npz),"
-                            " as save writes, nor a pickle of an earlier"
-                            f" version: {error}"
-                        ) from error
-            source = path
-        # else an open file, which numpy reads
-        archive = np.load(source)
-        if not hasattr(archive, "files"):
+        """The entries of a file written by ``save``, as a dict.
+
+        Raises
+        ------
+        ValueError
+            If the file is not an archive of numpy (or, for the classes that
+            saved them, a pickle of an earlier version), or is one that
+            cannot be read to its end. The message names the file.
+        OSError
+            If the file cannot be opened (``FileNotFoundError`` if there is
+            none), as ``open`` raises it.
+        """
+        if not isinstance(filename, (str, bytes, os.PathLike)):
+            # an open file, which is read from where it stands
+            return self._read_open(filename, filename, pickles=False)
+
+        path = os.fspath(filename)
+        suffix = b".npz" if isinstance(path, bytes) else ".npz"
+        if not os.path.isfile(path) and os.path.isfile(path + suffix):
+            path += suffix
+        # opened here and not by numpy, which leaves a file it cannot read
+        # open
+        with open(path, "rb") as f:
+            return self._read_open(f, filename, pickles=self._loads_pickles)
+
+    @staticmethod
+    def _read_open(f, filename, pickles):
+        """The entries of the open file ``f``; ``filename`` is what the
+        messages call it, and ``pickles`` whether a pickle of an earlier
+        version is read as well."""
+        # an archive of numpy is a zip file
+        start = f.tell()
+        is_archive = f.read(2) == b"PK"
+        f.seek(start)
+
+        if not is_archive:
+            if not pickles:
+                raise ValueError(
+                    f"{filename} is not an archive of numpy (.npz), as save writes"
+                )
+            try:
+                return pickle.load(f)
+            except Exception as error:
+                raise ValueError(
+                    f"{filename} is neither an archive of numpy (.npz),"
+                    " as save writes, nor a pickle of an earlier"
+                    f" version: {error}"
+                ) from error
+
+        # numpy and the modules it reads with raise errors of their own for
+        # an archive that is cut short or whose content has changed
+        try:
+            with np.load(f) as archive:
+                return {name: archive[name] for name in archive.files}
+        except _UNREADABLE_ARCHIVE as error:
             raise ValueError(
-                f"{filename} is not an archive of numpy (.npz), as save writes"
-            )
-        with archive:
-            return {name: archive[name] for name in archive.files}
+                f"{filename} is a damaged archive of numpy (.npz):"
+                f" {type(error).__name__}: {error}"
+            ) from error
 
     def _read_summary(self, data):
         """What the file holds of the summary, checked and ready for

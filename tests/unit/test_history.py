@@ -14,11 +14,14 @@ The observations are those of _history_data.py: seven of them in steps of
 
 import copy
 import copyreg
+import gc
 import inspect
 import io
 import os
 import pathlib
 import pickle
+import warnings
+import zipfile
 
 import numpy as np
 import numpy.testing
@@ -894,14 +897,125 @@ def test_load_refuses_what_is_not_an_archive(kind, tmp_path):
         history.load(array)
     empty = str(tmp_path / "empty")
     open(empty, "wb").close()
-    with pytest.raises((ValueError, EOFError)):
+    with pytest.raises(ValueError, match="empty is n(ot|either) an archive of numpy"):
         history.load(empty)
+    text = str(tmp_path / "text")
+    with open(text, "w") as f:
+        f.write("not a history\n")
+    with pytest.raises(ValueError, match="text is n(ot|either) an archive of numpy"):
+        history.load(text)
     pickled = str(tmp_path / "list.pkl")
     with open(pickled, "wb") as f:
         pickle.dump([1, 2, 3], f)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="list.pkl is not"):
         history.load(pickled)
     assert_same_state(history, kind, state)
+
+
+def damaged_archives(kind, directory):
+    """The file of a history of the kind, damaged in several ways: the
+    content of the files, by what was done to them."""
+    good = os.path.join(directory, "good.npz")
+    history = written(kind)
+    with open(good, "wb") as f:
+        # (the multi-objective classes write to a name as it is)
+        np.savez_compressed(f, **history._saved_arrays())
+    with open(good, "rb") as f:
+        content = f.read()
+    # stored without compression, so that one byte of an array can be changed
+    stored = io.BytesIO()
+    np.savez(stored, **history._saved_arrays())
+    changed = bytearray(stored.getvalue())
+    changed[changed.index(b"fx.npy") + 150] ^= 0xFF
+    return {
+        "cut in the middle": content[0 : len(content) // 2],
+        "cut by a few bytes": content[0:-5],
+        "only its first bytes": content[0:4],
+        "a byte of an array changed": bytes(changed),
+        "something else that starts like one": b"PK\x03\x04 and nothing of the kind",
+    }
+
+
+@pytest.mark.parametrize("as_open_file", [False, True])
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_refuses_a_damaged_archive(kind, as_open_file, tmp_path):
+    # numpy, zipfile and zlib raise errors of their own for these
+    history, *_ = many_observations(kind, 30)
+    state = state_of(history, kind)
+    file_name = str(tmp_path / "damaged.npz")
+    for what, content in damaged_archives(kind, str(tmp_path)).items():
+        with open(file_name, "wb") as f:
+            f.write(content)
+        with pytest.raises(ValueError, match="damaged.npz.* is a damaged archive"):
+            if as_open_file:
+                with open(file_name, "rb") as f:
+                    history.load(f)
+            else:
+                history.load(file_name)
+        assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_refuses_a_zip_file_of_something_else(kind, tmp_path):
+    # a sound archive, which numpy opens, without the entries of a history
+    history = written(kind)
+    state = state_of(history, kind)
+    file_name = str(tmp_path / "other.zip")
+    with zipfile.ZipFile(file_name, "w") as archive:
+        archive.writestr("readme.txt", "not a history")
+        archive.writestr("fx.npy", b"not an array either")
+    with pytest.raises(ValueError, match="other.zip is not the file of a history"):
+        history.load(file_name)
+    assert_same_state(history, kind, state)
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_closes_a_file_it_cannot_read(kind, tmp_path):
+    # numpy leaves a file open that it was given by name and cannot read
+    file_name = str(tmp_path / "damaged.npz")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        for content in damaged_archives(kind, str(tmp_path)).values():
+            with open(file_name, "wb") as f:
+                f.write(content)
+            with pytest.raises(ValueError):
+                D.new_history(kind).load(file_name)
+            gc.collect()
+            # (an open file cannot be removed on Windows)
+            os.remove(file_name)
+    assert not [w for w in caught if issubclass(w.category, ResourceWarning)]
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_of_a_file_that_cannot_be_opened(kind, tmp_path):
+    # these errors already name the file and say what is wrong
+    with pytest.raises(FileNotFoundError):
+        D.new_history(kind).load(str(tmp_path / "missing.npz"))
+    with pytest.raises(OSError):
+        D.new_history(kind).load(str(tmp_path))
+
+
+@pytest.mark.parametrize("kind", D.KINDS)
+def test_load_from_an_open_file_that_is_not_an_archive(kind, tmp_path):
+    history = written(kind)
+    state = state_of(history, kind)
+    for content in (b"", b"not a history\n", pickle.dumps({"num_runs": 0})):
+        with pytest.raises(ValueError, match="is not an archive of numpy"):
+            history.load(io.BytesIO(content))
+    assert_same_state(history, kind, state)
+
+    # a file that is read from where it stands
+    buffer = io.BytesIO()
+    buffer.write(b"something before the archive")
+    start = buffer.tell()
+    if D.is_multi(kind):
+        history.save(buffer)
+    else:
+        np.savez_compressed(buffer, **history._saved_arrays())
+    buffer.seek(start)
+    loaded = D.new_history(kind)
+    loaded.load(buffer)
+    assert_same_pickled_state(loaded, history)
 
 
 @pytest.mark.parametrize("kind", D.KINDS)
@@ -988,14 +1102,33 @@ def test_multi_save_and_load_take_an_open_file(kind):
     numpy.testing.assert_array_equal(loaded.pareto.reference_min, D.REFERENCE_MIN)
 
 
+def _count_unpickling():
+    Unpickled.times += 1
+    return {"num_runs": 0, "total_num_search": 0}
+
+
+class Unpickled:
+    """Counts how often a pickle of it is loaded."""
+
+    times = 0
+
+    def __reduce__(self):
+        return (_count_unpickling, ())
+
+
 @pytest.mark.parametrize("kind", D.SINGLE)
 def test_single_objective_load_does_not_unpickle(kind, tmp_path):
     # only the multi-objective classes ever saved pickles
     file_name = str(tmp_path / "pickled")
     with open(file_name, "wb") as f:
-        pickle.dump({"num_runs": 0, "total_num_search": 0}, f)
-    with pytest.raises(ValueError, match="allow_pickle"):
+        pickle.dump(Unpickled(), f)
+    Unpickled.times = 0
+    with pytest.raises(ValueError, match="pickled is not an archive of numpy"):
         D.new_history(kind).load(file_name)
+    assert Unpickled.times == 0
+    with open(file_name, "rb") as f:
+        pickle.load(f)
+    assert Unpickled.times == 1
 
 
 @pytest.mark.parametrize("kind", D.MULTI)
