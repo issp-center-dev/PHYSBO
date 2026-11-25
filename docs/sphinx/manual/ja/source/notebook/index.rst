@@ -9,6 +9,7 @@
 
    tutorial_basic
    tutorial_Gaussian_process
+   tutorial_ard
    tutorial_interactive_mode
    tutorial_once_mode
    tutorial_multi_probe

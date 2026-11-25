@@ -26,7 +26,7 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         super(Predictor, self).__init__(config, model)
 
-    def fit(self, training, num_basis=None, comm=None, objective_index=0):
+    def fit(self, training, num_basis=None, comm=None, objective_index=0, rng=None):
         """
         Fitting model to training dataset
 
@@ -41,12 +41,14 @@ class Predictor(physbo.predictor.BasePredictor):
             MPI communicator
         objective_index: int
             Index of objective column to use when training.t is 2D (default: 0)
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         """
         if self.model.prior.cov.num_dim is None:
             self.model.prior.cov.num_dim = training.X.shape[1]
         # Extract 1D t for model fitting: if 2D, take specified column; if 1D, use as is
         t_fit = training.t[:, objective_index] if training.t.ndim == 2 else training.t
-        self.model.fit(training.X, t_fit, self.config, comm=comm)
+        self.model.fit(training.X, t_fit, self.config, comm=comm, rng=rng)
         self.delete_stats()
 
     def get_basis(self, *args, **kwds):
@@ -147,7 +149,7 @@ class Predictor(physbo.predictor.BasePredictor):
             self.prepare(training, objective_index=objective_index)
         return self.model.get_post_fcov(training.X, test.X, diag=diag)
 
-    def get_post_samples(self, training, test, alpha=1, objective_index=0):
+    def get_post_samples(self, training, test, alpha=1, objective_index=0, rng=None):
         """
         Drawing samples of mean values of model
 
@@ -168,9 +170,9 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.model.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.model.post_sampling(training.X, test.X, alpha=alpha)
+        return self.model.post_sampling(training.X, test.X, alpha=alpha, rng=rng)
 
-    def get_predict_samples(self, training, test, N=1, objective_index=0):
+    def get_predict_samples(self, training, test, N=1, objective_index=0, rng=None):
         """
         Drawing samples of values of model
 
@@ -193,4 +195,4 @@ class Predictor(physbo.predictor.BasePredictor):
         """
         if self.model.stats is None:
             self.prepare(training, objective_index=objective_index)
-        return self.model.predict_sampling(training.X, test.X, N=N)
+        return self.model.predict_sampling(training.X, test.X, N=N, rng=rng)

@@ -6,13 +6,79 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import scipy.linalg
 
+from ... import _mpi
 from ... import blm
-from .. import inf
+from .. import cov, inf, lik, mean
 from . import learning
 from ._prior import Prior
+from ..._rng import get_rng
 
 from physbo.misc.permutation_importance import get_permutation_importance
+
+
+def draw_multivariate_normal(mean, cov, N=1, rng=None):
+    """
+    Draw samples from a multivariate normal distribution
+    by using the Cholesky decomposition.
+
+    Parameters
+    ----------
+    mean: numpy.ndarray
+        mean vector (ndata)
+    cov: numpy.ndarray
+        covariance matrix (ndata x ndata).
+        NOTE: this matrix is destroyed after calling this function
+        because it is used as workspace of the in-place Cholesky
+        decomposition (with a jitter term added to the diagonal elements
+        to keep the matrix positive definite).
+    N: int
+        number of samples
+        (default: 1)
+    rng: rng object, optional
+        random number generator (default: global numpy.random state)
+
+    Returns
+    -------
+    numpy.ndarray (N x ndata)
+    """
+    rng = get_rng(rng)
+    ndata = mean.shape[0]
+    if ndata == 0:
+        return np.zeros((N, 0))
+
+    # The covariance matrix is often numerically not positive definite,
+    # and hence a jitter term is added to the diagonal elements.
+    # When the Cholesky decomposition fails, the jitter term is increased.
+    #
+    # The decomposition is performed in place (cov is used as workspace)
+    # to avoid allocating another (ndata x ndata) matrix.
+    # A failed decomposition destroys the lower triangle and the diagonal
+    # but keeps the strict upper triangle intact, so that the matrix can be
+    # restored from the upper triangle and the saved diagonal for retrying.
+    diag = np.diag_indices_from(cov)
+    diag_cov = cov[diag].copy()
+    scale = np.mean(diag_cov)
+    if not scale > 0:
+        scale = 1.0
+    jitter = 1e-10 * scale
+    max_jitter = 1e-3 * scale
+    while True:
+        cov[diag] = diag_cov + jitter
+        try:
+            L = scipy.linalg.cholesky(
+                cov, lower=True, overwrite_a=True, check_finite=False
+            )
+            break
+        except np.linalg.LinAlgError:
+            if jitter > max_jitter:
+                raise
+            for i in range(1, ndata):
+                cov[i, :i] = cov[:i, i]
+            jitter *= 100
+    z = rng.standard_normal((N, ndata))
+    return mean + z @ L.T
 
 
 class Model:
@@ -32,6 +98,35 @@ class Model:
         self.num_params = self.lik.num_params + self.prior.num_params
         self.params = self.cat_params(self.lik.params, self.prior.params)
         self.stats = ()
+
+    @classmethod
+    def create_default(cls, ard=False, num_dim=None):
+        """
+        Create a default GP model with Gaussian kernel, constant mean, and Gaussian likelihood.
+
+        Parameters
+        ----------
+        ard : bool
+            If True, use ARD (per-dimension length scale) for the Gaussian kernel.
+        num_dim : int or None
+            Input dimension. Required when ard is True; optional otherwise.
+
+        Returns
+        -------
+        Model
+            A new Model instance.
+        """
+        if ard and num_dim is None:
+            raise ValueError(
+                "ard=True requires num_dim. "
+                "Provide the input dimension (e.g. from training data)."
+            )
+        cov_kernel = cov.Gauss(num_dim=num_dim, ard=ard)
+        return cls(
+            lik=lik.Gauss(),
+            mean=mean.Const(),
+            cov=cov_kernel,
+        )
 
     def cat_params(self, lik_params, prior_params):
         """
@@ -86,7 +181,7 @@ class Model:
         self.lik.set_params(lik_params)
         self.prior.set_params(prior_params)
 
-    def sub_sampling(self, X, t, N):
+    def sub_sampling(self, X, t, N, rng=None):
         """
         Make subset for sampling
 
@@ -98,15 +193,18 @@ class Model:
            The negative energy of each search candidate (value of the objective function to be optimized).
         N: int
            Total number of data in subset
+        rng: rng object, optional
+            random number generator (default: global numpy.random state)
         Returns
         -------
         subX: numpy.ndarray
         subt: numpy.ndarray
         """
+        rng = get_rng(rng)
         num_data = X.shape[0]
 
         if N is not None and N < num_data:
-            index = np.random.permutation(num_data)
+            index = rng.permutation(num_data)
             subX = X[index[0:N], :]
             subt = t[index[0:N]]
         else:
@@ -114,7 +212,7 @@ class Model:
             subt = t
         return subX, subt
 
-    def export_blm(self, num_basis, comm=None):
+    def export_blm(self, num_basis, comm=None, rng=None):
         """
         Exporting the blm(Baysean linear model) predictor
 
@@ -132,9 +230,15 @@ class Model:
         if not hasattr(self.prior.cov, "rand_expans"):
             raise ValueError("The kernel must be.")
 
-        basis_params = self.prior.cov.rand_expans(num_basis)
         if comm is not None:
-            basis_params = comm.bcast(basis_params, root=0)
+            # the basis of rank 0 is used; the random draws differ between
+            # the processes
+            basis_params, error = _mpi.call(
+                comm, self.prior.cov.rand_expans, num_basis, rng=rng
+            )
+            basis_params = _mpi.bcast(comm, basis_params, error, root=0)
+        else:
+            basis_params = self.prior.cov.rand_expans(num_basis, rng=rng)
         basis = blm.basis.Fourier(basis_params)
         prior = blm.prior.Gauss(num_basis)
         lik = blm.lik.Gauss(
@@ -145,7 +249,7 @@ class Model:
 
         return blr
 
-    def eval_marlik(self, params, X, t, N=None):
+    def eval_marlik(self, params, X, t, N=None, rng=None):
         """
         Evaluating marginal likelihood.
 
@@ -165,7 +269,7 @@ class Model:
             marlik: float
             Marginal likelihood.
         """
-        subX, subt = self.sub_sampling(X, t, N)
+        subX, subt = self.sub_sampling(X, t, N, rng=rng)
         if self.inf == "exact":
             marlik = inf.exact.eval_marlik(self, subX, subt, params=params)
         else:
@@ -173,7 +277,7 @@ class Model:
 
         return marlik
 
-    def get_grad_marlik(self, params, X, t, N=None):
+    def get_grad_marlik(self, params, X, t, N=None, rng=None):
         """
         Evaluating gradiant of marginal likelihood.
 
@@ -194,7 +298,7 @@ class Model:
         grad_marlik: numpy.ndarray
             Gradiant of marginal likelihood.
         """
-        subX, subt = self.sub_sampling(X, t, N)
+        subX, subt = self.sub_sampling(X, t, N, rng=rng)
         if self.inf == "exact":
             grad_marlik = inf.exact.get_grad_marlik(self, subX, subt, params=params)
         return grad_marlik
@@ -293,7 +397,7 @@ class Model:
 
         return post_fcov
 
-    def post_sampling(self, X, Z, params=None, N=1, alpha=1):
+    def post_sampling(self, X, Z, params=None, N=1, alpha=1, rng=None):
         """
         draws samples of mean value of model
 
@@ -315,11 +419,14 @@ class Model:
         if params is None:
             params = np.copy(self.params)
 
+        rng = get_rng(rng)
         fmean = self.get_post_fmean(X, Z, params=None)
         fcov = self.get_post_fcov(X, Z, params=None, diag=False)
-        return np.random.multivariate_normal(fmean, fcov * alpha**2, N)
+        if alpha != 1:
+            fcov *= alpha**2
+        return draw_multivariate_normal(fmean, fcov, N, rng=rng)
 
-    def predict_sampling(self, X, Z, params=None, N=1):
+    def predict_sampling(self, X, Z, params=None, N=1, rng=None):
         """
 
         Parameters
@@ -336,21 +443,23 @@ class Model:
 
         Returns
         -------
-        numpy.ndarray
+        numpy.ndarray (N x len(Z))
 
         """
         if params is None:
             params = np.copy(self.params)
 
+        rng = get_rng(rng)
         ndata = Z.shape[0]
         if ndata == 0:
             return np.zeros((N, 0))
         fmean = self.get_post_fmean(X, Z, params=None)
-        fcov = self.get_post_fcov(X, Z, params=None, diag=False) + self.lik.get_cov(
-            ndata
-        )
+        fcov = self.get_post_fcov(X, Z, params=None, diag=False)
+        # add the noise variance to the diagonal elements in place
+        # instead of adding the dense matrix self.lik.get_cov(ndata)
+        fcov[np.diag_indices_from(fcov)] += self.lik.trans_params() ** 2
 
-        return np.random.multivariate_normal(fmean, fcov, N)
+        return draw_multivariate_normal(fmean, fcov, N, rng=rng)
 
     def print_params(self):
         """
@@ -366,7 +475,7 @@ class Model:
         print("covariance parameter in GP prior: ", self.prior.cov.params)
         print("\n")
 
-    def get_cand_params(self, X, t):
+    def get_cand_params(self, X, t, rng=None):
         """
         Getting candidate for parameters
 
@@ -397,11 +506,11 @@ class Model:
         temp += self.prior.mean.num_params
 
         if self.prior.cov.num_params != 0:
-            params[temp:] = self.prior.cov.get_cand_params(X, t)
+            params[temp:] = self.prior.cov.get_cand_params(X, t, rng=rng)
 
         return params
 
-    def fit(self, X, t, config, comm=None):
+    def fit(self, X, t, config, comm=None, rng=None):
         """
         Fitting function (update parameters)
 
@@ -420,21 +529,28 @@ class Model:
         """
         method = config.learning.method
 
-        if method == "adam":
-            adam = learning.Adam(self, config)
-            params = adam.run(X, t)
+        def learn():
+            if method == "adam":
+                adam = learning.Adam(self, config, rng=rng)
+                params = adam.run(X, t)
 
-        if method in ("bfgs", "batch"):
-            bfgs = learning.Batch(self, config)
-            params = bfgs.run(X, t)
+            if method in ("bfgs", "batch"):
+                bfgs = learning.Batch(self, config, rng=rng)
+                params = bfgs.run(X, t)
+            return params
 
         if comm is not None:
-            params = comm.bcast(params, root=0)
+            # the parameters of rank 0 are used; learning starts from random
+            # parameters, which differ between the processes
+            params, error = _mpi.call(comm, learn)
+            params = _mpi.bcast(comm, params, error, root=0)
+        else:
+            params = learn()
 
         self.set_params(params)
 
     def get_permutation_importance(
-        self, X, t, n_perm: int, comm=None, split_features_parallel=False
+        self, X, t, n_perm: int, comm=None, split_features_parallel=False, rng=None
     ):
         """
         Calculating permutation importance of model
@@ -465,6 +581,7 @@ class Model:
             n_perm,
             comm=comm,
             split_features_parallel=split_features_parallel,
+            rng=rng,
         )
 
 

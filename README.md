@@ -43,6 +43,11 @@ PHYSBO was developed based on [COMBO](https://github.com/tsudalab/combo) for aca
   python3 -m pip install odat-se
   ```
 
+- In order to run examples/simple_time.py, matplotlib is required:
+  ``` bash
+  python3 -m pip install matplotlib
+  ```
+
 ## Install
 
 - From PyPI (recommended)
@@ -78,7 +83,7 @@ python3 -m pip uninstall physbo
 
 For an introductory tutorial please consult the documentation. ([English](https://issp-center-dev.github.io/PHYSBO/manual/master/en/notebook/tutorial_basic.html) / [日本語](https://issp-center-dev.github.io/PHYSBO/manual/develop/ja/install.html#id2))
 
-['examples/simple.py'](./examples/simple.py) is a simple example.
+['examples/single_objective/bayes_search.py'](./examples/single_objective/bayes_search.py) is a simple example.
 
 ### JSON ask-tell API, MCP server and Skills (for tools and AI agents)
 

@@ -32,7 +32,7 @@ cov = physbo.gp.cov.gauss(X_train.shape[1], ard=False)
 mean = physbo.gp.mean.const()
 
 gp = physbo.gp.model(lik=lik, cov=cov, mean=mean)
-config = physbo.misc.set_config()
+config = physbo.misc.SetConfig()
 
 gp.fit(X_train, t_train, config)
 gp.print_params()

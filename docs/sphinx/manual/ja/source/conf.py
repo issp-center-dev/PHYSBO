@@ -22,6 +22,14 @@ from importlib.util import find_spec
 
 sys.path.insert(0, os.path.abspath("../../../../../physbo"))
 
+# generator of the benchmark-function tables (docs/sphinx/manual/test_function_catalog.py)
+sys.path.insert(0, os.path.abspath("../.."))
+from test_function_catalog import sphinx_setup as _test_function_catalog_setup  # noqa: E402
+
+
+def setup(app):
+    return _test_function_catalog_setup(app, lang="ja")
+
 # -- Project information -----------------------------------------------------
 
 project = "PHYSBO"
@@ -29,9 +37,9 @@ copyright = "2020-, PHYSBO developers"
 author = "PHYSBO developers"
 
 # The short X.Y version.
-version = "3.2"
+version = "3.3"
 # The full version, including alpha/beta/rc tags.
-release = "3.2.1"
+release = "3.3-dev"
 
 # -- General configuration ---------------------------------------------------
 
@@ -69,7 +77,8 @@ locale_dirs = ["../../_locales"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+# "_generated" holds fragments included by test_functions.rst; they are not pages
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "_generated"]
 for t in ("tag-latex", "tag-latexpdf", "tag-latexpdfja"):
     if t in tags:
         exclude_patterns.append("api")
@@ -89,9 +98,9 @@ nbsphinx_execute = "never"
 
 napoleon_use_admonition_for_references = False
 
-current_version = os.environ.get("TARGET_NAME", "")
-if current_version:
-    branch = current_version
+tutorial_ref = os.environ.get("TUTORIAL_REF", "")
+if tutorial_ref:
+    branch = tutorial_ref
 else:
     supported_branches = ["master", "develop"]
     if find_spec("git"):

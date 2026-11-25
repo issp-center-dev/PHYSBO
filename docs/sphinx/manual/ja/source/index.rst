@@ -13,7 +13,19 @@ Welcome to PHYSBO's documentation!
    introduction
    install
    notebook/index
+
+.. toctree::
+   :maxdepth: 1
+
+   setconfig
+
+.. toctree::
+   :maxdepth: 2
+
    algorithm
+   random_numbers
+   checkpoint
+   test_functions
 
 .. toctree::
    :maxdepth: 1

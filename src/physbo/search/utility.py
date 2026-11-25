@@ -5,6 +5,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+"""Utility helpers for the search module.
+
+This module collects helpers used across the search policies:
+
+* :class:`Simulator` wraps a test function so it can be called by action index.
+* :func:`make_grid` builds a grid of candidate points for a discrete search.
+* :func:`plot_pareto_front` and :func:`plot_pareto_front_all` visualize the
+  Pareto front stored in a multi-objective history.
+* the remaining ``show_*`` / ``is_learning`` helpers format progress messages
+  and drive the search loop.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -183,12 +195,15 @@ def plot_pareto_front(
 
     undominated = []
     dominated = []
-    if steps_end is None:
-        steps_end = history.total_num_search
+    # only the observations there are
+    total = history.total_num_search
+    steps_begin = max(steps_begin, 0)
+    steps_end = total if steps_end is None else min(steps_end, total)
     for i in range(steps_begin, steps_end):
         if i in front_num:
             undominated.append(i)
-        else:
+        elif np.all(np.isfinite(history.fx[i])):
+            # failed observations (non-finite values) are not plotted
             dominated.append(i)
         min_fx = np.minimum(min_fx, history.fx[i, [x, y]])
         max_fx = np.maximum(max_fx, history.fx[i, [x, y]])
@@ -320,32 +335,326 @@ def plot_pareto_front_all(
 
 
 def show_search_results(history, N):
+    """Print a summary of the last ``N`` single-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results(n)
 
 
 def show_search_results_mo(history, N, disp_pareto_set=False):
+    """Print a summary of the last ``N`` multi-objective search steps.
+
+    Arguments
+    =========
+    history: History
+        The multi-objective search history.
+    N: int
+        Number of most recent steps to display. Capped at the total number of
+        searches performed so far.
+    disp_pareto_set: bool, default=False
+        If True, also display the current Pareto set.
+    """
     n = min(N, history.total_num_search)
     history.show_search_results_mo(n, disp_pareto_set)
 
 
+def score_name(score):
+    """Return the display name of an acquisition function.
+
+    Parameters
+    ----------
+    score : str or callable
+        Acquisition function name, function or callable object.
+
+    Returns
+    -------
+    str
+        The string itself, its name attribute, its function name, or its
+        class name, in that order of preference.
+    """
+    if isinstance(score, str):
+        return score
+    if hasattr(score, "name"):
+        return score.name
+    if hasattr(score, "__name__"):
+        return score.__name__
+    return type(score).__name__
+
+
 def show_start_message_multi_search(N, score=None):
+    """Print the header announcing a multiple-probe search step.
+
+    Arguments
+    =========
+    N: int
+        Zero-based index of the current search round; the printed index is
+        ``N + 1``.
+    score: str, optional
+        Name of the acquisition function. If None, ``"random"`` is shown.
+    """
     if score is None:
         score = "random"
     print(f"{N + 1:04}-th multiple probe search ({score})")
 
 
 def show_interactive_mode(simulator, history):
+    """Print a message when an interactive search session starts.
+
+    The message is shown only at the very first step (empty history) of an
+    interactive run, i.e. when no simulator is provided.
+
+    Arguments
+    =========
+    simulator: callable or None
+        The simulator, or None for interactive mode.
+    history: History
+        The search history.
+    """
     if simulator is None and history.total_num_search == 0:
         print("interactive mode starts ... \n ")
 
 
+def is_feasible(constraint, X):
+    """Evaluate a constraint on a set of points.
+
+    Arguments
+    =========
+    constraint: callable or None
+        Function from an array of shape (N, d) to a boolean array of N elements
+        (True for feasible points). If None, every point is feasible.
+    X: np.ndarray
+        Points to be judged, of shape (N, d).
+
+    Returns
+    =======
+    np.ndarray
+        Boolean array of shape (N,).
+
+    Raises
+    ======
+    ValueError
+        If ``constraint`` does not return one boolean per point.
+    """
+    N = X.shape[0]
+    if constraint is None:
+        return np.ones(N, dtype=bool)
+    ok = np.asarray(constraint(X))
+    if ok.dtype != bool:
+        # the values of the constraint functions (g(X) instead of g(X) <= 0)
+        # must not pass silently as "non-zero is feasible"
+        raise ValueError(
+            f"ERROR: constraint must return booleans (True for feasible points), but returned values of dtype {ok.dtype}"
+        )
+    ok = ok.reshape(-1)
+    if ok.size != N:
+        raise ValueError(
+            f"ERROR: constraint must return one boolean per point, but got {ok.size} values for {N} points"
+        )
+    return ok
+
+
+def sample_feasible(draw, N, constraint, max_trials_per_point=10000):
+    """Draw feasible points by rejection sampling.
+
+    Arguments
+    =========
+    draw: callable
+        Function from an integer n to an array of shape (n, d) of random points.
+        This is the only place where random numbers are consumed.
+    N: int
+        Number of feasible points to be drawn.
+    constraint: callable or None
+        See :func:`is_feasible`.
+    max_trials_per_point: int
+        Sampling is given up after ``max_trials_per_point * N`` points are drawn.
+
+    Returns
+    =======
+    np.ndarray or None
+        Feasible points of shape (N, d), in the order they are drawn.
+        None if N feasible points are not found within the limit.
+
+    Notes
+    =====
+    The first batch has N points, so a constraint which is always satisfied
+    consumes the same random numbers as the sampling without constraints.
+    """
+    max_trials = max_trials_per_point * N
+    accepted = []
+    num_accepted = 0
+    num_trials = 0
+    batch = N
+    while True:
+        X = draw(batch)
+        ok = is_feasible(constraint, X)
+        accepted.append(X[ok])
+        num_accepted += int(np.count_nonzero(ok))
+        num_trials += batch
+        if num_accepted >= N:
+            return np.vstack(accepted)[0:N]
+        if num_trials >= max_trials:
+            return None
+        # size of the next batch from the acceptance ratio so far
+        ratio = max(num_accepted, 1) / num_trials
+        batch = int(np.ceil(1.2 * (N - num_accepted) / ratio))
+        batch = max(N, min(batch, max_trials - num_trials, 100000))
+
+
 def length_vector(t):
+    """Return the number of elements of ``t``.
+
+    Arguments
+    =========
+    t: array-like or scalar
+        Input object.
+
+    Returns
+    =======
+    int
+        ``len(t)`` if ``t`` is sized, otherwise 1 (treating ``t`` as a scalar).
+    """
     N = len(t) if hasattr(t, "__len__") else 1
     return N
 
 
+def finite_mask(t):
+    """Return the mask of valid (finite) observations.
+
+    An observation is valid when all of its objective values are finite;
+    a NaN or an infinite value marks a failed evaluation.
+
+    Parameters
+    ----------
+    t: numpy.ndarray
+        N dimensional array (single objective) or N x k dimensional array
+        (k objectives) of objective values.
+
+    Returns
+    -------
+    mask: numpy.ndarray of bool, shape (N,)
+        True for valid observations, False for failed ones.
+    """
+    t = np.asarray(t, dtype=float)
+    if t.ndim <= 1:
+        return np.isfinite(t).reshape(-1)
+    return np.all(np.isfinite(t), axis=tuple(range(1, t.ndim)))
+
+
+def mask_rows(Z, mask):
+    """Select the observations given by mask from a basis array Z.
+
+    Parameters
+    ----------
+    Z: numpy.ndarray or None
+        (N, n) array, or (k, N, n) array (one basis per objective), or None.
+    mask: numpy.ndarray of bool, shape (N,)
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Z restricted to the rows where mask is True (None if Z is None).
+    """
+    if Z is None:
+        return None
+    Z = np.asarray(Z)
+    if Z.ndim == 3:
+        return Z[:, mask, :]
+    return Z[mask]
+
+
+def require_finite(X, t, max_shown=5):
+    """Raise an error if t contains a failed (non-finite) observation.
+
+    For the policies with a continuous search space. A failed point cannot
+    be removed from a continuous search space, and hence it would be
+    proposed again and again if it were only excluded from the training data.
+
+    Parameters
+    ----------
+    X: numpy.ndarray
+        N x d dimensional array. The inputs of the observations.
+    t: numpy.ndarray
+        N x k dimensional array. The objective values of the observations.
+    max_shown: int
+        The maximum number of the failed observations shown in the message.
+
+    Raises
+    ------
+    ValueError
+        If any objective value is NaN or +-Inf.
+    """
+    valid = finite_mask(t)
+    if np.all(valid):
+        return
+
+    X = np.asarray(X)
+    t = np.asarray(t)
+    failed = np.where(~valid)[0]
+    lines = [f"  X = {X[i]}, t = {t[i]}" for i in failed[:max_shown]]
+    if len(failed) > max_shown:
+        lines.append(f"  ... ({len(failed) - max_shown} more)")
+    msg = (
+        "Non-finite objective value (NaN or +-Inf) is given for "
+        f"{len(failed)} of {len(valid)} point(s):\n"
+        + "\n".join(lines)
+        + "\nFailed evaluations are not supported in continuous search spaces"
+        " (range policies), because a failed point would be proposed again."
+        " Return a finite penalty value suitable for your problem"
+        " from the simulator instead."
+        " Nothing has been written to the history."
+    )
+    raise ValueError(msg)
+
+
+def require_training_data(training):
+    """Raise an error if there is no observation to train the predictor with.
+
+    Parameters
+    ----------
+    training: physbo.Variable
+        The training dataset.
+
+    Raises
+    ------
+    RuntimeError
+        If the training dataset is empty.
+    """
+    if training is None or training.X is None or training.X.shape[0] == 0:
+        msg = (
+            "No valid observation is available for Bayesian optimization."
+            " Add observations with finite objective values"
+            " (e.g., by random_search) before calling bayes_search."
+        )
+        raise RuntimeError(msg)
+
+
 def is_learning(n, interval):
+    """Decide whether to (re)learn the hyperparameters at search step ``n``.
+
+    Arguments
+    =========
+    n: int
+        Zero-based index of the current search step.
+    interval: int
+        Hyperparameter learning interval.
+
+        * ``interval == 0``: learn only at the first step (``n == 0``).
+        * ``interval > 0``: learn every ``interval`` steps.
+        * ``interval < 0``: never learn.
+
+    Returns
+    =======
+    bool
+        True if hyperparameters should be learned at this step.
+    """
     if interval == 0:
         return n == 0
     elif interval > 0:
